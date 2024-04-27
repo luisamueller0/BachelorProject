@@ -1,0 +1,44 @@
+/* Styles for the dropdown container */
+.dropdown-container {
+    display: flex;
+    flex-direction: row; /* Stacks the dropdowns vertically */
+    padding: 20px; /* Adds padding around the container */
+    margin: 20px; /* Space from container to other elements */
+    background-color: #f8f9fa; /* Light grey background */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+}
+
+/* Styles for labels */
+.dropdown-label {
+    font-weight: bold; /* Makes text bold */
+    margin-bottom: 5px; /* Space between label and dropdown */
+    color: #333; /* Dark grey color for text */
+    font-size: 16px; /* Size of the label text */
+}
+
+/* Styles for dropdowns */
+.dropdown {
+    padding: 8px 12px; /* Padding inside the dropdown */
+    border-radius: 4px; /* Rounded borders for the dropdowns */
+    border: 1px solid #ccc; /* Light grey border */
+    background-color: #fff; /* White background color */
+    margin-bottom: 10px; /* Space between each dropdown */
+    cursor: pointer; /* Cursor indicates it's clickable */
+    font-size: 14px; /* Font size within the dropdown */
+    outline: none; /* Removes the default focus outline */
+}
+
+.dropdown:hover {
+    border-color: #888; /* Darker border on hover */
+}
+
+.dropdown:focus {
+    border-color: #0056b3; /* Blue border for focus */
+    box-shadow: 0 0 0 0.2rem rgba(0, 86, 179, 0.25); /* Glowing effect for focus */
+}
+
+/* Example of styling option elements (optional, not all browsers allow this) */
+option {
+    padding: 10px; /* Adds padding inside options */
+}

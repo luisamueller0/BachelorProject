@@ -23,5 +23,15 @@ artist.get('/', async (req, res) => {
     }
 });
 
+artist.get('/nationality/technique', async (req, res) => {
+    try {
+        const result = await artistModel.findAllNationalityTechnique();
+        res.json(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
 
 export default artist;
