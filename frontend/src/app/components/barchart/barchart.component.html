@@ -1,0 +1,12 @@
+<ng-container *ngIf="!isLoading">
+  <h1 *ngIf="artists.length > 1">Overview of Techniques of all {{ artists.length }} artists</h1>
+  <h1 *ngIf="artists.length === 1">
+    Technique distribution of Artist: {{ artists[0].firstname }} {{ artists[0].lastname }}
+  </h1>
+  <figure id="bar"></figure>
+</ng-container>
+
+<!-- Display loading indicator if data is still loading -->
+<div *ngIf="isLoading">
+  <p>Loading...</p>
+</div>

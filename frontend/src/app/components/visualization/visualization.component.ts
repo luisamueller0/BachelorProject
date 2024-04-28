@@ -5,6 +5,7 @@ import { Artist,ArtistNode } from '../../models/artist';
 import exhibited_with  from '../../models/exhibited_with';
 import { DecisionService } from '../../services/decision.service';
 import { Subscription } from 'rxjs';
+import { SelectionService } from '../../services/selection.service';
 
 @Component({
   selector: 'app-visualization',
@@ -25,14 +26,13 @@ export class VisualizationComponent implements OnInit {
   //SVG properties
   private svg: any;
   private margin = 50;
-  private width = 800 - (this.margin * 2);
-  private height =  800 - (this.margin * 2);
+  private width = 1000 - (this.margin * 2);
+  private height =  1000 - (this.margin * 2);
 
 // Sunburst properties
   private outerRadius: number = Math.min(this.width, this.height) / 2;
   private sunburstThickness:number = 50;
-  private middleRadius:number = this.outerRadius- this.sunburstThickness;
-  private innerRadius: number = this.middleRadius - this.sunburstThickness;
+  private innerRadius: number = this.outerRadius - this.sunburstThickness;
 
   //Inner order:
   private regionOrder: string[] = ["North Europe", "Western Europe", "Central Europe", "Eastern Europe", "Southern Europe", "Others"];
@@ -42,10 +42,16 @@ export class VisualizationComponent implements OnInit {
   private countryCentroids: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string} } = {};
   private nodes:ArtistNode[] = [];
   private edges: any;
+  private selectedNode: [SVGCircleElement, string] | null = null;
 
 
 
-constructor(private artistService: ArtistService, private decisionService:DecisionService) {
+
+constructor(private artistService: ArtistService,
+  private decisionService:DecisionService,
+  private selectionService: SelectionService) {
+    // Bind the method
+    this.handleNodeClick = this.handleNodeClick.bind(this);
 }
 
 
@@ -164,6 +170,7 @@ private  loadInitialData() {
   this.isLoading = false; // Set loading to false when data is loaded
   const degrees = this.calculateNodeDegrees(this.relationships);
   const normalizedDegrees = this.normalizeDegrees(degrees);
+  this.selectionService.selectArtist(this.artists);
   this.createSvg();
   this.drawSunburst();
   this.drawNetwork(normalizedDegrees);
@@ -229,6 +236,7 @@ private createSvg(): void {
   .append("g")
   .attr("transform", `translate(${this.width / 2 + this.margin}, ${this.height / 2 + this.margin})`);
 }
+
 
 
 
@@ -353,6 +361,31 @@ private setupRadialScale(): d3.ScaleLinear<number, number> {
            .range([this.innerRadius-10, 10]);
 }
 
+private calculateRadiusForNode(degree: number): number {
+  const minRadius = 6; // Minimum radius for the least connected node
+  const maxRadius = 15; // Maximum radius for the most connected node
+  return minRadius + (maxRadius - minRadius) * degree; // Linear scaling
+}
+private calculateCollisionRadius(degree: number): number {
+  const baseRadius = this.calculateRadiusForNode(degree); // Use the visual radius function
+  const padding = 2; // Additional padding to prevent visual overlaps
+  return baseRadius + padding;
+}
+
+private handleNodeClick(node: ArtistNode, event: MouseEvent): void {
+  console.log('Clicked on:', node.title);
+  this.selectionService.selectArtist([node.title]);
+  if (this.selectedNode !== null) {
+    const previousNode = this.selectedNode[0];
+    const previousColor = this.selectedNode[1];
+    previousNode.style.fill = previousColor;
+  }
+  const circle = event.currentTarget as SVGCircleElement;
+  this.selectedNode = [circle, circle.style.fill];
+  circle.style.fill = 'black';
+
+}
+
 private drawNetwork(degrees: Map<number, number>): void {
 
   console.log('Amount of Artists:', this.artists.length);
@@ -444,7 +477,8 @@ this.edges = edges;
 
   // Setup the force simulation
   const simulation = d3.forceSimulation(nodes)
-  .force("collision", d3.forceCollide().radius(10))
+  .force("collision", d3.forceCollide((d: any) => this.calculateCollisionRadius(degrees.get(d.id) || 0)))
+  //.force("collision", d3.forceCollide().radius(10))
   .force("angular", (alpha) => {
     // Angular constraint to keep nodes within their segment
     nodes.forEach((d:any) => {
@@ -475,6 +509,7 @@ this.edges = edges;
   .force("center", d3.forceCenter(this.width / 2, this.height / 2))
   .force("radial", d3.forceRadial((d:ArtistNode) => d.radius, this.width / 2, this.height / 2)) */
 
+const selectionService=this.selectionService;
 
   // Append circles (nodes) to the SVG
   const circles = this.svg.selectAll('.node')
@@ -482,7 +517,7 @@ this.edges = edges;
     .enter()
     .append('circle')
     .attr('class', 'node')
-      .attr('r', 8)
+    .attr('r', (d: any) => this.calculateRadiusForNode(degrees.get(d.id) || 0)) // Adjust radius based on degree
       .attr('cx', (d:any) => d.x) // Ensure correct positioning
       .attr('cy', (d:any) => d.y)
     .style('fill', (d:any) => d.color)  // Apply the color
@@ -497,7 +532,10 @@ this.edges = edges;
     })
     .on('mouseout', function () {
       d3.select('#tooltip').style('display', 'none');
-    });
+    })
+    .on('click', (event: MouseEvent, d: any) => this.handleNodeClick(d, event));
+      
+    
 
 
   // Append text labels for nodes

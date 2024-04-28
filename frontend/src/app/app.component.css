@@ -1,0 +1,18 @@
+.wrapper {
+    display: flex; /* Use flexbox */
+  }
+  
+  /* Style for the child elements */
+  .wrapper > *:first-child {
+    flex: 2; /* Takes up two-thirds of the space */
+  }
+  
+  .wrapper > *:last-child {
+    flex: 1; /* Takes up one-third of the space */
+  }
+  
+  /* Optional: Add margin between elements */
+  .wrapper > * {
+    margin-right: 20px;
+  }
+  
