@@ -375,15 +375,26 @@ private calculateCollisionRadius(degree: number): number {
 private handleNodeClick(node: ArtistNode, event: MouseEvent): void {
   console.log('Clicked on:', node.title);
   this.selectionService.selectArtist([node.title]);
-  if (this.selectedNode !== null) {
+  const circle = event.currentTarget as SVGCircleElement;
+// Check if the currently selected node is the same as the clicked node
+if (this.selectedNode && this.selectedNode[0] === circle) {
+  // If it's the same node, deselect it
+  circle.style.fill = this.selectedNode[1];
+  this.selectedNode = null;  // Clear the selected node
+  this.selectionService.selectArtist(this.artists);  // Reset the selection
+} else {
+  // If it's a different node or no node is currently selected
+  if (this.selectedNode) {
+    // Reset the previous node's color if another node was selected before
     const previousNode = this.selectedNode[0];
     const previousColor = this.selectedNode[1];
     previousNode.style.fill = previousColor;
   }
-  const circle = event.currentTarget as SVGCircleElement;
+  
+  // Set the new node as the selected node and change its color
   this.selectedNode = [circle, circle.style.fill];
-  circle.style.fill = 'black';
-
+  circle.style.fill = 'black';  // Change the fill color to black for selection
+}
 }
 
 private drawNetwork(degrees: Map<number, number>): void {

@@ -16,7 +16,7 @@ export class DecisionsComponent implements OnInit {
   SizeOptions: string[] = ['default: Importance (Degree)','Geographical', 'Amount of Exhibitions', 'Amount of different techniques', 'Amount of created Artworks']; // Example array of dropdown options
 
   selectedOrder: string =''
-  OrderOptions: string[] = ['none','Geographical', 'Amount of Exhibitions', 'Amount of different techniques', 'Amount of created Artworks']; // Example array of dropdown options
+  OrderOptions: string[] = ['default: Geographical', 'Amount of Exhibitions', 'Amount of different techniques', 'Amount of created Artworks']; // Example array of dropdown options
 
   selectedThickness: string =''
   ThicknessOptions: string[] = ['none','#exhibitions of Artist 1 and 2', 'Same techniques']; // Example array of dropdown options

@@ -1,12 +1,20 @@
 /* Styles for the dropdown container */
 .dropdown-container {
     display: flex;
-    flex-direction: row; /* Stacks the dropdowns vertically */
-    padding: 20px; /* Adds padding around the container */
+    flex-direction: row; /* Keeps the dropdown groups side by side */
+    padding: 50px; /* Adds padding around the container */
     margin: 20px; /* Space from container to other elements */
     background-color: #f8f9fa; /* Light grey background */
     border-radius: 8px; /* Rounded corners */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    justify-content: space-around; /* Distributes space between dropdown groups */
+}
+
+/* Styles for each dropdown group */
+.dropdown-group {
+    display: flex;
+    flex-direction: column; /* Stacks label and dropdown vertically */
+    align-items: left; /* Centers items in the group */
 }
 
 /* Styles for labels */
@@ -27,6 +35,7 @@
     cursor: pointer; /* Cursor indicates it's clickable */
     font-size: 14px; /* Font size within the dropdown */
     outline: none; /* Removes the default focus outline */
+    width: 100%; /* Ensures dropdowns use the full width of their group container */
 }
 
 .dropdown:hover {
@@ -34,8 +43,9 @@
 }
 
 .dropdown:focus {
-    border-color: #0056b3; /* Blue border for focus */
-    box-shadow: 0 0 0 0.2rem rgba(0, 86, 179, 0.25); /* Glowing effect for focus */
+    border-color: #7e24c7; /* Blue border for focus */
+    border-width: 2px;
+    box-shadow: 0 0 0 0.2rem rgba(66, 9, 133, 0.25); /* Glowing effect for focus */
 }
 
 /* Example of styling option elements (optional, not all browsers allow this) */

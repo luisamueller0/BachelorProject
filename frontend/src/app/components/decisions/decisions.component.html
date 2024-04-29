@@ -1,27 +1,29 @@
 <div class="dropdown-container">
 
-
+  <div class="dropdown-group">
   <!-- Label for the dropdown button -->
   <label for="dropdown" class="dropdown-label">Select node size:</label>
   <!-- Dropdown button -->
   <select class="dropdown" (change)="onSizeChange($event)">
     <option *ngFor="let option of SizeOptions" [value]="option">{{ option }}</option>
   </select>
-
+</div>
+  <div class="dropdown-group">
   <!-- Label for the dropdown button -->
   <label for="dropdown" class="dropdown-label">Select inner order:</label>
   <!-- Dropdown button -->
   <select class="dropdown" (change)="onOrderChange($event)">
     <option *ngFor="let option of OrderOptions" [value]="option">{{ option }}</option>
   </select>
-
+</div>
+  <div class="dropdown-group">
     <!-- Label for the dropdown button -->
     <label for="dropdown" class="dropdown-label">Select edge thickness:</label>
     <!-- Dropdown button -->
     <select class="dropdown" (change)="onThicknessChange($event)">
       <option *ngFor="let option of ThicknessOptions" [value]="option">{{ option }}</option>
     </select>
-
+  </div>
 
 
 </div>
