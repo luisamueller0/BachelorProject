@@ -1,0 +1,35 @@
+Zum Updaten von Labels:
+^^^^^^^^^^^^^^^^^^^^^^^^
+Hier: Techniques von json hinzufügen
+
+CALL apoc.load.json("catalogue_entries_0.json") YIELD value
+WITH value.ID AS jsonID, value.Type AS jsonType
+LIMIT 2000
+MATCH (n:CatalogueEntry)
+WHERE n.id = toString(jsonID)
+SET n.tech = jsonType
+
+
+
+Zum Anzeigen von sharedExhibitions:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// Step 1: Collect Exhibition IDs for each artist, potentially limit to relevant artists
+MATCH (a:Artist)-[:EXHIBITED]->(e:Exhibition)
+WITH a, COLLECT(e.id) AS a_exhibitions
+ORDER BY SIZE(a_exhibitions) DESC LIMIT 100 // Limit to top 100 artists based on exhibition count
+
+// Step 2: Repeat collection for all artists, then perform pair comparison
+MATCH (b:Artist)-[:EXHIBITED]->(f:Exhibition)
+WITH a, a_exhibitions, b, COLLECT(f.id) AS b_exhibitions
+WHERE a <> b AND a.id < b.id // Ensure unique pairs and avoid self-comparison
+
+// Step 3: Calculate the intersection of their exhibition lists, use native functions if APOC not available
+WITH a, b, [x IN a_exhibitions WHERE x IN b_exhibitions] AS shared_exhibitions
+RETURN a.firstname AS Artist1, b.firstname AS Artist2, SIZE(shared_exhibitions) AS SharedExhibitionCount
+ORDER BY SharedExhibitionCount DESC
+LIMIT 20
+
+
+Zum Einfügen der Properties in Artist:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Techniques und amountTechniques:
