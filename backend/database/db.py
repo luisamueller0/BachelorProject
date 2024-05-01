@@ -24,9 +24,10 @@ def update_entriesTechniques(driver):
         session.run("""
             UNWIND $data AS value
             WITH value.ID AS jsonID, value.Type AS jsonType
+                    LIMIT 5
 MATCH (n:CatalogueEntry)
 WHERE n.id = toString(jsonID)
-SET n.tech = jsonType
+SET n.artForm = jsonType
         """, data=data) 
     print(f"Updated {file_path} successfully.")
 
