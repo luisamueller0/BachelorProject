@@ -30,6 +30,86 @@ ORDER BY SharedExhibitionCount DESC
 LIMIT 20
 
 
+Zum Einfügen der Properties in exhibited_with:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+SharedExhibitions:
+MATCH (a:Artist)-[:EXHIBITED]->(e:Exhibition)
+WITH a, COLLECT(e.id) AS a_exhibitions
+ORDER BY SIZE(a_exhibitions) DESC LIMIT 100 
+// Step 2: Repeat collection for all artists, then perform pair comparison
+MATCH (b:Artist)-[:EXHIBITED]->(f:Exhibition)
+WITH a, a_exhibitions, b, COLLECT(f.id) AS b_exhibitions
+WHERE a <> b AND a.id < b.id // Ensure unique pairs and avoid self-comparison
+
+// Step 3: Calculate the intersection of their exhibition lists
+WITH a, b, [x IN a_exhibitions WHERE x IN b_exhibitions] AS shared_exhibitions
+
+// Step 4: Create or update EXHIBITED_WITH relationships with shared exhibition count for all pairs
+FOREACH (ignored IN CASE WHEN SIZE(shared_exhibitions) > 0 THEN [1] ELSE [] END |
+  MERGE (a)-[r:EXHIBITED_WITH]->(b)
+  SET r.sharedExhibitionCount = SIZE(shared_exhibitions)
+)
+
+
+
+
+CALL apoc.periodic.iterate(
+  '
+  MATCH (a:Artist)-[:EXHIBITED]->(e:Exhibition)
+  WITH DISTINCT a
+  RETURN a
+  ',
+  '
+  // Repeat collection for all artists, then perform pair comparison
+  MATCH (b:Artist)
+  WHERE a <> b // Ensure unique pairs and avoid self-comparison
+  WITH a, b
+  
+  // Process exhibitions for each pair of artists
+  UNWIND [(a)-->(e:Exhibition)<--(b) | e.id] AS a_exhibition_ids
+  UNWIND [(b)-->(e:Exhibition)<--(a) | e.id] AS b_exhibition_ids
+  
+  // Calculate the intersection of their exhibition lists
+  WITH a, b, COLLECT(DISTINCT a_exhibition_ids) AS a_exhibition_ids, COLLECT(DISTINCT b_exhibition_ids) AS b_exhibition_ids
+  WHERE a_exhibition_ids <> [] AND b_exhibition_ids <> [] // Ensure non-empty lists
+  WITH a, b, a_exhibition_ids, b_exhibition_ids
+  
+  // Create or update EXHIBITED_WITH relationships with shared exhibition count for all pairs
+  FOREACH (ignored IN CASE WHEN SIZE([x IN a_exhibition_ids WHERE x IN b_exhibition_ids]) > 0 THEN [1] ELSE [] END |
+    MATCH(a)-[r:EXHIBITED_WITH]->(b)
+    SET r.sharedExhibitionCount = SIZE([x IN a_exhibition_ids WHERE x IN b_exhibition_ids])
+  )
+  ',
+  {
+    batchSize: 1000,
+    parallel: true,
+    iterateList: true
+  }
+)
+
+
 Zum Einfügen der Properties in Artist:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Techniques und amountTechniques:
+Techniquesnd amountTechniques:
+MATCH (a:Artist)-[:CREATED]->(b:CatalogueEntry)
+WHERE b.technique <> '\\N'
+WITH a, COLLECT(b.technique) AS techniques
+MERGE (a)
+SET a.amountTechniques = SIZE(techniques)
+SET a.techniques = techniques
+
+Artforms und amountArtforms:
+MATCH (a:Artist)-[:CREATED]->(b:CatalogueEntry)
+WHERE b.artForm <> '\\N'
+WITH a, COLLECT(b.artForm) AS artForms
+SET a.amountArtForms = SIZE(artForms)
+SET a.artForms= artForms
+
+Added distinct artforms:
+MATCH (a:Artist)-[:CREATED]->(b:CatalogueEntry)
+WHERE b.artForm <> '\\N'
+WITH a, COLLECT(DISTINCT b.artForm) AS artForms
+SET a.distinctArtForms = artForms
+
+

@@ -35,7 +35,7 @@ export class VisualizationComponent implements OnInit {
   private innerRadius: number = this.outerRadius - this.sunburstThickness;
 
   //Inner order:
-  private regionOrder: string[] = ["North Europe", "Western Europe", "Central Europe", "Eastern Europe", "Southern Europe", "Others"];
+  private regionOrder: string[] = ["North Europe", "Eastern Europe", "Central Europe","Southern Europe", "Western Europe", "Others"];
 
 
   // Network properties
@@ -354,6 +354,73 @@ private createColorScale(countries: string[]): d3.ScaleSequential<string, number
 
  */
 
+/* private prepareMatrix(): number[][] {
+  const matrix: number[][] = [];
+
+  // Initialize the matrix with zeros
+  for (let i = 0; i < this.artists.length; i++) {
+    matrix[i] = new Array(this.artists.length).fill(0);
+  }
+
+  // Fill the matrix based on the relationships
+  this.relationships.forEach(rel => {
+    const startIndex = this.getIndexById(rel.startId);
+    const endIndex = this.getIndexById(rel.endId);
+    matrix[startIndex][endIndex] += 1; // Increment count for start node
+    matrix[endIndex][startIndex] += 1; // Increment count for end node (bidirectional)
+  });
+
+  return matrix;
+}
+
+// Helper function to get the index of an artist by its ID
+private getIndexById(id: number): number {
+  return this.artists.findIndex(artist => artist.id === id);
+}
+
+private drawChordDiagram() {
+const matrix = this.prepareMatrix();
+
+
+
+  // Create a chord layout
+  const chordLayout = d3.chord()
+    .padAngle(0.05)
+    .sortSubgroups(d3.descending)
+    .matrix(matrix);
+
+  // Define arc generators for the chords
+  const arc = d3.arc()
+    .innerRadius(this.outerRadius + 10)
+    .outerRadius(this.outerRadius + 20);
+
+  // Define a ribbon generator for the chords
+  const ribbon = d3.ribbon()
+    .radius(this.outerRadius + 10);
+
+  // Append groups for the chords
+  const chords = this.svg.append("g")
+    .selectAll("g")
+    .data(chordLayout)
+    .join("g")
+    .selectAll("path")
+    .data(d => d)
+    .join("path")
+    .attr("d", ribbon)
+    .style("fill", d => countryCentroids[countries[d.target.index]].color) // Use country color for chords
+    .style("stroke", "none");
+
+  // Add mouseover and mouseout events to display tooltip
+  chords.on('mouseover', function (event, d) {
+      // Display tooltip
+    })
+    .on('mouseout', function (event, d) {
+      // Hide tooltip
+    });
+} */
+
+
+
 
 private setupRadialScale(): d3.ScaleLinear<number, number> {
   return d3.scaleLinear()
@@ -382,6 +449,8 @@ if (this.selectedNode && this.selectedNode[0] === circle) {
   circle.style.fill = this.selectedNode[1];
   this.selectedNode = null;  // Clear the selected node
   this.selectionService.selectArtist(this.artists);  // Reset the selection
+  // Reset edge colors
+  this.edges.style('stroke', 'lightgray');
 } else {
   // If it's a different node or no node is currently selected
   if (this.selectedNode) {
@@ -389,11 +458,30 @@ if (this.selectedNode && this.selectedNode[0] === circle) {
     const previousNode = this.selectedNode[0];
     const previousColor = this.selectedNode[1];
     previousNode.style.fill = previousColor;
+    // Reset edge colors
+    this.edges.style('stroke', 'lightgray');
   }
   
   // Set the new node as the selected node and change its color
   this.selectedNode = [circle, circle.style.fill];
-  circle.style.fill = 'black';  // Change the fill color to black for selection
+  
+  // Darken the original color for the selected node
+  const originalColor = d3.color(circle.style.fill) as d3.RGBColor;
+  const darkerColor = d3.rgb(originalColor).darker(1); // Adjust the darkness factor as needed
+  circle.style.fill = darkerColor.toString();  // Change the fill color to the darker shade
+
+   // Highlight edges connected to the selected node
+   const selectedNodeId = node.id;
+   this.edges.style('stroke', (d: any) => {
+     // Check if the edge is connected to the selected node
+     if (d.source.id === selectedNodeId || d.target.id === selectedNodeId) {
+       // If connected, change the color to black
+       return darkerColor.toString();
+     } else {
+       // If not connected, keep the color light gray
+       return 'lightgray';
+     }
+   });
 }
 }
 
@@ -539,7 +627,7 @@ const selectionService=this.selectionService;
         .style('display', 'block')
         .style('left', `${x + 10}px`)
         .style('top', `${y + 10}px`)
-        .html(`Name: ${d.title.firstname} ${d.title.lastname}<br/>Technique: ${d.title.techniques}<br/>Nationality: ${d.title.country}`);
+        .html(`Name: ${d.title.firstname} ${d.title.lastname}<br/>Technique: ${d.title.distinct_techniques}<br/>Nationality: ${d.title.country}`);
     })
     .on('mouseout', function () {
       d3.select('#tooltip').style('display', 'none');

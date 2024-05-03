@@ -13,6 +13,7 @@ interface ArtistData {
     title: string;
     techniques: string[];
     amount_techniques: number;
+    distinct_techniques: string[];
     europeanRegion: string;
   }
 
@@ -44,6 +45,7 @@ interface ArtistData {
     title: string;
     techniques: string[];
     amount_techniques: number;
+    distinct_techniques: string[];
     europeanRegion: string;
   
     constructor(data: ArtistData) {
@@ -59,6 +61,7 @@ interface ArtistData {
       this.title = data.title;
       this.techniques = data.techniques;
       this.amount_techniques = data.amount_techniques;
+      this.distinct_techniques = data.distinct_techniques;
       this.europeanRegion = data.europeanRegion;
     }
   

@@ -41,8 +41,9 @@ class Artist {
         this.country = data.country;
         this.sex = data.sex;
         this.title = data.title;
-        this.techniques = data.techniques;
-        this.amount_techniques=data.amount_techniques;
+        this.techniques = data.artForms;
+        this.amount_techniques=data.amountArtForms;
+        this.distinct_techniques=data.distinctArtForms;
         this.europeanRegion = this.determineRegion(data.country);
     }
     calculateYear(date) {
@@ -161,7 +162,7 @@ const findAllNationalityTechnique = async () => {
    
    // Collect 25 distinct artists based on some criteria
 `MATCH (a:Artist)
-WHERE EXISTS(a.techniques) AND a.country <> '\\N'
+WHERE EXISTS(a.artForms) AND a.country <> '\\N'
 WITH a
 LIMIT 25
 WITH collect(a) AS selectedArtists
