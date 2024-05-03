@@ -113,3 +113,45 @@ WITH a, COLLECT(DISTINCT b.artForm) AS artForms
 SET a.distinctArtForms = artForms
 
 
+
+FOR COMMUNITY DETECTION
+^^^^^^^^^^^^^^^^^^^^^^
+// First, collect the necessary nodes and relationships into lists
+MATCH (a:Artist)
+WHERE EXISTS(a.artForms) AND a.country <> '\\N'
+WITH a
+WITH collect(a) AS selectedArtists
+UNWIND selectedArtists AS a
+MATCH (a)-[r:EXHIBITED_WITH]-(b)
+WHERE b IN selectedArtists
+WITH collect(a) AS nodes, collect(r) AS rels
+
+// Now, use a Cypher projection to create the in-memory graph
+CALL gds.graph.project.cypher(
+    'myGraph2',
+    'MATCH (n) WHERE n IN $nodes RETURN id(n) AS id',
+    'MATCH (n)-[r:EXHIBITED_WITH]->(m) WHERE n IN $nodes AND m IN $nodes RETURN id(n) AS source, id(m) AS target',
+    {parameters: {nodes: nodes}}
+)YIELD graphName, nodeCount, relationshipCount
+RETURN graphName, nodeCount, relationshipCount
+
+SMaller graph:
+// First, collect the necessary nodes and relationships into lists
+MATCH (a:Artist)
+WHERE EXISTS(a.artForms) AND a.country <> '\\N'
+WITH a
+LIMIT 1000
+WITH collect(a) AS selectedArtists
+UNWIND selectedArtists AS a
+MATCH (a)-[r:EXHIBITED_WITH]-(b)
+WHERE b IN selectedArtists
+WITH collect(a) AS nodes, collect(r) AS rels
+
+// Now, use a Cypher projection to create the in-memory graph
+CALL gds.graph.project.cypher(
+    'graph',
+    'MATCH (n) WHERE n IN $nodes RETURN id(n) AS id',
+    'MATCH (n)-[r:EXHIBITED_WITH]->(m) WHERE n IN $nodes AND m IN $nodes RETURN id(n) AS source, id(m) AS target',
+    {parameters: {nodes: nodes}}
+)YIELD graphName, nodeCount, relationshipCount
+RETURN graphName, nodeCount, relationshipCount

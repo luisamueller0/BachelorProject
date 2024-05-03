@@ -12,14 +12,20 @@ export class DecisionsComponent implements OnInit {
   ngOnInit() {
   }
 
+  selectedSunburst: string=''
+  SunburstOptions: string[] = ['default: Artist (preferred) nationality', 'Techniques', 'artist birthplace', 'artist deathplace', 'artist most exhibited place']; 
   selectedSize: string =''
-  SizeOptions: string[] = ['default: Importance (Degree)','Geographical', 'Amount of Exhibitions', 'Amount of different techniques', 'Amount of created Artworks']; // Example array of dropdown options
+  SizeOptions: string[] = ['default: Importance (Degree)', 'Amount of Exhibitions', 'Amount of different techniques', 'Amount of created Artworks']; // Example array of dropdown options
 
   selectedOrder: string =''
   OrderOptions: string[] = ['default: Geographical', 'Amount of Exhibitions', 'Amount of different techniques', 'Amount of created Artworks']; // Example array of dropdown options
 
   selectedThickness: string =''
   ThicknessOptions: string[] = ['none','#exhibitions of Artist 1 and 2', 'Same techniques']; // Example array of dropdown options
+  onSunburstChange(event: any) {
+    this.decisionService.changeDecisionSunburst(event.target.value);
+  }
+ 
   onSizeChange(event: any) {
     this.decisionService.changeDecisionSize(event.target.value);
   }

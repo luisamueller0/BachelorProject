@@ -70,6 +70,10 @@ ngOnInit(): void {
     this.updateVisualization('thickness', thickness);
   }));
 
+  this.subscriptions.add(this.decisionService.currentSunburst.subscribe(sunburst => {
+    this.updateVisualization('sunburst', sunburst);
+  }));
+
 
 }
 
@@ -342,84 +346,6 @@ private createColorScale(countries: string[]): d3.ScaleSequential<string, number
 
   return colorScale;
 }
-/* private createColorScale(countries: string[]): d3.ScaleOrdinal<string, string> {
-  const colors = [
-    "#1f77b4", "#aec7e8", "#ff7f0e", "#ffbb78", "#2ca02c", "#98df8a",
-    "#d62728", "#ff9896", "#9467bd", "#c5b0d5", "#8c564b", "#c49c94",
-    "#e377c2", "#f7b6d2", "#7f7f7f", "#c7c7c7", "#bcbd22", "#dbdb8d",
-    "#17becf", "#9edae5"
-  ]; // This array can be adjusted based on the actual number of countries.
-  return d3.scaleOrdinal(colors).domain(countries);
-}
-
- */
-
-/* private prepareMatrix(): number[][] {
-  const matrix: number[][] = [];
-
-  // Initialize the matrix with zeros
-  for (let i = 0; i < this.artists.length; i++) {
-    matrix[i] = new Array(this.artists.length).fill(0);
-  }
-
-  // Fill the matrix based on the relationships
-  this.relationships.forEach(rel => {
-    const startIndex = this.getIndexById(rel.startId);
-    const endIndex = this.getIndexById(rel.endId);
-    matrix[startIndex][endIndex] += 1; // Increment count for start node
-    matrix[endIndex][startIndex] += 1; // Increment count for end node (bidirectional)
-  });
-
-  return matrix;
-}
-
-// Helper function to get the index of an artist by its ID
-private getIndexById(id: number): number {
-  return this.artists.findIndex(artist => artist.id === id);
-}
-
-private drawChordDiagram() {
-const matrix = this.prepareMatrix();
-
-
-
-  // Create a chord layout
-  const chordLayout = d3.chord()
-    .padAngle(0.05)
-    .sortSubgroups(d3.descending)
-    .matrix(matrix);
-
-  // Define arc generators for the chords
-  const arc = d3.arc()
-    .innerRadius(this.outerRadius + 10)
-    .outerRadius(this.outerRadius + 20);
-
-  // Define a ribbon generator for the chords
-  const ribbon = d3.ribbon()
-    .radius(this.outerRadius + 10);
-
-  // Append groups for the chords
-  const chords = this.svg.append("g")
-    .selectAll("g")
-    .data(chordLayout)
-    .join("g")
-    .selectAll("path")
-    .data(d => d)
-    .join("path")
-    .attr("d", ribbon)
-    .style("fill", d => countryCentroids[countries[d.target.index]].color) // Use country color for chords
-    .style("stroke", "none");
-
-  // Add mouseover and mouseout events to display tooltip
-  chords.on('mouseover', function (event, d) {
-      // Display tooltip
-    })
-    .on('mouseout', function (event, d) {
-      // Hide tooltip
-    });
-} */
-
-
 
 
 private setupRadialScale(): d3.ScaleLinear<number, number> {

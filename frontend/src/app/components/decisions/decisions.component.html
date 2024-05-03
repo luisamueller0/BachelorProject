@@ -1,6 +1,15 @@
 <div class="dropdown-container">
 
   <div class="dropdown-group">
+    <!-- Label for the dropdown button -->
+    <label for="dropdown" class="dropdown-label">Select sunburst categories:</label>
+    <!-- Dropdown button -->
+    <select class="dropdown" (change)="onSunburstChange($event)">
+      <option *ngFor="let option of SunburstOptions" [value]="option">{{ option }}</option>
+    </select>
+  </div>
+
+  <div class="dropdown-group">
   <!-- Label for the dropdown button -->
   <label for="dropdown" class="dropdown-label">Select node size:</label>
   <!-- Dropdown button -->
@@ -24,6 +33,5 @@
       <option *ngFor="let option of ThicknessOptions" [value]="option">{{ option }}</option>
     </select>
   </div>
-
 
 </div>
