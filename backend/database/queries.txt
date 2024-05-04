@@ -89,6 +89,43 @@ CALL apoc.periodic.iterate(
 )
 
 
+New idea:
+First save amount of exhibited artworks for every artist with every exhibition 
+MATCH (a:Artist)-[r:EXHIBITED]->(e:Exhibition)
+WITH a, e, count(r) AS times
+MERGE (a)-[r_modified:EXHIBITED_MODIFIED]->(e)
+SET r_modified.AmountExhibitedArtworks = times
+
+
+MATCH (a1:Artist)-[r1:EXHIBITED_MODIFIED]->(e:Exhibition)<-[r2:EXHIBITED_MODIFIED]-(a2:Artist)
+WHERE id(a1) < id(a2)
+WITH a1, a2, e, r1.AmountExhibitedArtworks AS a1Amount, r2.AmountExhibitedArtworks AS a2Amount
+WITH a1, a2, a1Amount, a2Amount, SUM(a1Amount + a2Amount) AS TotalArtworks,  COLLECT(DISTINCT e) AS sharedExhibitions
+RETURN a1.id AS Artist1ID, a2.id AS Artist2ID, TotalArtworks, size(sharedExhibitions), a1Amount, a2Amount
+ORDER BY TotalArtworks DESC
+LIMIT 100
+WHAT TO DO, WHAT TO SAVE???
+
+
+
+Counts how often exhibited together but same exhibition multiplied also by how many artworks they exhibited there
+MATCH (a1:Artist)
+WITH a1 ORDER BY a1.name LIMIT 100
+MATCH (a1)-[:EXHIBITED]->(e:Exhibition)<-[:EXHIBITED]-(a2:Artist)
+WHERE id(a1) < id(a2)
+WITH a1, a2, collect(e) AS sharedExhibitions
+RETURN a1.lastname AS Artist1, a2.lastname AS Artist2, size(sharedExhibitions) AS TimesExhibitedTogether
+ORDER BY TimesExhibitedTogether DESC
+LIMIT 100
+
+Counts how often exhibited at same exhibition ()not including how many artworks
+// Match pairs of artists and their shared exhibitions
+MATCH (a1:Artist)-[:EXHIBITED]->(e:Exhibition)<-[:EXHIBITED]-(a2:Artist)
+WHERE id(a1) < id(a2)
+WITH a1, a2, COLLECT(DISTINCT e) AS sharedExhibitions
+MERGE (a1)-[r:EXHIBITED_WITH]-(a2)
+SET r.sharedExhibitions = SIZE(sharedExhibitions)
+
 Zum Einfügen der Properties in Artist:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Techniquesnd amountTechniques:

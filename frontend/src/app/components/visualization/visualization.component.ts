@@ -84,86 +84,18 @@ ngOnDestroy() {
 updateVisualization(type: string, value: string) {
   // React to the change
   console.log(`Updated ${type} to ${value}`);
-  // Refresh your D3 visualization here
-/*   if (type === 'order') {
+ /*  if (type === 'order') {
     // Update the order of the sunburst
     this.updateInnerOrder(value);
   } else if (type === 'size') {
     // Update the size of the sunburst
     this.updateNodeSize(value);
-  } else if (type === 'thickness') {
-    // Update the thickness of the sunburst
-    this.updateEdgeThickness(value);
-  } */
+  } else if (type === 'sunburst') {
+    // Update the sunburst categories
+    this.updateSunburst(value);
+  }  */
 }
 
-/*
-private updateInnerOrder(value: string): void {
-  // Sort your data based on the `value` which could be a certain property or attribute
-  // For instance, if `value` is 'alphabetical', sort by country name
-  const sortedData = this.sortDataByValue(value);
-
-  const arcGenerator = d3.arc()
-    .innerRadius(this.innerRadius)
-    .outerRadius(this.outerRadius);
-
-  this.svg.selectAll("path")
-    .data(sortedData)
-    .transition()  // Smooth transition
-    .duration(750)  // Duration of transition in milliseconds
-    .attr("d", arcGenerator)
-    .attr("fill", (d: any) => d.color);  // Update only the 'd' attribute to change the order
-
-  this.updateLabels(sortedData, arcGenerator);
-}
-
-private sortDataByValue(value: string): any[] {
-  // Assuming you have a function to sort your data based on the given 'value'
-  // This function should return the sorted array of data used in the sunburst.
-  return this.yourDataSortingFunction(value);
-}
-
-private updateLabels(data: any[], arcGenerator: any): void {
-  this.svg.selectAll("text")
-    .data(data)
-    .transition()
-    .duration(750)
-    .attr("transform", (d: any) => `translate(${arcGenerator.centroid(d)})`)
-    .text((d: any) => d.country);
-}*/
-
-
-/* // Method to update the node sizes based on the normalized degree
-private updateNodeSize(value:String): void {
-  if(value=='default: Importance (degree)'){
-  // Assuming `this.nodes` holds your nodes with a property `degree` for the normalized degrees
-  this.svg.selectAll("circle.node")
-    .transition()
-    .duration(750)
-    .attr("r", (d: any) => this.calculateRadiusForNode(d.degree));  // Calculate radius based on degree
-  }
-}
- */
-// Utility function to calculate the radius for a node based on its degree
-/* private calculateRadiusForNode(degree: number): number {
-  const minRadius = 6; // Minimum radius for the least connected node
-  const maxRadius = 15; // Maximum radius for the most connected node
-  // Mapping the degree (which is normalized between 0 and 1) to the radius range
-  return minRadius + (maxRadius - minRadius) * degree;
-}
-
-private updateEdgeThickness(value: string): void {
-  if(value = '#exhibtions of Artist 1 and 2'){
-
-
-  const newThickness = parseFloat(value);  // Convert `value` to a float for thickness
-
-  this.svg.selectAll("line.link")
-    .transition()
-    .duration(750)
-    .style("stroke-width", newThickness);
-}
-} */
 
 
 private  loadInitialData() {
