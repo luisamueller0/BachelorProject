@@ -96,7 +96,7 @@ WITH a, e, count(r) AS times
 MERGE (a)-[r_modified:EXHIBITED_MODIFIED]->(e)
 SET r_modified.AmountExhibitedArtworks = times
 
-
+SUM:
 MATCH (a1:Artist)-[r1:EXHIBITED_MODIFIED]->(e:Exhibition)<-[r2:EXHIBITED_MODIFIED]-(a2:Artist)
 WHERE id(a1) < id(a2)
 WITH a1, a2, e, r1.AmountExhibitedArtworks AS a1Amount, r2.AmountExhibitedArtworks AS a2Amount
@@ -104,7 +104,23 @@ WITH a1, a2, a1Amount, a2Amount, SUM(a1Amount + a2Amount) AS TotalArtworks,  COL
 RETURN a1.id AS Artist1ID, a2.id AS Artist2ID, TotalArtworks, size(sharedExhibitions), a1Amount, a2Amount
 ORDER BY TotalArtworks DESC
 LIMIT 100
-WHAT TO DO, WHAT TO SAVE???
+=> not good idea, very skewed (one artist less active)
+
+MINIMUM:
+MATCH (a1:Artist)-[r1:EXHIBITED_MODIFIED]->(e:Exhibition)<-[r2:EXHIBITED_MODIFIED]-(a2:Artist)
+WHERE id(a1) < id(a2)
+WITH a1, a2, e,
+     r1.AmountExhibitedArtworks AS a1Amount,
+     r2.AmountExhibitedArtworks AS a2Amount,
+     CASE 
+         WHEN r1.AmountExhibitedArtworks < r2.AmountExhibitedArtworks THEN r1.AmountExhibitedArtworks
+         ELSE r2.AmountExhibitedArtworks
+     END AS MinAmountPerExhibition
+WITH a1, a2, SUM(MinAmountPerExhibition) AS TotalMinAmount, COLLECT(e) AS SharedExhibitions
+// Check for an existing relationship in either direction
+MATCH p=(a1)-[r:EXHIBITED_WITH]-(a2)
+SET r.sharedExhibitionMinArtworks = TotalMinAmount
+=> choose this for now
 
 
 
@@ -149,7 +165,44 @@ WHERE b.artForm <> '\\N'
 WITH a, COLLECT(DISTINCT b.artForm) AS artForms
 SET a.distinctArtForms = artForms
 
+Added amount exhibited artworks for each artist:
+MATCH (artist:Artist)-[r:EXHIBITED_MODIFIED]->(exhibition:Exhibition)
+WITH artist, SUM(r.AmountExhibitedArtworks) AS TotalExhibitedArtworks
+SET artist.TotalExhibitedArtworks = TotalExhibitedArtworks
 
+Added birthcountry and deathcountry:
+MATCH (a:Artist)
+OPTIONAL MATCH (birthGeo:GeoName)
+WHERE a.birthplace = birthGeo.place OR a.birthplace = birthGeo.place_alt
+WITH a, COLLECT(DISTINCT birthGeo.country) AS birth_countries
+OPTIONAL MATCH (deathGeo:GeoName)
+WHERE a.deathplace = deathGeo.place OR a.deathplace = deathGeo.place_alt
+WITH a, birth_countries, COLLECT(DISTINCT deathGeo.country) AS death_countries
+WITH a, birth_countries[0] AS birth_country,
+       death_countries[0] AS death_country
+Set a.deathCountry = death_country
+SET a.birthCountry = birth_country
+
+Added where artist exhibited the most (country):
+
+First: saved for eevry exhibition in their properties (using rel. took place in)in what country it took place:
+MATCH p=(e:Exhibition)-[r:TOOK_PLACE_IN]->(h:Host) 
+SET e.tookPlaceInCountry=h.country
+
+MATCH (e:Exhibition)-[:TOOK_PLACE_IN]->(h:Host) 
+WHERE h.country <> '\\N'  // Exclude hosts with country equal to '\N'
+WITH e, COUNT(DISTINCT h) AS numHosts, COLLECT(DISTINCT h.country) AS hostCountries
+WHERE numHosts > 1
+SET e.tookPlaceInCountry = hostCountries
+SET e.numHosts = numHosts
+
+MATCH (a:Artist)-[r:EXHIBITED_MODIFIED]->(b:Exhibition)
+WHERE exists(b.tookPlaceInCountry)
+WITH a, MAX(r.AmountExhibitedArtworks) AS maxArtworks
+MATCH (a)-[r:EXHIBITED_MODIFIED]->(b:Exhibition)
+WHERE r.AmountExhibitedArtworks = maxArtworks AND exists(b.tookPlaceInCountry)
+SET a.mostExhibitedInCountry = b.tookPlaceInCountry
+=> this worked for 6708 artists
 
 FOR COMMUNITY DETECTION
 ^^^^^^^^^^^^^^^^^^^^^^
