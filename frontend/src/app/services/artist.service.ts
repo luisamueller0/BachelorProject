@@ -22,6 +22,15 @@ export class ArtistService {
     return this.http.get<any[][]>(this.dataUrl+ '/artist/nationality/technique').pipe(shareReplay())
   }
 
+  getArtistsWithBirthcountryTechnique():Observable<any[][]>{
+    return this.http.get<any[][]>(this.dataUrl+ '/artist/birthcountry/technique').pipe(shareReplay())
+  }
+
+  getArtistsWithDeathcountryTechnique():Observable<any[][]>{
+    return this.http.get<any[][]>(this.dataUrl+ '/artist/deathcountry/technique').pipe(shareReplay())
+  }
+
+
   /*
   getArtistById(id: string): Observable<any> {
     return this.http.get<any>(`${this.dataUrl}/${id}`);

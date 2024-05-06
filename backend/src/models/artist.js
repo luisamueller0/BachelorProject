@@ -9,18 +9,20 @@ class Artist {
         this.birthplace = data.birthplace;
         this.deathyear = this.calculateYear(data.deathdate.toString());
         this.deathplace = data.deathplace;
-        this.country = data.country;
+        this.nationality = data.country;
         this.sex = data.sex;
         this.title = data.title;
         this.techniques = data.artForms;
         this.amount_techniques=data.amountArtForms;
         this.distinct_techniques=data.distinctArtForms;
-        this.europeanRegion = this.determineRegion(data.country);
+        this.europeanRegionNationality = this.determineRegion(data.country);
         this.most_exhibited_in = data.mostExhibitedInCountry;
         this.most_exhibited_in_amount = data.mostExhibitedInCountryAmount;
         this.total_exhibited_artworks = data.TotalExhibitedArtworks;
         this.deathcountry = data.deathCountry;
+        this.europeanRegionDeath = this.determineRegion(data.deathCountry);
         this.birthcountry = data.birthCountry;
+        this.europeanRegionBirth = this.determineRegion(data.birthCountry);
         this.total_exhibitions = data.TotalExhibitions;
     }
     calculateYear(date) {
@@ -48,7 +50,7 @@ const europeanRegions = {
       "US", "AU", "GE", "MX", "AM", "IL", "CL", "AR", "CA", "DO", "PE", "JP", "TR", 
       "BR", "ZA", "NZ", "VE", "GT", "UY", "SV", "PY", "IN",  // Non-European countries
       // Adding countries that are outside of Europe but were listed in your dataset
-      "NZ", "ZA", "LU", "VE", "GT", "UY", "SV", "PY", "IN", "ME"
+      "NZ", "ZA", "LU", "VE", "GT", "UY", "SV", "PY", "IN", "ME", "TN", "MD"
     ]
   };
   
@@ -73,6 +75,44 @@ const findAllNationalityTechnique = async () => {
    // Collect 25 distinct artists based on some criteria
     `MATCH (a:Artist)
     WHERE EXISTS(a.artForms) AND a.country <> '\\N'
+    WITH a
+    LIMIT 25
+    WITH collect(a) AS selectedArtists
+
+    // For each artist in the selected group, find all exhibited relationships within this group
+    UNWIND selectedArtists AS a
+    MATCH p=(a)-[r:EXHIBITED_WITH]-(b)
+    WHERE b IN selectedArtists
+    RETURN p
+    `);
+
+    return await processResult(result);
+};
+
+const findAllBirthcountryTechnique = async () => {
+    const result = await session.run(
+   // Collect 25 distinct artists based on some criteria
+    `MATCH (a:Artist)
+    WHERE EXISTS(a.artForms) AND a.birthCountry IS NOT NULL
+    WITH a
+    LIMIT 25
+    WITH collect(a) AS selectedArtists
+
+    // For each artist in the selected group, find all exhibited relationships within this group
+    UNWIND selectedArtists AS a
+    MATCH p=(a)-[r:EXHIBITED_WITH]-(b)
+    WHERE b IN selectedArtists
+    RETURN p
+    `);
+
+    return await processResult(result);
+};
+
+const findAllDeathcountryTechnique = async () => {
+    const result = await session.run(
+   // Collect 25 distinct artists based on some criteria
+    `MATCH (a:Artist)
+    WHERE EXISTS(a.artForms) AND a.deathCountry IS NOT NULL
     WITH a
     LIMIT 25
     WITH collect(a) AS selectedArtists
@@ -124,5 +164,7 @@ const processResult = (result) => {
 
 module.exports = {
     findAll,
-    findAllNationalityTechnique
+    findAllNationalityTechnique,
+    findAllBirthcountryTechnique,
+    findAllDeathcountryTechnique
 };
