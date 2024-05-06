@@ -29,7 +29,14 @@ export class VisualizationComponent implements OnInit {
   private width = 1000 - (this.margin * 2);
   private height =  1000 - (this.margin * 2);
 
-// Sunburst properties
+  //Decisions
+   private degreesMap: Map<number, number> = new Map<number, number>();
+  private totalExhibitionsMap: Map<number, number> = new Map<number, number>();
+ private totalExhibitedArtworksMap: Map<number, number> = new Map<number, number>();
+ private differentTechniquesMap: Map<number, number> = new Map<number, number>();
+
+
+  // Sunburst properties
   private outerRadius: number = Math.min(this.width, this.height) / 2;
   private sunburstThickness:number = 50;
   private innerRadius: number = this.outerRadius - this.sunburstThickness;
@@ -43,8 +50,12 @@ export class VisualizationComponent implements OnInit {
   private nodes:ArtistNode[] = [];
   private edges: any;
   private selectedNode: [SVGCircleElement, string] | null = null;
+  //Forces
+  private simulation: d3.Simulation<ArtistNode, undefined> | null = null;
 
-
+// Create a color scale
+private edgeColorScale = d3.scaleSequential(d3.interpolateGreys) // You can use any color scale you prefer
+    .domain([0, 1]); // Adjust the domain based on your normalized values range
 
 
 constructor(private artistService: ArtistService,
@@ -53,7 +64,6 @@ constructor(private artistService: ArtistService,
     // Bind the method
     this.handleNodeClick = this.handleNodeClick.bind(this);
 }
-
 
 ngOnInit(): void {
   this.loadInitialData();
@@ -73,94 +83,29 @@ ngOnInit(): void {
   this.subscriptions.add(this.decisionService.currentSunburst.subscribe(sunburst => {
     this.updateVisualization('sunburst', sunburst);
   }));
-
-
 }
 
 ngOnDestroy() {
   this.subscriptions.unsubscribe();
 }
 
-updateVisualization(type: string, value: string) {
-  // React to the change
-  console.log(`Updated ${type} to ${value}`);
- /*  if (type === 'order') {
-    // Update the order of the sunburst
-    this.updateInnerOrder(value);
-  } else if (type === 'size') {
-    // Update the size of the sunburst
-    this.updateNodeSize(value);
-  } else if (type === 'sunburst') {
-    // Update the sunburst categories
-    this.updateSunburst(value);
-  }  */
-}
-
-
 
 private  loadInitialData() {
   this.artistService.getArtistsWithNationalityTechnique().subscribe((data) => {
-
   this.artists = data[0];
+
   this.relationships = data[1];
+  console.log(this.relationships);
   this.isLoading = false; // Set loading to false when data is loaded
-  const degrees = this.calculateNodeDegrees(this.relationships);
-  const normalizedDegrees = this.normalizeDegrees(degrees);
+ 
   this.selectionService.selectArtist(this.artists);
   this.createSvg();
   this.drawSunburst();
-  this.drawNetwork(normalizedDegrees);
-
+  this.drawNetwork();
 }, (error) => {
   console.error('There was an error', error);
   this.isLoading = false; // Make sure to set loading to false on error as well
 });
-}
-
-private calculateNodeDegrees(relationships: exhibited_with[]): Map<number, number> {
-  const degreeMap = new Map<number, number>();
-
-  relationships.forEach(rel => {
-    degreeMap.set(rel.startId, (degreeMap.get(rel.startId) || 0) + 1);
-    degreeMap.set(rel.endId, (degreeMap.get(rel.endId) || 0) + 1);
-  });
-
-  return degreeMap;
-}
-
-private normalizeDegrees(degrees: Map<number, number>): Map<number, number> {
-  const maxDegree = Math.max(...degrees.values());
-  const minDegree = Math.min(...degrees.values());
-  const range = maxDegree - minDegree;
-  const normalized = new Map<number, number>();
-  degrees.forEach((degree, id) => {
-    normalized.set(id, (degree -minDegree)/ range); // Normalize by dividing by the max degree
-  });
-  return normalized;
-}
-
-private prepareData(): any[] {
-  const regionMap = new Map<string, any[]>();
-
-  // Initialize regions in the map to preserve order
-  this.regionOrder.forEach(region => {
-    regionMap.set(region, []);
-  });
-
-  // Group artists by country and region
-  this.artists.forEach(artist => {
-    let regionArtists = regionMap.get(artist.europeanRegion);
-    if (regionArtists) {
-      regionArtists.push(artist);
-    }
-  });
-
-  // Flatten the map to an array for d3 processing, filtering out empty regions
-  const sortedArtists = Array.from(regionMap.entries())
-    .filter(([region, artists]) => artists.length > 0)
-    .flatMap(([region, artists]) => artists);
-
-  return sortedArtists;
 }
 
 
@@ -173,6 +118,200 @@ private createSvg(): void {
   .attr("transform", `translate(${this.width / 2 + this.margin}, ${this.height / 2 + this.margin})`);
 }
 
+updateVisualization(type: string, value: string) {
+  // React to the change
+  
+  console.log(`Updated ${type} to ${value}`);
+  if(this.svg){
+
+  if(type==='size'){
+    this.updateNodeSize(value);
+  }
+  if(type==='sunburst'){
+    this.updateSunburst(value);
+  }
+ 
+}
+
+}
+private updateSunburst(value: string) {
+  if(value === 'default: Artist (preferred) nationality'){
+    // Remove existing SVG
+    d3.select("figure#network").select("svg").remove();
+
+    //Create new svg
+    this.createSvg();
+/*     this.drawSunburst('nationality');
+    this.drawNetwork('nationality'); */
+  }
+  else if(value === 'artist birthcountry'){
+    // Remove existing SVG
+    d3.select("figure#network").select("svg").remove();
+
+    //Create new svg
+    this.createSvg();
+  /*   this.drawSunburst('nationality');
+    this.drawNetwork('nationality'); */
+  }
+}
+private updateNodeSize(value: string) {
+  if(value === 'Amount of Exhibitions'){
+if(this.totalExhibitionsMap.size === 0) {
+    // Create a Map<number, number> to hold the total exhibition values
+    const totalExhibitionsMap = new Map<number, number>();
+    this.artists.forEach(artist => {
+        totalExhibitionsMap.set(artist.id, artist.total_exhibitions);
+    });
+    // Normalize the values using the normalizeLinear function
+    const normalizedTotalExhibitions = this.normalizeLinear(totalExhibitionsMap);
+    this.totalExhibitionsMap = normalizedTotalExhibitions;
+  }
+    // Select all circles with the class 'node'
+    const circles = this.svg.selectAll('.node');
+
+    // Update the radius of each circle based on the normalized total exhibitions
+    circles.attr('r', (d: any) => {
+        // Retrieve the normalized value for the current artist from the map
+        const normalizedValue = this.totalExhibitionsMap.get(d.artist.id)||0;
+        // Use the normalized value to calculate the radius for the current circle
+        return this.calculateRadiusForNode(normalizedValue);
+    });
+   
+    
+}
+else if(value === "default: Importance (Degree)")
+  {
+     // Select all circles with the class 'node'
+
+     const circles = this.svg.selectAll('.node');
+ 
+     // Update the radius of each circle based on the normalized total exhibitions
+     circles.attr('r', (d: any) => {
+         // Retrieve the normalized value for the current artist from the map
+         const normalizedValue = this.degreesMap.get(d.artist.id)||0;
+         // Use the normalized value to calculate the radius for the current circle
+         return this.calculateRadiusForNode(normalizedValue);
+     });
+  }
+  else if(value === 'Amount of different techniques'){
+    if(this.differentTechniquesMap.size === 0) {
+
+      
+        // Create a Map<number, number> to hold the total exhibition values
+        const differentTechniquesMap = new Map<number, number>();
+        this.artists.forEach(artist => {
+
+          differentTechniquesMap.set(artist.id, artist.distinct_techniques.length);
+        });
+    
+        
+        // Normalize the values using the normalizeLinear function
+        const normalizeddifferentTechniquesMap = this.normalizeLinear(differentTechniquesMap);
+    
+        this.differentTechniquesMap = normalizeddifferentTechniquesMap
+      }
+     
+        // Select all circles with the class 'node'
+        const circles = this.svg.selectAll('.node');
+    
+        // Update the radius of each circle based on the normalized total exhibitions
+        circles.attr('r', (d: any) => {
+            // Retrieve the normalized value for the current artist from the map
+            const normalizedValue = this.differentTechniquesMap.get(d.artist.id)||0;
+            // Use the normalized value to calculate the radius for the current circle
+            return this.calculateRadiusForNode(normalizedValue);
+        });
+       
+        
+    }
+  else if(value === 'Amount of exhibited Artworks'){
+    if(this.totalExhibitedArtworksMap.size === 0) {
+
+      
+        // Create a Map<number, number> to hold the total exhibition values
+        const totalExhibitedArtworksMap = new Map<number, number>();
+        this.artists.forEach(artist => {
+            totalExhibitedArtworksMap.set(artist.id, artist.total_exhibited_artworks);
+        });
+    
+        
+        // Normalize the values using the normalizeLinear function
+        const normalizedTotalExhibitions = this.normalizeLinear(totalExhibitedArtworksMap);
+    
+        this.totalExhibitedArtworksMap = normalizedTotalExhibitions
+      }
+ 
+        // Select all circles with the class 'node'
+        const circles = this.svg.selectAll('.node');
+    
+        // Update the radius of each circle based on the normalized total exhibitions
+        circles.attr('r', (d: any) => {
+            // Retrieve the normalized value for the current artist from the map
+            const normalizedValue = this.totalExhibitedArtworksMap.get(d.artist.id)||0;
+            // Use the normalized value to calculate the radius for the current circle
+            return this.calculateRadiusForNode(normalizedValue);
+        });
+       
+        
+    }
+  this.resetSimulation();
+  
+}
+private getNodeSize():number[]{
+  // Select all circles with the class 'node'
+  const circles = this.svg.selectAll('.node');
+  
+  // Get the radii (sizes) of all circles
+  const sizes: number[] = [];
+  circles.each(function(this: any, d: any) {
+    const radius = parseFloat(d3.select(this).attr('r')); // Get the radius attribute and convert it to a number
+    sizes[d.id] = radius; // Store the radius in the sizes array
+  });
+ 
+  return sizes;
+}
+
+private resetSimulation() {
+  const sizes = this.getNodeSize();
+if(this.simulation){
+  // Update collision force with new sizes
+  this.simulation.force("collision", d3.forceCollide((d: any) => this.calculateCollisionRadius(sizes[d.id] || 0)));
+
+  // Update angular force
+  this.simulation.force("angular", (alpha) => {
+      // Angular constraint to keep nodes within their segment
+      this.nodes.forEach((d: any) => {
+          const currentAngle = Math.atan2(d.y - this.height / 2, d.x - this.width / 2);
+          const deltaAngle = currentAngle - d.angle;
+          if (Math.abs(deltaAngle) > 0.1) {  // Adjust sensitivity as needed
+              const correctedAngle = d.angle + Math.sign(deltaAngle) * 0.1;  // Gradually adjust
+              d.x += (d.radius * Math.sin(correctedAngle) - d.x) * alpha;
+              d.y += (-d.radius * Math.cos(correctedAngle) - d.y) * alpha;
+          }
+      });
+  });
+
+  // Update tick function
+  this.simulation.on("tick", () => {
+      this.boundaryForce(0.5);
+      // Update node positions
+      this.svg.selectAll('.node')
+          .attr('cx', (d: any) => d.x)
+          .attr('cy', (d: any) => d.y);
+      this.edges
+          .attr("x1", (d: any) => d.source.x)
+          .attr("y1", (d: any) => d.source.y)
+          .attr("x2", (d: any) => d.target.x)
+          .attr("y2", (d: any) => d.target.y);
+  });
+
+  // Restart the simulation
+  this.simulation.alpha(1).restart();
+}
+}
+
+ 
+
 
 
 
@@ -180,7 +319,6 @@ private drawSunburst():void{
   //const countries = this.artists.map(artist => artist.country);
   const countryMap = new Map<string, Artist[]>();
   const sortedArtists:Artist[] = this.prepareData();
-  sortedArtists.forEach(artist => console.log(artist.europeanRegion, '', artist.country));
   sortedArtists.forEach(artist => {
     if (!countryMap.has(artist.country)) {
       countryMap.set(artist.country, []);
@@ -189,7 +327,6 @@ private drawSunburst():void{
   });
 
   const countries = Array.from(countryMap.keys()); // Distinct list of countries
-  console.log(countries)
   const totalArtists = this.artists.length;
   const minimumAngle = Math.PI / 18;
 
@@ -267,99 +404,32 @@ private drawSunburst():void{
       country: d.country
     };
   });
-  console.log('CountryCentroids:', this.countryCentroids);
+
 
 }
 
-private createColorScale(countries: string[]): d3.ScaleSequential<string, number> {
-  // Create a scale that maps [0, number of countries] to [0, 1]
-  const colorScale = d3.scaleSequential(d3.interpolateWarm)
-                        .domain([0, countries.length - 1]);
 
-  return colorScale;
+
+private drawNetwork(): void {
+if(this.degreesMap.size === 0) {
+  const degrees = this.calculateNodeDegrees(this.relationships);
+  const normalizedDegrees = this.normalizeLinear(degrees);
+  this.degreesMap = normalizedDegrees;
 }
-
-
-private setupRadialScale(): d3.ScaleLinear<number, number> {
-  return d3.scaleLinear()
-           .domain([0, 1])  // Normalized degree
-           .range([this.innerRadius-10, 10]);
-}
-
-private calculateRadiusForNode(degree: number): number {
-  const minRadius = 6; // Minimum radius for the least connected node
-  const maxRadius = 15; // Maximum radius for the most connected node
-  return minRadius + (maxRadius - minRadius) * degree; // Linear scaling
-}
-private calculateCollisionRadius(degree: number): number {
-  const baseRadius = this.calculateRadiusForNode(degree); // Use the visual radius function
-  const padding = 2; // Additional padding to prevent visual overlaps
-  return baseRadius + padding;
-}
-
-private handleNodeClick(node: ArtistNode, event: MouseEvent): void {
-  console.log('Clicked on:', node.title);
-  this.selectionService.selectArtist([node.title]);
-  const circle = event.currentTarget as SVGCircleElement;
-// Check if the currently selected node is the same as the clicked node
-if (this.selectedNode && this.selectedNode[0] === circle) {
-  // If it's the same node, deselect it
-  circle.style.fill = this.selectedNode[1];
-  this.selectedNode = null;  // Clear the selected node
-  this.selectionService.selectArtist(this.artists);  // Reset the selection
-  // Reset edge colors
-  this.edges.style('stroke', 'lightgray');
-} else {
-  // If it's a different node or no node is currently selected
-  if (this.selectedNode) {
-    // Reset the previous node's color if another node was selected before
-    const previousNode = this.selectedNode[0];
-    const previousColor = this.selectedNode[1];
-    previousNode.style.fill = previousColor;
-    // Reset edge colors
-    this.edges.style('stroke', 'lightgray');
-  }
-  
-  // Set the new node as the selected node and change its color
-  this.selectedNode = [circle, circle.style.fill];
-  
-  // Darken the original color for the selected node
-  const originalColor = d3.color(circle.style.fill) as d3.RGBColor;
-  const darkerColor = d3.rgb(originalColor).darker(1); // Adjust the darkness factor as needed
-  circle.style.fill = darkerColor.toString();  // Change the fill color to the darker shade
-
-   // Highlight edges connected to the selected node
-   const selectedNodeId = node.id;
-   this.edges.style('stroke', (d: any) => {
-     // Check if the edge is connected to the selected node
-     if (d.source.id === selectedNodeId || d.target.id === selectedNodeId) {
-       // If connected, change the color to black
-       return darkerColor.toString();
-     } else {
-       // If not connected, keep the color light gray
-       return 'lightgray';
-     }
-   });
-}
-}
-
-private drawNetwork(degrees: Map<number, number>): void {
-
-  console.log('Amount of Artists:', this.artists.length);
   // Format artists as nodes
   const nodes: ArtistNode[] = this.artists.map((artist: Artist) => {
-    console.log(artist.country, this.countryCentroids[artist.country]); // This will show if some country data is missing or undefined
+
     const countryData = this.countryCentroids[artist.country];
-    console.log(countryData)
-    const degree = degrees.get(artist.id) || 0;
-    console.log(degree);
+
+    const degree = this.degreesMap.get(artist.id) || 0;
+
     const radial = this.setupRadialScale()(degree);
     const angle = countryData.middleAngle;
     const x =  radial * Math.sin(angle);
     const y = - radial * Math.cos(angle);
     return {
         id: artist.id,
-        title: artist,
+        artist: artist,
         x: x,
         y: y,
         vx: 0, // velocity in x
@@ -370,7 +440,8 @@ private drawNetwork(degrees: Map<number, number>): void {
         countryData: countryData
     };
   });
-  console.log(nodes)
+  
+  this.nodes= nodes;
 
   // Create a mapping object to look up node indices by ID
   const getNodeIndexById = (id: number) => {
@@ -387,14 +458,25 @@ private drawNetwork(degrees: Map<number, number>): void {
  * @returns An array of formatted relationships where each relationship is an object containing 'source' and 'target' properties.
  * These properties are references to the node objects that D3 can use to render the links in the visualization.
  */
-  const formattedRelationships = this.relationships.map((relationship: exhibited_with) => {
+ // Extract the sharedExhibitionMinArtworks values from the relationships array
+const sharedExhibitionMinArtworksValues = this.relationships.map((relationship: exhibited_with) => relationship.sharedExhibitionMinArtworks);
+
+// Normalize the sharedExhibitionMinArtworks values using normalizeLinear
+const normalizedSharedExhibitionMinArtworks = this.normalizeLogarithmically(new Map(sharedExhibitionMinArtworksValues.map((value, index) => [index, value])));
+
+// Map the normalized values to the formattedRelationships array
+const formattedRelationships = this.relationships.map((relationship: exhibited_with, index) => {
     const sourceIndex = getNodeIndexById(relationship.startId);
     const targetIndex = getNodeIndexById(relationship.endId);
     return {
-      source: nodes[sourceIndex],
-      target: nodes[targetIndex],
+        source: nodes[sourceIndex],
+        target: nodes[targetIndex],
+        sharedExhibitions: relationship.sharedExhibitions,
+        sharedExhibitionMinArtworks: normalizedSharedExhibitionMinArtworks.get(index) || 0 // Use normalized value or default to 0
     };
-  });
+});
+
+
 
   // Append edges to the SVG
   const edges = this.svg.selectAll('.link')
@@ -402,71 +484,35 @@ private drawNetwork(degrees: Map<number, number>): void {
     .enter()
     .append('line')
     .attr('class', 'link')
-    .style('stroke', 'lightgray')
+    .style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks))
     .style('stroke-width', 2)
     .attr('x1', (d: any) => d.source.x)
     .attr('y1', (d: any) => d.source.y)
     .attr('x2', (d: any) => d.target.x)
-    .attr('y2', (d: any) => d.target.y);
+    .attr('y2', (d: any) => d.target.y)
+    
+    ;
 this.edges = edges;
-
-  const centerX = this.width / 2 + this.margin;
-  const centerY = this.height / 2 + this.margin;
-  const innerRadius = this.innerRadius;
-  function boundaryForce(alpha:number) {
-    for (let node of nodes) {
-      // Calculate the current radius and angle from the center
-      let dx = (node.x as number) - (centerX as number);
-      let dy = (node.y as number) - centerY;
-      let distance = Math.sqrt(dx * dx + dy * dy);
-      let angle = Math.atan2(dy, dx);
-
-      // Define inner and outer boundary limits
-      let innerBoundary = innerRadius + 50; // 10 is a margin from the inner boundary
-
-      if (distance < innerBoundary) {
-        node.x = centerX + innerBoundary * Math.cos(angle);
-        node.y = centerY + innerBoundary * Math.sin(angle);
-      }
-    }
-  }
-
-
-  // Setup the force simulation
-  const simulation = d3.forceSimulation(nodes)
-  .force("collision", d3.forceCollide((d: any) => this.calculateCollisionRadius(degrees.get(d.id) || 0)))
-  //.force("collision", d3.forceCollide().radius(10))
-  .force("angular", (alpha) => {
-    // Angular constraint to keep nodes within their segment
-    nodes.forEach((d:any) => {
-        const currentAngle = Math.atan2(d.y - this.height / 2, d.x - this.width / 2);
-        const deltaAngle = currentAngle - d.angle;
-        if (Math.abs(deltaAngle) > 0.1) {  // Adjust sensitivity as needed
-            const correctedAngle = d.angle + Math.sign(deltaAngle) * 0.1;  // Gradually adjust
-            d.x += ( d.radius * Math.sin(correctedAngle) - d.x) * alpha;
-            d.y += ( - d.radius * Math.cos(correctedAngle) - d.y) * alpha;
-        }
+ /*  // Append edges to the SVG
+  const edges = this.svg.selectAll('.link')
+    .data(formattedRelationships)
+    .enter()
+    .append('line')
+    .attr('class', 'link')
+  //  .style('stroke', 'lightgray')
+    .style('stroke-width', 2)
+    .attr('x1', (d: any) => d.source.x)
+    .attr('y1', (d: any) => d.source.y)
+    .attr('x2', (d: any) => d.target.x)
+    .attr('y2', (d: any) => d.target.y)
+    .style('stroke', (d: any) => {
+      // Check the condition and return the appropriate color
+      return d.sharedExhibitions < 3? 'lightgray' : 'red';
     });
-  })
-  .on("tick", () => {
-    boundaryForce(0.5);
-    // Update node positions
-    this.svg.selectAll('.node')
-      .attr('cx', (d:any) => d.x)
-      .attr('cy', (d:any) => d.y);
-      edges
-      .attr("x1", (d:any) => d.source.x)
-      .attr("y1", (d:any) => d.source.y)
-      .attr("x2", (d:any) => d.target.x)
-      .attr("y2", (d:any) => d.target.y);
-  });
+    ;
+this.edges = edges; */
 
- /*  unused forces:
-  .force("boundary", boundaryForce)
-  .force("center", d3.forceCenter(this.width / 2, this.height / 2))
-  .force("radial", d3.forceRadial((d:ArtistNode) => d.radius, this.width / 2, this.height / 2)) */
 
-const selectionService=this.selectionService;
 
   // Append circles (nodes) to the SVG
   const circles = this.svg.selectAll('.node')
@@ -474,7 +520,7 @@ const selectionService=this.selectionService;
     .enter()
     .append('circle')
     .attr('class', 'node')
-    .attr('r', (d: any) => this.calculateRadiusForNode(degrees.get(d.id) || 0)) // Adjust radius based on degree
+    .attr('r', (d: any) => this.calculateRadiusForNode(this.degreesMap.get(d.id) || 0)) // Adjust radius based on degree
       .attr('cx', (d:any) => d.x) // Ensure correct positioning
       .attr('cy', (d:any) => d.y)
     .style('fill', (d:any) => d.color)  // Apply the color
@@ -485,14 +531,13 @@ const selectionService=this.selectionService;
         .style('display', 'block')
         .style('left', `${x + 10}px`)
         .style('top', `${y + 10}px`)
-        .html(`Name: ${d.title.firstname} ${d.title.lastname}<br/>Technique: ${d.title.distinct_techniques}<br/>Nationality: ${d.title.country}`);
+        .html(`Name: ${d.artist.firstname} ${d.artist.lastname}<br/>Technique: ${d.artist.distinct_techniques}<br/>Nationality: ${d.artist.country}`);
     })
     .on('mouseout', function () {
       d3.select('#tooltip').style('display', 'none');
     })
     .on('click', (event: MouseEvent, d: any) => this.handleNodeClick(d, event));
       
-    
 
 
   // Append text labels for nodes
@@ -507,36 +552,221 @@ const selectionService=this.selectionService;
     .style("font-size", "0.7em")
     .text(function(d: any) { return d.id; });
 
+
+    const sizes = this.getNodeSize();
+  // Setup the force simulation
+  const simulation = d3.forceSimulation(nodes)
+  .force("collision", d3.forceCollide((d: any) => this.calculateCollisionRadius(sizes[d.id] || 0)))
+  //.force("collision", d3.forceCollide().radius(10))
+  .force("angular", (alpha) => {
+    // Angular constraint to keep nodes within their segment
+    nodes.forEach((d:any) => {
+        const currentAngle = Math.atan2(d.y - this.height / 2, d.x - this.width / 2);
+        const deltaAngle = currentAngle - d.angle;
+        if (Math.abs(deltaAngle) > 0.1) {  // Adjust sensitivity as needed
+            const correctedAngle = d.angle + Math.sign(deltaAngle) * 0.1;  // Gradually adjust
+            d.x += ( d.radius * Math.sin(correctedAngle) - d.x) * alpha;
+            d.y += ( - d.radius * Math.cos(correctedAngle) - d.y) * alpha;
+        }
+    });
+  })
+  .on("tick", () => {
+    this.boundaryForce(0.5);
+    // Update node positions
+    this.svg.selectAll('.node')
+      .attr('cx', (d:any) => d.x)
+      .attr('cy', (d:any) => d.y);
+      edges
+      .attr("x1", (d:any) => d.source.x)
+      .attr("y1", (d:any) => d.source.y)
+      .attr("x2", (d:any) => d.target.x)
+      .attr("y2", (d:any) => d.target.y);
+  });
+ 
+
+ /*  unused forces:
+  .force("boundary", boundaryForce)
+  .force("center", d3.forceCenter(this.width / 2, this.height / 2))
+  .force("radial", d3.forceRadial((d:ArtistNode) => d.radius, this.width / 2, this.height / 2)) */
+
   // Bind nodes to the simulation
   simulation.nodes(nodes);
+  this.simulation = simulation;
 }
+
+private boundaryForce(alpha: number): void {
+  const centerX = this.width / 2 + this.margin;
+  const centerY = this.height / 2 + this.margin;
+  const innerRadius = this.innerRadius;
+  const nodes = this.nodes;
+
+  for (let node of nodes) {
+      // Calculate the current distance from the center
+      const dx = node.x ? node.x - centerX : 0;
+      const dy = node.y ? node.y - centerY : 0;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      // Calculate the angle of the node
+      const angle = Math.atan2(dy, dx);
+
+      // Define the inner boundary based on the sunburst's inner radius at the current angle
+      const innerBoundary = innerRadius + 50; // Adjust the padding as needed
+
+      // Check if the node is within the inner boundary
+      if (distance < innerBoundary) {
+          // Move the node to the closest point on the inner boundary
+          node.x = centerX + innerBoundary * Math.cos(angle);
+          node.y = centerY + innerBoundary * Math.sin(angle);
+      }
+  }
+}
+
+
+private calculateNodeDegrees(relationships: exhibited_with[]): Map<number, number> {
+  const degreeMap = new Map<number, number>();
+
+  relationships.forEach(rel => {
+    degreeMap.set(rel.startId, (degreeMap.get(rel.startId) || 0) + 1);
+    degreeMap.set(rel.endId, (degreeMap.get(rel.endId) || 0) + 1);
+  });
+
+  return degreeMap;
+}
+
+private normalizeLinear(values: Map<number, number>): Map<number, number> {
+  const maxValue = Math.max(...values.values());
+  const minValue = Math.min(...values.values());
+  const range = maxValue- minValue;
+  const normalized = new Map<number, number>();
+  values.forEach((value, id) => {
+    normalized.set(id, (value -minValue)/ range); // Normalize by dividing by the max degree
+  });
+  return normalized;
+}
+
+private normalizeLogarithmically(values: Map<number, number>): Map<number, number> {
+  const logMaxValue = Math.log1p(Math.max(...values.values()));
+  const logMinValue = Math.log1p(Math.min(...values.values()));
+  const range = logMaxValue- logMinValue;
+  const normalized = new Map<number, number>();
+  values.forEach((value, id) => {
+    normalized.set(id, (Math.log1p(value) -logMinValue)/ range); // Normalize by dividing by the max degree
+  });
+  return normalized;
+}
+
+
+
+private normalizeSqrt(values: Map<number, number>): Map<number, number> {
+  const sqrtMaxValue = Math.sqrt(Math.max(...values.values()));
+  const sqrtMinValue = Math.sqrt(Math.min(...values.values()));
+  const range = sqrtMaxValue- sqrtMinValue;
+  const normalized = new Map<number, number>();
+  values.forEach((value, id) => {
+    normalized.set(id, (Math.sqrt(value) -sqrtMinValue)/ range); // Normalize by dividing by the max degree
+  });
+  return normalized;
+}
+
+
+
+private prepareData(): any[] {
+  const regionMap = new Map<string, any[]>();
+
+  // Initialize regions in the map to preserve order
+  this.regionOrder.forEach(region => {
+    regionMap.set(region, []);
+  });
+
+  // Group artists by country and region
+  this.artists.forEach(artist => {
+    let regionArtists = regionMap.get(artist.europeanRegion);
+    if (regionArtists) {
+      regionArtists.push(artist);
+    }
+  });
+
+  // Flatten the map to an array for d3 processing, filtering out empty regions
+  const sortedArtists = Array.from(regionMap.entries())
+    .filter(([region, artists]) => artists.length > 0)
+    .flatMap(([region, artists]) => artists);
+
+  return sortedArtists;
+}
+
 
 // Code that can be used to normalize the degrees logarithmically or by square root
 
-private normalizeDegreesLogarithmically(degrees: Map<number, number>): Map<number, number> {
-  const normalized = new Map<number, number>();
-  degrees.forEach((degree, id) => {
-      const logDegree = Math.log1p(degree); // Use log1p to avoid log(0)
-      normalized.set(id, logDegree);
-  });
 
-  const maxLogDegree = Math.max(...Array.from(normalized.values()));
-  normalized.forEach((value, id) => {
-      normalized.set(id, value / maxLogDegree); // Normalize by the maximum log degree
-  });
+private createColorScale(countries: string[]): d3.ScaleSequential<string, number> {
+  // Create a scale that maps [0, number of countries] to [0, 1]
+  const colorScale = d3.scaleSequential(d3.interpolateWarm)
+                        .domain([0, countries.length - 1]);
 
-  return normalized;
+  return colorScale;
 }
 
-private normalizeDegreesSqrt(degrees: Map<number, number>): Map<number, number> {
-  const normalized = new Map<number, number>();
-  const maxDegree = Math.sqrt(Math.max(...degrees.values()));
 
-  degrees.forEach((degree, id) => {
-      normalized.set(id, Math.sqrt(degree) / maxDegree);
-  });
+private setupRadialScale(): d3.ScaleLinear<number, number> {
+  return d3.scaleLinear()
+           .domain([0, 1])  // Normalized degree
+           .range([this.innerRadius-10, 10]);
+}
 
-  return normalized;
+private calculateRadiusForNode(value: number): number {
+  const minRadius = 6; // Minimum radius for the least connected node
+  const maxRadius = 30; // Maximum radius for the most connected node
+  const calculatedRadius = minRadius + (maxRadius - minRadius) * value;
+
+  return calculatedRadius;
+
+ // Linear scaling
+}
+
+private calculateCollisionRadius(size: number): number {
+  const baseRadius = size; // Use the visual radius function
+  const padding = 2; // Additional padding to prevent visual overlaps
+  return baseRadius + padding;
+}
+
+private handleNodeClick(node: ArtistNode, event: MouseEvent): void {
+  console.log('Clicked on:', node.artist);
+  this.selectionService.selectArtist([node.artist]);
+  const circle = event.currentTarget as SVGCircleElement;
+// Check if the currently selected node is the same as the clicked node
+if (this.selectedNode && this.selectedNode[0] === circle) {
+  // If it's the same node, deselect it
+  circle.style.fill = this.selectedNode[1];
+  this.selectedNode = null;  // Clear the selected node
+  this.selectionService.selectArtist(this.artists);  // Reset the selection
+  // Reset edge colors
+  this.edges.style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks))
+} else {
+  // If it's a different node or no node is currently selected
+  if (this.selectedNode) {
+    // Reset the previous node's color if another node was selected before
+    const previousNode = this.selectedNode[0];
+    const previousColor = this.selectedNode[1];
+    previousNode.style.fill = previousColor;
+    // Reset edge colors
+    this.edges.style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks))
+  }
+  
+  // Set the new node as the selected node and change its color
+  this.selectedNode = [circle, circle.style.fill];
+  
+  // Darken the original color for the selected node
+  const originalColor = d3.color(circle.style.fill) as d3.RGBColor;
+  const darkerColor = d3.rgb(originalColor).darker(1); // Adjust the darkness factor as needed
+  circle.style.fill = darkerColor.toString();  // Change the fill color to the darker shade
+
+   // Highlight edges connected to the selected node
+   const selectedNodeId = node.id;
+   this.edges.filter((d: any) => {
+    return d.source.id === selectedNodeId || d.target.id === selectedNodeId;
+  }).style('stroke', darkerColor.toString());
+  
+}
 }
 }
 

@@ -13,9 +13,9 @@ export class DecisionsComponent implements OnInit {
   }
 
   selectedSunburst: string=''
-  SunburstOptions: string[] = ['default: Artist (preferred) nationality', 'Techniques', 'artist birthplace', 'artist deathplace', 'artist most exhibited place']; 
+  SunburstOptions: string[] = ['default: Artist (preferred) nationality', 'Techniques', 'artist birthcountry', 'artist deathcountry', 'artist most exhibited country']; 
   selectedSize: string =''
-  SizeOptions: string[] = ['default: Importance (Degree)', 'Amount of Exhibitions', 'Amount of different techniques', 'Amount of created Artworks']; // Example array of dropdown options
+  SizeOptions: string[] = ['default: Importance (Degree)', 'Amount of Exhibitions', 'Amount of different techniques', 'Amount of exhibited Artworks']; // Example array of dropdown options
 
   selectedOrder: string =''
   OrderOptions: string[] = ['default: Geographical', 'Amount of Exhibitions', 'Amount of different techniques', 'Amount of created Artworks']; // Example array of dropdown options

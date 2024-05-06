@@ -10,16 +10,22 @@ interface ArtistData {
     deathplace: string;
     country: string;
     sex: string;
-    title: string;
+    artist: string;
     techniques: string[];
     amount_techniques: number;
     distinct_techniques: string[];
     europeanRegion: string;
+    most_exhibited_in:string;
+    most_exhibited_in_amount:number;
+    total_exhibited_artworks:number;
+    deathcountry:string;
+    birthcountry:string;
+    total_exhibitions:number;
   }
 
   interface ArtistNode extends d3.SimulationNodeDatum {
     id: number;
-    title: Artist;
+    artist: Artist;
     angle: number;
     radius: number;
     color: string | number;
@@ -42,11 +48,17 @@ interface ArtistData {
     deathplace: string;
     country: string;
     sex: string;
-    title: string;
+    artist: string;
     techniques: string[];
     amount_techniques: number;
     distinct_techniques: string[];
     europeanRegion: string;
+    most_exhibited_in:string;
+    most_exhibited_in_amount:number;
+    total_exhibited_artworks:number;
+    deathcountry:string;
+    birthcountry:string;
+    total_exhibitions:number;
   
     constructor(data: ArtistData) {
       this.id = Number(data.id);
@@ -58,11 +70,17 @@ interface ArtistData {
       this.deathplace = data.deathplace;
       this.country = data.country;
       this.sex = data.sex;
-      this.title = data.title;
+      this.artist = data.artist;
       this.techniques = data.techniques;
       this.amount_techniques = data.amount_techniques;
       this.distinct_techniques = data.distinct_techniques;
       this.europeanRegion = data.europeanRegion;
+      this.most_exhibited_in = data.most_exhibited_in;
+      this.most_exhibited_in_amount = data.most_exhibited_in_amount;
+      this.total_exhibited_artworks = data.total_exhibited_artworks;
+      this.deathcountry = data.deathcountry;
+      this.birthcountry = data.birthcountry;
+      this.total_exhibitions = data.total_exhibitions;
     }
   
     get fullname(): string {
