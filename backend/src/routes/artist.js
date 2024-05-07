@@ -51,4 +51,14 @@ artist.get('/deathcountry/technique', async (req, res) => {
     }
 });
 
+artist.get('/mostexhibitedincountry/technique', async (req, res) => {
+    try {
+        const result = await artistModel.findAllMostExhibitedInTechnique();
+        res.json(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
 export default artist;

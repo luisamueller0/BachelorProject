@@ -30,7 +30,13 @@ export class ArtistService {
     return this.http.get<any[][]>(this.dataUrl+ '/artist/deathcountry/technique').pipe(shareReplay())
   }
 
+  getArtistsWithMostExhibitedInTechnique():Observable<any[][]>{
+    return this.http.get<any[][]>(this.dataUrl+ '/artist/mostexhibitedincountry/technique').pipe(shareReplay())
+  }
 
+
+
+  
   /*
   getArtistById(id: string): Observable<any> {
     return this.http.get<any>(`${this.dataUrl}/${id}`);

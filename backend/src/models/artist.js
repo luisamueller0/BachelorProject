@@ -17,6 +17,7 @@ class Artist {
         this.distinct_techniques=data.distinctArtForms;
         this.europeanRegionNationality = this.determineRegion(data.country);
         this.most_exhibited_in = data.mostExhibitedInCountry;
+        this.europeanRegionMostExhibited = this.determineRegion(data.mostExhibitedInCountry);
         this.most_exhibited_in_amount = data.mostExhibitedInCountryAmount;
         this.total_exhibited_artworks = data.TotalExhibitedArtworks;
         this.deathcountry = data.deathCountry;
@@ -50,10 +51,10 @@ const europeanRegions = {
       "US", "AU", "GE", "MX", "AM", "IL", "CL", "AR", "CA", "DO", "PE", "JP", "TR", 
       "BR", "ZA", "NZ", "VE", "GT", "UY", "SV", "PY", "IN",  // Non-European countries
       // Adding countries that are outside of Europe but were listed in your dataset
-      "NZ", "ZA", "LU", "VE", "GT", "UY", "SV", "PY", "IN", "ME", "TN", "MD"
+      "NZ", "ZA", "LU", "VE", "GT", "UY", "SV", "PY", "IN", "ME", "TN", "MD", "ID"
     ]
   };
-  
+ 
 
 class exhibited_with {
     constructor(startData, endData, relationshipData) {
@@ -93,7 +94,7 @@ const findAllBirthcountryTechnique = async () => {
     const result = await session.run(
    // Collect 25 distinct artists based on some criteria
     `MATCH (a:Artist)
-    WHERE EXISTS(a.artForms) AND a.birthCountry IS NOT NULL
+    WHERE EXISTS(a.artForms) AND a.birthCountry <> '\\N'
     WITH a
     LIMIT 25
     WITH collect(a) AS selectedArtists
@@ -112,7 +113,7 @@ const findAllDeathcountryTechnique = async () => {
     const result = await session.run(
    // Collect 25 distinct artists based on some criteria
     `MATCH (a:Artist)
-    WHERE EXISTS(a.artForms) AND a.deathCountry IS NOT NULL
+    WHERE EXISTS(a.artForms) AND a.deathCountry <> '\\N'
     WITH a
     LIMIT 25
     WITH collect(a) AS selectedArtists
@@ -126,6 +127,26 @@ const findAllDeathcountryTechnique = async () => {
 
     return await processResult(result);
 };
+const findAllMostExhibitedInTechnique = async () => {
+    const result = await session.run(
+   // Collect 25 distinct artists based on some criteria
+    `MATCH (a:Artist)
+    WHERE EXISTS(a.artForms) AND a.mostExhibitedInCountry <> '\\N' AND a.unclearMostExhibitedInCountry = FALSE 
+    WITH a
+    LIMIT 25
+    WITH collect(a) AS selectedArtists
+
+    // For each artist in the selected group, find all exhibited relationships within this group
+    UNWIND selectedArtists AS a
+    MATCH p=(a)-[r:EXHIBITED_WITH]-(b)
+    WHERE b IN selectedArtists
+    RETURN p
+    `);
+
+    return await processResult(result);
+};
+
+
 
 const processResult = (result) => {
     const artistsId = new Set();
@@ -166,5 +187,6 @@ module.exports = {
     findAll,
     findAllNationalityTechnique,
     findAllBirthcountryTechnique,
-    findAllDeathcountryTechnique
+    findAllDeathcountryTechnique,
+    findAllMostExhibitedInTechnique
 };

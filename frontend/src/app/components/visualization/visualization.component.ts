@@ -22,6 +22,9 @@ export class VisualizationComponent implements OnInit {
 
   //Selection properties
   private subscriptions: Subscription = new Subscription();
+  private currentOrder: string = '';
+  private currentSize: string = '';
+  private currentSunburst: string = '';
 
   //SVG properties
   private svg: any;
@@ -70,10 +73,12 @@ ngOnInit(): void {
 
   this.subscriptions.add(this.decisionService.currentOrder.subscribe(order => {
     this.updateVisualization('order', order);
+    this.currentOrder = order;
   }));
 
   this.subscriptions.add(this.decisionService.currentSize.subscribe(size => {
     this.updateVisualization('size', size);
+    this.currentSize = size;
   }));
 
   this.subscriptions.add(this.decisionService.currentThickness.subscribe(thickness => {
@@ -82,6 +87,7 @@ ngOnInit(): void {
 
   this.subscriptions.add(this.decisionService.currentSunburst.subscribe(sunburst => {
     this.updateVisualization('sunburst', sunburst);
+    this.currentSunburst = sunburst;
   }));
 }
 
@@ -93,13 +99,14 @@ ngOnDestroy() {
 private  loadInitialData() {
   this.artistService.getArtistsWithNationalityTechnique().subscribe((data) => {
   this.artists = data[0];
-  console.log(this.artists);
-
   this.relationships = data[1];
-  console.log(this.relationships);
   this.isLoading = false; // Set loading to false when data is loaded
  
   this.selectionService.selectArtist(this.artists);
+  // Create all the maps for the node sizes:
+  const degrees = this.calculateNodeDegrees(this.relationships);
+  const normalizedDegrees = this.normalizeSqrt(degrees);
+  this.degreesMap = normalizedDegrees;
   this.createSvg();
   this.drawSunburst('nationality');
   this.drawNetwork('nationality');
@@ -123,16 +130,16 @@ updateVisualization(type: string, value: string) {
   // React to the change
   
   console.log(`Updated ${type} to ${value}`);
-  if(this.svg){
-
-  if(type==='size'){
-    this.updateNodeSize(value);
+  if (this.svg) {
+    if (type === 'size') {
+      this.updateNodeSize(value);
+    }
+    if (type === 'sunburst') {
+      this.updateSunburst(value);
+      console.log('size:', this.currentSize)
+      this.updateNodeSize(this.currentSize);
+    }
   }
-  if(type==='sunburst'){
-    this.updateSunburst(value);
-  }
- 
-}
 
 }
 private updateSunburst(value: string) {
@@ -143,10 +150,13 @@ private updateSunburst(value: string) {
     this.artistService.getArtistsWithNationalityTechnique().subscribe((data) => {
       this.artists = data[0];
       this.relationships = data[1];
-      console.log(this.relationships);
       this.isLoading = false; // Set loading to false when data is loaded
-     
       this.selectionService.selectArtist(this.artists);
+      // Create all the maps for the node sizes:
+      const degrees = this.calculateNodeDegrees(this.relationships);
+      const normalizedDegrees = this.normalizeSqrt(degrees);
+      this.degreesMap = normalizedDegrees;
+      
       this.createSvg();
       this.drawSunburst('nationality');
       this.drawNetwork('nationality');
@@ -159,9 +169,13 @@ private updateSunburst(value: string) {
     this.artistService.getArtistsWithBirthcountryTechnique().subscribe((data) => {
       this.artists = data[0];
       this.relationships = data[1];
-      console.log(this.relationships);
       this.isLoading = false; // Set loading to false when data is loaded
       this.selectionService.selectArtist(this.artists);
+      // Create all the maps for the node sizes:
+      const degrees = this.calculateNodeDegrees(this.relationships);
+      const normalizedDegrees = this.normalizeSqrt(degrees);
+      this.degreesMap = normalizedDegrees;
+      
       this.createSvg();
       this.drawSunburst('birthcountry');
       this.drawNetwork('birthcountry');
@@ -174,12 +188,36 @@ private updateSunburst(value: string) {
     this.artistService.getArtistsWithDeathcountryTechnique().subscribe((data) => {
       this.artists = data[0];
       this.relationships = data[1];
-      console.log(this.relationships);
       this.isLoading = false; // Set loading to false when data is loaded
       this.selectionService.selectArtist(this.artists);
+      // Create all the maps for the node sizes:
+      const degrees = this.calculateNodeDegrees(this.relationships);
+      const normalizedDegrees = this.normalizeSqrt(degrees);
+      this.degreesMap = normalizedDegrees;
+      
       this.createSvg();
       this.drawSunburst('deathcountry');
       this.drawNetwork('deathcountry');
+    }, (error) => {
+      console.error('There was an error', error);
+      this.isLoading = false; // Make sure to set loading to false on error as well
+    });
+  }
+  else if(value === 'artist most exhibited country'){
+    this.artistService.getArtistsWithMostExhibitedInTechnique().subscribe((data) => {
+      this.artists = data[0];
+      this.relationships = data[1];
+      this.isLoading = false; // Set loading to false when data is loaded
+      this.selectionService.selectArtist(this.artists);
+      // Create all the maps for the node sizes:
+      const degrees = this.calculateNodeDegrees(this.relationships);
+      const normalizedDegrees = this.normalizeSqrt(degrees);
+      this.degreesMap = normalizedDegrees;
+      
+
+      this.createSvg();
+      this.drawSunburst('mostexhibited');
+      this.drawNetwork('mostexhibited');
     }, (error) => {
       console.error('There was an error', error);
       this.isLoading = false; // Make sure to set loading to false on error as well
@@ -360,17 +398,13 @@ private drawSunburst(value: string):void{
   });
 }
   else if(value === 'birthcountry'){
-    console.log('birthcountry')
     const sortedArtists:Artist[] = this.prepareData('birthcountry');
     sortedArtists.forEach(artist => {
-      console.log('birthcountry', artist.birthcountry)
       if (!countryMap.has(artist.birthcountry)) {
-        
         countryMap.set(artist.birthcountry, []);
       }
       countryMap.get(artist.birthcountry)!.push(artist);
     });
-    console.log(countryMap)
   }
   else if(value === 'deathcountry'){
     const sortedArtists:Artist[] = this.prepareData('deathcountry');
@@ -379,6 +413,15 @@ private drawSunburst(value: string):void{
         countryMap.set(artist.deathcountry, []);
       }
       countryMap.get(artist.deathcountry)!.push(artist);
+    });
+  }
+  else if(value === 'mostexhibited'){
+    const sortedArtists:Artist[] = this.prepareData('mostexhibited');
+    sortedArtists.forEach(artist => {
+      if (!countryMap.has(artist.most_exhibited_in)) {
+        countryMap.set(artist.most_exhibited_in, []);
+      }
+      countryMap.get(artist.most_exhibited_in)!.push(artist);
     });
   }
 
@@ -467,11 +510,6 @@ private drawSunburst(value: string):void{
 
 private drawNetwork(value: string): void {
 
-if(this.degreesMap.size === 0) {
-  const degrees = this.calculateNodeDegrees(this.relationships);
-  const normalizedDegrees = this.normalizeLinear(degrees);
-  this.degreesMap = normalizedDegrees;
-}
 let nodes: ArtistNode[] = [];
 if(value === 'nationality'){
   // Format artists as nodes
@@ -542,6 +580,30 @@ if(value === 'nationality'){
     };
   });
 }
+
+else if(value === 'mostexhibited'){
+  // Format artists as nodes
+  nodes = this.artists.map((artist: Artist) => {
+   const countryData = this.countryCentroids[artist.most_exhibited_in];
+   const degree = this.degreesMap.get(artist.id) || 0;
+   const radial = this.setupRadialScale()(degree);
+   const angle = countryData.middleAngle;
+   const x =  radial * Math.sin(angle);
+   const y = - radial * Math.cos(angle);
+   return {
+       id: artist.id,
+       artist: artist,
+       x: x,
+       y: y,
+       vx: 0, // velocity in x
+       vy: 0, // velocity in y
+       angle: angle,
+       radius: radial,
+       color: countryData.color,
+       countryData: countryData
+   };
+ });
+}
   
   this.nodes= nodes;
 
@@ -578,7 +640,9 @@ const formattedRelationships = this.relationships.map((relationship: exhibited_w
     };
 });
 
-
+formattedRelationships.sort((a, b) => {
+  return a.sharedExhibitionMinArtworks - b.sharedExhibitionMinArtworks;
+});
 
   // Append edges to the SVG
   const edges = this.svg.selectAll('.link')
@@ -591,9 +655,8 @@ const formattedRelationships = this.relationships.map((relationship: exhibited_w
     .attr('x1', (d: any) => d.source.x)
     .attr('y1', (d: any) => d.source.y)
     .attr('x2', (d: any) => d.target.x)
-    .attr('y2', (d: any) => d.target.y)
-    
-    ;
+    .attr('y2', (d: any) => d.target.y);
+
 this.edges = edges;
  /*  // Append edges to the SVG
   const edges = this.svg.selectAll('.link')
@@ -633,7 +696,7 @@ this.edges = edges; */
         .style('display', 'block')
         .style('left', `${x + 10}px`)
         .style('top', `${y + 10}px`)
-        .html(`Name: ${d.artist.firstname} ${d.artist.lastname}<br/>Technique: ${d.artist.distinct_techniques}<br/>Nationality: ${d.artist.country}`);
+        .html(`Name: ${d.artist.firstname} ${d.artist.lastname}<br/>Technique: ${d.artist.distinct_techniques}<br/>Nationality: ${d.artist.nationality}`);
     })
     .on('mouseout', function () {
       d3.select('#tooltip').style('display', 'none');
@@ -809,12 +872,22 @@ private prepareData(value:string): any[] {
     }
   });
 }
+else if(value === 'mostexhibited'){
+
+  this.artists.forEach(artist => {
+    let regionArtists = regionMap.get(artist.europeanRegionMostExhibited);
+    if (regionArtists) {
+      regionArtists.push(artist);
+    }
+  });
+}
 
   // Flatten the map to an array for d3 processing, filtering out empty regions
   const sortedArtists = Array.from(regionMap.entries())
     .filter(([region, artists]) => artists.length > 0)
     .flatMap(([region, artists]) => artists);
 
+    
   return sortedArtists;
 }
 

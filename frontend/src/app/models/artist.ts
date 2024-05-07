@@ -16,6 +16,7 @@ interface ArtistData {
   distinct_techniques: string[];
   europeanRegionNationality: string;
   most_exhibited_in:string;
+  europeanRegionMostExhibited: string;
   most_exhibited_in_amount:number;
   total_exhibited_artworks:number;
   deathcountry:string;
@@ -56,6 +57,7 @@ interface ArtistData {
     distinct_techniques: string[];
     europeanRegionNationality: string;
     most_exhibited_in:string;
+    europeanRegionMostExhibited: string;
     most_exhibited_in_amount:number;
     total_exhibited_artworks:number;
     deathcountry:string;
@@ -80,6 +82,7 @@ interface ArtistData {
       this.distinct_techniques = data.distinct_techniques;
       this.europeanRegionNationality = data.europeanRegionNationality;
       this.most_exhibited_in = data.most_exhibited_in;
+      this.europeanRegionMostExhibited = data.europeanRegionMostExhibited;
       this.most_exhibited_in_amount = data.most_exhibited_in_amount;
       this.total_exhibited_artworks = data.total_exhibited_artworks;
       this.deathcountry = data.deathcountry;
