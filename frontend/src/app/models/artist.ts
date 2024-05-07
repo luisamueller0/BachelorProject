@@ -14,6 +14,7 @@ interface ArtistData {
   techniques: string[];
   amount_techniques: number;
   distinct_techniques: string[];
+  techniques_freq: { [key: string]: number }[]; 
   europeanRegionNationality: string;
   most_exhibited_in:string;
   europeanRegionMostExhibited: string;
@@ -55,6 +56,7 @@ interface ArtistData {
     techniques: string[];
     amount_techniques: number;
     distinct_techniques: string[];
+    techniques_freq: { [key: string]: number }[]; 
     europeanRegionNationality: string;
     most_exhibited_in:string;
     europeanRegionMostExhibited: string;
@@ -80,6 +82,7 @@ interface ArtistData {
       this.techniques = data.techniques;
       this.amount_techniques = data.amount_techniques;
       this.distinct_techniques = data.distinct_techniques;
+      this.techniques_freq = this.convertToMap(data.techniques_freq);
       this.europeanRegionNationality = data.europeanRegionNationality;
       this.most_exhibited_in = data.most_exhibited_in;
       this.europeanRegionMostExhibited = data.europeanRegionMostExhibited;
@@ -92,6 +95,23 @@ interface ArtistData {
       this.total_exhibitions = data.total_exhibitions;
     }
   
+     // Method to convert array to map
+     convertToMap(techniquesFreq:any) {
+      const techniquesMap = new Map();
+      try {
+          const dataObj = JSON.parse(techniquesFreq);
+          for (const technique in dataObj) {
+              if (Object.hasOwnProperty.call(dataObj, technique)) {
+                  const frequency = dataObj[technique];
+                  techniquesMap.set(technique, frequency);
+              }
+          }
+      } catch (error) {
+          console.error('Error parsing techniquesFreq:', error);
+      }
+      console.log('map', techniquesMap)
+      return techniquesMap;
+  }
     get fullname(): string {
       return `${this.firstname} ${this.lastname}`;
     }

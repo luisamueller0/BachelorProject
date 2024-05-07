@@ -105,7 +105,7 @@ private  loadInitialData() {
   this.artists = data[0];
   this.relationships = data[1];
   this.isLoading = false; // Set loading to false when data is loaded
- 
+ console.log(typeof(this.artists[2].techniques_freq))
   this.selectionService.selectArtist(this.artists);
   // Create all the maps for the node sizes:
   const degrees = this.calculateNodeDegrees(this.relationships);
