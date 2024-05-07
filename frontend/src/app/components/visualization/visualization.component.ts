@@ -226,7 +226,8 @@ private calculateCountryConnections(value: string): CountryConnections {
   return { matrix, countryIndex };
 }
 
-
+private drawSunburstTechniques(): void {
+}
 private updateSunburst(value: string) {
    // Remove existing SVG
    d3.select("figure#network").select("svg").remove();
