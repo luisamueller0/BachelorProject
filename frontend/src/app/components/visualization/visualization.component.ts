@@ -6,6 +6,10 @@ import exhibited_with  from '../../models/exhibited_with';
 import { DecisionService } from '../../services/decision.service';
 import { Subscription } from 'rxjs';
 import { SelectionService } from '../../services/selection.service';
+interface CountryConnections {
+  matrix: number[][];
+  countryIndex: Map<string, number>;
+}
 
 @Component({
   selector: 'app-visualization',
@@ -109,6 +113,7 @@ private  loadInitialData() {
   this.degreesMap = normalizedDegrees;
   this.createSvg();
   this.drawSunburst('nationality');
+  this.drawChordDiagram('nationality');
   this.drawNetwork('nationality');
 }, (error) => {
   console.error('There was an error', error);
@@ -142,6 +147,86 @@ updateVisualization(type: string, value: string) {
   }
 
 }
+
+
+private drawChordDiagram(value: string): void {
+  const connections = this.calculateCountryConnections(value);
+  const outerRadius = this.innerRadius; // Slightly larger than the sunburst
+  const innerRadius = this.innerRadius - 30// Adjust thickness as needed
+  const { matrix, countryIndex } = connections;
+  // Create the chord layout
+  const chord = d3.chord()
+    .sortSubgroups(d3.descending)(matrix);
+
+  const arc = d3.arc()
+    .innerRadius(innerRadius)
+    .outerRadius(outerRadius);
+
+  const ribbon = d3.ribbon()
+    .radius(innerRadius);
+
+  // Append the group for the arcs
+  const group = this.svg.append("g")
+    .selectAll("g")
+    .data(chord.groups)
+    .enter().append("g");
+
+  // Draw the arcs
+  group.append("path")
+    .style("fill", (d:any) => this.countryCentroids[Array.from(countryIndex.keys())[d.index]].color)
+    .style("stroke", (d:any) => d3.rgb(this.countryCentroids[Array.from(countryIndex.keys())[d.index]].color.toString()).darker())
+    .style("opacity", 0.6)
+    .attr("d", arc);
+
+  // Draw the ribbons
+  this.svg.append("g")
+    .datum(chord)
+    .append("g")
+    .selectAll("path")
+    .data((d:any) => d)
+    .enter().append("path")
+    .attr("d", ribbon)
+    .style("fill", (d:any) => this.countryCentroids[Array.from(countryIndex.keys())[d.source.index]].color)
+    .style("opacity", 0.4);
+}
+
+private calculateCountryConnections(value: string): CountryConnections {
+  const matrix: number[][] = [];
+  const countryIndex = new Map<string, number>();
+
+  // Use regionOrder to ensure the correct order of countries based on region
+  let index = 0;
+  if(value === 'nationality'){
+  this.regionOrder.forEach(region => {
+    this.artists.filter(artist => artist.europeanRegionNationality === region).forEach(artist => {
+      if (!countryIndex.has(artist.nationality)) {
+        countryIndex.set(artist.nationality, index++);
+      }
+    });
+  });
+}
+
+  // Initialize the matrix
+  for (let i = 0; i < countryIndex.size; i++) {
+    matrix[i] = new Array(countryIndex.size).fill(0);
+  }
+
+  // Fill the matrix with connection data
+  this.relationships.forEach(rel => {
+    const countryA = this.artists.find(a => a.id === rel.startId)?.nationality;
+    const countryB = this.artists.find(a => a.id === rel.endId)?.nationality;
+    if (countryA && countryB && countryIndex.has(countryA) && countryIndex.has(countryB)) {
+      const i = countryIndex.get(countryA);
+      const j = countryIndex.get(countryB);
+      matrix[i!][j!] += 1;
+      matrix[j!][i!] += 1; // Bidirectional for visual symmetry
+    }
+  });
+
+  return { matrix, countryIndex };
+}
+
+
 private updateSunburst(value: string) {
    // Remove existing SVG
    d3.select("figure#network").select("svg").remove();
@@ -213,8 +298,6 @@ private updateSunburst(value: string) {
       const degrees = this.calculateNodeDegrees(this.relationships);
       const normalizedDegrees = this.normalizeSqrt(degrees);
       this.degreesMap = normalizedDegrees;
-      
-
       this.createSvg();
       this.drawSunburst('mostexhibited');
       this.drawNetwork('mostexhibited');
