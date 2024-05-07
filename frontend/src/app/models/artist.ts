@@ -14,7 +14,7 @@ interface ArtistData {
   techniques: string[];
   amount_techniques: number;
   distinct_techniques: string[];
-  techniques_freq: { [key: string]: number }[]; 
+  techniques_freq: Map<string, number>; 
   europeanRegionNationality: string;
   most_exhibited_in:string;
   europeanRegionMostExhibited: string;
@@ -56,7 +56,7 @@ interface ArtistData {
     techniques: string[];
     amount_techniques: number;
     distinct_techniques: string[];
-    techniques_freq: { [key: string]: number }[]; 
+    techniques_freq: Map<string, number>; 
     europeanRegionNationality: string;
     most_exhibited_in:string;
     europeanRegionMostExhibited: string;
@@ -95,23 +95,24 @@ interface ArtistData {
       this.total_exhibitions = data.total_exhibitions;
     }
   
-     // Method to convert array to map
-     convertToMap(techniquesFreq:any) {
-      const techniquesMap = new Map();
-      try {
-          const dataObj = JSON.parse(techniquesFreq);
-          for (const technique in dataObj) {
-              if (Object.hasOwnProperty.call(dataObj, technique)) {
-                  const frequency = dataObj[technique];
-                  techniquesMap.set(technique, frequency);
-              }
+    convertToMap(data:any): Map<string, number> {// Iterate through each data object
+      const techniquesFreqMap = new Map<string, number>(); // Create a new Map
+      data.forEach((item:any) => {
+        // Iterate through the keys of each object
+        Object.keys(item).forEach(key => {
+          // Check if the key already exists in the map
+          if (techniquesFreqMap.has(key)) {
+            // If it exists, add the value to the existing value
+            techniquesFreqMap.set(key, techniquesFreqMap.get(key) + item[key]);
+          } else {
+            // If it doesn't exist, set the value for the key
+            techniquesFreqMap.set(key, item[key]);
           }
-      } catch (error) {
-          console.error('Error parsing techniquesFreq:', error);
-      }
-      console.log('map', techniquesMap)
-      return techniquesMap;
-  }
+        });
+      });
+      return techniquesFreqMap; // Return the Map
+    }
+     
     get fullname(): string {
       return `${this.firstname} ${this.lastname}`;
     }
