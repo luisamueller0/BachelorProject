@@ -55,18 +55,19 @@ option {
     padding: 10px; /* Adds padding inside options */
 }
 /* decisions.component.css */
+
 .ngx-slider {
-    width: 100%; /* Full width of the container */
-    margin-top: 20px;
-  }
+    flex-grow: 1; /* Allows the slider to fill the available space but not all of it */
+    max-width: 90%; /* Limits slider's width to 80% of its container */
+}
   
   .ngx-slider .ngx-slider-bar {
-    background-color: #007bff; /* Custom color for the slider bar */
+    background-color: #8400ff; /* Custom color for the slider bar */
   }
   
   .ngx-slider .ngx-slider-pointer {
     background-color: #fff; /* White pointers */
-    border: solid 2px #007bff; /* Blue border around pointers */
+    border: solid 2px #ae00ff; /* Blue border around pointers */
   }
   /* decisions.component.css */
 
@@ -77,4 +78,44 @@ option {
   .unconfirmed {
     color: grey; /* Revert text color to grey when not confirmed */
   }
-  
+  .dropdown-group2 {
+    display: flex;
+    flex-direction: row; /* Aligns items horizontally */
+    align-items: center; /* Centers items vertically */
+    justify-content: start; /* Aligns items to the start of the row */
+    gap: 20px; /* Adds space between the slider and the checkbox */
+   /* Adds vertical padding for better spacing */
+}
+/* Custom checkbox styles */
+.checkbox-group {
+    flex-grow: 0; /* Prevents the checkbox group from expanding */
+    display: flex;
+    margin-left: auto;
+    align-items: center; /* Ensures the checkbox is centered with the slider */
+}
+
+.custom-checkbox {
+    cursor: pointer;
+    width: 24px; /* Width of the checkbox */
+    height: 24px; /* Height of the checkbox */
+    border: 2px solid #ccc; /* Border for the checkbox */
+    border-radius: 50%; /* Makes the checkbox circular */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #fff; /* White background for checkbox */
+}
+
+.custom-checkbox i {
+    color: green; /* Icon color when active */
+    font-size: 16px; /* Size of the icon */
+}
+
+.custom-checkbox:hover {
+    border-color: #888; /* Darker border on hover */
+}
+
+.custom-checkbox:focus-within {
+    border-color: #7e24c7; /* Focus color */
+    box-shadow: 0 0 0 0.2rem rgba(66, 9, 133, 0.25); /* Glowing effect for focus */
+}

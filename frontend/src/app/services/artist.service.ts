@@ -1,6 +1,8 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, shareReplay } from 'rxjs';
+import { Artist } from '../models/artist';
+import exhibited_with from '../models/exhibited_with';
 
 @Injectable({
   providedIn: 'root'
@@ -74,6 +76,14 @@ export class ArtistService {
 
   getArtistsWithTechnique():Observable<any[][]>{
     return this.http.get<any[][]>(this.dataUrl+ '/artist/technique').pipe(shareReplay())
+  }
+
+  clusterArtists(artists:Artist[],relationships:exhibited_with, k:number):Observable<any[][]>{
+    const params = new HttpParams()
+      .set('minLimit', artists.toString())
+      .set('maxLimit', relationships.toString())
+      .set('k', k);
+    return this.http.get<any[][]>(this.dataUrl+ '/artist/cluster',{ params }).pipe(shareReplay())
   }
 
   

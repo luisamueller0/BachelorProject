@@ -36,7 +36,7 @@
             ],
             "styles": [
               "src/styles.css",
-              "node_modules/@angular-slider/ngx-slider/bundles/ngx-slider.umd.min.js"
+              "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
             ],
             "scripts": []
           },

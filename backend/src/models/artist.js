@@ -323,11 +323,31 @@ const processResult = (result) => {
     return [artists, relationships];
 };
 
-
 const math = require('mathjs');
 
+  // Assuming 'artists' is an array of artist nodes and 'relationships' is an array of edges with weights
+const normalizeLogarithmically = (values) => {
+    const logMaxValue = Math.log1p(Math.max(...values.values()));
+    const logMinValue = Math.log1p(Math.min(...values.values()));
+    const range = logMaxValue - logMinValue;
+    const normalized = new Map();
+    values.forEach((value, id) => {
+        normalized.set(id, (Math.log1p(value) - logMinValue) / range); // Normalize by dividing by the max degree
+    });
+    return normalized;
+};
+
 async function spectralClustering(artists, relationships, k) {
-    // Assuming 'artists' is an array of artist nodes and 'relationships' is an array of edges with weights
+    // Step 0: Extract sharedExhibitionMinArtworks values for normalization
+    const sharedExhibitionValues = new Map();
+    relationships.forEach(relationship => {
+        const id = relationship.startId;
+        const value = relationship.sharedExhibitionMinArtworks;
+        sharedExhibitionValues.set(id, value);
+    });
+
+    // Step 0.1: Normalize sharedExhibitionMinArtworks values
+    const normalizedSharedExhibitionValues = normalizeLogarithmically(sharedExhibitionValues);
 
     // Step 1: Construct the adjacency matrix
     const size = artists.length;
@@ -336,10 +356,11 @@ async function spectralClustering(artists, relationships, k) {
     relationships.forEach(relationship => {
         const i = artists.findIndex(artist => artist.id === relationship.startId);
         const j = artists.findIndex(artist => artist.id === relationship.endId);
-        const weight = relationship.sharedExhibitionMinArtworks; // assuming this is already normalized
+        const weight = normalizedSharedExhibitionValues.get(relationship.startId); // use normalized value
         adjacencyMatrix.set([i, j], weight);
         adjacencyMatrix.set([j, i], weight); // since it's an undirected graph
     });
+
 
     // Step 2: Construct the degree matrix
     const degreeMatrix = adjacencyMatrix.map((value, index, matrix) => {
@@ -358,6 +379,92 @@ async function spectralClustering(artists, relationships, k) {
 
     return clusters;
 }
+
+function kMeansClustering(data, k, maxIterations = 100) {
+    // Step 1: Initialize centroids
+    let centroids = initializeCentroids(data, k);
+
+    let prevCentroids;
+    let iterations = 0;
+
+    // Repeat until convergence or maxIterations reached
+    while (!areCentroidsEqual(centroids, prevCentroids) && iterations < maxIterations) {
+        // Step 2: Assign points to clusters
+        const clusters = assignPointsToClusters(data, centroids);
+
+        // Step 3: Update centroids
+        prevCentroids = centroids;
+        centroids = updateCentroids(data, clusters, k);
+
+        iterations++;
+    }
+
+    return clusters;
+}
+
+function initializeCentroids(data, k) {
+    // Randomly select k data points as initial centroids
+    const centroids = [];
+    const dataCopy = [...data]; // Create a copy to avoid modifying original data
+
+    for (let i = 0; i < k; i++) {
+        const randomIndex = Math.floor(Math.random() * dataCopy.length);
+        centroids.push(dataCopy.splice(randomIndex, 1)[0]); // Remove selected point from dataCopy and add to centroids
+    }
+
+    return centroids;
+}
+
+function assignPointsToClusters(data, centroids) {
+    const clusters = new Array(centroids.length).fill().map(() => []);
+
+    // Assign each point to the nearest centroid
+    data.forEach(point => {
+        const distances = centroids.map(centroid => calculateDistance(point, centroid));
+        const nearestCentroidIndex = distances.indexOf(Math.min(...distances));
+        clusters[nearestCentroidIndex].push(point);
+    });
+
+    return clusters;
+}
+
+function updateCentroids(data, clusters, k) {
+    const newCentroids = [];
+
+    // Calculate mean of points in each cluster to get new centroids
+    clusters.forEach(cluster => {
+        if (cluster.length > 0) {
+            const clusterMean = cluster.reduce((acc, point) => {
+                return acc.map((val, i) => val + point[i]); // Add corresponding coordinates
+            }, new Array(data[0].length).fill(0)).map(val => val / cluster.length); // Calculate mean
+            newCentroids.push(clusterMean);
+        } else {
+            // If cluster is empty, retain the previous centroid
+            newCentroids.push(centroids[newCentroids.length]);
+        }
+    });
+
+    return newCentroids;
+}
+
+function calculateDistance(point1, point2) {
+    // Euclidean distance between two points in n-dimensional space
+    return Math.sqrt(point1.reduce((acc, val, i) => acc + (val - point2[i]) ** 2, 0));
+}
+
+function areCentroidsEqual(centroids1, centroids2) {
+    if (!centroids1 || !centroids2 || centroids1.length !== centroids2.length) {
+        return false;
+    }
+
+    // Check if each centroid is equal to its counterpart
+    return centroids1.every((centroid, i) => centroid.every((val, j) => val === centroids2[i][j]));
+}
+
+
+// You will need to call this function with appropriate parameters
+
+
 module.exports = {
     findAll,
     findAllNationalityTechnique,
@@ -368,5 +475,6 @@ module.exports = {
     findAllNationalityTechniqueAmount, 
     findAllBirthcountryTechniqueAmount,
     findAllDeathcountryTechniqueAmount,
-    findAllMostExhibitedInTechniqueAmount
+    findAllMostExhibitedInTechniqueAmount,
+    spectralClustering
 };

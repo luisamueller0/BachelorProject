@@ -37,13 +37,19 @@
 <!-- Addition of ngx-slider for selecting range -->
 <div class="dropdown-group">
   <label class="dropdown-label">Select Range:</label>
+  <div class="dropdown-group2">
   <ngx-slider [(value)]="range[0]" [(highValue)]="range[1]" [options]="options"></ngx-slider>
-  <!-- Checkbox to confirm the use of selected range -->
+  <!-- Custom Checkbox as a hook icon -->
   <div class="checkbox-group">
-    <input type="checkbox" id="confirmRange" [(ngModel)]="useRange" (change)="onRangeChange()" />
-    <label for="confirmRange" [class.confirmed]="useRange" [class.unconfirmed]="!useRange">Confirm to use this range</label>
+    <input type="checkbox" id="confirmRange" [(ngModel)]="useRange" (change)="onRangeChange()" hidden/>
+    <label for="confirmRange" class="custom-checkbox">
+      <i class="fas fa-check" *ngIf="useRange"></i> <!-- Hook icon shows only when checked -->
+    </label>
   </div>
 </div>
 </div>
 
+</div>
+
 <!-- decisions.component.html -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet">

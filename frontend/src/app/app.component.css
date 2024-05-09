@@ -22,3 +22,19 @@
 .wrapper > *:last-child {
   margin-right: 0;
 }
+.container {
+  border: 2px solid #ccc; /* Overall border around the container */
+  padding: 20px; /* Add padding inside the container to space out the components */
+}
+
+.wrapper {
+  display: flex;
+  flex-wrap: wrap; /* Allow components to wrap if they exceed the container width */
+  gap: 20px; /* Add some space between components */
+}
+
+app-decisions, app-visualization, app-barchart {
+  border: 2px solid #ccc; /* Border around each individual component */
+  padding: 20px; /* Add padding inside each component to space out the content */
+  flex-grow: 1; /* Allow components to grow to fill available space */
+}
