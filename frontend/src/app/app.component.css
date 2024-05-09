@@ -1,18 +1,24 @@
 .wrapper {
-    display: flex; /* Use flexbox */
-  }
-  
-  /* Style for the child elements */
-  .wrapper > *:first-child {
-    flex: 2; /* Takes up two-thirds of the space */
-  }
-  
-  .wrapper > *:last-child {
-    flex: 1; /* Takes up one-third of the space */
-  }
-  
-  /* Optional: Add margin between elements */
-  .wrapper > * {
-    margin-right: 20px;
-  }
-  
+  display: flex; /* Use flexbox for layout */
+}
+
+/* Set a fixed width for the first child */
+.wrapper > *:first-child {
+  width: 500px;
+  flex-shrink: 0;  
+}
+
+/* Allow other elements to flexibly fill the remaining space */
+.wrapper > *:not(:first-child) {
+  flex-grow: 1;
+}
+
+/* Maintain spacing between components */
+.wrapper > * {
+  margin-right: 20px; 
+}
+
+/* Remove margin on the last element */
+.wrapper > *:last-child {
+  margin-right: 0;
+}

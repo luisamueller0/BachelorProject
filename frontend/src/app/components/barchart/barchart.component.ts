@@ -80,7 +80,6 @@ this.svg.selectAll("bars")
 // Function to calculate technique distribution
 private calculateTechniqueDistribution(artists: Artist[]): Map<string, number> {
   const techniqueDistribution = new Map<string, number>();
-  console.log('barchart:',this.artists)
   artists.forEach((artist) => {
     artist.techniques.forEach((technique) => {
       techniqueDistribution.set(technique, (techniqueDistribution.get(technique) || 0) + 1);

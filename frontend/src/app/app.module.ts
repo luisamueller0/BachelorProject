@@ -8,7 +8,8 @@ import { VisualizationComponent } from './components/visualization/visualization
 import { DecisionsComponent } from './components/decisions/decisions.component';
 import { ArtistService } from './services/artist.service';
 import { BarchartComponent } from './components/barchart/barchart.component';
-
+import { NgxSliderModule } from '@angular-slider/ngx-slider';
+import { FormsModule } from '@angular/forms'; // Import FormsModule
 @NgModule({
   declarations: [
     AppComponent,
@@ -19,7 +20,9 @@ import { BarchartComponent } from './components/barchart/barchart.component';
   imports: [
     BrowserModule,
     AppRoutingModule,
-    HttpClientModule
+    HttpClientModule,
+    NgxSliderModule,
+    FormsModule
   ],
   providers: [],
   bootstrap: [AppComponent]

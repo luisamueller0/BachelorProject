@@ -1,5 +1,4 @@
-const { session } = require('../db');
-
+const dbSemaphore = require('../semaphoreHandler');
 class Artist {
     constructor(data) {
         this.id = Number(data.id); 
@@ -69,11 +68,16 @@ class exhibited_with {
 
 
 const findAll = async () => {
+    const { session } = require('../db');
     const result = await session.run('MATCH (a:Artist) RETURN a LIMIT 25');
     return result.records.map(record => record.get('a').properties);
 };
 
 const findAllNationalityTechnique = async () => {
+    const { session } = require('../db');
+    return await dbSemaphore.runExclusive(async () => {
+        console.log('Semaphore acquired by normal')
+    
     const result = await session.run(
    // Collect 25 distinct artists based on some criteria
     `MATCH (a:Artist)
@@ -89,10 +93,38 @@ const findAllNationalityTechnique = async () => {
     RETURN p
     `);
 
-    return await processResult(result);
+    return await processResult(result); 
+});
 };
 
+const findAllNationalityTechniqueAmount = async (minLimit, maxLimit) => {
+    const { session } = require('../db');
+    return await dbSemaphore.runExclusive(async () => {
+        console.log('Semaphore acquired by amount')
+    const result = await session.run(
+   // Collect artists where total
+    `MATCH (a:Artist)
+    WHERE a.artForms <> [] AND a.country <> '\\N' AND a.TotalExhibitedArtworks >= $minLimit AND a.TotalExhibitedArtworks <= $maxLimit
+    WITH a
+    WITH collect(a) AS selectedArtists
+
+    // For each artist in the selected group, find all exhibited relationships within this group
+    UNWIND selectedArtists AS a
+    MATCH p=(a)-[r:EXHIBITED_WITH]-(b)
+    WHERE b IN selectedArtists
+    RETURN p
+    `
+    ,{ minLimit: parseInt(minLimit), maxLimit: parseInt(maxLimit) } );// Ensure these are correctly passed as integers);
+    
+
+    return await processResult(result);
+});
+};
+
+
 const findAllBirthcountryTechnique = async () => {
+    const { session } = require('../db');
+    return await dbSemaphore.runExclusive(async () => {
     const result = await session.run(
    // Collect 25 distinct artists based on some criteria
     `MATCH (a:Artist)
@@ -109,9 +141,35 @@ const findAllBirthcountryTechnique = async () => {
     `);
 
     return await processResult(result);
+});
+};
+
+const findAllBirthcountryTechniqueAmount = async (minLimit,maxLimit) => {
+    const { session } = require('../db');
+    return await dbSemaphore.runExclusive(async () => {
+    const result = await session.run(
+   // Collect 25 distinct artists based on some criteria
+    `MATCH (a:Artist) 
+    WHERE a.artForms <> [] AND a.birthCountry <> '\\N' AND a.TotalExhibitedArtworks >= $minLimit AND a.TotalExhibitedArtworks <= $maxLimit
+    WITH a
+    WITH collect(a) AS selectedArtists
+
+    // For each artist in the selected group, find all exhibited relationships within this group
+    UNWIND selectedArtists AS a
+    MATCH p=(a)-[r:EXHIBITED_WITH]-(b)
+    WHERE b IN selectedArtists
+    RETURN p
+    `
+    ,{ minLimit: parseInt(minLimit), maxLimit: parseInt(maxLimit) } );// Ensure these are correctly passed as integers);
+    
+
+    return await processResult(result);
+});
 };
 
 const findAllDeathcountryTechnique = async () => {
+    const { session } = require('../db');
+    return await dbSemaphore.runExclusive(async () => {
     const result = await session.run(
    // Collect 25 distinct artists based on some criteria
     `MATCH (a:Artist)
@@ -128,8 +186,38 @@ const findAllDeathcountryTechnique = async () => {
     `);
 
     return await processResult(result);
+
+});
 };
+
+const findAllDeathcountryTechniqueAmount = async (minLimit,maxLimit) => {
+    const { session } = require('../db');
+    return await dbSemaphore.runExclusive(async () => {
+    const result = await session.run(
+   // Collect 25 distinct artists based on some criteria
+    `MATCH (a:Artist)
+    WHERE a.artForms <> [] AND a.deathCountry <> '\\N'  AND a.TotalExhibitedArtworks >= $minLimit AND a.TotalExhibitedArtworks <= $maxLimit
+    WITH a
+    WITH collect(a) AS selectedArtists
+
+    // For each artist in the selected group, find all exhibited relationships within this group
+    UNWIND selectedArtists AS a
+    MATCH p=(a)-[r:EXHIBITED_WITH]-(b)
+    WHERE b IN selectedArtists
+    RETURN p
+    `
+    ,{ minLimit: parseInt(minLimit), maxLimit: parseInt(maxLimit) } );// Ensure these are correctly passed as integers);
+    
+
+    return await processResult(result);
+
+});
+};
+
+
 const findAllMostExhibitedInTechnique = async () => {
+    const { session } = require('../db');
+    return await dbSemaphore.runExclusive(async () => {
     const result = await session.run(
    // Collect 25 distinct artists based on some criteria
     `MATCH (a:Artist)
@@ -146,9 +234,37 @@ const findAllMostExhibitedInTechnique = async () => {
     `);
 
     return await processResult(result);
+});
 };
 
+const findAllMostExhibitedInTechniqueAmount = async (minLimit,maxLimit) => {
+    const { session } = require('../db');
+    return await dbSemaphore.runExclusive(async () => {
+    const result = await session.run(
+   // Collect 25 distinct artists based on some criteria
+    `MATCH (a:Artist)
+    WHERE a.artForms <> [] AND a.mostExhibitedInCountry <> '\\N' AND a.unclearMostExhibitedInCountry = FALSE  AND a.TotalExhibitedArtworks >= $minLimit AND a.TotalExhibitedArtworks <= $maxLimit
+    WITH a
+    WITH collect(a) AS selectedArtists
+
+    // For each artist in the selected group, find all exhibited relationships within this group
+    UNWIND selectedArtists AS a
+    MATCH p=(a)-[r:EXHIBITED_WITH]-(b)
+    WHERE b IN selectedArtists
+    RETURN p
+    `
+    ,{ minLimit: parseInt(minLimit), maxLimit: parseInt(maxLimit) } );// Ensure these are correctly passed as integers);
+    
+
+    return await processResult(result);
+
+});
+};
+
+
 const findAllTechniques = async () => {
+    const { session } = require('../db');
+    return await dbSemaphore.runExclusive(async () => {
     const result = await session.run(
    // Collect 25 distinct artists based on some criteria
     `MATCH (a:Artist)
@@ -165,7 +281,10 @@ const findAllTechniques = async () => {
     `);
 
     return await processResult(result);
+
+});
 };
+
 
 
 
@@ -204,11 +323,50 @@ const processResult = (result) => {
     return [artists, relationships];
 };
 
+
+const math = require('mathjs');
+
+async function spectralClustering(artists, relationships, k) {
+    // Assuming 'artists' is an array of artist nodes and 'relationships' is an array of edges with weights
+
+    // Step 1: Construct the adjacency matrix
+    const size = artists.length;
+    const adjacencyMatrix = math.zeros(size, size);
+
+    relationships.forEach(relationship => {
+        const i = artists.findIndex(artist => artist.id === relationship.startId);
+        const j = artists.findIndex(artist => artist.id === relationship.endId);
+        const weight = relationship.sharedExhibitionMinArtworks; // assuming this is already normalized
+        adjacencyMatrix.set([i, j], weight);
+        adjacencyMatrix.set([j, i], weight); // since it's an undirected graph
+    });
+
+    // Step 2: Construct the degree matrix
+    const degreeMatrix = adjacencyMatrix.map((value, index, matrix) => {
+        return index[0] === index[1] ? math.sum(matrix._data[index[0]]) : 0;
+    });
+
+    // Step 3: Construct the Laplacian matrix
+    const laplacianMatrix = math.subtract(degreeMatrix, adjacencyMatrix);
+
+    // Step 4: Compute the eigenvalues and eigenvectors
+    const {values, vectors} = math.eigs(laplacianMatrix);
+
+    // Step 5: Cluster the rows of the eigenvectors corresponding to the k smallest eigenvalues
+    const rows = vectors._data.map(row => row.slice(0, k));
+    const clusters = kMeansClustering(rows, k);
+
+    return clusters;
+}
 module.exports = {
     findAll,
     findAllNationalityTechnique,
     findAllBirthcountryTechnique,
     findAllDeathcountryTechnique,
     findAllMostExhibitedInTechnique,
-    findAllTechniques
+    findAllTechniques, 
+    findAllNationalityTechniqueAmount, 
+    findAllBirthcountryTechniqueAmount,
+    findAllDeathcountryTechniqueAmount,
+    findAllMostExhibitedInTechniqueAmount
 };

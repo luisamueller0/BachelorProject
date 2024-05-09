@@ -9,11 +9,13 @@ export class DecisionService {
   private orderSource = new BehaviorSubject<string>('');
   private sizeSource = new BehaviorSubject<string>('');
   private thicknessSource = new BehaviorSubject<string>('');
+  private rangeSource = new BehaviorSubject<number[]>([300, 400]); // Default range
 
   currentSunburst = this.sunburstSource.asObservable();
   currentOrder = this.orderSource.asObservable();
   currentSize = this.sizeSource.asObservable();
   currentThickness = this.thicknessSource.asObservable();
+  currentRange = this.rangeSource.asObservable();
 
   changeDecisionSunburst(sunburst: string) {
     this.sunburstSource.next(sunburst);
@@ -28,5 +30,10 @@ export class DecisionService {
 
   changeDecisionThickness(thickness: string) {
     this.thicknessSource.next(thickness);
+  }
+
+ 
+  changeDecisionRange(range: number[]) {
+    this.rangeSource.next(range);
   }
 }

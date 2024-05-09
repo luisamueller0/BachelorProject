@@ -93,6 +93,9 @@ ngOnInit(): void {
     this.updateVisualization('sunburst', sunburst);
     this.currentSunburst = sunburst;
   }));
+  this.subscriptions.add(this.decisionService.currentRange.subscribe(range => {
+    this.updateArtists(range);
+  }));
 }
 
 ngOnDestroy() {
@@ -101,14 +104,13 @@ ngOnDestroy() {
 
 
 private  loadInitialData() {
+ 
   this.artistService.getArtistsWithNationalityTechnique().subscribe((data) => {
   this.artists = data[0];
   this.relationships = data[1];
   this.isLoading = false; // Set loading to false when data is loaded
   this.selectionService.selectArtist(this.artists);
-  this.artists.forEach(artist => {
-    console.log(artist.distinct_techniques)}
-    );
+
     
   // Create all the maps for the node sizes:
   const degrees = this.calculateNodeDegrees(this.relationships);
@@ -116,12 +118,14 @@ private  loadInitialData() {
   this.degreesMap = normalizedDegrees;
   this.createSvg();
   this.drawSunburst('nationality');
-  this.drawChordDiagram('nationality');
+ //this.drawChordDiagram('nationality'); Chord Diagram
   this.drawNetwork('nationality');
 }, (error) => {
   console.error('There was an error', error);
   this.isLoading = false; // Make sure to set loading to false on error as well
-});
+}); 
+
+
 }
 
 
@@ -133,7 +137,22 @@ private createSvg(): void {
   .append("g")
   .attr("transform", `translate(${this.width / 2 + this.margin}, ${this.height / 2 + this.margin})`);
 }
-
+updateArtists(value:number[]){
+  console.log(value)
+ 
+    this.artistService.getAmountArtistsWithNationalityTechnique(value).subscribe((data) => {
+      console.log('it works')
+      const artists = data[0];
+      const relationships = data[1];
+      console.log('range:', value)
+      console.log('artists:', artists.length)
+      console.log('relationships:', relationships.length)
+   
+    }, (error) => {
+      console.error('There was an error', error);
+      this.isLoading = false; // Make sure to set loading to false on error as well
+    });  
+}
 updateVisualization(type: string, value: string) {
   // React to the change
   
@@ -144,10 +163,10 @@ updateVisualization(type: string, value: string) {
     }
     if (type === 'sunburst') {
       this.updateSunburst(value);
-      console.log('size:', this.currentSize)
       this.updateNodeSize(this.currentSize);
     }
   }
+  
 
 }
 
@@ -229,90 +248,6 @@ private calculateCountryConnections(value: string): CountryConnections {
   return { matrix, countryIndex };
 }
 
-private drawSunburstTechniques(): void {
-  
-  const techniquesMap = new Map<string, Artist[]>();
-
-
-  const techniques = Array.from(techniquesMap.keys()); 
-  const totalArtists = this.artists.length;
-  const minimumAngle = Math.PI / 18;
-
-  // Create a scale that determines the angle based on the number of artists
-  let totalAngleAvailable = 2 * Math.PI; // Total angle available (360 degrees)
-  let dynamicAngles = new Map<string, number>();
-
-  // First pass to assign minimum angles and adjust total available angle
-  techniquesMap.forEach((artists, country) => {
-    dynamicAngles.set(country, minimumAngle);
-    totalAngleAvailable -= minimumAngle;
-  });
-
-  // Allocate remaining angles based on the proportion of artists
-  techniquesMap.forEach((artists, country) => {
-    const proportion = artists.length / totalArtists;
-    const extraAngle = proportion * totalAngleAvailable;
-    const currentAngle = dynamicAngles.get(country) || 0;
-    dynamicAngles.set(country, currentAngle + extraAngle);
-  });
-
-
-  //const countryColorScale = d3.scaleOrdinal(d3.schemeCategory10);
-  const countryColorScale = this.createColorScale(techniques);
-
-
-  let currentAngle = 0;
-  const data = techniques.map((country, i) => {
-    const angle = dynamicAngles.get(country);
-    const startAngle = currentAngle;
-    const endAngle = currentAngle + (angle as number);
-    const middleAngle = (startAngle + endAngle) / 2;
-    currentAngle = endAngle;
-    return {
-      country,
-      startAngle,
-      endAngle,
-      middleAngle,
-      //color: this.createColorScale(countries)(country) // Assign color by country
-      color: countryColorScale(i)  // Assign color by index
-    };
-  });
-
-  // Create an arc generator
-  const arcGenerator = d3.arc()
-  .innerRadius(this.innerRadius)
-  .outerRadius(this.outerRadius);
-
-  // Draw arcs
-  this.svg.selectAll("path")
-  .data(data)
-  .enter()
-  .append("path")
-  .attr("d", arcGenerator)
-  .attr("fill", (d:any) => d.color);
-
-  // Draw labels
-  this.svg.selectAll("text")
-  .data(data)
-  .enter()
-  .append("text")
-  .attr("transform", (d:any) => `translate(${arcGenerator.centroid(d)})`)
-  .attr("text-anchor", "middle")
-  .text((d:any) => d.country);
-
-  // Save centroid data for node placement later
-  this.countryCentroids = {};
-  data.forEach(d => {
-    this.countryCentroids[d.country] = {
-      startAngle: d.startAngle,
-      endAngle: d.endAngle,
-      middleAngle: d.middleAngle,
-      color: d.color,
-      country: d.country
-    };
-  });
-
-}
 
 
 private updateSunburst(value: string) {
@@ -394,24 +329,6 @@ private updateSunburst(value: string) {
       this.isLoading = false; // Make sure to set loading to false on error as well
     });
   }
-  else if(value === 'techniques'){
-  this.artistService.getArtistsWithTechnique().subscribe((data) => {
-    this.artists = data[0];
-    this.relationships = data[1];
-    this.isLoading = false; // Set loading to false when data is loaded
-    this.selectionService.selectArtist(this.artists);
-    // Create all the maps for the node sizes:
-    const degrees = this.calculateNodeDegrees(this.relationships);
-    const normalizedDegrees = this.normalizeSqrt(degrees);
-    this.degreesMap = normalizedDegrees;
-    this.createSvg();
-    this.drawSunburstTechniques();
-    //this.drawNetwork();
-  }, (error) => {
-    console.error('There was an error', error);
-    this.isLoading = false; // Make sure to set loading to false on error as well
-  });
-}
 }
 private updateNodeSize(value: string) {
   if(value === 'Amount of Exhibitions'){

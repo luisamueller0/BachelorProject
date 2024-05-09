@@ -70,4 +70,53 @@ artist.get('/technique', async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+artist.get('/amount/nationality/technique', async (req, res) => {
+    const minLimit = req.query.minLimit;
+    const maxLimit = req.query.maxLimit;
+    
+    try {
+        const result = await artistModel.findAllNationalityTechniqueAmount(minLimit,maxLimit);
+        res.json(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+artist.get('/amount/birthcountry/technique', async (req, res) => {
+    const minLimit = req.query.minLimit;
+    const maxLimit = req.query.maxLimit;
+    
+    try {
+        const result = await artistModel.findAllBirthcountryTechniqueAmount(minLimit,maxLimit);
+        res.json(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+artist.get('/amount/deathcountry/technique', async (req, res) => {
+    const minLimit = req.query.minLimit;
+    const maxLimit = req.query.maxLimit;
+    
+    try {
+        const result = await artistModel.findAllDeathcountryTechniqueAmount(minLimit,maxLimit);
+        res.json(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+artist.get('/amount/mostexhibitedincountry/technique', async (req, res) => {
+    const minLimit = req.query.minLimit;
+    const maxLimit = req.query.maxLimit;
+    
+    try {
+        const result = await artistModel.findAllMostExhibitedInTechniqueAmount(minLimit,maxLimit);
+        res.json(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
 export default artist;
