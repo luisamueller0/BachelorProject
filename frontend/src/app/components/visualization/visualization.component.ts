@@ -120,10 +120,13 @@ private  loadInitialData() {
   this.drawSunburst('nationality');
  //this.drawChordDiagram('nationality'); Chord Diagram
   this.drawNetwork('nationality');
+
+  
 }, (error) => {
   console.error('There was an error', error);
   this.isLoading = false; // Make sure to set loading to false on error as well
 }); 
+
 
 
 }

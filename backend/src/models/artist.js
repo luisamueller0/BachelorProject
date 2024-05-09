@@ -331,6 +331,7 @@ const normalizeLogarithmically = (values) => {
     const logMinValue = Math.log1p(Math.min(...values.values()));
     const range = logMaxValue - logMinValue;
     const normalized = new Map();
+   
     values.forEach((value, id) => {
         normalized.set(id, (Math.log1p(value) - logMinValue) / range); // Normalize by dividing by the max degree
     });
@@ -356,110 +357,193 @@ async function spectralClustering(artists, relationships, k) {
     relationships.forEach(relationship => {
         const i = artists.findIndex(artist => artist.id === relationship.startId);
         const j = artists.findIndex(artist => artist.id === relationship.endId);
-        const weight = normalizedSharedExhibitionValues.get(relationship.startId); // use normalized value
-        adjacencyMatrix.set([i, j], weight);
-        adjacencyMatrix.set([j, i], weight); // since it's an undirected graph
+        const weight = normalizedSharedExhibitionValues.get(relationship.startId);
+
+        adjacencyMatrix.set([i, j], Number(weight));
+        adjacencyMatrix.set([j, i], Number(weight)); // since it's an undirected graph
     });
 
+    console.log('adjacency', adjacencyMatrix)
+   
 
     // Step 2: Construct the degree matrix
     const degreeMatrix = adjacencyMatrix.map((value, index, matrix) => {
-        return index[0] === index[1] ? math.sum(matrix._data[index[0]]) : 0;
+        return index[0] === index[1] ? Number(math.sum(matrix._data[index[0]])) : 0;
     });
 
+    console.log('degreematrix',degreeMatrix)
     // Step 3: Construct the Laplacian matrix
     const laplacianMatrix = math.subtract(degreeMatrix, adjacencyMatrix);
 
-    // Step 4: Compute the eigenvalues and eigenvectors
-    const {values, vectors} = math.eigs(laplacianMatrix);
+    console.log('laplacian',laplacianMatrix)
+   // Step 4: Compute the eigenvalues and eigenvectors
+   const eigensystem = math.eigs(laplacianMatrix);
 
-    // Step 5: Cluster the rows of the eigenvectors corresponding to the k smallest eigenvalues
-    const rows = vectors._data.map(row => row.slice(0, k));
-    const clusters = kMeansClustering(rows, k);
+   // Check if the eigenvalues and eigenvectors are defined and not empty
+   if (!eigensystem || eigensystem.values.length === 0) {
+       throw new Error("Eigenvectors are undefined or missing data.");
+   }
+   console.log('eigensystem', eigensystem);
+   
+   // Extract eigenvalues and eigenvectors, and sort them by eigenvalues
+   const eigenvaluesAndVectors = eigensystem.values.map((value, index) => ({
+       value,
+       vector: eigensystem.eigenvectors[index] // Correcting property name here
+   }));
+   
 
-    return clusters;
+   console.log('eigenvaluesAndVectors:', eigenvaluesAndVectors);
+   // Sort by eigenvalue in ascending order
+   const eigenvaluesAndVectorsArray = [];
+for (let i = 0; i < eigenvaluesAndVectors._data.length; i++) {
+    eigenvaluesAndVectorsArray.push(eigenvaluesAndVectors._data[i]);
 }
 
-function kMeansClustering(data, k, maxIterations = 100) {
-    // Step 1: Initialize centroids
+// Sort the array of objects by eigenvalue in ascending order
+eigenvaluesAndVectorsArray.sort((a, b) => a.value - b.value);
+
+   // Filter out the zero or near-zero eigenvalues (depending on context, you might need a threshold to skip very small but non-zero eigenvalues)
+   const filteredEigenvaluesAndVectors = eigenvaluesAndVectorsArray.filter(e => e.value > 1e-10);
+   
+   // Use the first k non-trivial eigenvectors for clustering
+   const vectorsForClustering = filteredEigenvaluesAndVectors.slice(0, k).map(e => {
+       // Assuming e.vector is a DenseMatrix and needs to be converted to an array
+       console.log('e.vector:', e.vector);
+
+       return e.vector.vector.toArray(); // Ensure this conversion matches the actual data structure
+   });
+   
+   const clusters = kMeansClustering(vectorsForClustering, k);
+   
+   // Assuming kMeansClustering and other related functions are d
+   
+return clusters;
+
+}
+
+function kMeansClustering(data, k) {
+    const maxIterations = 100;
     let centroids = initializeCentroids(data, k);
+    let assignments = new Array(data.length);
 
-    let prevCentroids;
-    let iterations = 0;
+    for (let iteration = 0; iteration < maxIterations; iteration++) {
+        // Step 1: Assign points to the nearest centroid
+        for (let i = 0; i < data.length; i++) {
+            let minDistance = Infinity;
+            let closestCentroid = 0;
+            for (let j = 0; j < k; j++) {
+                let distance = euclideanDistance(data[i], centroids[j]);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestCentroid = j;
+                }
+            }
+            assignments[i] = closestCentroid;
+        }
 
-    // Repeat until convergence or maxIterations reached
-    while (!areCentroidsEqual(centroids, prevCentroids) && iterations < maxIterations) {
-        // Step 2: Assign points to clusters
-        const clusters = assignPointsToClusters(data, centroids);
+        // Step 2: Recalculate centroids
+        let newCentroids = new Array(k).fill(0).map(() => new Array(data[0].length).fill(0));
+        let pointsInCluster = new Array(k).fill(0);
 
-        // Step 3: Update centroids
-        prevCentroids = centroids;
-        centroids = updateCentroids(data, clusters, k);
+        for (let i = 0; i < assignments.length; i++) {
+            const cluster = assignments[i];
+            for (let j = 0; j < data[i].length; j++) {
+                newCentroids[cluster][j] += data[i][j];
+            }
+            pointsInCluster[cluster]++;
+        }
 
-        iterations++;
+        for (let i = 0; i < k; i++) {
+            if (pointsInCluster[i] !== 0) {
+                for (let j = 0; j < newCentroids[i].length; j++) {
+                    newCentroids[i][j] /= pointsInCluster[i];
+                }
+            } else {
+                newCentroids[i] = centroids[i]; // In case no points were assigned, keep the old centroid
+            }
+        }
+
+        // Check for convergence (if centroids do not change)
+        if (centroids.every((centroid, index) => euclideanDistance(centroid, newCentroids[index]) === 0)) {
+            break;
+        }
+        centroids = newCentroids;
     }
 
-    return clusters;
+    return assignments;
 }
 
 function initializeCentroids(data, k) {
-    // Randomly select k data points as initial centroids
-    const centroids = [];
-    const dataCopy = [...data]; // Create a copy to avoid modifying original data
-
-    for (let i = 0; i < k; i++) {
-        const randomIndex = Math.floor(Math.random() * dataCopy.length);
-        centroids.push(dataCopy.splice(randomIndex, 1)[0]); // Remove selected point from dataCopy and add to centroids
+    let centroids = [];
+    let usedIndices = new Set();
+    while (centroids.length < k) {
+        let index = Math.floor(Math.random() * data.length);
+        if (!usedIndices.has(index)) {
+            centroids.push(data[index]);
+            usedIndices.add(index);
+        }
     }
-
     return centroids;
 }
 
-function assignPointsToClusters(data, centroids) {
-    const clusters = new Array(centroids.length).fill().map(() => []);
-
-    // Assign each point to the nearest centroid
-    data.forEach(point => {
-        const distances = centroids.map(centroid => calculateDistance(point, centroid));
-        const nearestCentroidIndex = distances.indexOf(Math.min(...distances));
-        clusters[nearestCentroidIndex].push(point);
-    });
-
-    return clusters;
-}
-
-function updateCentroids(data, clusters, k) {
-    const newCentroids = [];
-
-    // Calculate mean of points in each cluster to get new centroids
-    clusters.forEach(cluster => {
-        if (cluster.length > 0) {
-            const clusterMean = cluster.reduce((acc, point) => {
-                return acc.map((val, i) => val + point[i]); // Add corresponding coordinates
-            }, new Array(data[0].length).fill(0)).map(val => val / cluster.length); // Calculate mean
-            newCentroids.push(clusterMean);
-        } else {
-            // If cluster is empty, retain the previous centroid
-            newCentroids.push(centroids[newCentroids.length]);
-        }
-    });
-
-    return newCentroids;
-}
-
-function calculateDistance(point1, point2) {
-    // Euclidean distance between two points in n-dimensional space
-    return Math.sqrt(point1.reduce((acc, val, i) => acc + (val - point2[i]) ** 2, 0));
-}
-
-function areCentroidsEqual(centroids1, centroids2) {
-    if (!centroids1 || !centroids2 || centroids1.length !== centroids2.length) {
-        return false;
+function euclideanDistance(point1, point2) {
+    let sum = 0;
+    for (let i = 0; i < point1.length; i++) {
+        sum += (point1[i] - point2[i]) ** 2;
     }
-
-    // Check if each centroid is equal to its counterpart
-    return centroids1.every((centroid, i) => centroid.every((val, j) => val === centroids2[i][j]));
+    return Math.sqrt(sum);
 }
+
+
+
+
+
+const artists = [
+    { id: 1, name: "Artist 1" },
+    { id: 2, name: "Artist 2" },
+    { id: 3, name: "Artist 3" },
+    { id: 4, name: "Artist 4" },
+    { id: 5, name: "Artist 5" },
+    { id: 6, name: "Artist 6" },
+    { id: 7, name: "Artist 7" },
+    { id: 8, name: "Artist 8" },
+    { id: 9, name: "Artist 9" },
+];
+
+const relationships = [
+    // Cluster 1: Artists 1, 2, 3
+    { startId: 1, endId: 2, sharedExhibitionMinArtworks: 10 },
+    { startId: 1, endId: 3, sharedExhibitionMinArtworks: 12 },
+    { startId: 2, endId: 3, sharedExhibitionMinArtworks: 11 },
+
+    // Cluster 2: Artists 4, 5, 6
+    { startId: 4, endId: 5, sharedExhibitionMinArtworks: 9 },
+    { startId: 4, endId: 6, sharedExhibitionMinArtworks: 8 },
+    { startId: 5, endId: 6, sharedExhibitionMinArtworks: 7 },
+
+    // Cluster 3: Artists 7, 8, 9
+    { startId: 7, endId: 8, sharedExhibitionMinArtworks: 6 },
+    { startId: 7, endId: 9, sharedExhibitionMinArtworks: 5 },
+    { startId: 8, endId: 9, sharedExhibitionMinArtworks: 4 },
+
+    // Weak inter-cluster relationships (optional, to slightly connect clusters)
+    { startId: 3, endId: 4, sharedExhibitionMinArtworks: 2 }, // Weak link between cluster 1 and 2
+    { startId: 6, endId: 7, sharedExhibitionMinArtworks: 1 }, // Weak link between cluster 2 and 3
+];
+
+
+const k = 3; // Number of clusters
+
+// Call the spectralClustering function
+(async () => {
+    try {
+        const clusters = await spectralClustering(artists, relationships, k);
+        console.log(clusters);
+    } catch (error) {
+        console.error(error);
+    }
+})();
+// Inspect the result
 
 
 // You will need to call this function with appropriate parameters
