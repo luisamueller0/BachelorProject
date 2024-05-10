@@ -384,7 +384,10 @@ async function spectralClustering(artists, relationships, k) {
        throw new Error("Eigenvectors are undefined or missing data.");
    }
    console.log('eigensystem', eigensystem);
-   
+
+   console.log('eigenvec', eigensystem.eigenvectors[0].vector)
+
+   /* 
    // Extract eigenvalues and eigenvectors, and sort them by eigenvalues
    const eigenvaluesAndVectors = eigensystem.values.map((value, index) => ({
        value,
@@ -411,20 +414,40 @@ eigenvaluesAndVectorsArray.sort((a, b) => a.value - b.value);
        console.log('e.vector:', e.vector);
 
        return e.vector.vector.toArray(); // Ensure this conversion matches the actual data structure
-   });
-   
-   const clusters = kMeansClustering(vectorsForClustering, k);
+   }); */
+   // Extract the first k eigenvectors
+
+   // Extract the first three eigenvectors
+const firstThreeEigenvectors = eigensystem.eigenvectors.slice(0, k);
+
+// Initialize the feature matrix
+const featureMatrixU = [];
+
+// Loop over the eigenvectors
+for (let i = 0; i < firstThreeEigenvectors.length; i++) {
+    const vector = firstThreeEigenvectors[i].vector.toArray(); // Convert DenseMatrix to array
+    featureMatrixU.push(vector); // Push the vector as a column in the feature matrix
+}
+console.log('featureMatrixU:', featureMatrixU);
+
+// Transpose the feature matrix to have columns as data points
+const featureMatrixUTransposed = math.transpose(featureMatrixU);
+   const clusters = kMeansClustering(featureMatrixUTransposed, k);
    
    // Assuming kMeansClustering and other related functions are d
    
-return clusters;
+    // Associate artists with their clusters
+    const artistsWithClusters = artists.map((artist, index) => ({
+        ...artist,
+        cluster: clusters[index]
+    }));
 
-}
+    return artistsWithClusters;
 
-function kMeansClustering(data, k) {
+}function kMeansClustering(data, k) {
     const maxIterations = 100;
     let centroids = initializeCentroids(data, k);
-    let assignments = new Array(data.length);
+    let assignments = new Array(data.length).fill(-1); // Initialize assignments array with -1 (unassigned)
 
     for (let iteration = 0; iteration < maxIterations; iteration++) {
         // Step 1: Assign points to the nearest centroid
@@ -472,6 +495,7 @@ function kMeansClustering(data, k) {
 
     return assignments;
 }
+
 
 function initializeCentroids(data, k) {
     let centroids = [];
