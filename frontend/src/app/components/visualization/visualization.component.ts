@@ -129,6 +129,8 @@ private  loadInitialData() {
 
 
 
+
+
 }
 
 
@@ -254,6 +256,15 @@ private calculateCountryConnections(value: string): CountryConnections {
 
 
 private updateSunburst(value: string) {
+console.log('cluster')
+  this.artistService.clusterArtists(this.artists,this.relationships,3).subscribe((data) => {
+    console.log(data)
+    
+  }, (error) => {
+    console.error('There was an error', error);
+    this.isLoading = false; // Make sure to set loading to false on error as well
+  }); 
+  
    // Remove existing SVG
    d3.select("figure#network").select("svg").remove();
 

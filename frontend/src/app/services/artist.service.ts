@@ -78,10 +78,10 @@ export class ArtistService {
     return this.http.get<any[][]>(this.dataUrl+ '/artist/technique').pipe(shareReplay())
   }
 
-  clusterArtists(artists:Artist[],relationships:exhibited_with[], k:number):Observable<any[][]>{
+  clusterArtists(artists:Artist[],relationships:exhibited_with[], k:number):Observable<any[]>{
     const params = new HttpParams()
-      .set('minLimit', artists.toString())
-      .set('maxLimit', relationships.toString())
+      .set('minLimit', JSON.stringify(artists))
+      .set('maxLimit', JSON.stringify(relationships))
       .set('k', k);
     return this.http.get<any[][]>(this.dataUrl+ '/artist/cluster',{ params }).pipe(shareReplay())
   }
