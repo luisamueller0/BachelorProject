@@ -95,7 +95,7 @@ export class DecisionsComponent implements OnInit {
         console.log('relationships:', this.relationships.length)
      
         // Update dependent range options
-      const newCeil = Math.ceil(this.artists.length / 8);
+      const newCeil = Math.ceil(this.artists.length / 15);
 
       if (newCeil < 1 && this.artists.length > 0) {
         this.kOptions = { ...this.kOptions, ceil: 1 };  // Set ceil to 1 if calculation results in less than 1
