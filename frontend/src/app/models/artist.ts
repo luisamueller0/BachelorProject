@@ -25,6 +25,7 @@ interface ArtistData {
   birthcountry:string;
   europeanRegionBirth: string;
   total_exhibitions:number;
+  cluster: number;
   }
 
   interface ArtistNode extends d3.SimulationNodeDatum {
@@ -67,6 +68,7 @@ interface ArtistData {
     birthcountry:string;
     europeanRegionBirth: string;
     total_exhibitions:number;
+    cluster: number;
   
     constructor(data: ArtistData) {
       this.id = Number(data.id);
@@ -93,6 +95,7 @@ interface ArtistData {
       this.birthcountry = data.birthcountry;
       this.europeanRegionBirth = data.europeanRegionBirth;
       this.total_exhibitions = data.total_exhibitions;
+      this.cluster = data.cluster;
     }
   
     convertToMap(data:any): Map<string, number> {// Iterate through each data object

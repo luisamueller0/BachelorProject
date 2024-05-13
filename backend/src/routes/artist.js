@@ -119,14 +119,52 @@ artist.get('/amount/mostexhibitedincountry/technique', async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
-artist.get('/cluster', async (req, res) => {
-    const artists = JSON.parse(req.query.artists); // Parse artists parameter as JSON array
-    const relationships = JSON.parse(req.query.relationships); // Parse relationships parameter as JSON array
+artist.get('/cluster/nationality', async (req, res) => {
+    const minLimit = req.query.minLimit;
+    const maxLimit = req.query.maxLimit;
     const k = parseInt(req.query.k); // Parse k parameter as integer
 
+    try {
+        const result = await artistModel.spectralClusteringNationality(minLimit, maxLimit, k);
+        res.json(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+artist.get('/cluster/birthcountry', async (req, res) => {
+    const minLimit = req.query.minLimit;
+    const maxLimit = req.query.maxLimit;
+    const k = parseInt(req.query.k); // Parse k parameter as integer
 
     try {
-        const result = await artistModel.spectralClustering(artists,relationships, k);
+        const result = await artistModel.spectralClusteringBirthcountry(minLimit, maxLimit, k);
+        res.json(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+artist.get('/cluster/deathcountry', async (req, res) => {
+    const minLimit = req.query.minLimit;
+    const maxLimit = req.query.maxLimit;
+    const k = parseInt(req.query.k); // Parse k parameter as integer
+
+    try {
+        const result = await artistModel.spectralClusteringDeathcountry(minLimit, maxLimit, k);
+        res.json(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+artist.get('/cluster/mostexhibited', async (req, res) => {
+    const minLimit = req.query.minLimit;
+    const maxLimit = req.query.maxLimit;
+    const k = parseInt(req.query.k); // Parse k parameter as integer
+
+    try {
+        const result = await artistModel.spectralClusteringMostExhibited(minLimit, maxLimit, k);
         res.json(result);
     } catch (error) {
         console.error(error);

@@ -96,6 +96,10 @@ ngOnInit(): void {
   this.subscriptions.add(this.decisionService.currentRange.subscribe(range => {
     this.updateArtists(range);
   }));
+
+  this.subscriptions.add(this.decisionService.currentK.subscribe(k => {
+    this.updateCluster(k);
+  }));
 }
 
 ngOnDestroy() {
@@ -142,21 +146,35 @@ private createSvg(): void {
   .append("g")
   .attr("transform", `translate(${this.width / 2 + this.margin}, ${this.height / 2 + this.margin})`);
 }
-updateArtists(value:number[]){
-  console.log(value)
+
+updateCluster(k: number) {
+  const range = this.decisionService.getDecisionRange();
+  if(range[0].length !== 0){
+  console.log('range:', range)
+  console.log('k value:', k)
+  this.artistService.clusterAmountArtistsNationality(range[0], k).subscribe((data) => {
+    console.log('k data', data)
+    const artists = data[0];
+    const relationships = data[1];
+    console.log('k artists:', artists.length)
+    console.log('k relationships:', relationships.length)
+
+  }, (error) => {
+    console.error('There was an error', error);
+  });
+}
+
+}
+updateArtists(range:[number[], Artist[], exhibited_with[]]){
  
-    this.artistService.getAmountArtistsWithNationalityTechnique(value).subscribe((data) => {
-      console.log('it works')
-      const artists = data[0];
-      const relationships = data[1];
-      console.log('range:', value)
-      console.log('artists:', artists.length)
-      console.log('relationships:', relationships.length)
+  console.log('range:', range[0])
+  console.log('artists:', range[1].length)
+  console.log('relationships:', range[2].length)
+
+
+    console.log('with cluster')
+    
    
-    }, (error) => {
-      console.error('There was an error', error);
-      this.isLoading = false; // Make sure to set loading to false on error as well
-    });  
 }
 updateVisualization(type: string, value: string) {
   // React to the change
@@ -256,15 +274,7 @@ private calculateCountryConnections(value: string): CountryConnections {
 
 
 private updateSunburst(value: string) {
-console.log('cluster')
-  this.artistService.clusterArtists(this.artists,this.relationships,3).subscribe((data) => {
-    console.log(data)
-    
-  }, (error) => {
-    console.error('There was an error', error);
-    this.isLoading = false; // Make sure to set loading to false on error as well
-  }); 
-  
+
    // Remove existing SVG
    d3.select("figure#network").select("svg").remove();
 

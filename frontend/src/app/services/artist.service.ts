@@ -86,6 +86,16 @@ export class ArtistService {
     return this.http.get<any[][]>(this.dataUrl+ '/artist/cluster',{ params }).pipe(shareReplay())
   }
 
+  clusterAmountArtistsNationality(range:number[], k:number):Observable<any[][]>{
+    const params = new HttpParams()
+      .set('minLimit', JSON.stringify(range[0]))
+      .set('maxLimit', JSON.stringify(range[1]))
+      .set('k', JSON.stringify(k));
+
+    return this.http.get<any[][]>(this.dataUrl+ '/artist/cluster/nationality', { params }).pipe(shareReplay());
+  
+  }
+
   
 
 

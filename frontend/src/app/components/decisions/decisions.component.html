@@ -48,6 +48,13 @@
   </div>
 </div>
 </div>
+<div class="dropdown-group">
+  <label class="dropdown-label">Select K Value (Dependent on Artists):</label>
+  <div class="dropdown-group2">
+    <ngx-slider [(value)]="k" [options]="kOptions" (valueChange)="onKChange()"></ngx-slider>
+  </div>
+</div>
+
 
 </div>
 

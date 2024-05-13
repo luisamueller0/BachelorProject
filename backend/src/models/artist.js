@@ -25,6 +25,7 @@ class Artist {
         this.europeanRegionBirth = this.determineRegion(data.birthCountry);
         this.total_exhibitions = data.TotalExhibitions;
         this.techniques_freq = data.artFormsFreq;
+        this.cluster = -1; // Default value
     }
     calculateYear(date) {
         if (!date) return null; // Handle cases where birthdate is not provided
@@ -339,6 +340,7 @@ const normalizeLogarithmically = (values) => {
 };
 
 async function spectralClustering(artists, relationships, k) {
+    console.log('cluster')
     // Step 0: Extract sharedExhibitionMinArtworks values for normalization
     const sharedExhibitionValues = new Map();
     relationships.forEach(relationship => {
@@ -361,21 +363,16 @@ async function spectralClustering(artists, relationships, k) {
 
         adjacencyMatrix.set([i, j], Number(weight));
         adjacencyMatrix.set([j, i], Number(weight)); // since it's an undirected graph
-    });
-
-    console.log('adjacency', adjacencyMatrix)
-   
+    });   
 
     // Step 2: Construct the degree matrix
     const degreeMatrix = adjacencyMatrix.map((value, index, matrix) => {
         return index[0] === index[1] ? Number(math.sum(matrix._data[index[0]])) : 0;
     });
 
-    console.log('degreematrix',degreeMatrix)
     // Step 3: Construct the Laplacian matrix
     const laplacianMatrix = math.subtract(degreeMatrix, adjacencyMatrix);
 
-    console.log('laplacian',laplacianMatrix)
    // Step 4: Compute the eigenvalues and eigenvectors
    const eigensystem = math.eigs(laplacianMatrix);
 
@@ -383,39 +380,7 @@ async function spectralClustering(artists, relationships, k) {
    if (!eigensystem || eigensystem.values.length === 0) {
        throw new Error("Eigenvectors are undefined or missing data.");
    }
-   console.log('eigensystem', eigensystem);
-
-   console.log('eigenvec', eigensystem.eigenvectors[0].vector)
-
-   /* 
-   // Extract eigenvalues and eigenvectors, and sort them by eigenvalues
-   const eigenvaluesAndVectors = eigensystem.values.map((value, index) => ({
-       value,
-       vector: eigensystem.eigenvectors[index] // Correcting property name here
-   }));
-   
-
-   console.log('eigenvaluesAndVectors:', eigenvaluesAndVectors);
-   // Sort by eigenvalue in ascending order
-   const eigenvaluesAndVectorsArray = [];
-for (let i = 0; i < eigenvaluesAndVectors._data.length; i++) {
-    eigenvaluesAndVectorsArray.push(eigenvaluesAndVectors._data[i]);
-}
-
-// Sort the array of objects by eigenvalue in ascending order
-eigenvaluesAndVectorsArray.sort((a, b) => a.value - b.value);
-
-   // Filter out the zero or near-zero eigenvalues (depending on context, you might need a threshold to skip very small but non-zero eigenvalues)
-   const filteredEigenvaluesAndVectors = eigenvaluesAndVectorsArray.filter(e => e.value > 1e-10);
-   
-   // Use the first k non-trivial eigenvectors for clustering
-   const vectorsForClustering = filteredEigenvaluesAndVectors.slice(0, k).map(e => {
-       // Assuming e.vector is a DenseMatrix and needs to be converted to an array
-       console.log('e.vector:', e.vector);
-
-       return e.vector.vector.toArray(); // Ensure this conversion matches the actual data structure
-   }); */
-   // Extract the first k eigenvectors
+ 
 
    // Extract the first three eigenvectors
 const firstThreeEigenvectors = eigensystem.eigenvectors.slice(0, k);
@@ -436,12 +401,19 @@ const featureMatrixUTransposed = math.transpose(featureMatrixU);
    // Assuming kMeansClustering and other related functions are d
    
     // Associate artists with their clusters
-    const artistsWithClusters = artists.map((artist, index) => ({
+    const clusterArray = artists.map((artist, index) => ({
         ...artist,
         cluster: clusters[index]
     }));
+    // Associate artists with their clusters
+    const artistsWithClusters = artists.map((artist, index) => {
+    artist.cluster = clusters[index]; // Assign the cluster to the artist
+   
+    return artist;
+});
 
-    return clusters;
+console.log('cluster finished')
+    return artistsWithClusters;
 
 }
 function kMeansClustering(data, k, minClusterSize) {
@@ -606,20 +578,48 @@ function calculateTotalDistance(data, centroids, clusterAssignments) {
 
 
 
-const k = 10; // Number of clusters
 
-// Call the spectralClustering function
-(async () => {
+async function spectralClusteringNationality(min, max, k) {
     try {
-        const [artists,relationships] = await findAllNationalityTechniqueAmount(100, 400);
-        const clusters = await spectralClustering(artists, relationships, k);
-        console.log(clusters);
+        const [artists, relationships] = await findAllNationalityTechniqueAmount(min, max);
+        const artistsWithClusters = await spectralClustering(artists, relationships, k);
+        return [artistsWithClusters, relationships];
+
     } catch (error) {
         console.error(error);
     }
-})();
-// Inspect the result
+}
+async function spectralClusteringBirthcountry(min, max, k) {
+    try {
+        const [artists, relationships] = await findAllBirthcountryTechniqueAmount(min, max);
+        const artistsWithClusters = await spectralClustering(artists, relationships, k);
+        return [artistsWithClusters, relationships];
 
+    } catch (error) {
+        console.error(error);
+    }
+}
+async function spectralClusteringDeathcountry(min, max, k) 
+{
+    try {
+        const [artists, relationships] = await findAllDeathcountryTechniqueAmount(min, max);
+        const artistsWithClusters = await spectralClustering(artists, relationships, k);
+        return [artistsWithClusters, relationships];
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+async function spectralClusteringMostExhibited(min, max, k) {
+    try {
+        const [artists, relationships] = await findAllMostExhibitedInTechniqueAmount(min, max);
+        const artistsWithClusters= await spectralClustering(artists, relationships, k);
+        return [artistsWithClusters, relationships];
+    } catch (error) {
+        console.error(error);
+    }
+
+}
 
 // You will need to call this function with appropriate parameters
 
@@ -635,5 +635,8 @@ module.exports = {
     findAllBirthcountryTechniqueAmount,
     findAllDeathcountryTechniqueAmount,
     findAllMostExhibitedInTechniqueAmount,
-    spectralClustering
+    spectralClusteringNationality,
+    spectralClusteringBirthcountry,
+    spectralClusteringDeathcountry,
+    spectralClusteringMostExhibited
 };
