@@ -10,12 +10,14 @@ import { ArtistService } from './services/artist.service';
 import { BarchartComponent } from './components/barchart/barchart.component';
 import { NgxSliderModule } from '@angular-slider/ngx-slider';
 import { FormsModule } from '@angular/forms'; // Import FormsModule
+import { ClusterVisComponent } from './components/clusterVis/clusterVis.component';
 @NgModule({
   declarations: [
     AppComponent,
     VisualizationComponent,
     DecisionsComponent,
-    BarchartComponent
+    BarchartComponent,
+    ClusterVisComponent
   ],
   imports: [
     BrowserModule,
