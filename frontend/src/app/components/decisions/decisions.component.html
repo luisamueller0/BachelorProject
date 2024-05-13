@@ -52,6 +52,13 @@
   <label class="dropdown-label">Select K Value (Dependent on Artists):</label>
   <div class="dropdown-group2">
     <ngx-slider [(value)]="k" [options]="kOptions" (valueChange)="onKChange()"></ngx-slider>
+  <!-- Custom Checkbox as a hook icon -->
+  <div class="checkbox-group">
+    <input type="checkbox" id="confirmK" [(ngModel)]="useK" (change)="onKChange()" hidden/>
+    <label for="confirmK" class="custom-checkbox">
+      <i class="fas fa-check" *ngIf="useK"></i> <!-- Hook icon shows only when checked -->
+    </label>
+  </div>
   </div>
 </div>
 

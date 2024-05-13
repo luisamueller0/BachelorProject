@@ -14,7 +14,6 @@ export class DecisionsComponent implements OnInit {
   constructor(private decisionService: DecisionService, private artistService: ArtistService) { }
 
   ngOnInit() {
-
     // Fetch default data from the database and set it as default values
     this.artistService.getAmountArtistsWithNationalityTechnique(this.range).subscribe((data) => {
       this.artists = data[0];
@@ -24,6 +23,8 @@ export class DecisionsComponent implements OnInit {
       console.error('Error fetching default data:', error);
     });
   }
+
+
   artists: Artist[] = [];
   relationships: exhibited_with[] = [];
   range: number[] = [300, 400];  // Initial range values
@@ -39,6 +40,7 @@ export class DecisionsComponent implements OnInit {
     ceil: 5,
     step: 1
   };
+  useK = false; // whether to use the selected k
 
 
   selectedSunburst: string=''
@@ -69,8 +71,14 @@ export class DecisionsComponent implements OnInit {
   }
 
   onKChange() {
-    this.decisionService.changeK(this.k);
-    console.log('k:', this.k)
+    if(this.useK) {
+      this.decisionService.changeK(this.k);
+      console.log('k:', this.k)
+      }
+      // Add a delay before resetting useRange to show the green check mark
+      setTimeout(() => {
+        this.useK = false; // Reset the checkbox after action
+      }, 2000);  // Adjust delay as needed
   }
 
   onRangeChange() {

@@ -396,8 +396,12 @@ for (let i = 0; i < firstThreeEigenvectors.length; i++) {
 
 // Transpose the feature matrix to have columns as data points
 const featureMatrixUTransposed = math.transpose(featureMatrixU);
-   const clusters = kMeansClustering(featureMatrixUTransposed, k);
-   
+      // Perform initial kMeans Clustering
+      let clusters = kMeansClustering(featureMatrixUTransposed, k, 1); // Assume minClusterSize = 1 for basic example
+
+      // Redistribute clusters here
+      clusters = redistributeClusters(featureMatrixUTransposed, clusters, k, 5, 15); // Example sizes
+  
    // Assuming kMeansClustering and other related functions are d
    
     // Associate artists with their clusters
@@ -408,14 +412,72 @@ const featureMatrixUTransposed = math.transpose(featureMatrixU);
     // Associate artists with their clusters
     const artistsWithClusters = artists.map((artist, index) => {
     artist.cluster = clusters[index]; // Assign the cluster to the artist
-   
-    return artist;
+        
 });
+   
+    // Initialize an array of k empty arrays for the clusters
+const clusteredArtists = Array.from({ length: k }, () => []);
+
+// Populate the cluster arrays with artists
+artists.forEach((artist, index) => {
+  const clusterIndex = clusters[index]; // Retrieve the cluster index assigned to the artist
+  clusteredArtists[clusterIndex].push(artist); // Add the artist to the corresponding cluster
+});
+console.log(clusteredArtists.length, clusteredArtists[0].length, clusteredArtists[1].length)
 
 console.log('cluster finished')
-    return artistsWithClusters;
+    return clusteredArtists;
 
 }
+function redistributeClusters(data, clusters, k, minClusterSize, maxClusterSize) {
+    const centroids = calculateCentroids(data, clusters, k);
+    let clusterSizes = new Array(k).fill(0);
+    clusters.forEach(cluster => clusterSizes[cluster]++);
+
+    const needsHelp = clusterSizes.map((size, index) => ({
+        index,
+        size,
+        type: size < minClusterSize ? 'undersized' : (size > maxClusterSize ? 'oversized' : 'ok')
+    })).filter(stat => stat.type !== 'ok');
+
+    needsHelp.forEach(need => {
+        if (need.type === 'oversized') {
+            data.forEach((point, idx) => {
+                if (clusters[idx] === need.index) {
+                    const currentClusterIndex = need.index;
+                    let closest = { index: -1, distance: Infinity };
+                    
+                    centroids.forEach((centroid, index) => {
+                        if (index !== currentClusterIndex && clusterSizes[index] < maxClusterSize) {
+                            const distance = euclideanDistance(point, centroid);
+                            if (distance < closest.distance) {
+                                closest = { index, distance };
+                            }
+                        }
+                    });
+
+                    if (closest.index !== -1) {
+                        clusters[idx] = closest.index;
+                        clusterSizes[currentClusterIndex]--;
+                        clusterSizes[closest.index]++;
+                    }
+                }
+            });
+        }
+    });
+
+    return clusters;
+}
+function calculateCentroids(data, clusters, k) {
+    const centroids = Array(k).fill(null).map(() => []);
+    data.forEach((point, index) => {
+        centroids[clusters[index]].push(point);
+    });
+    return centroids.map(cluster => cluster.reduce((mean, point) => 
+        mean.map((m, idx) => m + point[idx] / cluster.length), new Array(data[0].length).fill(0))
+    );
+}
+
 function kMeansClustering(data, k, minClusterSize) {
     const maxIterations = 500;
     let bestCentroids = [];
@@ -494,17 +556,24 @@ function kMeansClustering(data, k, minClusterSize) {
 
 
 function initializeCentroids(data, k) {
-    const centroids = [];
-    const usedIndices = new Set();
-    while (centroids.length < k) {
-        const index = Math.floor(Math.random() * data.length);
-        if (!usedIndices.has(index)) {
-            centroids.push(data[index]);
-            usedIndices.add(index);
-        }
+    const centroids = [data[Math.floor(Math.random() * data.length)]]; // Start with one random centroid
+    for (let i = 1; i < k; i++) {
+        const distances = data.map(point => Math.min(...centroids.map(centroid => euclideanDistance(point, centroid))));
+        const totalDistance = distances.reduce((a, b) => a + b, 0);
+        const probabilities = distances.map(distance => distance / totalDistance);
+        const cumulativeProbabilities = probabilities.reduce((acc, prob, index) => {
+            if (index === 0) acc.push(prob);
+            else acc.push(acc[index - 1] + prob);
+            return acc;
+        }, []);
+        
+        const rand = Math.random();
+        const nextCentroidIndex = cumulativeProbabilities.findIndex(cumProb => cumProb >= rand);
+        centroids.push(data[nextCentroidIndex]);
     }
     return centroids;
 }
+
 
 function assignPointsToCentroids(data, centroids) {
     const clusterAssignments = [];
@@ -582,8 +651,8 @@ function calculateTotalDistance(data, centroids, clusterAssignments) {
 async function spectralClusteringNationality(min, max, k) {
     try {
         const [artists, relationships] = await findAllNationalityTechniqueAmount(min, max);
-        const artistsWithClusters = await spectralClustering(artists, relationships, k);
-        return [artistsWithClusters, relationships];
+        const clusteredArtists = await spectralClustering(artists, relationships, k);
+        return [clusteredArtists, relationships];
 
     } catch (error) {
         console.error(error);

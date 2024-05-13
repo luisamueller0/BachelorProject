@@ -154,7 +154,7 @@ updateCluster(k: number) {
   console.log('k value:', k)
   this.artistService.clusterAmountArtistsNationality(range[0], k).subscribe((data) => {
     console.log('k data', data)
-    const artists = data[0];
+    const artists = data[0][0];
     const relationships = data[1];
     console.log('k artists:', artists.length)
     console.log('k relationships:', relationships.length)
