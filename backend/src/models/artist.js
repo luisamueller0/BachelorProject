@@ -410,7 +410,7 @@ const featureMatrixUTransposed = math.transpose(featureMatrixU);
         cluster: clusters[index]
     }));
     // Associate artists with their clusters
-    const artistsWithClusters = artists.map((artist, index) => {
+    const clusterAssignments = artists.map((artist, index) => {
     artist.cluster = clusters[index]; // Assign the cluster to the artist
         
 });
@@ -423,10 +423,36 @@ artists.forEach((artist, index) => {
   const clusterIndex = clusters[index]; // Retrieve the cluster index assigned to the artist
   clusteredArtists[clusterIndex].push(artist); // Add the artist to the corresponding cluster
 });
+
+const clusterMap = new Map();
+artists.forEach((artist, index) => {
+    clusterMap.set(artist.id, clusters[index]); // Correctly associate artist ID with cluster index
+});
+
+
+
+const intraClusterRelationships = Array.from({ length: k }, () => []);
+    const interClusterRelationships = [];
+
+    relationships.forEach(relationship => {
+        const clusterA = clusterMap.get(relationship.startId);
+        const clusterB = clusterMap.get(relationship.endId);
+    
+        if (clusterA === clusterB) {
+            intraClusterRelationships[clusterA].push(relationship);
+        } else {
+            interClusterRelationships.push(relationship);
+        }
+    });
+    
 console.log(clusteredArtists.length, clusteredArtists[0].length, clusteredArtists[1].length)
 
 console.log('cluster finished')
-    return clusteredArtists;
+return {
+    clusteredArtists,
+    intraClusterRelationships,
+    interClusterRelationships  // You might want to further organize this by cluster pairs if needed
+};
 
 }
 function redistributeClusters(data, clusters, k, minClusterSize, maxClusterSize) {
@@ -652,7 +678,7 @@ async function spectralClusteringNationality(min, max, k) {
     try {
         const [artists, relationships] = await findAllNationalityTechniqueAmount(min, max);
         const clusteredArtists = await spectralClustering(artists, relationships, k);
-        return [clusteredArtists, relationships];
+        return clusteredArtists;
 
     } catch (error) {
         console.error(error);
