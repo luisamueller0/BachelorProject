@@ -430,29 +430,46 @@ artists.forEach((artist, index) => {
 });
 
 
-
 const intraClusterRelationships = Array.from({ length: k }, () => []);
-    const interClusterRelationships = [];
+const interClusterRelationshipsMap = new Map();
 
-    relationships.forEach(relationship => {
-        const clusterA = clusterMap.get(relationship.startId);
-        const clusterB = clusterMap.get(relationship.endId);
-    
-        if (clusterA === clusterB) {
-            intraClusterRelationships[clusterA].push(relationship);
-        } else {
-            interClusterRelationships.push(relationship);
+relationships.forEach(relationship => {
+    const clusterA = clusterMap.get(relationship.startId);
+    const clusterB = clusterMap.get(relationship.endId);
+
+    if (clusterA === clusterB) {
+        intraClusterRelationships[clusterA].push(relationship);
+    } else {
+        const key = `${Math.min(clusterA, clusterB)}-${Math.max(clusterA, clusterB)}`;
+        if (!interClusterRelationshipsMap.has(key)) {
+            interClusterRelationshipsMap.set(key, { 
+                startId: Math.min(clusterA, clusterB), 
+                endId: Math.max(clusterA, clusterB), 
+                sharedExhibitions: 0, 
+                sharedExhibitionMinArtworks: 0 
+            });
         }
-    });
-    
+        const aggregatedRelationship = interClusterRelationshipsMap.get(key);
+        aggregatedRelationship.sharedExhibitions += relationship.sharedExhibitions;
+        aggregatedRelationship.sharedExhibitionMinArtworks += relationship.sharedExhibitionMinArtworks;
+    }
+});
+
+const interClusterRelationships = Array.from(interClusterRelationshipsMap.values()).map(rel => 
+    new exhibited_with(
+        { id: rel.startId }, 
+        { id: rel.endId }, 
+        { sharedExhibitions: rel.sharedExhibitions, sharedExhibitionMinArtworks: rel.sharedExhibitionMinArtworks }
+    )
+);
 console.log(clusteredArtists.length, clusteredArtists[0].length, clusteredArtists[1].length)
 
 console.log('cluster finished')
-return {
+return [
     clusteredArtists,
     intraClusterRelationships,
     interClusterRelationships  // You might want to further organize this by cluster pairs if needed
-};
+];
 
 }
 function redistributeClusters(data, clusters, k, minClusterSize, maxClusterSize) {

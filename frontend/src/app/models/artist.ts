@@ -42,6 +42,13 @@ interface ArtistData {
         country: string
     };
   }
+
+  interface ClusterNode extends d3.SimulationNodeDatum {
+    clusterId: number;
+    artists: Artist[];
+    outerRadius: number;
+    innerRadius: number;
+  }
   
   class Artist {
     id: number;
@@ -123,4 +130,4 @@ interface ArtistData {
   
 
   
-  export { Artist, ArtistData, ArtistNode };
+  export { Artist, ArtistData, ArtistNode, ClusterNode};
