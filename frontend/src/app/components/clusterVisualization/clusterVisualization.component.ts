@@ -5,6 +5,12 @@ import { Subscription } from 'rxjs';
 import * as d3 from 'd3';
 import { DecisionService } from '../../services/decision.service';
 import { ArtistService } from '../../services/artist.service';
+interface InterCommunityEdge extends d3.SimulationLinkDatum<ClusterNode> {
+  source: number | ClusterNode;
+  target: number | ClusterNode;
+  sharedExhibitionMinArtworks: number;
+}
+
 
 @Component({
   selector: 'app-clusterVisualization',
@@ -17,7 +23,7 @@ export class ClusterVisualizationComponent implements OnInit {
   // Data from backend
   private clusters: Artist[][] = [];
   private intraCommunityEdges: exhibited_with[][] = [];
-  private interCommunityEdges: exhibited_with[] = [];
+  private interCommunityEdges: InterCommunityEdge[] = [];
 
   // User Interactions
   private subscriptions: Subscription = new Subscription();
@@ -120,65 +126,84 @@ private edgeColorScale = d3.scaleSequential(d3.interpolateGreys) // You can use 
     // Fetch data from backend
     this.artistService.clusterAmountArtistsNationality([200, 400], 5)
       .subscribe(data => {
-        console.log(data)
+        console.log(data);
         this.clusters = data[0];
         this.intraCommunityEdges = data[1] as exhibited_with[][];
-        this.interCommunityEdges = data[2] as exhibited_with[];
-        console.log('intercommunity edge:', this.interCommunityEdges[0])
-        console.log(this.clusters, this.intraCommunityEdges, this.interCommunityEdges)
-
-         // Calculate degrees for each cluster
-      this.calculateNodeDegreesForClusters();
+        const interCommunityEdgesRaw = data[2] as exhibited_with[];
+        console.log('intercommunity edges:', interCommunityEdgesRaw);
+  
+        // Transform the interCommunityEdges to InterCommunityEdge
+        this.interCommunityEdges = interCommunityEdgesRaw.map(edge => ({
+          source: edge.startId,
+          target: edge.endId,
+          sharedExhibitionMinArtworks: edge.sharedExhibitionMinArtworks
+        }));
+  
+        // Calculate degrees for each cluster
+        this.calculateNodeDegreesForClusters();
+        
         // Call createGlobalColorScale after clusters are initialized
         this.globalColorScale = this.createGlobalColorScale();
-
+  
         this.initializeVisualization();
-
+  
         this.isLoading = false;
       }, error => {
         console.error('There was an error', error);
         this.isLoading = false;
       });
   }
-
+  
+  
   private initializeVisualization() {
     this.createSvg();
-    this.renderClusters();
-  }
+    this.renderClusters(); // Render clusters first
+    this.renderInterCommunityEdges(); // Render inter-community edges next
+ }
+ 
 
-  private createSvg(): void {
+private createSvg(): void {
     const zoom: d3.ZoomBehavior<Element, unknown> = d3.zoom<Element, unknown>()
-      .scaleExtent([0.1, 10])
-      .on('zoom', (event: any) => {
-        this.g.attr('transform', event.transform);
-      });
+        .scaleExtent([0.1, 10])
+        .on('zoom', (event: any) => {
+            this.g.attr('transform', event.transform);
+        });
 
     this.svg = d3.select("figure#network")
-      .append("svg")
-      .attr("width", this.width + (this.margin * 2))
-      .attr("height", this.height + (this.margin * 2))
-      .call(zoom as any) // Cast to any to resolve type issue
-      .append("g")
-      .attr("transform", `translate(${this.width / 2 + this.margin}, ${this.height / 2 + this.margin})`);
+        .append("svg")
+        .attr("width", this.width + (this.margin * 2))
+        .attr("height", this.height + (this.margin * 2))
+        .call(zoom as any) // Cast to any to resolve type issue
+        .append("g")
+        .attr("transform", `translate(${this.width / 2 + this.margin}, ${this.height / 2 + this.margin})`);
 
     this.g = this.svg.append('g');
+
+    // Add a group for clusters
+    this.g.append('g')
+        .attr('class', 'clusters');
+
+    // Add a group for inter-community edges
+    this.g.append('g')
+        .attr('class', 'inter-community-edges');
+
     // Debug: Log the SVG element to ensure it is created correctly
     console.log("SVG element created:", this.svg);
-  }
+}
 
-  private renderClusters(): void {
+private renderClusters(): void {
     const maxSize = Math.max(...this.clusters.map(cluster => cluster.length));
 
     const clusterNodes: ClusterNode[] = this.clusters.map((cluster, index) => {
-      const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, maxSize);
-      return {
-        clusterId: index,
-        artists: cluster,
-        outerRadius: outerRadius,
-        innerRadius: innerRadius,
-        x: Math.random() * this.width - this.width / 2,
-        y: Math.random() * this.height - this.height / 2
-      };
+        const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, maxSize);
+        return {
+            clusterId: index,
+            artists: cluster,
+            outerRadius: outerRadius,
+            innerRadius: innerRadius,
+            x: Math.random() * this.width - this.width / 2,
+            y: Math.random() * this.height - this.width / 2
+        };
     });
 
     // Debug: Log the initial cluster nodes to ensure they have correct properties
@@ -187,132 +212,55 @@ private edgeColorScale = d3.scaleSequential(d3.interpolateGreys) // You can use 
     const clusterGroups = clusterNodes.map(clusterNode => this.createClusterGroup(clusterNode));
 
     // Bind the data to the cluster elements using d3.join()
-    this.g.selectAll(".cluster")
-      .data(clusterNodes)
-      .join(
-        (enter: any) => enter.append("g").attr("class", "cluster"),
-        (update: any) => update,
-        (exit: any) => exit.remove()
-      )
-      .each(function (this: any, d: any, i: number) { // Add type annotation to 'this'
-        d3.select(this).selectAll("*").remove(); // Clear any existing content
-        d3.select(this).append(() => clusterGroups[i]);
-      });
-
-    // Render edges between clusters
-    this.renderInterCommunityEdges(clusterNodes);
+    this.g.select('.clusters').selectAll(".cluster")
+        .data(clusterNodes)
+        .join(
+            (enter: any) => enter.append("g").attr("class", "cluster"),
+            (update: any) => update,
+            (exit: any) => exit.remove()
+        )
+        .each(function (this: any, d: any, i: number) { // Add type annotation to 'this'
+            d3.select(this).selectAll("*").remove(); // Clear any existing content
+            d3.select(this).append(() => clusterGroups[i]);
+        });
 
     // Simulate the clusters
     this.simulateClusters(clusterNodes);
-  }
-
- private renderInterCommunityEdges(clusterNodes: ClusterNode[]): void {
-  const edgeScale = d3.scaleLinear()
-    .domain(d3.extent(this.interCommunityEdges, d => d.sharedExhibitionMinArtworks) as [number, number])
-    .range([1, 50]); // Adjust range as needed for stroke width
-
-  console.log(this.interCommunityEdges[0]);
-
-  this.g.selectAll(".inter-community-edge")
-    .data(this.interCommunityEdges)
-    .enter()
-    .append("line")
-    .attr("class", "inter-community-edge")
-    .style("stroke", 'gray')
-    .style("stroke-width", (d: any) => edgeScale(d.sharedExhibitionMinArtworks))
-    .attr("x1", (d: any) => {
-      const startCluster = this.findClusterNodeById(clusterNodes, d.startId);
-      const endCluster = this.findClusterNodeById(clusterNodes, d.endId);
-      const intersection = this.getIntersectionPoint(startCluster, endCluster.x, endCluster.y);
-      if(intersection !== undefined){
-      return intersection.x;
-      }else{
-        return 0;
-      }
-    })
-    .attr("y1", (d: any) => {
-      const startCluster = this.findClusterNodeById(clusterNodes, d.startId);
-      const endCluster = this.findClusterNodeById(clusterNodes, d.endId);
-      const intersection = this.getIntersectionPoint(startCluster, endCluster.x, endCluster.y);
-      if(intersection !== undefined){
-      return intersection.y;
-      }else{
-        return 0;
-      }
-    })
-    .attr("x2", (d: any) => {
-      const endCluster = this.findClusterNodeById(clusterNodes, d.endId);
-      const startCluster = this.findClusterNodeById(clusterNodes, d.startId);
-      const intersection = this.getIntersectionPoint(endCluster, startCluster.x, startCluster.y);
-      if(intersection !== undefined){
-      return intersection.x;
-      }else{
-        return 0;
-      }
-    })
-    .attr("y2", (d: any) => {
-      const endCluster = this.findClusterNodeById(clusterNodes, d.endId);
-      const startCluster = this.findClusterNodeById(clusterNodes, d.startId);
-      const intersection = this.getIntersectionPoint(endCluster, startCluster.x, startCluster.y);
-      if(intersection !== undefined){
-      return intersection.y;
-      }else{
-        return 0;
-      }
-    });
 }
 
-
-  private findClusterNodeById(clusterNodes: ClusterNode[], id: number): ClusterNode {
+private findClusterNodeById(clusterNodes: ClusterNode[], id: number): ClusterNode {
     return clusterNodes.find(clusterNode => clusterNode.clusterId === id)!;
-  }
+}
 
-  private simulateClusters(clusterNodes: ClusterNode[]): void {
-    this.clusterSimulation = d3.forceSimulation(clusterNodes)
-      .force("collision", d3.forceCollide<ClusterNode>().radius(d => d.outerRadius + 20)) // Increase padding
-      .force("x", d3.forceX(0).strength(0.2)) // Increase the strength
-      .force("y", d3.forceY(0).strength(0.2)) // Increase the strength
-      .on("tick", () => this.ticked());
+private simulateClusters(clusterNodes: ClusterNode[]): void {
+  // Convert interCommunityEdges to the format required by d3.forceLink
+  const links: InterCommunityEdge[] = this.interCommunityEdges;
 
-    // Debug: Log the cluster simulation setup
-    console.log("Cluster simulation setup:", this.clusterSimulation);
-  }
+  // Define a scale to adjust the link distance based on shared exhibitions
+  const linkDistanceScale = d3.scaleLinear()
+    .domain(d3.extent(links, d => d.sharedExhibitionMinArtworks) as [number, number])
+    .range([50, 300]); // Adjust these values as needed for your visualization
 
-  private ticked(): void {
+  this.clusterSimulation = d3.forceSimulation<ClusterNode>(clusterNodes)
+    .force("collision", d3.forceCollide<ClusterNode>().radius(d => d.outerRadius + 20)) // Increase padding
+    .force("link", d3.forceLink<ClusterNode, InterCommunityEdge>(links)
+      .id(d => d.clusterId)
+      .distance(d => linkDistanceScale(d.sharedExhibitionMinArtworks))
+    )
+    .force("x", d3.forceX(0).strength(0.2)) // Increase the strength
+    .force("y", d3.forceY(0).strength(0.2)) // Increase the strength
+    .on("tick", () => this.ticked());
+
+  // Debug: Log the cluster simulation setup
+  console.log("Cluster simulation setup with links:", this.clusterSimulation);
+}
+
+private ticked(): void {
   const clusterNodes = this.clusterSimulation!.nodes() as ClusterNode[];
 
   // Update the cluster positions
   this.g.selectAll(".cluster")
-    .attr("transform", (d: ClusterNode) => {
-      return `translate(${d.x}, ${d.y})`;
-    });
-
-  // Update inter-community edges
-  this.g.selectAll(".inter-community-edge")
-    .attr("x1", (d: any) => {
-      const startCluster = this.findClusterNodeById(clusterNodes, d.startId);
-      const endCluster = this.findClusterNodeById(clusterNodes, d.endId);
-      const intersection = this.getIntersectionPoint(startCluster, endCluster.x ?? 0, endCluster.y ?? 0);
-      return intersection ? intersection.x : 0;
-    })
-    .attr("y1", (d: any) => {
-      const startCluster = this.findClusterNodeById(clusterNodes, d.startId);
-      const endCluster = this.findClusterNodeById(clusterNodes, d.endId);
-      const intersection = this.getIntersectionPoint(startCluster, endCluster.x ?? 0, endCluster.y ?? 0);
-      return intersection ? intersection.y : 0;
-    })
-    .attr("x2", (d: any) => {
-      const endCluster = this.findClusterNodeById(clusterNodes, d.endId);
-      const startCluster = this.findClusterNodeById(clusterNodes, d.startId);
-      const intersection = this.getIntersectionPoint(endCluster, startCluster.x ?? 0, startCluster.y ?? 0);
-      return intersection ? intersection.x : 0;
-    })
-    .attr("y2", (d: any) => {
-      const endCluster = this.findClusterNodeById(clusterNodes, d.endId);
-      const startCluster = this.findClusterNodeById(clusterNodes, d.startId);
-      const intersection = this.getIntersectionPoint(endCluster, startCluster.x ?? 0, startCluster.y ?? 0);
-      return intersection ? intersection.y : 0;
-    });
+    .attr("transform", (d: ClusterNode) => `translate(${d.x}, ${d.y})`);
 
   // Update positions of nodes within clusters
   this.g.selectAll(".cluster .artist-node")
@@ -324,8 +272,99 @@ private edgeColorScale = d3.scaleSequential(d3.interpolateGreys) // You can use 
     .attr("y1", (d: any) => d.source.y)
     .attr("x2", (d: any) => d.target.x)
     .attr("y2", (d: any) => d.target.y);
+
+  this.g.selectAll(".inter-community-edge")
+    .attr("x1", (d: any) => {
+      const startCluster = d.source as ClusterNode;
+      const endCluster = d.target as ClusterNode;
+      const { x1 } = this.calculateIntersectionPoint(startCluster, endCluster);
+      return x1;
+    })
+    .attr("y1", (d: any) => {
+      const startCluster = d.source as ClusterNode;
+      const endCluster = d.target as ClusterNode;
+      const { y1 } = this.calculateIntersectionPoint(startCluster, endCluster);
+      return y1;
+    })
+    .attr("x2", (d: any) => {
+      const startCluster = d.source as ClusterNode;
+      const endCluster = d.target as ClusterNode;
+      const { x2 } = this.calculateIntersectionPoint(startCluster, endCluster);
+      return x2;
+    })
+    .attr("y2", (d: any) => {
+      const startCluster = d.source as ClusterNode;
+      const endCluster = d.target as ClusterNode;
+      const { y2 } = this.calculateIntersectionPoint(startCluster, endCluster);
+      return y2;
+    });
 }
 
+
+   
+
+private calculateIntersectionPoint(source: ClusterNode, target: ClusterNode): { x1: number, y1: number, x2: number, y2: number } {
+  let x1 = 0;
+  let y1 = 0;
+  let x2 = 0;
+  let y2 = 0;
+
+  if (source.y !== undefined && source.x !== undefined && target.y !== undefined && target.x !== undefined) {
+    const angle = Math.atan2(target.y - source.y, target.x - source.x);
+
+    x1 = source.x + source.outerRadius * Math.cos(angle);
+    y1 = source.y + source.outerRadius * Math.sin(angle);
+
+    x2 = target.x - target.outerRadius * Math.cos(angle);
+    y2 = target.y - target.outerRadius * Math.sin(angle);
+  }
+
+  return { x1, y1, x2, y2 };
+}
+
+
+private renderInterCommunityEdges(): void {
+  const edgeScale = d3.scaleLinear()
+    .domain(d3.extent(this.interCommunityEdges, d => d.sharedExhibitionMinArtworks) as [number, number])
+    .range([1, 50]); // Adjust range as needed for stroke width
+
+  const edges = this.g.selectAll(".inter-community-edge")
+    .data(this.interCommunityEdges)
+    .enter()
+    .append("line")
+    .attr("class", "inter-community-edge")
+    .style("stroke", "#aaa")
+    .style("stroke-width", (d: any) => edgeScale(d.sharedExhibitionMinArtworks))
+    .attr("x1", (d: any) => {
+      const startCluster = this.findClusterNodeById(this.clusterSimulation!.nodes(), d.startId);
+      const endCluster = this.findClusterNodeById(this.clusterSimulation!.nodes(), d.endId);
+      const { x1 } = this.calculateIntersectionPoint(startCluster, endCluster);
+      return x1;
+    })
+    .attr("y1", (d: any) => {
+      const startCluster = this.findClusterNodeById(this.clusterSimulation!.nodes(), d.startId);
+      const endCluster = this.findClusterNodeById(this.clusterSimulation!.nodes(), d.endId);
+      const { y1 } = this.calculateIntersectionPoint(startCluster, endCluster);
+      return y1;
+    })
+    .attr("x2", (d: any) => {
+      const startCluster = this.findClusterNodeById(this.clusterSimulation!.nodes(), d.startId);
+      const endCluster = this.findClusterNodeById(this.clusterSimulation!.nodes(), d.endId);
+      const { x2 } = this.calculateIntersectionPoint(startCluster, endCluster);
+      return x2;
+    })
+    .attr("y2", (d: any) => {
+      const startCluster = this.findClusterNodeById(this.clusterSimulation!.nodes(), d.startId);
+      const endCluster = this.findClusterNodeById(this.clusterSimulation!.nodes(), d.endId);
+      const { y2 } = this.calculateIntersectionPoint(startCluster, endCluster);
+      return y2;
+    });
+
+  // Debug: Log the edges to ensure they are created correctly
+  console.log("Inter-community edges:", edges);
+}
+
+  
   private createClusterGroup(clusterNode: ClusterNode): SVGGElement {
     const arcGenerator = d3.arc<any>()
       .innerRadius(clusterNode.innerRadius)
@@ -385,6 +424,7 @@ private edgeColorScale = d3.scaleSequential(d3.interpolateGreys) // You can use 
     const clusterGroup = d3.create("svg:g")
       .attr("class", "cluster")
       .attr("transform", `translate(${clusterNode.x}, ${clusterNode.y})`);
+
 
     // Append paths for the sunburst
     clusterGroup.selectAll("path")
@@ -560,24 +600,17 @@ private edgeColorScale = d3.scaleSequential(d3.interpolateGreys) // You can use 
   // Helper methods
 
 
-// Function to calculate the intersection point of a line with a circle
-private getIntersectionPoint(cluster: ClusterNode, targetX: undefined|number, targetY: number|undefined): { x: number, y: number }|undefined {
-  if(cluster.x !== undefined && cluster.y !== undefined && targetX !== undefined && targetY !== undefined){
-    const dx = targetX - cluster.x;
-    const dy = targetY - cluster.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    const scaleFactor = cluster.outerRadius / distance;
-    return {
-      x: cluster.x + dx * scaleFactor,
-      y: cluster.y + dy * scaleFactor
-    }
-  }
-  else{
-    return undefined;
-  }
+    private calculateOuterRadiusPoint(cluster: ClusterNode, angle: number): { x: number, y: number } {
+      let x = 0;
+      let y = 0;
+      if (cluster.x !== undefined && cluster.y !== undefined) {
+        x = cluster.x + cluster.outerRadius * Math.cos(angle);
+        y = cluster.y + cluster.outerRadius * Math.sin(angle);
+      }
+      
+      return { x, y };
+   }
  
-}
-
 
   private getNodeSize(clusterGroup:any):number[]{
     // Select all circles with the class 'node'
