@@ -13,15 +13,7 @@ Where:
 
 const artist = Router();
 
-artist.get('/', async (req, res) => {
-    try {
-        const result = await artistModel.findAll();
-        res.json(result);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Internal server error" });
-    }
-});
+
 
 artist.get('/nationality/technique', async (req, res) => {
     try {

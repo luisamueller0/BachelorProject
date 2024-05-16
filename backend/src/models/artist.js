@@ -1,4 +1,12 @@
 const dbSemaphore = require('../semaphoreHandler');
+const math = require('mathjs');
+
+let latestArtists = [];
+let latestRelationships = [];
+let latestMinLimit = -1;
+let latestMaxLimit = -1;
+
+
 class Artist {
     constructor(data) {
         this.id = Number(data.id); 
@@ -66,13 +74,6 @@ class exhibited_with {
         this.sharedExhibitionMinArtworks = relationshipData.sharedExhibitionMinArtworks;
     }
 }
-
-
-const findAll = async () => {
-    const { session } = require('../db');
-    const result = await session.run('MATCH (a:Artist) RETURN a LIMIT 25');
-    return result.records.map(record => record.get('a').properties);
-};
 
 const findAllNationalityTechnique = async () => {
     const { session } = require('../db');
@@ -288,44 +289,6 @@ const findAllTechniques = async () => {
 
 
 
-
-const processResult = (result) => {
-    const artistsId = new Set();
-    const relationships = [];
-    const artists = [];
-    
-    result.records.forEach(record => {
-        const relationship = record.get('p');
-
-        const startData = relationship.start.properties;
-        const endData = relationship.end.properties;
-        const relationshipData = relationship.segments[0].relationship.properties;
-        const relation = new exhibited_with(startData, endData, relationshipData);
-        
-        relationships.push(relation);
-    
-        // Check if the artist with the same ID hasn't been created yet
-        const artistId = startData.id;
-        if (!artistsId.has(artistId)) {
-            const artist = new Artist(startData);
-            artistsId.add(artistId);
-            artists.push(artist);
-            // Store the artist object as needed
-        }
-    
-        const otherArtistId = endData.id;
-        if (!artistsId.has(otherArtistId)) {
-            const otherArtist = new Artist(endData);
-            artistsId.add(otherArtistId);
-            artists.push(otherArtist);
-        }
-    });
-
-    return [artists, relationships];
-};
-
-const math = require('mathjs');
-
   // Assuming 'artists' is an array of artist nodes and 'relationships' is an array of edges with weights
 const normalizeLogarithmically = (values) => {
     const logMaxValue = Math.log1p(Math.max(...values.values()));
@@ -462,7 +425,6 @@ const interClusterRelationships = Array.from(interClusterRelationshipsMap.values
         { sharedExhibitions: rel.sharedExhibitions, sharedExhibitionMinArtworks: rel.sharedExhibitionMinArtworks }
     )
 );
-console.log(clusteredArtists.length, clusteredArtists[0].length, clusteredArtists[1].length)
 
 console.log('cluster finished')
 return [
@@ -472,6 +434,7 @@ return [
 ];
 
 }
+
 function redistributeClusters(data, clusters, k, minClusterSize, maxClusterSize) {
     const centroids = calculateCentroids(data, clusters, k);
     let clusterSizes = new Array(k).fill(0);
@@ -511,6 +474,7 @@ function redistributeClusters(data, clusters, k, minClusterSize, maxClusterSize)
 
     return clusters;
 }
+
 function calculateCentroids(data, clusters, k) {
     const centroids = Array(k).fill(null).map(() => []);
     data.forEach((point, index) => {
@@ -597,7 +561,6 @@ function kMeansClustering(data, k, minClusterSize) {
     return bestClusterAssignments;
 }
 
-
 function initializeCentroids(data, k) {
     const centroids = [data[Math.floor(Math.random() * data.length)]]; // Start with one random centroid
     for (let i = 1; i < k; i++) {
@@ -616,7 +579,6 @@ function initializeCentroids(data, k) {
     }
     return centroids;
 }
-
 
 function assignPointsToCentroids(data, centroids) {
     const clusterAssignments = [];
@@ -687,26 +649,73 @@ function calculateTotalDistance(data, centroids, clusterAssignments) {
     return totalDistance;
 }
 
+const processResult = (result) => {
+    const artistsId = new Set();
+    const relationships = [];
+    const artists = [];
+    
+    result.records.forEach(record => {
+        const relationship = record.get('p');
+
+        const startData = relationship.start.properties;
+        const endData = relationship.end.properties;
+        const relationshipData = relationship.segments[0].relationship.properties;
+        const relation = new exhibited_with(startData, endData, relationshipData);
+        
+        relationships.push(relation);
+    
+        // Check if the artist with the same ID hasn't been created yet
+        const artistId = startData.id;
+        if (!artistsId.has(artistId)) {
+            const artist = new Artist(startData);
+            artistsId.add(artistId);
+            artists.push(artist);
+            // Store the artist object as needed
+        }
+    
+        const otherArtistId = endData.id;
+        if (!artistsId.has(otherArtistId)) {
+            const otherArtist = new Artist(endData);
+            artistsId.add(otherArtistId);
+            artists.push(otherArtist);
+        }
+    });
+
+    return [artists, relationships];
+};
+
 
 
 
 
 async function spectralClusteringNationality(min, max, k) {
     try {
-        const [artists, relationships] = await findAllNationalityTechniqueAmount(min, max);
-        const clusteredArtists = await spectralClustering(artists, relationships, k);
-        return clusteredArtists;
-
+        // To only retrieve the artists, when min/max got changed
+        if(latestMinLimit!=min || latestMaxLimit!=max)    {
+            const [artists, relationships] = await findAllNationalityTechniqueAmount(min, max);
+            latestArtists = artists;
+            latestRelationships = relationships;
+            latestMinLimit=min;
+            latestMaxLimit=max;
+            console.log( latestMinLimit, latestMaxLimit)
+        }
+        const artistsWithClusters= await spectralClustering(latestArtists, latestRelationships, k);
+        return artistsWithClusters;
     } catch (error) {
         console.error(error);
     }
 }
 async function spectralClusteringBirthcountry(min, max, k) {
     try {
-        const [artists, relationships] = await findAllBirthcountryTechniqueAmount(min, max);
-        const artistsWithClusters = await spectralClustering(artists, relationships, k);
-        return [artistsWithClusters, relationships];
-
+        if(latestMinLimit!=min || latestMaxLimit!=max)    {
+            const [artists, relationships] = await findAllBirthcountryTechniqueAmount(min, max);
+            latestArtists = artists;
+            latestRelationships = relationships;
+            latestMinLimit=min;
+            latestMaxLimit=max;
+        }
+        const artistsWithClusters= await spectralClustering(latestArtists, latestRelationships, k);
+        return artistsWithClusters;
     } catch (error) {
         console.error(error);
     }
@@ -714,30 +723,39 @@ async function spectralClusteringBirthcountry(min, max, k) {
 async function spectralClusteringDeathcountry(min, max, k) 
 {
     try {
-        const [artists, relationships] = await findAllDeathcountryTechniqueAmount(min, max);
-        const artistsWithClusters = await spectralClustering(artists, relationships, k);
-        return [artistsWithClusters, relationships];
-
+        if(latestMinLimit!=min || latestMaxLimit!=max)    {
+            const [artists, relationships] = await findAllDeathcountryTechniqueAmount(min, max);
+            latestArtists = artists;
+            latestRelationships = relationships;
+            latestMinLimit=min;
+            latestMaxLimit=max;
+        }
+        const artistsWithClusters= await spectralClustering(latestArtists, latestRelationships, k);
+        return artistsWithClusters;
     } catch (error) {
         console.error(error);
     }
 }
 async function spectralClusteringMostExhibited(min, max, k) {
     try {
-        const [artists, relationships] = await findAllMostExhibitedInTechniqueAmount(min, max);
-        const artistsWithClusters= await spectralClustering(artists, relationships, k);
-        return [artistsWithClusters, relationships];
+        if(latestMinLimit!=min || latestMaxLimit!=max)    {
+            const [artists, relationships] = await findAllMostExhibitedInTechniqueAmount(min, max);
+            latestArtists = artists;
+            latestRelationships = relationships;
+            latestMinLimit=min;
+            latestMaxLimit=max;
+        }
+        const artistsWithClusters= await spectralClustering(latestArtists, latestRelationships, k);
+        return artistsWithClusters;
     } catch (error) {
         console.error(error);
     }
-
 }
 
-// You will need to call this function with appropriate parameters
+
 
 
 module.exports = {
-    findAll,
     findAllNationalityTechnique,
     findAllBirthcountryTechnique,
     findAllDeathcountryTechnique,

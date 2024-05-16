@@ -155,26 +155,9 @@ updateCluster(k: number) {
   this.artistService.clusterAmountArtistsNationality(range[0], k).subscribe((data) => {
     console.log('k data', data)
 
-  /*   this.renderClusters(artists, relationships)
-  }, (error) => {
-    console.error('There was an error', error);
-  });} */
 
   });}
 }
-
-/* private renderClusters(clusters: Artist[][], relationships: exhibited_with[]): void {
-  this.svg.selectAll("*").remove(); // Clear previous SVG content if necessary
-
-  const g = this.svg.selectAll("g")
-    .data(clusters)
-    .enter()
-    .append("g")
-    .attr("transform", (d, i) => `translate(${i * 150 + 100}, ${this.height / 2})`) // Temporarily position clusters
-
-  g.each((d, i, nodes) => this.drawSunburst(d, d3.select(nodes[i])));
-}
- */
 updateArtists(range:[number[], Artist[], exhibited_with[]]){
  
   console.log('range:', range[0])

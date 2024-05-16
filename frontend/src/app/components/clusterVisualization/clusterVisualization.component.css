@@ -12,4 +12,11 @@
     opacity: 0.9;
     color: rgb(0, 0, 0);
   }
+  .loading-message {
+    font-size: 500px;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 50px;
+    color:red;
+  }
   

@@ -17,9 +17,7 @@ export class ArtistService {
   constructor(private http: HttpClient) { }
 
 
-  getArtists():Observable<any[]>{
-    return this.http.get<any[]>(this.dataUrl + '/artist').pipe(shareReplay())
-  }
+
   getArtistsWithNationalityTechnique():Observable<any[][]>{
     return this.http.get<any[][]>(this.dataUrl+ '/artist/nationality/technique').pipe(shareReplay())
   }

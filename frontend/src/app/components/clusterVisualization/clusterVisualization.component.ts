@@ -5,12 +5,13 @@ import { Subscription } from 'rxjs';
 import * as d3 from 'd3';
 import { DecisionService } from '../../services/decision.service';
 import { ArtistService } from '../../services/artist.service';
+import { SelectionService } from '../../services/selection.service';
+
 interface InterCommunityEdge extends d3.SimulationLinkDatum<ClusterNode> {
   source: number | ClusterNode;
   target: number | ClusterNode;
   sharedExhibitionMinArtworks: number;
 }
-
 
 @Component({
   selector: 'app-clusterVisualization',
@@ -19,11 +20,12 @@ interface InterCommunityEdge extends d3.SimulationLinkDatum<ClusterNode> {
 })
 export class ClusterVisualizationComponent implements OnInit {
 
-  private isLoading: boolean = true;
+  public isLoading: boolean = true;
   // Data from backend
   private clusters: Artist[][] = [];
   private intraCommunityEdges: exhibited_with[][] = [];
   private interCommunityEdges: InterCommunityEdge[] = [];
+  private clusterNodes: ClusterNode[] = [];
 
   // User Interactions
   private subscriptions: Subscription = new Subscription();
@@ -32,16 +34,16 @@ export class ClusterVisualizationComponent implements OnInit {
   private svg: any;
   private g: any; // Group for zooming
   private margin = 50;
-  private width = 2000 - (this.margin * 2);
-  private height = 2000 - (this.margin * 2);
+  private baseWidth = 2000 - (this.margin * 2);
+  private baseHeight = 2000 - (this.margin * 2);
+  private minClusterRadius = 200; // Minimum radius for each cluster
 
   // Create a color scale
-private edgeColorScale = d3.scaleSequential(d3.interpolateGreys) // You can use any color scale you prefer
-.domain([0, 1]); // Adjust the domain based on your normalized values range
-
+  private edgeColorScale = d3.scaleSequential(d3.interpolateGreys) // You can use any color scale you prefer
+    .domain([0, 1]); // Adjust the domain based on your normalized values range
 
   // For selections
-  private degreesMap:{ [clusterId: number]: Map<number, number>} = {};
+  private degreesMap: { [clusterId: number]: Map<number, number> } = {};
   private totalExhibitionsMap: Map<number, number> = new Map<number, number>();
   private totalExhibitedArtworksMap: Map<number, number> = new Map<number, number>();
   private differentTechniquesMap: Map<number, number> = new Map<number, number>();
@@ -65,10 +67,14 @@ private edgeColorScale = d3.scaleSequential(d3.interpolateGreys) // You can use 
   private countryIndexMap = new Map<string, number>();
   private globalColorScale: d3.ScaleSequential<string, number> = d3.scaleSequential(d3.interpolateSpectral); // Default color scale
 
-
   private clusterCountryCentroids: { [clusterId: number]: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } } = {};
-  constructor(private decisionService: DecisionService,
-              private artistService: ArtistService) { }
+  
+  constructor(private decisionService: DecisionService, 
+    private artistService: ArtistService,
+    private selectionService: SelectionService) {
+       // Bind the method
+    //this.handleNodeClick = this.handleNodeClick.bind(this);
+     }
 
   ngOnInit() {
     this.loadInitialData();
@@ -107,103 +113,161 @@ private edgeColorScale = d3.scaleSequential(d3.interpolateGreys) // You can use 
 
   updateCluster(k: number) {
     console.log(k);
-  }
+    const range = this.decisionService.getDecisionRange();
+    if(range[0].length !== 0){
+      console.log('range:', range)
+      console.log('k value:', k)
+      this.isLoading = true;
+      this.artistService.clusterAmountArtistsNationality(range[0], k).subscribe((data) => {
+      const clusters = data[0];
+      const intraCommunityEdges = data[1] as exhibited_with[][];
+      const interCommunityEdges = data[2] as exhibited_with[];
+      console.log('k data', data)
+      this.loadNewData(clusters, intraCommunityEdges, interCommunityEdges);
 
-  private calculateNodeDegreesForClusters(): void {
-    this.intraCommunityEdges.forEach((relationships, clusterId) => {
-      const degreeMap = new Map<number, number>();
-      relationships.forEach(rel => {
-        degreeMap.set(rel.startId, (degreeMap.get(rel.startId) || 0) + 1);
-        degreeMap.set(rel.endId, (degreeMap.get(rel.endId) || 0) + 1);
-      });
-      const normalizedDegrees = this.normalizeLinear(degreeMap);
-      this.degreesMap[clusterId] = normalizedDegrees;
+    }, error => {
+      console.error('There was an error', error);
+      this.isLoading = false;
     });
+      
+    
+    }
+  }
+loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][], interCommunityEdges: exhibited_with[]){
+  this.svg.selectAll("*").remove();
+  this.clusters = clusters;
+  this.intraCommunityEdges = intraCommunityEdges;
+  this.interCommunityEdges = interCommunityEdges.map(edge => ({
+    source: edge.startId,
+    target: edge.endId,
+    sharedExhibitionMinArtworks: edge.sharedExhibitionMinArtworks
+  }));
+  let allArtists:Artist[]= [];
+  this.clusters.forEach(cluster => {;
+    allArtists.push(...cluster);
+  });
+  this.selectedCluster = allArtists;
+  this.selectionService.selectArtist(this.selectedCluster);
+
+  // Calculate degrees for each cluster
+  this.calculateNodeDegreesForClusters();
+
+  // Call createGlobalColorScale after clusters are initialized
+  this.globalColorScale = this.createGlobalColorScale();
+
+  this.renderClusters(); // Render clusters first
+  this.renderInterCommunityEdges(); // Render inter-community edges next
+
+  this.isLoading = false;
+ 
+
+}
+  ngOnDestroy() {
+    this.subscriptions.unsubscribe();
   }
 
-
+  
   private loadInitialData() {
+   
     // Fetch data from backend
     this.artistService.clusterAmountArtistsNationality([200, 400], 5)
       .subscribe(data => {
         console.log(data);
         this.clusters = data[0];
+        
         this.intraCommunityEdges = data[1] as exhibited_with[][];
         const interCommunityEdgesRaw = data[2] as exhibited_with[];
         console.log('intercommunity edges:', interCommunityEdgesRaw);
-  
-        // Transform the interCommunityEdges to InterCommunityEdge
         this.interCommunityEdges = interCommunityEdgesRaw.map(edge => ({
           source: edge.startId,
           target: edge.endId,
           sharedExhibitionMinArtworks: edge.sharedExhibitionMinArtworks
         }));
-  
+
+        let allArtists:Artist[]= [];
+        this.clusters.forEach(cluster => {;
+          allArtists.push(...cluster);
+        });
+        this.selectedCluster = allArtists;
+        this.isLoading = false;
+        this.selectionService.selectArtist(this.selectedCluster);
+
         // Calculate degrees for each cluster
         this.calculateNodeDegreesForClusters();
-        
+
         // Call createGlobalColorScale after clusters are initialized
         this.globalColorScale = this.createGlobalColorScale();
-  
+
         this.initializeVisualization();
-  
+
         this.isLoading = false;
       }, error => {
         console.error('There was an error', error);
         this.isLoading = false;
       });
   }
-  
-  
+
   private initializeVisualization() {
     this.createSvg();
     this.renderClusters(); // Render clusters first
     this.renderInterCommunityEdges(); // Render inter-community edges next
- }
- 
+  }
 
-private createSvg(): void {
+  private createSvg(): void {
     const zoom: d3.ZoomBehavior<Element, unknown> = d3.zoom<Element, unknown>()
-        .scaleExtent([0.1, 10])
-        .on('zoom', (event: any) => {
-            this.g.attr('transform', event.transform);
-        });
-
+      .scaleExtent([0.1, 10])
+      .on('zoom', (event: any) => {
+        this.g.attr('transform', event.transform);
+      });
+  
+    // Calculate the dimensions based on the number of clusters
+    const dimensions = this.calculateSvgDimensions(this.clusters.length);
+    this.baseWidth = dimensions.width;
+    this.baseHeight = dimensions.height;
+  
     this.svg = d3.select("figure#network")
-        .append("svg")
-        .attr("width", this.width + (this.margin * 2))
-        .attr("height", this.height + (this.margin * 2))
-        .call(zoom as any) // Cast to any to resolve type issue
-        .append("g")
-        .attr("transform", `translate(${this.width / 2 + this.margin}, ${this.height / 2 + this.margin})`);
-
+      .append("svg")
+      .attr("width", this.baseWidth + (this.margin * 2))
+      .attr("height", this.baseHeight + (this.margin * 2))
+      .call(zoom as any) // Cast to any to resolve type issue
+      .append("g")
+      .attr("transform", `translate(${this.baseWidth / 2 + this.margin}, ${this.baseHeight / 2 + this.margin})`);
+  
     this.g = this.svg.append('g');
-
+  
     // Add a group for clusters
     this.g.append('g')
-        .attr('class', 'clusters');
-
+      .attr('class', 'clusters');
+  
     // Add a group for inter-community edges
     this.g.append('g')
-        .attr('class', 'inter-community-edges');
-
+      .attr('class', 'inter-community-edges');
+  
     // Debug: Log the SVG element to ensure it is created correctly
     console.log("SVG element created:", this.svg);
-}
-
-private renderClusters(): void {
+  }
+  
+  private calculateSvgDimensions(numClusters: number): { width: number, height: number } {
+    const clustersPerRow = Math.ceil(Math.sqrt(numClusters));
+    const clusterSpacing = this.minClusterRadius * 2;
+    const width = clustersPerRow * clusterSpacing;
+    const height = clustersPerRow * clusterSpacing;
+    return { width, height };
+  }
+  
+  private renderClusters(): void {
     const maxSize = Math.max(...this.clusters.map(cluster => cluster.length));
 
     const clusterNodes: ClusterNode[] = this.clusters.map((cluster, index) => {
-        const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, maxSize);
-        return {
-            clusterId: index,
-            artists: cluster,
-            outerRadius: outerRadius,
-            innerRadius: innerRadius,
-            x: Math.random() * this.width - this.width / 2,
-            y: Math.random() * this.height - this.width / 2
-        };
+      const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, maxSize);
+      return {
+        clusterId: index,
+        artists: cluster,
+        outerRadius: outerRadius,
+        innerRadius: innerRadius,
+        x: Math.random() * this.baseWidth - this.baseWidth / 2,
+        y: Math.random() * this.baseHeight - this.baseWidth / 2
+      };
     });
 
     // Debug: Log the initial cluster nodes to ensure they have correct properties
@@ -213,23 +277,23 @@ private renderClusters(): void {
 
     // Bind the data to the cluster elements using d3.join()
     this.g.select('.clusters').selectAll(".cluster")
-        .data(clusterNodes)
-        .join(
-            (enter: any) => enter.append("g").attr("class", "cluster"),
-            (update: any) => update,
-            (exit: any) => exit.remove()
-        )
-        .each(function (this: any, d: any, i: number) { // Add type annotation to 'this'
-            d3.select(this).selectAll("*").remove(); // Clear any existing content
-            d3.select(this).append(() => clusterGroups[i]);
-        });
+      .data(clusterNodes)
+      .join(
+        (enter: any) => enter.append("g").attr("class", "cluster"),
+        (update: any) => update,
+        (exit: any) => exit.remove()
+      )
+      .each(function (this: any, d: any, i: number) { // Add type annotation to 'this'
+        d3.select(this).selectAll("*").remove(); // Clear any existing content
+        d3.select(this).append(() => clusterGroups[i]);
+      });
 
+      this.clusterNodes = clusterNodes;
     // Simulate the clusters
     this.simulateClusters(clusterNodes);
-}
-
-private findClusterNodeById(clusterNodes: ClusterNode[], id: number): ClusterNode {
-    return clusterNodes.find(clusterNode => clusterNode.clusterId === id)!;
+  }
+private findClusterNodeById(id: number): number {
+    return this.clusterNodes.findIndex(clusterNode => clusterNode.clusterId === id)!;
 }
 
 private simulateClusters(clusterNodes: ClusterNode[]): void {
@@ -242,7 +306,7 @@ private simulateClusters(clusterNodes: ClusterNode[]): void {
     .range([50, 300]); // Adjust these values as needed for your visualization
 
   this.clusterSimulation = d3.forceSimulation<ClusterNode>(clusterNodes)
-    .force("collision", d3.forceCollide<ClusterNode>().radius(d => d.outerRadius + 20)) // Increase padding
+    .force("collision", d3.forceCollide<ClusterNode>().radius(d => d.outerRadius)) // Increase padding
     .force("link", d3.forceLink<ClusterNode, InterCommunityEdge>(links)
       .id(d => d.clusterId)
       .distance(d => linkDistanceScale(d.sharedExhibitionMinArtworks))
@@ -255,72 +319,99 @@ private simulateClusters(clusterNodes: ClusterNode[]): void {
   console.log("Cluster simulation setup with links:", this.clusterSimulation);
 }
 
+
 private ticked(): void {
-  const clusterNodes = this.clusterSimulation!.nodes() as ClusterNode[];
 
   // Update the cluster positions
   this.g.selectAll(".cluster")
+  .attr("x1", (d: ClusterNode) => d.x)
+    .attr("cy", (d: ClusterNode) => d.y)
     .attr("transform", (d: ClusterNode) => `translate(${d.x}, ${d.y})`);
+  const clusternodes = this.g.selectAll(".cluster");
 
   // Update positions of nodes within clusters
-  this.g.selectAll(".cluster .artist-node")
+  this.g.selectAll(".artist-node")
     .attr("cx", (d: ArtistNode) => d.x)
     .attr("cy", (d: ArtistNode) => d.y);
 
-  this.g.selectAll(".cluster .artist-edge")
+  this.g.selectAll(".artist-edge")
     .attr("x1", (d: any) => d.source.x)
     .attr("y1", (d: any) => d.source.y)
     .attr("x2", (d: any) => d.target.x)
     .attr("y2", (d: any) => d.target.y);
 
+    this.g.selectAll(".inter-community-edge")
+    .attr("x1", (d: any) => d.source.x)
+    .attr("y1", (d: any) => d.source.y)
+    .attr("x2", (d: any) => d.target.x)
+    .attr("y2", (d: any) => d.target.y);
+/* 
+  // Update inter-community edge positions
   this.g.selectAll(".inter-community-edge")
     .attr("x1", (d: any) => {
-      const startCluster = d.source as ClusterNode;
-      const endCluster = d.target as ClusterNode;
+      const startClusterIndex =this.findClusterNodeById(d.source.clusterId as number);
+      const startCluster = this.clusterNodes[startClusterIndex]
+      const endClusterIndex =this.findClusterNodeById( d.target.clusterId as number);
+      const endCluster = this.clusterNodes[endClusterIndex]
       const { x1 } = this.calculateIntersectionPoint(startCluster, endCluster);
       return x1;
     })
     .attr("y1", (d: any) => {
-      const startCluster = d.source as ClusterNode;
-      const endCluster = d.target as ClusterNode;
+      const startClusterIndex =this.findClusterNodeById( d.source.clusterId as number);
+      const startCluster = this.clusterNodes[startClusterIndex]
+      const endClusterIndex =this.findClusterNodeById(d.target.clusterId as number);
+      const endCluster = this.clusterNodes[endClusterIndex]
       const { y1 } = this.calculateIntersectionPoint(startCluster, endCluster);
       return y1;
     })
     .attr("x2", (d: any) => {
-      const startCluster = d.source as ClusterNode;
-      const endCluster = d.target as ClusterNode;
+      const startClusterIndex =this.findClusterNodeById(d.source.clusterId as number);
+      const startCluster = this.clusterNodes[startClusterIndex]
+      const endClusterIndex =this.findClusterNodeById( d.target.clusterId as number);
+      const endCluster = this.clusterNodes[endClusterIndex]
       const { x2 } = this.calculateIntersectionPoint(startCluster, endCluster);
       return x2;
     })
     .attr("y2", (d: any) => {
-      const startCluster = d.source as ClusterNode;
-      const endCluster = d.target as ClusterNode;
+      const startClusterIndex =this.findClusterNodeById( d.source.clusterId as number);
+      const startCluster = this.clusterNodes[startClusterIndex]
+      const endClusterIndex =this.findClusterNodeById( d.target.clusterId as number);
+      const endCluster = this.clusterNodes[endClusterIndex]
       const { y2 } = this.calculateIntersectionPoint(startCluster, endCluster);
       return y2;
     });
+ */
+  // Debug: Log the updated edge positions to ensure they are being set correctly
+
 }
 
 
    
-
 private calculateIntersectionPoint(source: ClusterNode, target: ClusterNode): { x1: number, y1: number, x2: number, y2: number } {
   let x1 = 0;
   let y1 = 0;
   let x2 = 0;
   let y2 = 0;
 
-  if (source.y !== undefined && source.x !== undefined && target.y !== undefined && target.x !== undefined) {
-    const angle = Math.atan2(target.y - source.y, target.x - source.x);
+  if (source.x !== undefined && source.y !== undefined && target.x !== undefined && target.y !== undefined) {
+    const dx = target.x - source.x;
+    const dy = target.y - source.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
 
-    x1 = source.x + source.outerRadius * Math.cos(angle);
-    y1 = source.y + source.outerRadius * Math.sin(angle);
-
-    x2 = target.x - target.outerRadius * Math.cos(angle);
-    y2 = target.y - target.outerRadius * Math.sin(angle);
+    if (distance > 0) {
+      x1 = source.x + (source.outerRadius * dx / distance);
+      y1 = source.y + (source.outerRadius * dy / distance);
+      x2 = target.x - (target.outerRadius * dx / distance);
+      y2 = target.y - (target.outerRadius * dy / distance);
+    }
   }
+
+  // Debug: Log the calculated intersection points
+
 
   return { x1, y1, x2, y2 };
 }
+
 
 
 private renderInterCommunityEdges(): void {
@@ -328,6 +419,7 @@ private renderInterCommunityEdges(): void {
     .domain(d3.extent(this.interCommunityEdges, d => d.sharedExhibitionMinArtworks) as [number, number])
     .range([1, 50]); // Adjust range as needed for stroke width
 
+    
   const edges = this.g.selectAll(".inter-community-edge")
     .data(this.interCommunityEdges)
     .enter()
@@ -336,116 +428,129 @@ private renderInterCommunityEdges(): void {
     .style("stroke", "#aaa")
     .style("stroke-width", (d: any) => edgeScale(d.sharedExhibitionMinArtworks))
     .attr("x1", (d: any) => {
-      const startCluster = this.findClusterNodeById(this.clusterSimulation!.nodes(), d.startId);
-      const endCluster = this.findClusterNodeById(this.clusterSimulation!.nodes(), d.endId);
+      const startClusterIndex =this.findClusterNodeById(d.source.clusterId as number);
+      const startCluster = this.clusterNodes[startClusterIndex]
+      const endClusterIndex =this.findClusterNodeById( d.target.clusterId as number);
+      const endCluster = this.clusterNodes[endClusterIndex]
       const { x1 } = this.calculateIntersectionPoint(startCluster, endCluster);
       return x1;
     })
     .attr("y1", (d: any) => {
-      const startCluster = this.findClusterNodeById(this.clusterSimulation!.nodes(), d.startId);
-      const endCluster = this.findClusterNodeById(this.clusterSimulation!.nodes(), d.endId);
+      const startClusterIndex =this.findClusterNodeById( d.source.clusterId as number);
+      const startCluster = this.clusterNodes[startClusterIndex]
+      const endClusterIndex =this.findClusterNodeById(d.target.clusterId as number);
+      const endCluster = this.clusterNodes[endClusterIndex]
       const { y1 } = this.calculateIntersectionPoint(startCluster, endCluster);
       return y1;
     })
     .attr("x2", (d: any) => {
-      const startCluster = this.findClusterNodeById(this.clusterSimulation!.nodes(), d.startId);
-      const endCluster = this.findClusterNodeById(this.clusterSimulation!.nodes(), d.endId);
+      const startClusterIndex =this.findClusterNodeById(d.source.clusterId as number);
+      const startCluster = this.clusterNodes[startClusterIndex]
+      const endClusterIndex =this.findClusterNodeById( d.target.clusterId as number);
+      const endCluster = this.clusterNodes[endClusterIndex]
       const { x2 } = this.calculateIntersectionPoint(startCluster, endCluster);
       return x2;
     })
     .attr("y2", (d: any) => {
-      const startCluster = this.findClusterNodeById(this.clusterSimulation!.nodes(), d.startId);
-      const endCluster = this.findClusterNodeById(this.clusterSimulation!.nodes(), d.endId);
+      const startClusterIndex =this.findClusterNodeById( d.source.clusterId as number);
+      const startCluster = this.clusterNodes[startClusterIndex]
+      const endClusterIndex =this.findClusterNodeById( d.target.clusterId as number);
+      const endCluster = this.clusterNodes[endClusterIndex]
       const { y2 } = this.calculateIntersectionPoint(startCluster, endCluster);
       return y2;
     });
 
-  // Debug: Log the edges to ensure they are created correctly
-  console.log("Inter-community edges:", edges);
+
+
 }
 
-  
-  private createClusterGroup(clusterNode: ClusterNode): SVGGElement {
-    const arcGenerator = d3.arc<any>()
-      .innerRadius(clusterNode.innerRadius)
-      .outerRadius(clusterNode.outerRadius);
+private createClusterGroup(clusterNode: ClusterNode): SVGGElement {
+  const arcGenerator = d3.arc<any>()
+    .innerRadius(clusterNode.innerRadius)
+    .outerRadius(clusterNode.outerRadius);
 
-    const countryMap = new Map<string, Artist[]>();
-    const sortedArtists: Artist[] = this.prepareData(clusterNode.artists);
-    sortedArtists.forEach(artist => {
-      if (!countryMap.has(artist.nationality)) {
-        countryMap.set(artist.nationality, []);
-      }
-      countryMap.get(artist.nationality)!.push(artist);
-    });
+  const countryMap = new Map<string, Artist[]>();
+  const sortedArtists: Artist[] = this.prepareData(clusterNode.artists);
+  sortedArtists.forEach(artist => {
+    if (!countryMap.has(artist.nationality)) {
+      countryMap.set(artist.nationality, []);
+    }
+    countryMap.get(artist.nationality)!.push(artist);
+  });
 
-    // Calculate angles for each nationality segment
-    const countries = Array.from(countryMap.keys());
-    const totalArtists = clusterNode.artists.length;
-    const minimumAngle = Math.PI / 18;
+  // Calculate angles for each nationality segment
+  const countries = Array.from(countryMap.keys());
+  const totalArtists = clusterNode.artists.length;
+  const minimumAngle = Math.PI / 18;
 
-    let totalAngleAvailable = 2 * Math.PI;
-    const dynamicAngles = new Map<string, number>();
+  let totalAngleAvailable = 2 * Math.PI;
+  const dynamicAngles = new Map<string, number>();
 
-    // First pass to assign minimum angles and adjust total available angle
-    countryMap.forEach((artists, country) => {
-      dynamicAngles.set(country, minimumAngle);
-      totalAngleAvailable -= minimumAngle;
-    });
+  // First pass to assign minimum angles and adjust total available angle
+  countryMap.forEach((artists, country) => {
+    dynamicAngles.set(country, minimumAngle);
+    totalAngleAvailable -= minimumAngle;
+  });
 
-    // Allocate remaining angles based on the proportion of artists
-    countryMap.forEach((artists, country) => {
-      const proportion = artists.length / totalArtists;
-      const extraAngle = proportion * totalAngleAvailable;
-      const currentAngle = dynamicAngles.get(country) || 0;
-      dynamicAngles.set(country, currentAngle + extraAngle);
-    });
+  // Allocate remaining angles based on the proportion of artists
+  countryMap.forEach((artists, country) => {
+    const proportion = artists.length / totalArtists;
+    const extraAngle = proportion * totalAngleAvailable;
+    const currentAngle = dynamicAngles.get(country) || 0;
+    dynamicAngles.set(country, currentAngle + extraAngle);
+  });
 
-    let currentAngle = 0;
-    const data = countries.map((country) => {
-      const angle = dynamicAngles.get(country) as number;
-      const startAngle = currentAngle;
-      const endAngle = currentAngle + angle;
-      const middleAngle = (startAngle + endAngle) / 2;
-      currentAngle = endAngle;
-      const countryIndex = this.countryIndexMap.get(country) as number;
-      return {
-        country,
-        startAngle,
-        endAngle,
-        middleAngle,
-        innerRadius: clusterNode.innerRadius,
-        outerRadius: clusterNode.outerRadius,
-        color: this.globalColorScale(countryIndex) // Get color from ordinal scale
-      };
-    });
+  let currentAngle = 0;
+  const data = countries.map((country) => {
+    const angle = dynamicAngles.get(country) as number;
+    const startAngle = currentAngle;
+    const endAngle = currentAngle + angle;
+    const middleAngle = (startAngle + endAngle) / 2;
+    currentAngle = endAngle;
+    const countryIndex = this.countryIndexMap.get(country) as number;
+    return {
+      country,
+      startAngle,
+      endAngle,
+      middleAngle,
+      innerRadius: clusterNode.innerRadius,
+      outerRadius: clusterNode.outerRadius,
+      color: this.globalColorScale(countryIndex) // Get color from ordinal scale
+    };
+  });
 
-    // Create a new group for this cluster
-    const clusterGroup = d3.create("svg:g")
-      .attr("class", "cluster")
-      .attr("transform", `translate(${clusterNode.x}, ${clusterNode.y})`);
+  // Create a new group for this cluster
+  const clusterGroup = d3.create("svg:g")
+    .attr("class", "cluster")
+    .attr("transform", `translate(${clusterNode.x}, ${clusterNode.y})`);
 
+  // Append a background circle for the cluster
+  clusterGroup.append("circle")
+    .attr("class", "cluster-background")
+    .attr("r", clusterNode.outerRadius)
+    .style("fill", "none") // No fill color
+    .style("stroke", "#ccc") // Light gray stroke for the background circle
+    .style("stroke-width", 1); // Adjust stroke width as needed
 
-    // Append paths for the sunburst
-    clusterGroup.selectAll("path")
-      .data(data)
-      .enter()
-      .append("path")
-      .attr("d", arcGenerator)
-      .attr("fill", (d: any) => d.color);
+  // Append paths for the sunburst
+  clusterGroup.selectAll("path")
+    .data(data)
+    .enter()
+    .append("path")
+    .attr("d", arcGenerator)
+    .attr("fill", (d: any) => d.color);
 
-    // Append labels for the countries
-    clusterGroup.selectAll("text")
-      .data(data)
-      .enter()
-      .append("text")
-      .attr("transform", (d: any) => `translate(${arcGenerator.centroid(d)})`)
-      .attr("text-anchor", "middle")
-      .text((d: any) => d.country);
+  // Append labels for the countries
+  clusterGroup.selectAll("text")
+    .data(data)
+    .enter()
+    .append("text")
+    .attr("transform", (d: any) => `translate(${arcGenerator.centroid(d)})`)
+    .attr("text-anchor", "middle")
+    .text((d: any) => d.country);
 
-     // Save centroid data for node placement later
-     
-  let countryCentroids  :{ [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string} } = {};
+  // Save centroid data for node placement later
+  let countryCentroids: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } = {};
   data.forEach(d => {
     countryCentroids[d.country] = {
       startAngle: d.startAngle,
@@ -456,16 +561,16 @@ private renderInterCommunityEdges(): void {
     };
   });
 
+  // Store the countryCentroids for this cluster in the component property
+  this.clusterCountryCentroids[clusterNode.clusterId] = countryCentroids;
+
+  // Add artist network within the cluster
+  this.createArtistNetwork(clusterGroup, clusterNode, countryCentroids);
+
+  return clusterGroup.node() as SVGGElement;
+}
 
 
-    // Store the countryCentroids for this cluster in the component property
-    this.clusterCountryCentroids[clusterNode.clusterId] = countryCentroids;
-
-    // Add artist network within the cluster
-    this.createArtistNetwork(clusterGroup, clusterNode,  countryCentroids);
-
-    return clusterGroup.node() as SVGGElement;
-  }
   private createArtistNetwork(clusterGroup: any, cluster: ClusterNode, countryCentroids: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } }): void {
     const artists = cluster.artists;
     const relationships = this.intraCommunityEdges[cluster.clusterId];
@@ -652,15 +757,17 @@ private renderInterCommunityEdges(): void {
 
   // Used to generate the possible radius properties for each sunburst cluster
   private createSunburstProperties(clusterSize: number, maxSize: number): [number, number] {
-    const minRadius = 200; // Minimum radius for the smallest cluster
-    const maxRadius = Math.min(this.width, this.height) / 2; // Increase the maximum radius for the largest cluster
+    const minRadius = this.minClusterRadius; // Use the minimum cluster radius as the base
+    const maxRadius = Math.min(this.baseWidth, this.baseHeight) / 3; // Adjust max radius to fit within SVG dimensions
   
-    // Calculate the proportional radius
+    // Calculate the proportional radius based on cluster size
     const outerRadius = minRadius + ((maxRadius - minRadius) * (clusterSize / maxSize));
     const innerRadius = outerRadius - this.sunburstThickness;
   
     return [outerRadius, innerRadius];
   }
+  
+  
   private getClusterGroupDimensions(clusterGroup: any): { width: number, height: number } {
     const bbox = clusterGroup.node().getBBox();
     return { width: bbox.width, height: bbox.height };
@@ -757,7 +864,7 @@ private boundaryForce(artistNodes: ArtistNode[], innerRadius: number, padding: n
   }
 
   private calculateRadiusForNode(value: number, innerRadius: number): number {
-    const minRadius =20; // Minimum radius for the least connected node
+    const minRadius =10; // Minimum radius for the least connected node
     const maxRadius = innerRadius / 10; // Maximum radius for the most connected node
     const calculatedRadius = minRadius + (maxRadius - minRadius) * value;
   
@@ -770,4 +877,16 @@ private boundaryForce(artistNodes: ArtistNode[], innerRadius: number, padding: n
     const padding = 2; // Additional padding to prevent visual overlaps
     return baseRadius + padding;
   }
+  private calculateNodeDegreesForClusters(): void {
+    this.intraCommunityEdges.forEach((relationships, clusterId) => {
+      const degreeMap = new Map<number, number>();
+      relationships.forEach(rel => {
+        degreeMap.set(rel.startId, (degreeMap.get(rel.startId) || 0) + 1);
+        degreeMap.set(rel.endId, (degreeMap.get(rel.endId) || 0) + 1);
+      });
+      const normalizedDegrees = this.normalizeLinear(degreeMap);
+      this.degreesMap[clusterId] = normalizedDegrees;
+    });
+  }
+
 }

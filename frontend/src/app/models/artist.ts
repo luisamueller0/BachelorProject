@@ -48,6 +48,8 @@ interface ArtistData {
     artists: Artist[];
     outerRadius: number;
     innerRadius: number;
+    x: number;
+    y: number;
   }
   
   class Artist {
