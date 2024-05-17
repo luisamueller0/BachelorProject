@@ -49,9 +49,9 @@ export class ClusterVisualizationComponent implements OnInit {
 
   // For selections
   private degreesMap: { [clusterId: number]: Map<number, number> } = {};
-  private totalExhibitionsMap: Map<number, number> = new Map<number, number>();
-  private totalExhibitedArtworksMap: Map<number, number> = new Map<number, number>();
-  private differentTechniquesMap: Map<number, number> = new Map<number, number>();
+  private totalExhibitionsMap: { [clusterId: number]: Map<number, number> } = {};
+  private totalExhibitedArtworksMap:{ [clusterId: number]: Map<number, number> } = {};
+  private differentTechniquesMap: { [clusterId: number]: Map<number, number> } = {};
 
   // Sunburst Properties
   private sunburstThickness: number = 50;
@@ -126,25 +126,46 @@ export class ClusterVisualizationComponent implements OnInit {
     const normalizedMaps: { [clusterId: number]: Map<number, number> } = {};
   
     this.clusters.forEach((cluster, clusterId) => {
-      const metricMap = new Map<number, number>();
+      let metricMap = new Map<number, number>();
   
       if (metric === 'Amount of Exhibitions') {
-        cluster.forEach((artist: Artist) => {
-          metricMap.set(artist.id, artist.total_exhibited_artworks);
-        });
+        if (this.totalExhibitionsMap[clusterId]) {
+          metricMap = this.totalExhibitionsMap[clusterId];
+        } else {
+          cluster.forEach((artist: Artist) => {
+            metricMap.set(artist.id, artist.total_exhibited_artworks);
+          });
+          this.totalExhibitionsMap[clusterId] = this.normalizeLinear(metricMap);
+        }
       } else if (metric === 'Amount of different techniques') {
-        cluster.forEach((artist: Artist) => {
-          metricMap.set(artist.id, artist.amount_techniques);
-        });
+        if (this.differentTechniquesMap[clusterId]) {
+          metricMap = this.differentTechniquesMap[clusterId];
+        } else {
+          cluster.forEach((artist: Artist) => {
+            metricMap.set(artist.id, artist.amount_techniques);
+          });
+          this.differentTechniquesMap[clusterId] = this.normalizeLinear(metricMap);
+        }
       } else if (metric === 'Amount of exhibited Artworks') {
-        cluster.forEach((artist: Artist) => {
-          metricMap.set(artist.id, artist.total_exhibited_artworks);
-        });
+        if (this.totalExhibitedArtworksMap[clusterId]) {
+          metricMap = this.totalExhibitedArtworksMap[clusterId];
+        } else {
+          cluster.forEach((artist: Artist) => {
+            metricMap.set(artist.id, artist.total_exhibited_artworks);
+          });
+          this.totalExhibitedArtworksMap[clusterId] = this.normalizeLinear(metricMap);
+        }
+      } else if (metric === 'default: Importance (Degree)') {
+        if (this.degreesMap[clusterId]) {
+          metricMap = this.degreesMap[clusterId];
+        } else {
+          // Calculate degrees only if not already done
+          this.calculateNodeDegreesForClusters();
+          metricMap = this.degreesMap[clusterId];
+        }
       }
-  
-      // Normalize the values
-      const normalizedMap = this.normalizeLinear(metricMap);
-      normalizedMaps[clusterId] = normalizedMap;
+
+      normalizedMaps[clusterId] = this.normalizeLinear(metricMap);
     });
   
     return normalizedMaps;
@@ -160,18 +181,51 @@ export class ClusterVisualizationComponent implements OnInit {
         const clusterId = clusterData.clusterId;
         const normalizedMap = normalizedMaps[clusterId];
 
-        
         // Update the radius of each node in the cluster based on the normalized values
-        clusterNode.selectAll(".artist-node")
-            .attr('r', (d: any) => {
+        clusterNode.selectAll<SVGCircleElement, ArtistNode>(".artist-node")
+            .attr('r', (d: ArtistNode) => {
                 const artistId = d.artist.id;
-    
                 const innerRadius = clusterData.innerRadius; // Use the cluster's innerRadius directly
-                // Calculate and return the new radius
                 return this.calculateNodeRadius(artistId, normalizedMap, innerRadius);
             });
+
+        // Reinitialize the force simulation for the artist nodes
+        const artistNodes = clusterNode.selectAll<SVGCircleElement, ArtistNode>(".artist-node").data();
+        this.runArtistSimulation(artistNodes, clusterData);
     });
 }
+
+private runArtistSimulation(artistNodes: ArtistNode[], cluster: ClusterNode) {
+    const relationships = this.intraCommunityEdges[cluster.clusterId];
+    const sizes = this.getNodeSizes(artistNodes);
+
+    // Re-create the force simulation
+    const simulation = d3.forceSimulation(artistNodes)
+        .force("collision", d3.forceCollide((d: any) => this.calculateCollisionRadius(sizes[d.id] || 0)))
+        .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - 10)) // Add boundary force
+        .on("tick", () => {
+            this.g.selectAll(".artist-node")
+                .attr('cx', (d: any) => d.x)
+                .attr('cy', (d: any) => d.y);
+            this.g.selectAll(".artist-edge")
+                .attr("x1", (d: any) => d.source.x)
+                .attr("y1", (d: any) => d.source.y)
+                .attr("x2", (d: any) => d.target.x)
+                .attr("y2", (d: any) => d.target.y);
+        });
+
+    // Restart the simulation
+    simulation.alpha(1).restart();
+}
+
+private getNodeSizes(artistNodes: ArtistNode[]): number[] {
+    const sizes: number[] = [];
+    artistNodes.forEach(node => {
+        sizes[node.id] = node.radius;
+    });
+    return sizes;
+}
+
 
 private calculateNodeRadius(artistId: number, normalizedMap: Map<number, number>, innerRadius: number): number {
     const normalizedValue = normalizedMap.get(artistId) || 0;
@@ -1214,6 +1268,7 @@ private boundaryForce(artistNodes: ArtistNode[], innerRadius: number, padding: n
       const normalizedDegrees = this.normalizeLinear(degreeMap);
       this.degreesMap[clusterId] = normalizedDegrees;
     });
+    
   }
 
   
