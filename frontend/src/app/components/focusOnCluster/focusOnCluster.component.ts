@@ -1,4 +1,3 @@
-import { Component, OnInit, ElementRef } from '@angular/core';
 import * as d3 from 'd3';
 import { ArtistService } from '../../services/artist.service';
 import { Artist,ArtistNode } from '../../models/artist';
@@ -6,18 +5,19 @@ import exhibited_with  from '../../models/exhibited_with';
 import { DecisionService } from '../../services/decision.service';
 import { Subscription } from 'rxjs';
 import { SelectionService } from '../../services/selection.service';
+import { Component, OnInit, ElementRef } from '@angular/core';
 interface CountryConnections {
   matrix: number[][];
   countryIndex: Map<string, number>;
 }
 
 @Component({
-  selector: 'app-visualization',
-  templateUrl: './visualization.component.html',
-  styleUrls: ['./visualization.component.css']
+  selector: 'app-focusOnCluster',
+  templateUrl: './focusOnCluster.component.html',
+  styleUrls: ['./focusOnCluster.component.css']
 })
-export class VisualizationComponent implements OnInit {
-  // Loading indicator
+export class FocusOnClusterComponent implements OnInit {
+
   isLoading: boolean = true;
 
   //Data properties
@@ -1086,19 +1086,5 @@ if (this.selectedNode && this.selectedNode[0] === circle) {
 }
 }
 
-/* .call(d3.drag()  // enable drag support
-        .on("start", (event, d) => {
-          if (!event.active) simulation.alphaTarget(0.3).restart();
-          d.fx = d.x;
-          d.fy = d.y;
-        })
-        .on("drag", (event, d) => {
-          d.fx = event.x;
-          d.fy = event.y;
-        })
-        .on("end", (event, d) => {
-          if (!event.active) simulation.alphaTarget(0);
-          d.fx = null;
-          d.fy = null;
-        }));
- */
+
+

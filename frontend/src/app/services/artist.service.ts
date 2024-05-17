@@ -93,6 +93,36 @@ export class ArtistService {
     return this.http.get<any[][]>(this.dataUrl+ '/artist/cluster/nationality', { params }).pipe(shareReplay());
   
   }
+  clusterAmountArtistsBirthcountry(range:number[], k:number):Observable<any[][]>{
+    const params = new HttpParams()
+      .set('minLimit', JSON.stringify(range[0]))
+      .set('maxLimit', JSON.stringify(range[1]))
+      .set('k', JSON.stringify(k));
+
+    return this.http.get<any[][]>(this.dataUrl+ '/artist/cluster/birthcountry', { params }).pipe(shareReplay());
+  
+  }
+
+  clusterAmountArtistsDeathcountry(range:number[], k:number):Observable<any[][]>{
+    const params = new HttpParams()
+      .set('minLimit', JSON.stringify(range[0]))
+      .set('maxLimit', JSON.stringify(range[1]))
+      .set('k', JSON.stringify(k));
+
+    return this.http.get<any[][]>(this.dataUrl+ '/artist/cluster/deathcountry', { params }).pipe(shareReplay());
+  
+  }
+
+  clusterAmountArtistsMostExhibited(range:number[], k:number):Observable<any[][]>{
+    const params = new HttpParams()
+      .set('minLimit', JSON.stringify(range[0]))
+      .set('maxLimit', JSON.stringify(range[1]))
+      .set('k', JSON.stringify(k));
+
+    return this.http.get<any[][]>(this.dataUrl+ '/artist/cluster/mostexhibited', { params }).pipe(shareReplay());
+  
+  }
+
 
   
 

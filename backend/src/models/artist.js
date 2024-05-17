@@ -5,6 +5,7 @@ let latestArtists = [];
 let latestRelationships = [];
 let latestMinLimit = -1;
 let latestMaxLimit = -1;
+let latestValue = '';
 
 
 class Artist {
@@ -50,21 +51,41 @@ class Artist {
     }
 
 }
+
 // Define European regions based on country codes
 const europeanRegions = {
-    "North Europe": ["DK", "EE", "FI", "IE", "LT", "LV", "NO", "SE", "IS"], // Including Iceland (IS)
-    "Western Europe": ["GB", "FR", "BE", "NL", "LU", "CH"], // Including Switzerland (CH) and Luxembourg (LU)
-    "Central Europe": ["DE", "PL", "CZ", "SK", "AT", "HU"], // Including Austria (AT), Czech Republic (CZ), Slovakia (SK)
-    "Southern Europe": ["PT", "ES", "IT", "GR", "HR", "BA", "RS", "ME", "SI"], // Including Slovenia (SI), Croatia (HR), Bosnia and Herzegovina (BA), Serbia (RS), Montenegro (ME)
-    "Eastern Europe": ["RU", "UA", "BY", "BG", "RO"], // Including Bulgaria (BG), Belarus (BY)
+    "North Europe": ["DK", "EE", "FI", "IE", "LT", "LV", "NO", "SE", "IS"],
+    "Western Europe": ["GB", "FR", "BE", "NL", "LU", "CH", "MC", "DE", "AT"], // Added DE, AT
+    "Southern Europe": ["PT", "ES", "IT", "GR", "HR", "BA", "RS", "ME", "SI", "MA", "GI"],
+    "Eastern Europe": ["RU", "UA", "BY", "BG", "RO", "MD", "AZ", "PL", "CZ", "SK", "HU"], // Added PL, CZ, SK, HU
     "Others": [
-      "US", "AU", "GE", "MX", "AM", "IL", "CL", "AR", "CA", "DO", "PE", "JP", "TR", 
-      "BR", "ZA", "NZ", "VE", "GT", "UY", "SV", "PY", "IN",  // Non-European countries
-      // Adding countries that are outside of Europe but were listed in your dataset
-      "NZ", "ZA", "LU", "VE", "GT", "UY", "SV", "PY", "IN", "ME", "TN", "MD", "ID"
+      "US", "AU", "GE", "MX", "AM", "IL", "CL", "AR", "CA", "DO", "PE", "JP", "TR",
+      "BR", "ZA", "NZ", "VE", "GT", "UY", "SV", "PY", "IN", "PF", "KZ", "UZ", "VN", 
+      "NA", "JO", "IR", "KH", "JM", "SA", "DZ", "CN", "EG", "VI", "ID", "CU", "TN", 
+      "MQ", "MU", "LK", "EC", "SG", "BL", "TH", "BO"
     ]
   };
- 
+  
+/*   const allCountries = [
+    "GB", "ID", "UA", "CH", "RU", "NL", "DE", "BY", "IT", "LT", "US", "HU", "FR", "AU", "BE", "CZ", "AT", "NO", 
+    "GR", "SE", "PL", "LV", "FI", "ES", "MD", "CA", "BG", "GE", "DZ", "MX", "AZ", "RO", "EE", "DK", "AR", "UY", 
+    "CU", "PT", "HR", "SI", "TN", "EG", "SK", "TR", "VI", "RS", "IE", "DO", "JP", "MQ", "IN", "MU", "ME", "CL", 
+    "ZA", "NZ", "KH", "LU", "GI", "VE", "GT", "SV", "PY", "LK", "BA", "EC", "BR", "SG", "BL", "PE", "TH", "PF", 
+    "AM", "IL", "MC", "CN", "UZ", "KZ", "MA", "BO", "VN", "NA", "JO", "IR", "JM", "SA"
+  ]
+  // Create a set of all countries in europeanRegions
+const categorizedCountries = new Set();
+Object.values(europeanRegions).forEach(regionCountries => {
+  regionCountries.forEach(country => {
+    categorizedCountries.add(country);
+  });
+});
+
+// Find countries in allCountries that are not in categorizedCountries
+const uncategorizedCountries = allCountries.filter(country => !categorizedCountries.has(country));
+
+console.log(uncategorizedCountries);
+   */
 
 class exhibited_with {
     constructor(startData, endData, relationshipData) {
@@ -73,7 +94,7 @@ class exhibited_with {
         this.sharedExhibitions = relationshipData.sharedExhibitions;
         this.sharedExhibitionMinArtworks = relationshipData.sharedExhibitionMinArtworks;
     }
-}
+} 
 
 const findAllNationalityTechnique = async () => {
     const { session } = require('../db');
@@ -691,12 +712,13 @@ const processResult = (result) => {
 async function spectralClusteringNationality(min, max, k) {
     try {
         // To only retrieve the artists, when min/max got changed
-        if(latestMinLimit!=min || latestMaxLimit!=max)    {
+        if(latestMinLimit!=min || latestMaxLimit!=max  || latestValue !== 'nationality')    {
             const [artists, relationships] = await findAllNationalityTechniqueAmount(min, max);
             latestArtists = artists;
             latestRelationships = relationships;
             latestMinLimit=min;
             latestMaxLimit=max;
+            latestValue = 'nationality';
             console.log( latestMinLimit, latestMaxLimit)
         }
         const artistsWithClusters= await spectralClustering(latestArtists, latestRelationships, k);
@@ -707,12 +729,13 @@ async function spectralClusteringNationality(min, max, k) {
 }
 async function spectralClusteringBirthcountry(min, max, k) {
     try {
-        if(latestMinLimit!=min || latestMaxLimit!=max)    {
+        if(latestMinLimit!=min || latestMaxLimit!=max  || latestValue !== 'birthcountry')    {
             const [artists, relationships] = await findAllBirthcountryTechniqueAmount(min, max);
             latestArtists = artists;
             latestRelationships = relationships;
             latestMinLimit=min;
             latestMaxLimit=max;
+            latestValue = 'birthcountry';
         }
         const artistsWithClusters= await spectralClustering(latestArtists, latestRelationships, k);
         return artistsWithClusters;
@@ -723,12 +746,13 @@ async function spectralClusteringBirthcountry(min, max, k) {
 async function spectralClusteringDeathcountry(min, max, k) 
 {
     try {
-        if(latestMinLimit!=min || latestMaxLimit!=max)    {
+        if(latestMinLimit!=min || latestMaxLimit!=max  || latestValue !== 'deathcountry')    {
             const [artists, relationships] = await findAllDeathcountryTechniqueAmount(min, max);
             latestArtists = artists;
             latestRelationships = relationships;
             latestMinLimit=min;
             latestMaxLimit=max;
+            latestValue = 'deathcountry';
         }
         const artistsWithClusters= await spectralClustering(latestArtists, latestRelationships, k);
         return artistsWithClusters;
@@ -738,12 +762,13 @@ async function spectralClusteringDeathcountry(min, max, k)
 }
 async function spectralClusteringMostExhibited(min, max, k) {
     try {
-        if(latestMinLimit!=min || latestMaxLimit!=max)    {
+        if(latestMinLimit!=min || latestMaxLimit!=max  || latestValue !== 'mostexhibited')    {
             const [artists, relationships] = await findAllMostExhibitedInTechniqueAmount(min, max);
             latestArtists = artists;
             latestRelationships = relationships;
             latestMinLimit=min;
             latestMaxLimit=max;
+            latestValue = 'mostexhibited';
         }
         const artistsWithClusters= await spectralClustering(latestArtists, latestRelationships, k);
         return artistsWithClusters;

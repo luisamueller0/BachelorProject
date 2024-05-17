@@ -7,12 +7,12 @@ import relationship from '../models/exhibited_with'
   providedIn: 'root'
 })
 export class DecisionService {
-  private sunburstSource = new BehaviorSubject<string>('');
+  private sunburstSource = new BehaviorSubject<string>('nationality');
   private orderSource = new BehaviorSubject<string>('');
   private sizeSource = new BehaviorSubject<string>('');
   private thicknessSource = new BehaviorSubject<string>('');
-  private rangeSource = new BehaviorSubject<[number[], Artist[], relationship[]]>([[], [], []]); // Default range
-  private kSource = new BehaviorSubject<number>(1); 
+  private rangeSource = new BehaviorSubject<number[]>([200,400]); // Default range
+  private kSource = new BehaviorSubject<number>(5); 
 
   currentSunburst = this.sunburstSource.asObservable();
   currentOrder = this.orderSource.asObservable();
@@ -37,7 +37,7 @@ export class DecisionService {
   }
 
  
-  changeDecisionRange(range: [number[], Artist[], relationship[]]) {
+  changeDecisionRange(range: number[]) {
     this.rangeSource.next(range);
   }
   changeK(k: number) {
@@ -56,7 +56,7 @@ export class DecisionService {
   getDecisionThickness(): string {
     return this.thicknessSource.getValue();
   }
-  getDecisionRange(): [number[], Artist[], relationship[]] {
+  getDecisionRange(): number[] {
     return this.rangeSource.getValue();
   }
   getK(): number {
