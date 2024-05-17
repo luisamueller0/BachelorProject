@@ -120,7 +120,7 @@ const findAllNationalityTechnique = async () => {
 });
 };
 
-const findAllNationalityTechniqueAmount = async (minLimit, maxLimit) => {
+/* const findAllNationalityTechniqueAmount = async (minLimit, maxLimit) => {
     const { session } = require('../db');
     return await dbSemaphore.runExclusive(async () => {
         console.log('Semaphore acquired by amount')
@@ -142,7 +142,7 @@ const findAllNationalityTechniqueAmount = async (minLimit, maxLimit) => {
 
     return await processResult(result);
 });
-};
+}; */
 
 
 const findAllBirthcountryTechnique = async () => {
@@ -167,7 +167,7 @@ const findAllBirthcountryTechnique = async () => {
 });
 };
 
-const findAllBirthcountryTechniqueAmount = async (minLimit,maxLimit) => {
+/* const findAllBirthcountryTechniqueAmount = async (minLimit,maxLimit) => {
     const { session } = require('../db');
     return await dbSemaphore.runExclusive(async () => {
     const result = await session.run(
@@ -188,7 +188,7 @@ const findAllBirthcountryTechniqueAmount = async (minLimit,maxLimit) => {
 
     return await processResult(result);
 });
-};
+}; */
 
 const findAllDeathcountryTechnique = async () => {
     const { session } = require('../db');
@@ -212,7 +212,7 @@ const findAllDeathcountryTechnique = async () => {
 
 });
 };
-
+/* 
 const findAllDeathcountryTechniqueAmount = async (minLimit,maxLimit) => {
     const { session } = require('../db');
     return await dbSemaphore.runExclusive(async () => {
@@ -235,7 +235,7 @@ const findAllDeathcountryTechniqueAmount = async (minLimit,maxLimit) => {
     return await processResult(result);
 
 });
-};
+}; */
 
 
 const findAllMostExhibitedInTechnique = async () => {
@@ -260,7 +260,7 @@ const findAllMostExhibitedInTechnique = async () => {
 });
 };
 
-const findAllMostExhibitedInTechniqueAmount = async (minLimit,maxLimit) => {
+/* const findAllMostExhibitedInTechniqueAmount = async (minLimit,maxLimit) => {
     const { session } = require('../db');
     return await dbSemaphore.runExclusive(async () => {
     const result = await session.run(
@@ -282,7 +282,7 @@ const findAllMostExhibitedInTechniqueAmount = async (minLimit,maxLimit) => {
     return await processResult(result);
 
 });
-};
+}; */
 
 
 const findAllTechniques = async () => {
@@ -415,6 +415,7 @@ artists.forEach((artist, index) => {
 
 
 const intraClusterRelationships = Array.from({ length: k }, () => []);
+const singleInterClusterRelationships = Array.from({ length: k }, () => []);
 const interClusterRelationshipsMap = new Map();
 
 relationships.forEach(relationship => {
@@ -424,6 +425,8 @@ relationships.forEach(relationship => {
     if (clusterA === clusterB) {
         intraClusterRelationships[clusterA].push(relationship);
     } else {
+        singleInterClusterRelationships[clusterA].push(relationship);
+        singleInterClusterRelationships[clusterB].push(relationship);
         const key = `${Math.min(clusterA, clusterB)}-${Math.max(clusterA, clusterB)}`;
         if (!interClusterRelationshipsMap.has(key)) {
             interClusterRelationshipsMap.set(key, { 
@@ -451,7 +454,8 @@ console.log('cluster finished')
 return [
     clusteredArtists,
     intraClusterRelationships,
-    interClusterRelationships  // You might want to further organize this by cluster pairs if needed
+    interClusterRelationships,  // You might want to further organize this by cluster pairs if needed
+    singleInterClusterRelationships
 ];
 
 }
@@ -708,6 +712,116 @@ const processResult = (result) => {
 
 
 
+const findAllNationalityTechniqueAmount = async (minLimit, maxLimit) => {
+    const query = `
+        MATCH (a:Artist)
+        WHERE a.artForms <> [] AND a.country <> '\\N' AND a.TotalExhibitedArtworks >= $minLimit AND a.TotalExhibitedArtworks <= $maxLimit
+        WITH a
+        WITH collect(a) AS selectedArtists
+
+        UNWIND selectedArtists AS a
+        MATCH p=(a)-[r:EXHIBITED_WITH]-(b)
+        WHERE b IN selectedArtists
+        RETURN p
+    `;
+    return streamQuery(query, { minLimit: parseInt(minLimit), maxLimit: parseInt(maxLimit) });
+};
+
+const findAllBirthcountryTechniqueAmount = async (minLimit, maxLimit) => {
+    const query = `
+        MATCH (a:Artist)
+        WHERE a.artForms <> [] AND a.birthCountry <> '\\N' AND a.TotalExhibitedArtworks >= $minLimit AND a.TotalExhibitedArtworks <= $maxLimit
+        WITH a
+        WITH collect(a) AS selectedArtists
+
+        UNWIND selectedArtists AS a
+        MATCH p=(a)-[r:EXHIBITED_WITH]-(b)
+        WHERE b IN selectedArtists
+        RETURN p
+    `;
+    return streamQuery(query, { minLimit: parseInt(minLimit), maxLimit: parseInt(maxLimit) });
+};
+
+const findAllDeathcountryTechniqueAmount = async (minLimit, maxLimit) => {
+    const query = `
+        MATCH (a:Artist)
+        WHERE a.artForms <> [] AND a.deathCountry <> '\\N' AND a.TotalExhibitedArtworks >= $minLimit AND a.TotalExhibitedArtworks <= $maxLimit
+        WITH a
+        WITH collect(a) AS selectedArtists
+
+        UNWIND selectedArtists AS a
+        MATCH p=(a)-[r:EXHIBITED_WITH]-(b)
+        WHERE b IN selectedArtists
+        RETURN p
+    `;
+    return streamQuery(query, { minLimit: parseInt(minLimit), maxLimit: parseInt(maxLimit) });
+};
+
+const findAllMostExhibitedInTechniqueAmount = async (minLimit, maxLimit) => {
+    const query = `
+        MATCH (a:Artist)
+        WHERE a.artForms <> [] AND a.mostExhibitedInCountry <> '\\N' AND a.unclearMostExhibitedInCountry = FALSE AND a.TotalExhibitedArtworks >= $minLimit AND a.TotalExhibitedArtworks <= $maxLimit
+        WITH a
+        WITH collect(a) AS selectedArtists
+
+        UNWIND selectedArtists AS a
+        MATCH p=(a)-[r:EXHIBITED_WITH]-(b)
+        WHERE b IN selectedArtists
+        RETURN p
+    `;
+    return streamQuery(query, { minLimit: parseInt(minLimit), maxLimit: parseInt(maxLimit) });
+};
+const streamQuery = async (query, params) => {
+    const { session } = require('../db');
+    return await dbSemaphore.runExclusive(async () => {
+        const result = session.run(query, params);
+
+        const artistsId = new Set();
+        const relationships = [];
+        const artists = [];
+
+        await new Promise((resolve, reject) => {
+            result.subscribe({
+                onNext: record => {
+                    const relationship = record.get('p');
+
+                    const startData = relationship.start.properties;
+                    const endData = relationship.end.properties;
+                    const relationshipData = relationship.segments[0].relationship.properties;
+                    const relation = new exhibited_with(startData, endData, relationshipData);
+
+                    relationships.push(relation);
+
+                    const artistId = startData.id;
+                    if (!artistsId.has(artistId)) {
+                        const artist = new Artist(startData);
+                        artistsId.add(artistId);
+                        artists.push(artist);
+                    }
+
+                    const otherArtistId = endData.id;
+                    if (!artistsId.has(otherArtistId)) {
+                        const otherArtist = new Artist(endData);
+                        artistsId.add(otherArtistId);
+                        artists.push(otherArtist);
+                    }
+                },
+                onCompleted: () => {
+                    resolve([artists, relationships]);
+                },
+                onError: error => {
+                    reject(error);
+                },
+            });
+        });
+
+        return [artists, relationships];
+    });
+};
+
+
+
+
 
 async function spectralClusteringNationality(min, max, k) {
     try {
@@ -722,6 +836,7 @@ async function spectralClusteringNationality(min, max, k) {
             console.log( latestMinLimit, latestMaxLimit)
         }
         const artistsWithClusters= await spectralClustering(latestArtists, latestRelationships, k);
+
         return artistsWithClusters;
     } catch (error) {
         console.error(error);

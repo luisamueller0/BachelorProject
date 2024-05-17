@@ -153,7 +153,7 @@ updateCluster(k: number) {
   console.log('range:', range)
   console.log('k value:', k)
   this.artistService.clusterAmountArtistsNationality(range, k).subscribe((data) => {
-    console.log('k data', data)
+    //console.log('k data', data)
 
 
   });}

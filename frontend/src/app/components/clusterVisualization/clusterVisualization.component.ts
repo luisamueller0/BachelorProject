@@ -28,6 +28,9 @@ export class ClusterVisualizationComponent implements OnInit {
   private intraCommunityEdges: exhibited_with[][] = [];
   private interCommunityEdges: InterCommunityEdge[] = [];
   private clusterNodes: ClusterNode[] = [];
+  private allArtists: Artist[] = [];
+  private artistClusterMap: Map<number, ClusterNode> = new Map<number, ClusterNode>();
+
 
   // User Interactions
   private subscriptions: Subscription = new Subscription();
@@ -109,7 +112,7 @@ export class ClusterVisualizationComponent implements OnInit {
     console.log(`Updated ${type} to ${value}`);
     if (this.isIniatialized) {
       if (type === 'size') {
-        //this.updateNodeSize(value);
+        this.updateNodeSize(value);
       }
       if (type === 'sunburst') {
         this.updateSunburst(value);
@@ -119,6 +122,61 @@ export class ClusterVisualizationComponent implements OnInit {
     }
   }
 
+  private calculateNormalizedMaps(metric: string): { [clusterId: number]: Map<number, number> } {
+    const normalizedMaps: { [clusterId: number]: Map<number, number> } = {};
+  
+    this.clusters.forEach((cluster, clusterId) => {
+      const metricMap = new Map<number, number>();
+  
+      if (metric === 'Amount of Exhibitions') {
+        cluster.forEach((artist: Artist) => {
+          metricMap.set(artist.id, artist.total_exhibited_artworks);
+        });
+      } else if (metric === 'Amount of Different Techniques') {
+        cluster.forEach((artist: Artist) => {
+          metricMap.set(artist.id, artist.amount_techniques);
+        });
+      } else if (metric === 'Amount of Exhibited Artworks') {
+        cluster.forEach((artist: Artist) => {
+          metricMap.set(artist.id, artist.total_exhibited_artworks);
+        });
+      }
+  
+      // Normalize the values
+      const normalizedMap = this.normalizeLinear(metricMap);
+      normalizedMaps[clusterId] = normalizedMap;
+    });
+  
+    return normalizedMaps;
+  }
+  
+
+  private updateNodeSize(metric: string) {
+    const normalizedMaps = this.calculateNormalizedMaps(metric);
+  
+    // Select all clusters and update the nodes within each cluster
+    this.svg.selectAll(".cluster").each((d: ClusterNode, i: number, nodes: any[]) => {
+      const clusterNode = d3.select(nodes[i]);
+      const clusterId = d.clusterId;
+      const normalizedMap = normalizedMaps[clusterId];
+
+      console.log('normalizedMap:', normalizedMap);
+      console.log('clusterId:', clusterId);
+      console.log('clusterNode:', clusterNode);
+
+  
+      // Update the radius of each node in the cluster based on the normalized values
+      clusterNode.selectAll(".artist-node")
+        .attr('r', (d: any) => this.calculateNodeRadius(d.artist.id, normalizedMap, d.countryData.innerRadius));
+    });
+  }
+  
+  private calculateNodeRadius(artistId: number, normalizedMap: Map<number, number>, innerRadius: number): number {
+    const normalizedValue = normalizedMap.get(artistId) || 0;
+    return this.calculateRadiusForNode(normalizedValue, innerRadius);
+  }
+  
+  
 
   private updateSunburst(value: string) {
     const range = this.decisionService.getDecisionRange();
@@ -188,13 +246,13 @@ export class ClusterVisualizationComponent implements OnInit {
   }
 
 
-  updateArtists(range: any) {
+  private   updateArtists(range: any) {
     const k = this.decisionService.getK();
     this.updateCluster(k)
     console.log(range);
   }
 
-  updateCluster(k: number) {
+  private   updateCluster(k: number) {
     if(this.firstK === -1){
       this.firstK = this.firstK + 1;
       return;
@@ -202,8 +260,7 @@ export class ClusterVisualizationComponent implements OnInit {
     console.log(k);
     const range = this.decisionService.getDecisionRange();
     if(range.length !== 0){
-      console.log('range:', range)
-      console.log('k value:', k)
+
        // Remove the existing SVG element
     d3.select("figure#network").select("svg").remove();
       this.isLoading = true;
@@ -211,7 +268,6 @@ export class ClusterVisualizationComponent implements OnInit {
       const clusters = data[0];
       const intraCommunityEdges = data[1] as exhibited_with[][];
       const interCommunityEdges = data[2] as exhibited_with[];
-      console.log('k data', data)
       const value = this.decisionService.getDecisionSunburst();
       this.loadNewData(clusters, intraCommunityEdges, interCommunityEdges, value);
 
@@ -224,7 +280,7 @@ export class ClusterVisualizationComponent implements OnInit {
     }
   }
 
-  loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][], interCommunityEdges: exhibited_with[], value: string){
+private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][], interCommunityEdges: exhibited_with[], value: string){
     // Remove the existing SVG element
     d3.select("figure#network").select("svg").remove();
     this.clusters = clusters;
@@ -236,8 +292,13 @@ export class ClusterVisualizationComponent implements OnInit {
     }));
 
     let allArtists:Artist[]= [];
-    this.clusters.forEach(cluster => {;
+    this.clusters.forEach((cluster, clusterIndex) => {
       allArtists.push(...cluster);
+  
+      // Populate the artistClusterMap
+      cluster.forEach(artist => {
+        this.artistClusterMap.set(artist.id, this.clusterNodes[clusterIndex]);
+      });
     });
     this.selectedCluster = allArtists;
     this.selectionService.selectArtist(this.selectedCluster);
@@ -276,10 +337,16 @@ export class ClusterVisualizationComponent implements OnInit {
         }));
 
         let allArtists:Artist[]= [];
-        this.clusters.forEach(cluster => {;
+        this.clusters.forEach((cluster, clusterIndex) => {
           allArtists.push(...cluster);
+      
+          // Populate the artistClusterMap
+          cluster.forEach(artist => {
+            this.artistClusterMap.set(artist.id, this.clusterNodes[clusterIndex]);
+          });
         });
         this.selectedCluster = allArtists;
+        this.allArtists = allArtists;
        
         this.selectionService.selectArtist(this.selectedCluster);
 
@@ -604,10 +671,8 @@ export class ClusterVisualizationComponent implements OnInit {
         break;
     }
 
-  console.log(countryMap)
   // Calculate angles for each nationality segment
   const countries = Array.from(countryMap.keys());
-  console.log(countries)
   const totalArtists = clusterNode.artists.length;
   const minimumAngle = Math.PI / 18;
 
@@ -739,7 +804,6 @@ this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
     else if(value === 'birthcountry'){
       artistNodes = artists.map((artist: Artist) => {
         const countryData = countryCentroids[artist.birthcountry];
-        console.log(artist, countryData)
         const degree = degreeMap.get(artist.id) || 0;
         const radialScale = this.setupRadialScale(cluster.innerRadius);
         const radial = radialScale(degree);
@@ -941,9 +1005,7 @@ this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
   
   // Used to order them by default
   private prepareData(artists: Artist[], value: string): Artist[] {
-    artists.forEach((artist, index) => {
-      console.log(artist.nationality,artist.birthcountry,artist.deathcountry,artist.most_exhibited_in)
-    })
+
     const regionMap = new Map<string, any[]>();
 
     // Initialize regions in the map to preserve order
@@ -991,9 +1053,7 @@ else if(value === 'mostexhibited'){
       .filter(([region, artists]) => artists.length > 0)
       .flatMap(([region, artists]) => artists);
 
-     sortedArtists.forEach((artist, index) => {
-      console.log(artist.nationality)
-     })
+
     return sortedArtists;
   }
 
@@ -1153,5 +1213,10 @@ private boundaryForce(artistNodes: ArtistNode[], innerRadius: number, padding: n
       this.degreesMap[clusterId] = normalizedDegrees;
     });
   }
+
+  
+
+
+  
 
 }
