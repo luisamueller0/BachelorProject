@@ -117,7 +117,7 @@ export class ClusterVisualizationComponent implements OnInit {
       if (type === 'sunburst') {
         this.updateSunburst(value);
         const currentNodeSize = this.decisionService.getDecisionSize();
-        //this.updateNodeSize(currentNodeSize);
+        this.updateNodeSize(currentNodeSize);
       }
     }
   }
