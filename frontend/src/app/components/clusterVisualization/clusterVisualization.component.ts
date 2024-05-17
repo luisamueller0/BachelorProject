@@ -115,8 +115,9 @@ export class ClusterVisualizationComponent implements OnInit {
         this.updateNodeSize(value);
       }
       if (type === 'sunburst') {
-        this.updateSunburst(value);
         const currentNodeSize = this.decisionService.getDecisionSize();
+        this.updateSunburst(value);
+        
         this.updateNodeSize(currentNodeSize);
       }
     }
@@ -129,40 +130,32 @@ export class ClusterVisualizationComponent implements OnInit {
       let metricMap = new Map<number, number>();
   
       if (metric === 'Amount of Exhibitions') {
-        if (this.totalExhibitionsMap[clusterId]) {
-          metricMap = this.totalExhibitionsMap[clusterId];
-        } else {
+      
           cluster.forEach((artist: Artist) => {
             metricMap.set(artist.id, artist.total_exhibited_artworks);
           });
           this.totalExhibitionsMap[clusterId] = this.normalizeLinear(metricMap);
-        }
+        
       } else if (metric === 'Amount of different techniques') {
-        if (this.differentTechniquesMap[clusterId]) {
-          metricMap = this.differentTechniquesMap[clusterId];
-        } else {
+    
           cluster.forEach((artist: Artist) => {
             metricMap.set(artist.id, artist.amount_techniques);
           });
           this.differentTechniquesMap[clusterId] = this.normalizeLinear(metricMap);
-        }
+        
       } else if (metric === 'Amount of exhibited Artworks') {
-        if (this.totalExhibitedArtworksMap[clusterId]) {
-          metricMap = this.totalExhibitedArtworksMap[clusterId];
-        } else {
+
           cluster.forEach((artist: Artist) => {
             metricMap.set(artist.id, artist.total_exhibited_artworks);
           });
           this.totalExhibitedArtworksMap[clusterId] = this.normalizeLinear(metricMap);
-        }
+        
       } else if (metric === 'default: Importance (Degree)') {
-        if (this.degreesMap[clusterId]) {
-          metricMap = this.degreesMap[clusterId];
-        } else {
+
           // Calculate degrees only if not already done
           this.calculateNodeDegreesForClusters();
           metricMap = this.degreesMap[clusterId];
-        }
+        
       }
 
       normalizedMaps[clusterId] = this.normalizeLinear(metricMap);
@@ -826,8 +819,12 @@ this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
   private createArtistNetwork(value: string, clusterGroup: any, cluster: ClusterNode, countryCentroids: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } }): void {
     const artists = cluster.artists;
     const relationships = this.intraCommunityEdges[cluster.clusterId];
+    const size = this.decisionService.getDecisionSize();
+    console.log('size:',size)
+    const metricMap = this.calculateNormalizedMaps(size)[cluster.clusterId];
     const degreeMap = this.degreesMap[cluster.clusterId] || new Map<number, number>();
-  
+
+
     // Define the central position of the cluster
     const centerX = 0;
     const centerY = 0;
@@ -839,6 +836,7 @@ this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
         const degree = degreeMap.get(artist.id) || 0;
         const radialScale = this.setupRadialScale(cluster.innerRadius);
         const radial = radialScale(degree);
+        const nodeRadius = metricMap.get(artist.id) || 0;
         const angle = countryData.middleAngle;
         const x = centerX + radial * Math.sin(angle);
         const y = centerY - radial * Math.cos(angle);
@@ -851,7 +849,7 @@ this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
           vx: 0,
           vy: 0,
           angle: angle,
-          radius: this.calculateRadiusForNode(degree, cluster.innerRadius),
+          radius: this.calculateRadiusForNode(nodeRadius, cluster.innerRadius),
           color: this.globalColorScale(countryIndex),
           countryData: countryData
         };
@@ -863,6 +861,7 @@ this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
         const degree = degreeMap.get(artist.id) || 0;
         const radialScale = this.setupRadialScale(cluster.innerRadius);
         const radial = radialScale(degree);
+        const nodeRadius = metricMap.get(artist.id) || 0;
         const angle = countryData.middleAngle;
         const x = centerX + radial * Math.sin(angle);
         const y = centerY - radial * Math.cos(angle);
@@ -875,7 +874,7 @@ this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
           vx: 0,
           vy: 0,
           angle: angle,
-          radius: this.calculateRadiusForNode(degree, cluster.innerRadius),
+          radius: this.calculateRadiusForNode(nodeRadius, cluster.innerRadius),
           color: this.globalColorScale(countryIndex),
           countryData: countryData
         };
@@ -884,9 +883,10 @@ this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
     else if(value === 'deathcountry'){
       artistNodes= artists.map((artist: Artist) => {
         const countryData = countryCentroids[artist.deathcountry];
-        const degree = degreeMap.get(artist.id) || 0;
+        const degree =degreeMap.get(artist.id) || 0;
         const radialScale = this.setupRadialScale(cluster.innerRadius);
         const radial = radialScale(degree);
+        const nodeRadius = metricMap.get(artist.id) || 0;
         const angle = countryData.middleAngle;
         const x = centerX + radial * Math.sin(angle);
         const y = centerY - radial * Math.cos(angle);
@@ -899,7 +899,7 @@ this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
           vx: 0,
           vy: 0,
           angle: angle,
-          radius: this.calculateRadiusForNode(degree, cluster.innerRadius),
+          radius: this.calculateRadiusForNode(nodeRadius, cluster.innerRadius),
           color: this.globalColorScale(countryIndex),
           countryData: countryData
         };
@@ -908,9 +908,10 @@ this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
     else if(value === 'mostexhibited'){
       artistNodes = artists.map((artist: Artist) => {
         const countryData = countryCentroids[artist.most_exhibited_in];
-        const degree = degreeMap.get(artist.id) || 0;
+        const degree =degreeMap.get(artist.id) || 0;
         const radialScale = this.setupRadialScale(cluster.innerRadius);
         const radial = radialScale(degree);
+        const nodeRadius = metricMap.get(artist.id) || 0;
         const angle = countryData.middleAngle;
         const x = centerX + radial * Math.sin(angle);
         const y = centerY - radial * Math.cos(angle);
@@ -923,7 +924,7 @@ this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
           vx: 0,
           vy: 0,
           angle: angle,
-          radius: this.calculateRadiusForNode(degree, cluster.innerRadius),
+          radius: this.calculateRadiusForNode(nodeRadius, cluster.innerRadius),
           color: this.globalColorScale(countryIndex),
           countryData: countryData
         };
