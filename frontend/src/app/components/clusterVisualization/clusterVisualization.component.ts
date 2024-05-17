@@ -132,11 +132,11 @@ export class ClusterVisualizationComponent implements OnInit {
         cluster.forEach((artist: Artist) => {
           metricMap.set(artist.id, artist.total_exhibited_artworks);
         });
-      } else if (metric === 'Amount of Different Techniques') {
+      } else if (metric === 'Amount of different techniques') {
         cluster.forEach((artist: Artist) => {
           metricMap.set(artist.id, artist.amount_techniques);
         });
-      } else if (metric === 'Amount of Exhibited Artworks') {
+      } else if (metric === 'Amount of exhibited Artworks') {
         cluster.forEach((artist: Artist) => {
           metricMap.set(artist.id, artist.total_exhibited_artworks);
         });
@@ -153,29 +153,31 @@ export class ClusterVisualizationComponent implements OnInit {
 
   private updateNodeSize(metric: string) {
     const normalizedMaps = this.calculateNormalizedMaps(metric);
-  
+
     // Select all clusters and update the nodes within each cluster
-    this.svg.selectAll(".cluster").each((d: ClusterNode, i: number, nodes: any[]) => {
-      const clusterNode = d3.select(nodes[i]);
-      const clusterId = d.clusterId;
-      const normalizedMap = normalizedMaps[clusterId];
+    this.g.selectAll(".cluster").each((clusterData: ClusterNode, i: number, nodes: any[]) => {
+        const clusterNode = d3.select(nodes[i]);
+        const clusterId = clusterData.clusterId;
+        const normalizedMap = normalizedMaps[clusterId];
 
-      console.log('normalizedMap:', normalizedMap);
-      console.log('clusterId:', clusterId);
-      console.log('clusterNode:', clusterNode);
-
-  
-      // Update the radius of each node in the cluster based on the normalized values
-      clusterNode.selectAll(".artist-node")
-        .attr('r', (d: any) => this.calculateNodeRadius(d.artist.id, normalizedMap, d.countryData.innerRadius));
+        
+        // Update the radius of each node in the cluster based on the normalized values
+        clusterNode.selectAll(".artist-node")
+            .attr('r', (d: any) => {
+                const artistId = d.artist.id;
+    
+                const innerRadius = clusterData.innerRadius; // Use the cluster's innerRadius directly
+                // Calculate and return the new radius
+                return this.calculateNodeRadius(artistId, normalizedMap, innerRadius);
+            });
     });
-  }
-  
-  private calculateNodeRadius(artistId: number, normalizedMap: Map<number, number>, innerRadius: number): number {
+}
+
+private calculateNodeRadius(artistId: number, normalizedMap: Map<number, number>, innerRadius: number): number {
     const normalizedValue = normalizedMap.get(artistId) || 0;
     return this.calculateRadiusForNode(normalizedValue, innerRadius);
-  }
-  
+}
+
   
 
   private updateSunburst(value: string) {
