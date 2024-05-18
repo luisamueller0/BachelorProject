@@ -7,6 +7,7 @@ import { DecisionService } from '../../services/decision.service';
 import { ArtistService } from '../../services/artist.service';
 import { SelectionService } from '../../services/selection.service';
 
+
 interface InterCommunityEdge extends d3.SimulationLinkDatum<ClusterNode> {
   source: number | ClusterNode;
   target: number | ClusterNode;
@@ -64,7 +65,7 @@ export class ClusterVisualizationComponent implements OnInit {
   private selectedCluster: any = null;
 
   // Forces in the clusters
-  private simulation: d3.Simulation<ArtistNode, undefined> | null = null;
+  private simulation: d3.Simulation<ArtistNode, undefined>[] = [];
 
   // Forces between the clusters
   private clusterSimulation: d3.Simulation<ClusterNode, undefined> | null = d3.forceSimulation<ClusterNode>();
@@ -164,60 +165,65 @@ export class ClusterVisualizationComponent implements OnInit {
     return normalizedMaps;
   }
   
+private updateNodeSize(metric: string) {
+  const normalizedMaps = this.calculateNormalizedMaps(metric);
 
-  private updateNodeSize(metric: string) {
-    const normalizedMaps = this.calculateNormalizedMaps(metric);
+  // Select all clusters and update the nodes within each cluster
+  this.g.selectAll(".cluster").each((clusterData: ClusterNode, i: number, nodes: any[]) => {
+    const clusterNode = d3.select(nodes[i]);
+    const clusterId = clusterData.clusterId;
+    const normalizedMap = normalizedMaps[clusterId];
 
-    // Select all clusters and update the nodes within each cluster
-    this.g.selectAll(".cluster").each((clusterData: ClusterNode, i: number, nodes: any[]) => {
-        const clusterNode = d3.select(nodes[i]);
-        const clusterId = clusterData.clusterId;
-        const normalizedMap = normalizedMaps[clusterId];
+    // Array to store sizes of nodes in the current cluster
+    const updatedSizes: number[] = [];
 
-        // Update the radius of each node in the cluster based on the normalized values
-        clusterNode.selectAll<SVGCircleElement, ArtistNode>(".artist-node")
-            .attr('r', (d: ArtistNode) => {
-                const artistId = d.artist.id;
-                const innerRadius = clusterData.innerRadius; // Use the cluster's innerRadius directly
-                return this.calculateNodeRadius(artistId, normalizedMap, innerRadius);
-            });
+    // Update the radius of each node in the cluster based on the normalized values
+    clusterNode.selectAll<SVGCircleElement, ArtistNode>(".artist-node")
+      .attr('r', (d: ArtistNode) => {
+        const artistId = d.artist.id;
+        const innerRadius = clusterData.innerRadius; // Use the cluster's innerRadius directly
+        const radius = this.calculateNodeRadius(artistId, normalizedMap, innerRadius);
+        updatedSizes[d.id] = radius;
+        return radius;
+      });
 
-        // Reinitialize the force simulation for the artist nodes
-        const artistNodes = clusterNode.selectAll<SVGCircleElement, ArtistNode>(".artist-node").data();
-        this.runArtistSimulation(artistNodes, clusterData);
-    });
+    // Reinitialize the force simulation for the artist nodes
+    const artistNodes = clusterNode.selectAll<SVGCircleElement, ArtistNode>(".artist-node").data();
+    this.resetSimulation(updatedSizes, artistNodes, clusterData);
+  });
 }
 
-private runArtistSimulation(artistNodes: ArtistNode[], cluster: ClusterNode) {
-    const relationships = this.intraCommunityEdges[cluster.clusterId];
-    const sizes = this.getNodeSizes(artistNodes);
+private resetSimulation(updatedSizes: number[], artistNodes: ArtistNode[], cluster: ClusterNode) {
+  if (this.simulation[cluster.clusterId]) {
+    const nodesSelection = this.g.select(`.cluster-${cluster.clusterId}`).selectAll('.artist-node')
+    const edgesSelection = this.g.selectAll(`.cluster-${cluster.clusterId} .artist-edge`);
+    // Create the force simulation
+    this.simulation[cluster.clusterId] = d3.forceSimulation<ArtistNode>(artistNodes) // Explicitly define the type of the force simulation
+      .force("collision", d3.forceCollide((d: any) => this.calculateCollisionRadius(updatedSizes[d.id] || 0)))
+      .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - 10)) // Add boundary force
+      .on("tick", () => {
+        nodesSelection
+          .attr('cx', (d: any) => {
+            console.log(d.x)
 
-    // Re-create the force simulation
-    const simulation = d3.forceSimulation(artistNodes)
-        .force("collision", d3.forceCollide((d: any) => this.calculateCollisionRadius(sizes[d.id] || 0)))
-        .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - 10)) // Add boundary force
-        .on("tick", () => {
-            this.g.selectAll(".artist-node")
-                .attr('cx', (d: any) => d.x)
-                .attr('cy', (d: any) => d.y);
-            this.g.selectAll(".artist-edge")
-                .attr("x1", (d: any) => d.source.x)
-                .attr("y1", (d: any) => d.source.y)
-                .attr("x2", (d: any) => d.target.x)
-                .attr("y2", (d: any) => d.target.y);
-        });
+            return d.x;
+          }) // Use 'cx' for circle elements
+          .attr('cy', (d: any) => {
 
-    // Restart the simulation
-    simulation.alpha(1).restart();
+            return d.y;
+          }); // Use 'cy' for circle elements
+        edgesSelection
+          .attr("x1", (d: any) => d.source.x)
+          .attr("y1", (d: any) => d.source.y)
+          .attr("x2", (d: any) => d.target.x)
+          .attr("y2", (d: any) => d.target.y);
+      })
+
+    // Add boundary force to keep nodes within the cluster's sunburst
+    this.simulation[cluster.clusterId].alpha(1).restart(); // Restart the simulation with alpha
+  }
 }
 
-private getNodeSizes(artistNodes: ArtistNode[]): number[] {
-    const sizes: number[] = [];
-    artistNodes.forEach(node => {
-        sizes[node.id] = node.radius;
-    });
-    return sizes;
-}
 
 
 private calculateNodeRadius(artistId: number, normalizedMap: Map<number, number>, innerRadius: number): number {
@@ -763,7 +769,7 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
 
   // Create a new group for this cluster
   const clusterGroup = d3.create("svg:g")
-    .attr("class", "cluster")
+  .attr("class", `cluster cluster-${clusterNode.clusterId}`)
     .on('click', () => this.onClusterClick(clusterNode))
     .attr("transform", `translate(${clusterNode.x}, ${clusterNode.y})`);
 
@@ -1015,7 +1021,7 @@ this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
     .force("collision", d3.forceCollide((d: any) => this.calculateCollisionRadius(sizes[d.id] || 0)))
     .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - 10)) // Add boundary force
     .on("tick", () => {
-      this.svg.selectAll('.node')
+      this.g.selectAll('.artist-node')
         .attr('cx', (d: any) => d.x)
         .attr('cy', (d: any) => d.y);
       edges
@@ -1024,6 +1030,8 @@ this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
         .attr("x2", (d: any) => d.target.x)
         .attr("y2", (d: any) => d.target.y);
     });
+  simulation.nodes(artistNodes);
+  this.simulation[cluster.clusterId] = simulation;
   simulation.alpha(1).restart();
 
  

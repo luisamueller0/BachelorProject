@@ -28,7 +28,7 @@ interface ArtistData {
   cluster: number;
   }
 
-  interface ArtistNode extends d3.SimulationNodeDatum {
+  interface ArtistNode extends d3.SimulationNodeDatum{
     id: number;
     artist: Artist;
     angle: number;
