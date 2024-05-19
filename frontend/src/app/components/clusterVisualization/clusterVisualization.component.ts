@@ -1,5 +1,4 @@
-import { Component, OnInit } from '@angular/core';
-import { Artist, ArtistNode, ClusterNode } from '../../models/artist';
+import { Component, OnInit, HostListener } from '@angular/core';import { Artist, ArtistNode, ClusterNode } from '../../models/artist';
 import exhibited_with from '../../models/exhibited_with';
 import { Subscription } from 'rxjs';
 import * as d3 from 'd3';
@@ -78,12 +77,11 @@ private isNodeClick: boolean = false;
 
   private clusterCountryCentroids: { [clusterId: number]: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } } = {};
   
-  constructor(private decisionService: DecisionService, 
+    constructor(private decisionService: DecisionService, 
     private artistService: ArtistService,
     private selectionService: SelectionService) {
-       // Bind the method
     this.handleNodeClick = this.handleNodeClick.bind(this);
-     }
+  }
 
   ngOnInit() {
     this.loadInitialData();
@@ -110,9 +108,97 @@ private isNodeClick: boolean = false;
     this.subscriptions.add(this.decisionService.currentK.subscribe(k => {
       this.updateCluster(k);
     }));
+
+    // Call resize handler initially
+    this.resizeSvg();
+    window.addEventListener('resize', this.onResize.bind(this));
   }
 
-  updateVisualization(type: string, value: any) {
+  ngOnDestroy() {
+    this.subscriptions.unsubscribe();
+    window.removeEventListener('resize', this.onResize.bind(this));
+  }
+  @HostListener('window:resize', ['$event'])
+  onResize(event: any) {
+    this.resizeSvg();
+  }
+
+  private resizeSvg(): void {
+    if (!this.g) return; // Ensure this.g is initialized before proceeding
+
+    const svgElement = d3.select("figure#network svg");
+    const width = window.innerWidth * 0.9; // 90% of window width
+    const height = window.innerHeight * 0.8; // 80% of window height
+
+    svgElement
+      .attr("width", width)
+      .attr("height", height);
+
+    this.baseWidth = width - (this.margin * 2);
+    this.baseHeight = height - (this.margin * 2);
+
+    // Adjust the zoom to fit the clusters
+    this.zoomToFitClusters();
+  }
+
+  private zoomToFitClusters(): void {
+    if (!this.g) return; // Ensure this.g is initialized before proceeding
+  
+    const bounds = this.g.node().getBBox();
+    const fullWidth = bounds.width;
+    const fullHeight = bounds.height;
+    const width = parseInt(this.svg.attr("width"));
+    const height = parseInt(this.svg.attr("height"));
+    const midX = bounds.x + fullWidth / 2;
+    const midY = bounds.y + fullHeight / 2;
+  
+    if (fullWidth === 0 || fullHeight === 0) return; // Nothing to fit
+  
+    // Adjust the scale factor to add extra space around the clusters
+    const scaleAdjustmentFactor = 0.9; // Adjust this value to get the desired extra space (less than 1 to zoom out further)
+    const scale = scaleAdjustmentFactor * Math.min(width / fullWidth, height / fullHeight);
+  
+    const translate = [width / 2 - scale * midX, height / 2 - scale * midY];
+  
+    this.svg.transition()
+      .duration(750)
+      .call(d3.zoom().transform, d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale));
+  }
+  private createSvg(): void {
+    const zoom: d3.ZoomBehavior<Element, unknown> = d3.zoom<Element, unknown>()
+      .scaleExtent([0.1, 10])
+      .on('zoom', (event: any) => {
+        this.g.attr('transform', event.transform);
+      })
+      .filter((event: any) => {
+        // Allow zooming with mousewheel, pinch, and double-click, but prevent zooming with right click and dragging
+        return (!event.ctrlKey || event.type === 'wheel') && event.button === 0;
+      });
+  
+    this.svg = d3.select("figure#network")
+      .append("svg")
+      .call(zoom as any) // Cast to any to resolve type issue
+      .attr("width", this.baseWidth + (this.margin * 2)) // Set initial dimensions
+      .attr("height", this.baseHeight + (this.margin * 2)) // Set initial dimensions
+      .append("g")
+      .attr("transform", `translate(${this.baseWidth / 2 + this.margin}, ${this.baseHeight / 2 + this.margin})`);
+  
+    this.g = this.svg.append('g');
+  
+    // Add a group for clusters
+    this.g.append('g')
+      .attr('class', 'clusters');
+  
+    // Add a group for inter-community edges
+    this.g.append('g')
+      .attr('class', 'inter-community-edges');
+  
+    this.resizeSvg(); // Call resizeSvg to adjust dimensions after initialization
+  
+    console.log("SVG element created:", this.svg);
+  }
+  
+ private updateVisualization(type: string, value: any) {
     console.log(`Updated ${type} to ${value}`);
     if (this.isIniatialized) {
       if (type === 'size') {
@@ -409,9 +495,7 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
   
 
   }
-  ngOnDestroy() {
-    this.subscriptions.unsubscribe();
-  }
+
 
   
   private loadInitialData() {
@@ -467,39 +551,7 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
     this.renderInterCommunityEdges(); // Render inter-community edges next
   }
 
-  private createSvg(): void {
-    const zoom: d3.ZoomBehavior<Element, unknown> = d3.zoom<Element, unknown>()
-      .scaleExtent([0.1, 10])
-      .on('zoom', (event: any) => {
-        this.g.attr('transform', event.transform);
-      });
-  
-    // Calculate the dimensions based on the number of clusters
-    const dimensions = this.calculateSvgDimensions(this.clusters.length);
-    this.baseWidth = dimensions.width;
-    this.baseHeight = dimensions.height;
-  
-    this.svg = d3.select("figure#network")
-      .append("svg")
-      .attr("width", this.baseWidth + (this.margin * 2))
-      .attr("height", this.baseHeight + (this.margin * 2))
-      .call(zoom as any) // Cast to any to resolve type issue
-      .append("g")
-      .attr("transform", `translate(${this.baseWidth / 2 + this.margin}, ${this.baseHeight / 2 + this.margin})`);
-  
-    this.g = this.svg.append('g');
-  
-    // Add a group for clusters
-    this.g.append('g')
-      .attr('class', 'clusters');
-  
-    // Add a group for inter-community edges
-    this.g.append('g')
-      .attr('class', 'inter-community-edges');
-  
-    // Debug: Log the SVG element to ensure it is created correctly
-    console.log("SVG element created:", this.svg);
-  }
+ 
   
   private calculateSvgDimensions(numClusters: number): { width: number, height: number } {
     const clustersPerRow = Math.ceil(Math.sqrt(numClusters));
@@ -1094,11 +1146,20 @@ private onClusterClick(clusterNode: ClusterNode): void {
         return d.source.id === selectedNodeId || d.target.id === selectedNodeId;
       }).style('stroke', (d: any) => edgeColorScale(d.sharedExhibitionMinArtworks));
   
-      // Set edges that are not connected to the selected node to none
-      this.g.selectAll(".artist-edge").filter((d: any) => {
-        return d.source.id !== selectedNodeId && d.target.id !== selectedNodeId;
-      }).style('stroke', 'none'); // Set to none
-  
+   // Set edges that are not connected to the selected node within the same cluster to none
+this.g.selectAll(".artist-edge").filter((d: any) => {
+  const clusterNode = this.artistClusterMap.get(artistNode.id);
+  if (!clusterNode) return false; // Safety check
+
+  const clusterId = clusterNode.clusterId;
+  const sourceClusterNode = this.artistClusterMap.get(d.source.id);
+  const targetClusterNode = this.artistClusterMap.get(d.target.id);
+
+  // Ensure both source and target nodes are within the same cluster
+  return (sourceClusterNode && sourceClusterNode.clusterId === clusterId) && (targetClusterNode && targetClusterNode.clusterId === clusterId) && 
+         (d.source.id !== selectedNodeId && d.target.id !== selectedNodeId);
+}).style('stroke', 'none'); // Set to none
+
       // Add black border to connected nodes
       this.g.selectAll(".artist-node").each((d: any, i: number, nodes: any) => {
         if (connectedNodeIds.has(d.id)) {

@@ -1,40 +1,44 @@
-.wrapper {
-  display: flex; /* Use flexbox for layout */
-}
-
-/* Set a fixed width for the first child */
-.wrapper > *:first-child {
-  width: 500px;
-  flex-shrink: 0;  
-}
-
-/* Allow other elements to flexibly fill the remaining space */
-.wrapper > *:not(:first-child) {
-  flex-grow: 1;
-}
-
-/* Maintain spacing between components */
-.wrapper > * {
-  margin-right: 20px; 
-}
-
-/* Remove margin on the last element */
-.wrapper > *:last-child {
-  margin-right: 0;
-}
 .container {
-  border: 2px solid #ccc; /* Overall border around the container */
-  padding: 20px; /* Add padding inside the container to space out the components */
+  display: flex;
+  height: 100vh; /* Make the container take the full height of the viewport */
+  padding: 0; /* Remove padding */
+  margin: 0; /* Remove margin */
 }
 
 .wrapper {
   display: flex;
-  flex-wrap: wrap; /* Allow components to wrap if they exceed the container width */
-  gap: 20px; /* Add some space between components */
+  flex-direction: row; /* Arrange children in a row */
+  width: 100%;
+  height: 100%;
 }
 
-app-decisions, app-visualization, app-barchart {
+.sidebar {
+  width: 10%; /* Sidebar takes 10% of the width */
+  display: flex;
+  flex-direction: column; /* Stack sidebar items vertically */
+  padding: 10px; /* Add padding */
+  box-sizing: border-box; /* Include padding in the element's total width and height */
+}
+
+.main-content {
+  width: 90%; /* Main content takes the remaining 90% */
+  display: flex;
+  flex-direction: column; /* Stack main content items vertically */
+  padding: 10px; /* Add padding */
+  box-sizing: border-box; /* Include padding in the element's total width and height */
+}
+
+.main-content app-clusterVisualization {
+  flex-grow: 1; /* Cluster visualization takes up remaining vertical space */
+}
+
+.main-content app-barchart {
+  height: auto; /* Let the bar chart height adjust based on its content */
+}
+
+app-decisions, app-placeholder, app-clusterVisualization, app-barchart {
   border: 2px solid #ccc; /* Border around each individual component */
-  padding: 20px; /* Add padding inside each component to space out the content */
-  flex-grow: 1; /* Allow components to grow to fill available space */
+  padding: 10px; /* Add padding inside each component to space out the content */
+  box-sizing: border-box; /* Include padding in the element's total width and height */
+  margin-bottom: 10px; /* Add margin between stacked components */
 }
