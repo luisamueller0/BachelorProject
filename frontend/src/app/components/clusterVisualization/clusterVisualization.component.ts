@@ -1,11 +1,11 @@
-import { Component, OnInit, HostListener } from '@angular/core';import { Artist, ArtistNode, ClusterNode } from '../../models/artist';
+import { Component, OnInit, HostListener } from '@angular/core';
+import * as d3 from 'd3';
+import { Artist, ArtistNode, ClusterNode } from '../../models/artist';
 import exhibited_with from '../../models/exhibited_with';
 import { Subscription } from 'rxjs';
-import * as d3 from 'd3';
 import { DecisionService } from '../../services/decision.service';
 import { ArtistService } from '../../services/artist.service';
 import { SelectionService } from '../../services/selection.service';
-
 
 interface InterCommunityEdge extends d3.SimulationLinkDatum<ClusterNode> {
   source: number | ClusterNode;
@@ -19,67 +19,54 @@ interface InterCommunityEdge extends d3.SimulationLinkDatum<ClusterNode> {
   styleUrls: ['./clusterVisualization.component.css']
 })
 export class ClusterVisualizationComponent implements OnInit {
-
   public isLoading: boolean = true;
   private firstK: number = -1;
   private isIniatialized: boolean = false;
-  // Data from backend
+
   private clusters: Artist[][] = [];
   private intraCommunityEdges: exhibited_with[][] = [];
   private interCommunityEdges: InterCommunityEdge[] = [];
   private clusterNodes: ClusterNode[] = [];
   private allArtists: Artist[] = [];
   private artistClusterMap: Map<number, ClusterNode> = new Map<number, ClusterNode>();
-  private artistNodes:ArtistNode[][]= [];
+  private artistNodes: ArtistNode[][] = [];
   private selectedClusterNode: ClusterNode | null = null;
 
-  // User Interactions
   private subscriptions: Subscription = new Subscription();
 
-  // SVG properties
   private svg: any;
   private g: any; // Group for zooming
-  private margin = 50;
-  private baseWidth = 2000 - (this.margin * 2);
-  private baseHeight = 2000 - (this.margin * 2);
+  private baseWidth: number = 0; // Adjusted width
+  private baseHeight: number = 0; // Adjusted height
   private minClusterRadius = 200; // Minimum radius for each cluster
 
-  // Create a color scale
-  private edgeColorScale = d3.scaleSequential(d3.interpolateGreys) // You can use any color scale you prefer
-    .domain([0, 1]); // Adjust the domain based on your normalized values range
+  private edgeColorScale = d3.scaleSequential(d3.interpolateGreys).domain([0, 1]);
 
-  // For selections
   private degreesMap: { [clusterId: number]: Map<number, number> } = {};
   private totalExhibitionsMap: { [clusterId: number]: Map<number, number> } = {};
-  private totalExhibitedArtworksMap:{ [clusterId: number]: Map<number, number> } = {};
+  private totalExhibitedArtworksMap: { [clusterId: number]: Map<number, number> } = {};
   private differentTechniquesMap: { [clusterId: number]: Map<number, number> } = {};
 
-  // Sunburst Properties
   private sunburstThickness: number = 50;
 
-  // Inner order selection
   private regionOrder: string[] = ["North Europe", "Eastern Europe", "Southern Europe", "Western Europe", "Others"];
 
-  // Network Properties
   private selectedNode: [SVGCircleElement, string] | null = null;
   private selectedCluster: any = null;
-  // Class properties
-private isNodeClick: boolean = false;
+  private isNodeClick: boolean = false;
 
-  // Forces in the clusters
   private simulation: d3.Simulation<ArtistNode, undefined>[] = [];
 
-  // Forces between the clusters
   private clusterSimulation: d3.Simulation<ClusterNode, undefined> | null = d3.forceSimulation<ClusterNode>();
 
   private countryIndexMap = new Map<string, number>();
-  private globalColorScale: d3.ScaleSequential<string, number> = d3.scaleSequential(d3.interpolateSpectral); // Default color scale
+  private globalColorScale: d3.ScaleSequential<string, number> = d3.scaleSequential(d3.interpolateSpectral);
 
   private clusterCountryCentroids: { [clusterId: number]: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } } = {};
-  
-    constructor(private decisionService: DecisionService, 
-    private artistService: ArtistService,
-    private selectionService: SelectionService) {
+
+  constructor(private decisionService: DecisionService,
+              private artistService: ArtistService,
+              private selectionService: SelectionService) {
     this.handleNodeClick = this.handleNodeClick.bind(this);
   }
 
@@ -109,7 +96,6 @@ private isNodeClick: boolean = false;
       this.updateCluster(k);
     }));
 
-    // Call resize handler initially
     this.resizeSvg();
     window.addEventListener('resize', this.onResize.bind(this));
   }
@@ -118,32 +104,32 @@ private isNodeClick: boolean = false;
     this.subscriptions.unsubscribe();
     window.removeEventListener('resize', this.onResize.bind(this));
   }
+
   @HostListener('window:resize', ['$event'])
   onResize(event: any) {
     this.resizeSvg();
   }
 
   private resizeSvg(): void {
-    if (!this.g) return; // Ensure this.g is initialized before proceeding
+    if (!this.g) return;
 
     const svgElement = d3.select("figure#network svg");
-    const width = window.innerWidth * 0.9; // 90% of window width
-    const height = window.innerHeight * 0.8; // 80% of window height
+    const width = window.innerWidth; // Use full window width
+    const height = window.innerHeight; // Use full window height
 
     svgElement
       .attr("width", width)
       .attr("height", height);
 
-    this.baseWidth = width - (this.margin * 2);
-    this.baseHeight = height - (this.margin * 2);
+    this.baseWidth = width;
+    this.baseHeight = height;
 
-    // Adjust the zoom to fit the clusters
     this.zoomToFitClusters();
   }
 
   private zoomToFitClusters(): void {
-    if (!this.g) return; // Ensure this.g is initialized before proceeding
-  
+    if (!this.g) return;
+
     const bounds = this.g.node().getBBox();
     const fullWidth = bounds.width;
     const fullHeight = bounds.height;
@@ -151,53 +137,48 @@ private isNodeClick: boolean = false;
     const height = parseInt(this.svg.attr("height"));
     const midX = bounds.x + fullWidth / 2;
     const midY = bounds.y + fullHeight / 2;
-  
-    if (fullWidth === 0 || fullHeight === 0) return; // Nothing to fit
-  
-    // Adjust the scale factor to add extra space around the clusters
-    const scaleAdjustmentFactor = 0.9; // Adjust this value to get the desired extra space (less than 1 to zoom out further)
+
+    if (fullWidth === 0 || fullHeight === 0) return;
+
+    const scaleAdjustmentFactor = 0.9;
     const scale = scaleAdjustmentFactor * Math.min(width / fullWidth, height / fullHeight);
-  
+
     const translate = [width / 2 - scale * midX, height / 2 - scale * midY];
-  
+
     this.svg.transition()
       .duration(750)
       .call(d3.zoom().transform, d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale));
   }
+
   private createSvg(): void {
     const zoom: d3.ZoomBehavior<Element, unknown> = d3.zoom<Element, unknown>()
-      .scaleExtent([0.1, 10])
+      .scaleExtent([0.1, 10]) // Adjust the zoom range as needed
       .on('zoom', (event: any) => {
         this.g.attr('transform', event.transform);
       })
       .filter((event: any) => {
         // Allow zooming with mousewheel, pinch, and double-click, but prevent zooming with right click and dragging
         return (!event.ctrlKey || event.type === 'wheel') && event.button === 0;
-      });
-  
+      })
+      .wheelDelta((event: WheelEvent) => -event.deltaY * (event.deltaMode === 1 ? 0.005 : 0.002)); // Adjust zoom sensitivity
+
     this.svg = d3.select("figure#network")
       .append("svg")
-      .call(zoom as any) // Cast to any to resolve type issue
-      .attr("width", this.baseWidth + (this.margin * 2)) // Set initial dimensions
-      .attr("height", this.baseHeight + (this.margin * 2)) // Set initial dimensions
-      .append("g")
-      .attr("transform", `translate(${this.baseWidth / 2 + this.margin}, ${this.baseHeight / 2 + this.margin})`);
-  
+      .call(zoom as any)
+      .attr("width", this.baseWidth)
+      .attr("height", this.baseHeight)
+      .append("g");
+
     this.g = this.svg.append('g');
-  
-    // Add a group for clusters
-    this.g.append('g')
-      .attr('class', 'clusters');
-  
-    // Add a group for inter-community edges
-    this.g.append('g')
-      .attr('class', 'inter-community-edges');
-  
-    this.resizeSvg(); // Call resizeSvg to adjust dimensions after initialization
-  
+
+    this.g.append('g').attr('class', 'clusters');
+    this.g.append('g').attr('class', 'inter-community-edges');
+
+    this.resizeSvg();
+
     console.log("SVG element created:", this.svg);
   }
-  
+
  private updateVisualization(type: string, value: any) {
     console.log(`Updated ${type} to ${value}`);
     if (this.isIniatialized) {
@@ -602,7 +583,6 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
   }
 
   private simulateClusters(clusterNodes: ClusterNode[]): void {
-    // Convert interCommunityEdges to the format required by d3.forceLink
     const links: InterCommunityEdge[] = this.interCommunityEdges;
 
     // Define a scale to adjust the link distance based on shared exhibitions
@@ -611,18 +591,18 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
       .range([50, 300]); // Adjust these values as needed for your visualization
 
     this.clusterSimulation = d3.forceSimulation<ClusterNode>(clusterNodes)
-      .force("collision", d3.forceCollide<ClusterNode>().radius(d => d.outerRadius)) // Increase padding
+      .force("collision", d3.forceCollide<ClusterNode>().radius(d => d.outerRadius))
       .force("link", d3.forceLink<ClusterNode, InterCommunityEdge>(links)
         .id(d => d.clusterId)
         .distance(d => linkDistanceScale(d.sharedExhibitionMinArtworks))
       )
-      .force("x", d3.forceX(0).strength(0.2)) // Increase the strength
-      .force("y", d3.forceY(0).strength(0.2)) // Increase the strength
+      .force("x", d3.forceX((d:ClusterNode) => (d.clusterId % 2 === 0 ? 500 : -500)).strength(0.7)) // Increase strength and offset
+      .force("y", d3.forceY(0).strength(0.05)) // Reduce strength of y force
       .on("tick", () => this.ticked());
 
-    // Debug: Log the cluster simulation setup
     console.log("Cluster simulation setup with links:", this.clusterSimulation);
-  }
+}
+
 
 
   private ticked(): void {

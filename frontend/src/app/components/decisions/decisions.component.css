@@ -24,7 +24,7 @@
     font-weight: bold; /* Makes text bold */
     margin-bottom: 5px; /* Space between label and dropdown */
     color: #333; /* Dark grey color for text */
-    font-size: 16px; /* Size of the label text */
+
 }
 
 /* Styles for dropdowns */
@@ -35,7 +35,7 @@
     background-color: #fff; /* White background color */
     margin-bottom: 10px; /* Space between each dropdown */
     cursor: pointer; /* Cursor indicates it's clickable */
-    font-size: 14px; /* Font size within the dropdown */
+    
     outline: none; /* Removes the default focus outline */
     width: 100%; /* Ensures dropdowns use the full width of their group container */
 }

@@ -1,11 +1,17 @@
 <div class="container">
   <div class="wrapper">
-    <div class="sidebar">
-      <app-decisions></app-decisions>
-      <app-decisions></app-decisions> <!-- Placeholder component for future content -->
+    <div class="top-section">
+      <div class="sidebar-left">
+        <app-decisions></app-decisions>
+      </div>
+      <div class="cluster-center">
+        <app-clusterVisualization></app-clusterVisualization>
+      </div>
+      <div class="sidebar-right">
+        <app-decisions></app-decisions>
+      </div>
     </div>
-    <div class="main-content">
-      <app-clusterVisualization></app-clusterVisualization>
+    <div class="bottom-section">
       <app-barchart></app-barchart>
     </div>
   </div>

@@ -14,7 +14,7 @@ export class BarchartComponent implements OnInit {
   artists: Artist[] = [];
   isLoading: boolean = true; // Add a loading indicator
   private svg: any;
-  private margin = { top: 20, right: 30, bottom: 90, left: 40 }; // Adjust bottom margin for rotated labels
+  private margin = { top: 20, right: 30, bottom: 150, left: 70 }; // Adjust bottom margin for rotated labels
   private width = 950 - this.margin.left - this.margin.right; // Increase width if possible
   private height = 500 - this.margin.top - this.margin.bottom; // Adjust height accordingly
   

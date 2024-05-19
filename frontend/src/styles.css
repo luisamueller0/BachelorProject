@@ -1,1 +1,12 @@
 /* You can add global styles to this file, and also import other style files */
+* {
+    font-size: 20px;
+    box-sizing: border-box; /* Ensure padding and borders are included in the element's total width and height */
+  }
+  
+  /* Optional: you can also reset margins and paddings to ensure consistency */
+  body, html {
+    margin: 0;
+    padding: 0;
+    font-size: 20px; /* Redundant due to the global rule, but ensures body and html have the desired size */
+  }
