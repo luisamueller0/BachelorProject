@@ -32,6 +32,7 @@ export class ClusterVisualizationComponent implements OnInit {
   private allArtists: Artist[] = [];
   private artistClusterMap: Map<number, ClusterNode> = new Map<number, ClusterNode>();
   private artistNodes:ArtistNode[][]= [];
+  private selectedClusterNode: ClusterNode | null = null;
 
   // User Interactions
   private subscriptions: Subscription = new Subscription();
@@ -63,6 +64,8 @@ export class ClusterVisualizationComponent implements OnInit {
   // Network Properties
   private selectedNode: [SVGCircleElement, string] | null = null;
   private selectedCluster: any = null;
+  // Class properties
+private isNodeClick: boolean = false;
 
   // Forces in the clusters
   private simulation: d3.Simulation<ArtistNode, undefined>[] = [];
@@ -713,7 +716,6 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
 
 
   }
-
   private createClusterGroup(clusterNode: ClusterNode, value: string): SVGGElement {
     const arcGenerator = d3.arc<any>()
       .innerRadius(clusterNode.innerRadius)
@@ -761,101 +763,135 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
         });
         break;
     }
+  
+    // Calculate angles for each nationality segment
+    const countries = Array.from(countryMap.keys());
+    const totalArtists = clusterNode.artists.length;
+    const minimumAngle = Math.PI / 18;
+  
+    let totalAngleAvailable = 2 * Math.PI;
+    const dynamicAngles = new Map<string, number>();
+  
+    // First pass to assign minimum angles and adjust total available angle
+    countryMap.forEach((artists, country) => {
+      dynamicAngles.set(country, minimumAngle);
+      totalAngleAvailable -= minimumAngle;
+    });
+  
+    // Allocate remaining angles based on the proportion of artists
+    countryMap.forEach((artists, country) => {
+      const proportion = artists.length / totalArtists;
+      const extraAngle = proportion * totalAngleAvailable;
+      const currentAngle = dynamicAngles.get(country) || 0;
+      dynamicAngles.set(country, currentAngle + extraAngle);
+    });
+  
+    let currentAngle = 0;
+    const data = countries.map((country) => {
+      const angle = dynamicAngles.get(country) as number;
+      const startAngle = currentAngle;
+      const endAngle = currentAngle + angle;
+      const middleAngle = (startAngle + endAngle) / 2;
+      currentAngle = endAngle;
+      const countryIndex = this.countryIndexMap.get(country) as number;
+      return {
+        country,
+        startAngle,
+        endAngle,
+        middleAngle,
+        innerRadius: clusterNode.innerRadius,
+        outerRadius: clusterNode.outerRadius,
+        color: this.globalColorScale(countryIndex) // Get color from ordinal scale
+      };
+    });
+  
+    // Create a new group for this cluster
+    const clusterGroup = d3.create("svg:g")
+      .attr("class", `cluster cluster-${clusterNode.clusterId}`)
+      .on('click', () => this.onClusterClick(clusterNode))
+      .attr("transform", `translate(${clusterNode.x}, ${clusterNode.y})`);
+  
+    // Append paths for the sunburst
+    clusterGroup.selectAll("path")
+      .data(data)
+      .enter()
+      .append("path")
+      .attr("d", arcGenerator)
+      .attr("fill", (d: any) => d.color)
+      .style('stroke', 'none'); // Initialize with no border
+  
+    // Append labels for the countries
+    clusterGroup.selectAll("text")
+      .data(data)
+      .enter()
+      .append("text")
+      .attr("transform", (d: any) => `translate(${arcGenerator.centroid(d)})`)
+      .attr("text-anchor", "middle")
+      .text((d: any) => d.country);
+  
+    // Save centroid data for node placement later
+    let countryCentroids: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } = {};
+    data.forEach(d => {
+      countryCentroids[d.country] = {
+        startAngle: d.startAngle,
+        endAngle: d.endAngle,
+        middleAngle: d.middleAngle,
+        color: d.color,
+        country: d.country
+      };
+    });
+  
+    // Store the countryCentroids for this cluster in the component property
+    this.clusterCountryCentroids[clusterNode.clusterId] = countryCentroids;
+  
+    // Add artist network within the cluster
+    this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
+  
+    return clusterGroup.node() as SVGGElement;
+  }
+  // Cluster click handler
+// Cluster click handler
+private onClusterClick(clusterNode: ClusterNode): void {
+  // If an artist node was clicked, do nothing
+  if (this.isNodeClick) {
+    this.isNodeClick = false;
+    return;
+  }
 
-  // Calculate angles for each nationality segment
-  const countries = Array.from(countryMap.keys());
-  const totalArtists = clusterNode.artists.length;
-  const minimumAngle = Math.PI / 18;
+  const selectedArtists = clusterNode.artists;
+  const selectedEdges = this.intraCommunityEdges[clusterNode.clusterId];
 
-  let totalAngleAvailable = 2 * Math.PI;
-  const dynamicAngles = new Map<string, number>();
+  // If the same cluster is clicked again, deselect it
+  if (this.selectedClusterNode && this.selectedClusterNode.clusterId === clusterNode.clusterId) {
+    // Reset the selected cluster node's border
+    this.g.selectAll(`.cluster-${this.selectedClusterNode.clusterId} path`)
+      .style('stroke', 'none');
 
-  // First pass to assign minimum angles and adjust total available angle
-  countryMap.forEach((artists, country) => {
-    dynamicAngles.set(country, minimumAngle);
-    totalAngleAvailable -= minimumAngle;
-  });
+    // Clear the selection
+    this.selectedClusterNode = null;
+    this.selectionService.selectArtist(this.allArtists);
+    this.selectionService.selectCluster(this.allArtists);
+    this.selectionService.selectClusterEdges([]);
 
-  // Allocate remaining angles based on the proportion of artists
-  countryMap.forEach((artists, country) => {
-    const proportion = artists.length / totalArtists;
-    const extraAngle = proportion * totalAngleAvailable;
-    const currentAngle = dynamicAngles.get(country) || 0;
-    dynamicAngles.set(country, currentAngle + extraAngle);
-  });
+  } else {
+    // Reset the previous cluster node's border if there is one
+    if (this.selectedClusterNode) {
+      this.g.selectAll(`.cluster-${this.selectedClusterNode.clusterId} path`)
+        .style('stroke', 'none');
+    }
 
-  let currentAngle = 0;
-  const data = countries.map((country) => {
-    const angle = dynamicAngles.get(country) as number;
-    const startAngle = currentAngle;
-    const endAngle = currentAngle + angle;
-    const middleAngle = (startAngle + endAngle) / 2;
-    currentAngle = endAngle;
-    const countryIndex = this.countryIndexMap.get(country) as number;
-    return {
-      country,
-      startAngle,
-      endAngle,
-      middleAngle,
-      innerRadius: clusterNode.innerRadius,
-      outerRadius: clusterNode.outerRadius,
-      color: this.globalColorScale(countryIndex) // Get color from ordinal scale
-    };
-  });
+    // Set the new cluster node as selected and change its border
+    this.selectedClusterNode = clusterNode;
+    this.g.selectAll(`.cluster-${clusterNode.clusterId} path`)
+      .style('stroke', 'black')
+      .style('stroke-width', '2px'); // Adjust the border width as needed
 
-  // Create a new group for this cluster
-  const clusterGroup = d3.create("svg:g")
-  .attr("class", `cluster cluster-${clusterNode.clusterId}`)
-    .on('click', () => this.onClusterClick(clusterNode))
-    .attr("transform", `translate(${clusterNode.x}, ${clusterNode.y})`);
-
-
-// Append paths for the sunburst
-clusterGroup.selectAll("path")
-  .data(data)
-  .enter()
-  .append("path")
-  .attr("d", arcGenerator)
-  .attr("fill", (d: any) => d.color);
-
-  // Append labels for the countries
-  clusterGroup.selectAll("text")
-    .data(data)
-    .enter()
-    .append("text")
-    .attr("transform", (d: any) => `translate(${arcGenerator.centroid(d)})`)
-    .attr("text-anchor", "middle")
-    .text((d: any) => d.country);
-
-
-// Save centroid data for node placement later
-let countryCentroids: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } = {};
-data.forEach(d => {
-  countryCentroids[d.country] = {
-    startAngle: d.startAngle,
-    endAngle: d.endAngle,
-    middleAngle: d.middleAngle,
-    color: d.color,
-    country: d.country
-  };
-});
-
-// Store the countryCentroids for this cluster in the component property
-this.clusterCountryCentroids[clusterNode.clusterId] = countryCentroids;
-
-// Add artist network within the cluster
-this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
-
-  return clusterGroup.node() as SVGGElement;
-}
-
-  private onClusterClick(clusterNode: ClusterNode): void {
-    const selectedArtists = clusterNode.artists;
-    const selectedEdges = this.intraCommunityEdges[clusterNode.clusterId];
+    // Select the new cluster node
+    this.selectionService.selectArtist(selectedArtists);
     this.selectionService.selectCluster(selectedArtists);
     this.selectionService.selectClusterEdges(selectedEdges);
   }
-
+}
 
 
   private createArtistNetwork(value: string, clusterGroup: any, cluster: ClusterNode, countryCentroids: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } }): void {
@@ -992,10 +1028,12 @@ this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
       .domain([0, 1])
       .range([lighterColor, darkerColor]);
   }
-  
+  // Artist node click handler
   private handleNodeClick(artistNode: ArtistNode, event: MouseEvent): void {
-    console.log('Clicked on:', artistNode.artist);
-    this.selectionService.selectArtist([artistNode.artist]);
+    // Prevent the cluster click handler from executing
+    this.isNodeClick = true;
+    event.stopPropagation(); // Use the event object to stop propagation
+  
     const circle = event.currentTarget as SVGCircleElement;
   
     // Check if the currently selected node is the same as the clicked node
@@ -1004,8 +1042,10 @@ this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
       circle.style.fill = this.selectedNode[1];
       circle.style.stroke = 'none'; // Remove border
       circle.style.strokeWidth = '1px'; // Reset border width
-      this.selectedNode = null;  // Clear the selected node
-      this.selectionService.selectArtist(this.allArtists);  // Reset the selection
+      this.selectedNode = null; // Clear the selected node
+      this.selectionService.selectArtist(this.allArtists); // Reset the selection
+      this.selectionService.selectCluster(this.allArtists); // Reset the cluster selection
+      this.selectionService.selectClusterEdges([]); // Reset the edges selection
       // Reset edge colors
       this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
       // Reset connected nodes' borders
@@ -1031,7 +1071,7 @@ this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
       // Darken the original color for the selected node
       const originalColor = d3.color(circle.style.fill) as d3.RGBColor;
       const darkerColor = d3.rgb(originalColor).darker(1); // Adjust the darkness factor as needed
-      circle.style.fill = darkerColor.toString();  // Change the fill color to the darker shade
+      circle.style.fill = darkerColor.toString(); // Change the fill color to the darker shade
       circle.style.stroke = 'black'; // Add black border
       circle.style.strokeWidth = '3px'; // Make the border thicker
   
@@ -1053,12 +1093,11 @@ this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
       this.g.selectAll(".artist-edge").filter((d: any) => {
         return d.source.id === selectedNodeId || d.target.id === selectedNodeId;
       }).style('stroke', (d: any) => edgeColorScale(d.sharedExhibitionMinArtworks));
-
-   // Set edges that are not connected to the selected node to white
-   this.g.selectAll(".artist-edge").filter((d: any) => {
-    return d.source.id !== selectedNodeId && d.target.id !== selectedNodeId;
-  }).style('stroke', 'none'); // Set to white
   
+      // Set edges that are not connected to the selected node to none
+      this.g.selectAll(".artist-edge").filter((d: any) => {
+        return d.source.id !== selectedNodeId && d.target.id !== selectedNodeId;
+      }).style('stroke', 'none'); // Set to none
   
       // Add black border to connected nodes
       this.g.selectAll(".artist-node").each((d: any, i: number, nodes: any) => {
@@ -1068,9 +1107,22 @@ this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
             .style('stroke-width', '3px'); // Make the border thicker
         }
       });
+  
+      // Select the individual artist
+      this.selectionService.selectArtist([artistNode.artist]);
+  
+      // Also select the cluster and intercommunity edges
+      const clusterNode = this.artistClusterMap.get(artistNode.id);
+      if (clusterNode) {
+        const selectedClusterArtists = clusterNode.artists;
+        const selectedClusterEdges = this.intraCommunityEdges[clusterNode.clusterId];
+        this.selectionService.selectCluster(selectedClusterArtists);
+        this.selectionService.selectClusterEdges(selectedClusterEdges);
+      }
     }
   }
   
+
 
   private repelFromCenterForce(artistNodes: ArtistNode[],centralNode: ArtistNode, radius: number, padding: number = 5): (alpha: number) => void {
     return function(alpha: number) {
@@ -1335,7 +1387,6 @@ private boundaryForce(artistNodes: ArtistNode[], innerRadius: number, padding: n
   
     return calculatedRadius;
   }
-  
   
   private calculateCollisionRadius(size: number): number {
     const baseRadius = size; // Use the visual radius function
