@@ -79,7 +79,7 @@ export class ClusterVisualizationComponent implements OnInit {
     private artistService: ArtistService,
     private selectionService: SelectionService) {
        // Bind the method
-    //this.handleNodeClick = this.handleNodeClick.bind(this);
+    this.handleNodeClick = this.handleNodeClick.bind(this);
      }
 
   ngOnInit() {
@@ -936,7 +936,8 @@ this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
       })
       .on('mouseout', function () {
         d3.select('#tooltip').style('display', 'none');
-      });
+      })
+      .on('click', (event: MouseEvent, d: any) => this.handleNodeClick(d, event));
   
     const text = clusterGroup.selectAll(".artist-node").append("g").attr("class", "labels").selectAll("g")
       .data(circles)
@@ -984,8 +985,92 @@ this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
   }
   
   
+  private createEdgeColorScale(baseColor: string): d3.ScaleLinear<string, number> {
+    const lighterColor = d3.rgb(baseColor).brighter(4).toString(); // Make it more white
+    const darkerColor = d3.rgb(baseColor).darker(2).toString();
+    return d3.scaleLinear<string, number>()
+      .domain([0, 1])
+      .range([lighterColor, darkerColor]);
+  }
   
-  // Helper methods
+  private handleNodeClick(artistNode: ArtistNode, event: MouseEvent): void {
+    console.log('Clicked on:', artistNode.artist);
+    this.selectionService.selectArtist([artistNode.artist]);
+    const circle = event.currentTarget as SVGCircleElement;
+  
+    // Check if the currently selected node is the same as the clicked node
+    if (this.selectedNode && this.selectedNode[0] === circle) {
+      // If it's the same node, deselect it
+      circle.style.fill = this.selectedNode[1];
+      circle.style.stroke = 'none'; // Remove border
+      circle.style.strokeWidth = '1px'; // Reset border width
+      this.selectedNode = null;  // Clear the selected node
+      this.selectionService.selectArtist(this.allArtists);  // Reset the selection
+      // Reset edge colors
+      this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
+      // Reset connected nodes' borders
+      this.g.selectAll(".artist-node").style('stroke', 'none').style('stroke-width', '1px'); // Reset border width
+    } else {
+      // If it's a different node or no node is currently selected
+      if (this.selectedNode) {
+        // Reset the previous node's color if another node was selected before
+        const previousNode = this.selectedNode[0];
+        const previousColor = this.selectedNode[1];
+        previousNode.style.fill = previousColor;
+        previousNode.style.stroke = 'none'; // Remove border
+        previousNode.style.strokeWidth = '1px'; // Reset border width
+        // Reset edge colors
+        this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
+        // Reset connected nodes' borders
+        this.g.selectAll(".artist-node").style('stroke', 'none').style('stroke-width', '1px'); // Reset border width
+      }
+  
+      // Set the new node as the selected node and change its color
+      this.selectedNode = [circle, circle.style.fill];
+  
+      // Darken the original color for the selected node
+      const originalColor = d3.color(circle.style.fill) as d3.RGBColor;
+      const darkerColor = d3.rgb(originalColor).darker(1); // Adjust the darkness factor as needed
+      circle.style.fill = darkerColor.toString();  // Change the fill color to the darker shade
+      circle.style.stroke = 'black'; // Add black border
+      circle.style.strokeWidth = '3px'; // Make the border thicker
+  
+      // Create a color scale for the edges connected to the selected node
+      const edgeColorScale = this.createEdgeColorScale(darkerColor.toString());
+  
+      // Highlight edges connected to the selected node
+      const selectedNodeId = artistNode.id;
+      const connectedNodeIds: Set<Number> = new Set<Number>();
+      this.g.selectAll(".artist-edge").each((d: any) => {
+        if (d.source.id === selectedNodeId) {
+          connectedNodeIds.add(d.target.id);
+        } else if (d.target.id === selectedNodeId) {
+          connectedNodeIds.add(d.source.id);
+        }
+      });
+  
+      console.log(connectedNodeIds);
+      this.g.selectAll(".artist-edge").filter((d: any) => {
+        return d.source.id === selectedNodeId || d.target.id === selectedNodeId;
+      }).style('stroke', (d: any) => edgeColorScale(d.sharedExhibitionMinArtworks));
+
+   // Set edges that are not connected to the selected node to white
+   this.g.selectAll(".artist-edge").filter((d: any) => {
+    return d.source.id !== selectedNodeId && d.target.id !== selectedNodeId;
+  }).style('stroke', 'none'); // Set to white
+  
+  
+      // Add black border to connected nodes
+      this.g.selectAll(".artist-node").each((d: any, i: number, nodes: any) => {
+        if (connectedNodeIds.has(d.id)) {
+          d3.select(nodes[i])
+            .style('stroke', 'black')
+            .style('stroke-width', '3px'); // Make the border thicker
+        }
+      });
+    }
+  }
+  
 
   private repelFromCenterForce(artistNodes: ArtistNode[],centralNode: ArtistNode, radius: number, padding: number = 5): (alpha: number) => void {
     return function(alpha: number) {
