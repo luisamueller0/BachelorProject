@@ -1,69 +1,63 @@
 <div class="dropdown-container">
-
   <div class="dropdown-group">
-    <!-- Label for the dropdown button -->
     <label for="dropdown" class="dropdown-label">Select sunburst categories:</label>
-    <!-- Dropdown button -->
     <select class="dropdown" (change)="onSunburstChange($event)">
       <option *ngFor="let option of SunburstOptions" [value]="option">{{ option }}</option>
     </select>
   </div>
 
   <div class="dropdown-group">
-  <!-- Label for the dropdown button -->
-  <label for="dropdown" class="dropdown-label">Select node size:</label>
-  <!-- Dropdown button -->
-  <select class="dropdown" (change)="onSizeChange($event)">
-    <option *ngFor="let option of SizeOptions" [value]="option">{{ option }}</option>
-  </select>
-</div>
+    <label for="dropdown" class="dropdown-label">Select node size:</label>
+    <select class="dropdown" (change)="onSizeChange($event)">
+      <option *ngFor="let option of SizeOptions" [value]="option">{{ option }}</option>
+    </select>
+  </div>
+
   <div class="dropdown-group">
-  <!-- Label for the dropdown button -->
-  <label for="dropdown" class="dropdown-label">Select inner order:</label>
-  <!-- Dropdown button -->
-  <select class="dropdown" (change)="onOrderChange($event)">
-    <option *ngFor="let option of OrderOptions" [value]="option">{{ option }}</option>
-  </select>
-</div>
+    <label for="dropdown" class="dropdown-label">Select inner order:</label>
+    <select class="dropdown" (change)="onOrderChange($event)">
+      <option *ngFor="let option of OrderOptions" [value]="option">{{ option }}</option>
+    </select>
+  </div>
+
+  <!-- 
   <div class="dropdown-group">
-    <!-- Label for the dropdown button -->
     <label for="dropdown" class="dropdown-label">Select edge thickness:</label>
-    <!-- Dropdown button -->
     <select class="dropdown" (change)="onThicknessChange($event)">
       <option *ngFor="let option of ThicknessOptions" [value]="option">{{ option }}</option>
     </select>
   </div>
+-->
+  <!-- Addition of ngx-slider for selecting range -->
+  <div class="dropdown-group">
+    <label class="dropdown-label">Select the range of exhibited artworks to filter artists:</label>
+    <div class="dropdown-group2">
+      <ngx-slider [(value)]="range[0]" [(highValue)]="range[1]" [options]="options" (valueChange)="onRangeSliderChange()"></ngx-slider>
+      <div class="checkbox-group">
+        <input type="checkbox" id="confirmRange" [(ngModel)]="useRange" (change)="onRangeChange()" hidden/>
+        <label for="confirmRange" class="custom-checkbox">
+          <i class="fas fa-check" *ngIf="useRange"></i>
+        </label>
+      </div>
+    </div>
+    <!-- <p class="dropdown-description">Use the slider to set the range of artworks. Only artists who have exhibited artworks within this range will be shown.</p>--->
+    <div *ngIf="rangeChanged" class="green-label">To apply, click on the checkbox on the right</div>
+  </div>
 
-<!-- Addition of ngx-slider for selecting range -->
-<div class="dropdown-group">
-  <label class="dropdown-label">Select Range:</label>
-  <div class="dropdown-group2">
-  <ngx-slider [(value)]="range[0]" [(highValue)]="range[1]" [options]="options"></ngx-slider>
-  <!-- Custom Checkbox as a hook icon -->
-  <div class="checkbox-group">
-    <input type="checkbox" id="confirmRange" [(ngModel)]="useRange" (change)="onRangeChange()" hidden/>
-    <label for="confirmRange" class="custom-checkbox">
-      <i class="fas fa-check" *ngIf="useRange"></i> <!-- Hook icon shows only when checked -->
-    </label>
+  <div class="dropdown-group">
+    <label class="dropdown-label">Select amount of clusters (dependent on artists):</label>
+    <div class="dropdown-group2">
+      <ngx-slider [(value)]="k" [options]="kOptions" (valueChange)="onKSliderChange()"></ngx-slider>
+      <div class="checkbox-group">
+        <input type="checkbox" id="confirmK" [(ngModel)]="useK" (change)="onKChange()" hidden/>
+        <label for="confirmK" class="custom-checkbox">
+          <i class="fas fa-check" *ngIf="useK"></i>
+        </label>
+      </div>
+    </div>
+    <div *ngIf="showK" class="info-text">Before visualization updates choose amount of clusters for {{ numberOfArtists }} artists.</div>
+    <div *ngIf="kChanged" class="green-label">To apply, click on the checkbox on the right</div>
   </div>
 </div>
-</div>
-<div class="dropdown-group">
-  <label class="dropdown-label">Select K Value (Dependent on Artists):</label>
-  <div class="dropdown-group2">
-    <ngx-slider [(value)]="k" [options]="kOptions" (valueChange)="onKChange()"></ngx-slider>
-  <!-- Custom Checkbox as a hook icon -->
-  <div class="checkbox-group">
-    <input type="checkbox" id="confirmK" [(ngModel)]="useK" (change)="onKChange()" hidden/>
-    <label for="confirmK" class="custom-checkbox">
-      <i class="fas fa-check" *ngIf="useK"></i> <!-- Hook icon shows only when checked -->
-    </label>
-  </div>
-  </div>
-</div>
 
-
-</div>
-
-<!-- decisions.component.html -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet">

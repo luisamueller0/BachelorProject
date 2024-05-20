@@ -11,13 +11,15 @@ import { BarchartComponent } from './components/barchart/barchart.component';
 import { NgxSliderModule } from '@angular-slider/ngx-slider';
 import { FormsModule } from '@angular/forms'; // Import FormsModule
 import { ClusterVisualizationComponent } from './components/clusterVisualization/clusterVisualization.component';
+import { MapComponent } from './components/map/map.component';
 @NgModule({
   declarations: [
     AppComponent,
     VisualizationComponent,
     DecisionsComponent,
     BarchartComponent,
-    ClusterVisualizationComponent
+    ClusterVisualizationComponent,
+    MapComponent
 
   ],
   imports: [

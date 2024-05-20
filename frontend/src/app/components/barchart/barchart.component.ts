@@ -113,3 +113,21 @@ ngOnDestroy(): void {
   this.subscription.unsubscribe();
 }
 }
+
+/* const techniques = [
+  "drawing",
+  "drawing: chalk",
+  "drawing: charcoal",
+  "drawing: pen and ink",
+  "painting",
+  "painting: aquarelle",
+  "painting: gouache",
+  "painting: oil",
+  "painting: tempera",
+  "mural painting",
+  "mural painting: fresco",
+  "pastel",
+  "mixed media",
+  "monotype",
+  "other medium",
+]; */

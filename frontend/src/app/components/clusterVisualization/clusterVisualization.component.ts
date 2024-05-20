@@ -31,6 +31,9 @@ export class ClusterVisualizationComponent implements OnInit {
   private artistClusterMap: Map<number, ClusterNode> = new Map<number, ClusterNode>();
   private artistNodes: ArtistNode[][] = [];
   private selectedClusterNode: ClusterNode | null = null;
+  private allCountries: string[] = [];
+ 
+  
 
   private subscriptions: Subscription = new Subscription();
 
@@ -47,7 +50,7 @@ export class ClusterVisualizationComponent implements OnInit {
   private totalExhibitedArtworksMap: { [clusterId: number]: Map<number, number> } = {};
   private differentTechniquesMap: { [clusterId: number]: Map<number, number> } = {};
 
-  private sunburstThickness: number = 50;
+  private sunburstThickness: number = 90;
 
   private regionOrder: string[] = ["North Europe", "Eastern Europe", "Southern Europe", "Western Europe", "Others"];
 
@@ -464,20 +467,48 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
     this.selectedCluster = allArtists;
     this.selectionService.selectArtist(this.selectedCluster);
 
+    switch(value){
+      case 'nationality':
+        this.allArtists.forEach(artist => {
+          if(!this.allCountries.includes(artist.nationality)){
+            this.allCountries.push(artist.nationality)
+          }
+        });
+        break;
+      case 'birthcountry':
+        this.allArtists.forEach(artist => {
+          if(!this.allCountries.includes(artist.birthcountry)){
+            this.allCountries.push(artist.birthcountry)
+          }
+        });
+        break;
+      case 'deathcountry':
+        this.allArtists.forEach(artist => {
+          if(!this.allCountries.includes(artist.deathcountry)){
+            this.allCountries.push(artist.deathcountry)
+          }
+        });
+        break;
+      case 'mostexhibited':
+        this.allArtists.forEach(artist => {
+          if(!this.allCountries.includes(artist.most_exhibited_in)){
+            this.allCountries.push(artist.most_exhibited_in)
+          }
+        });
+        break;
+    }
+    this.selectionService.selectCountries(this.allCountries);
+
     // Calculate degrees for each cluster
     this.calculateNodeDegreesForClusters();
 
     // Call createGlobalColorScale after clusters are initialized
     this.globalColorScale = this.createGlobalColorScale(value);
 
-
     this.initializeVisualization(value);
     this.isLoading = false;
-  
 
   }
-
-
   
   private loadInitialData() {
    
@@ -506,6 +537,16 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
         });
         this.selectedCluster = allArtists;
         this.allArtists = allArtists;
+        
+        // Add for map a list of all countries
+        this.allArtists.forEach(artist => {
+          if(!this.allCountries.includes(artist.nationality)){
+            this.allCountries.push(artist.nationality)
+          }
+        });
+        this.selectionService.selectCountries(this.allCountries);
+
+        
        
         this.selectionService.selectArtist(this.selectedCluster);
 
@@ -859,7 +900,10 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
       .append("text")
       .attr("transform", (d: any) => `translate(${arcGenerator.centroid(d)})`)
       .attr("text-anchor", "middle")
-      .text((d: any) => d.country);
+      .text((d: any) => d.country)
+      .style("font-size", "35px")
+      .style("fill", "white")     // Set the text color to white
+   
   
     // Save centroid data for node placement later
     let countryCentroids: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } = {};
@@ -889,6 +933,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
     this.isNodeClick = false;
     return;
   }
+  const type = this.decisionService.getDecisionSunburst();
 
   const selectedArtists = clusterNode.artists;
   const selectedEdges = this.intraCommunityEdges[clusterNode.clusterId];
@@ -904,6 +949,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
     this.selectionService.selectArtist(this.allArtists);
     this.selectionService.selectCluster(this.allArtists);
     this.selectionService.selectClusterEdges([]);
+    this.selectionService.selectCountries(this.allCountries);
 
   } else {
     // Reset the previous cluster node's border if there is one
@@ -922,6 +968,30 @@ private onClusterClick(clusterNode: ClusterNode): void {
     this.selectionService.selectArtist(selectedArtists);
     this.selectionService.selectCluster(selectedArtists);
     this.selectionService.selectClusterEdges(selectedEdges);
+    const countries:string[]= [];
+    selectedArtists.forEach(artist => {
+      switch(type){
+        case 'nationality':
+          if(!countries.includes(artist.nationality))
+          countries.push(artist.nationality);
+          break;
+        case 'birthcountry':
+          if(!countries.includes(artist.birthcountry))
+          countries.push(artist.birthcountry);
+          break;
+        case 'deathcountry':
+          if(!countries.includes(artist.deathcountry))
+          countries.push(artist.deathcountry);
+          break;
+        case 'mostexhibited':
+          if(!countries.includes(artist.most_exhibited_in))
+          countries.push(artist.most_exhibited_in);
+          break;
+      };
+          
+    });
+    this.selectionService.selectCountries(countries);
+    
   }
 }
 
@@ -1062,6 +1132,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
   }
   // Artist node click handler
   private handleNodeClick(artistNode: ArtistNode, event: MouseEvent): void {
+    
     // Prevent the cluster click handler from executing
     this.isNodeClick = true;
     event.stopPropagation(); // Use the event object to stop propagation
@@ -1082,6 +1153,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
       this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
       // Reset connected nodes' borders
       this.g.selectAll(".artist-node").style('stroke', 'none').style('stroke-width', '1px'); // Reset border width
+      this.selectionService.selectCountries(this.allCountries);
     } else {
       // If it's a different node or no node is currently selected
       if (this.selectedNode) {
@@ -1151,6 +1223,25 @@ this.g.selectAll(".artist-edge").filter((d: any) => {
   
       // Select the individual artist
       this.selectionService.selectArtist([artistNode.artist]);
+
+      const artist = artistNode.artist;
+      const type = this.decisionService.getDecisionSunburst();
+    
+      switch(type){
+        case 'nationality':
+          this.selectionService.selectCountries([artist.nationality])
+          break;
+        case 'birthcountry':
+          this.selectionService.selectCountries([artist.birthcountry])
+          break;
+        case 'deathcountry':
+          this.selectionService.selectCountries([artist.deathcountry])
+          break;
+        case 'mostexhibited':
+          this.selectionService.selectCountries([artist.most_exhibited_in])
+          break;
+      };
+          
   
       // Also select the cluster and intercommunity edges
       const clusterNode = this.artistClusterMap.get(artistNode.id);

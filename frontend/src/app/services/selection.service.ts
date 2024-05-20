@@ -14,10 +14,12 @@ export class SelectionService {
   private selectedArtist  = new BehaviorSubject<Artist[]>([]);
   private selectedCluster = new BehaviorSubject<Artist[]>([]);
   private selectedClusterEdges = new BehaviorSubject<exhibited_with[]>([]);
+  private selectedCountries = new BehaviorSubject<string[]>([]);
 
   currentArtist = this.selectedArtist.asObservable();
   currentCluster = this.selectedCluster.asObservable();
   currentClusterEdges= this.selectedClusterEdges.asObservable();
+  currentCountries = this.selectedCountries.asObservable();
 
   selectArtist(artists:Artist[]) {
     this.selectedArtist.next(artists);
@@ -35,5 +37,9 @@ export class SelectionService {
   selectClusterEdges(edges:exhibited_with[]){
     console.log('selected cluster edges', edges.length)
     this.selectedClusterEdges.next(edges);
+  }
+
+  selectCountries(countries:string[]){
+    this.selectedCountries.next(countries);
   }
 }
