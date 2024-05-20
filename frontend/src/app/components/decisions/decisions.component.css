@@ -3,10 +3,10 @@
     display: flex;
     flex-direction: column; /* Keeps the dropdown groups side by side */
     padding: 50px; /* Adds padding around the container */
-    margin: 20px; /* Space from container to other elements */
-    background-color: #f8f9fa; /* Light grey background */
+    margin: 5px; /* Space from container to other elements */
+    /* background-color: #f8f9fa;  Light grey background */
     border-radius: 8px; /* Rounded corners */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); Subtle shadow */
     justify-content: space-around; /* Distributes space between dropdown groups */
 }
 
