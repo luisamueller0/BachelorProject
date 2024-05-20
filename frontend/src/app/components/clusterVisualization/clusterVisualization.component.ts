@@ -113,6 +113,9 @@ export class ClusterVisualizationComponent implements OnInit {
     this.resizeSvg();
   }
 
+  public getTitle(): string {
+    return `Displaying ${this.allArtists.length} artists and ${this.clusters.length} clusters`;
+  }
   private resizeSvg(): void {
     if (!this.g) return;
 
@@ -585,7 +588,7 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
   
   private renderClusters(value: string): void {
     const maxSize = Math.max(...this.clusters.map(cluster => cluster.length));
-
+console.log(this.clusters)
     const clusterNodes: ClusterNode[] = this.clusters.map((cluster, index) => {
       const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, maxSize);
       return {

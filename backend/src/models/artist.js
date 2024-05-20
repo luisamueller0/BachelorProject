@@ -709,6 +709,29 @@ const processResult = (result) => {
     return [artists, relationships];
 };
 
+function removeEmptyClusters(clusteredArtists) {
+    // Remove empty clusters and reassign IDs
+    const nonEmptyClusters = clusteredArtists.filter(cluster => cluster.length > 0);
+    const newClusterMap = new Map();
+
+    nonEmptyClusters.forEach((cluster, newIndex) => {
+        cluster.forEach(artist => {
+            newClusterMap.set(artist.id, newIndex);
+        });
+    });
+
+    const newClusteredArtists = Array.from({ length: nonEmptyClusters.length }, () => []);
+
+    clusteredArtists.forEach(cluster => {
+        cluster.forEach(artist => {
+            const newClusterId = newClusterMap.get(artist.id);
+            newClusteredArtists[newClusterId].push(artist);
+            artist.cluster = newClusterId; // Update the artist's cluster ID
+        });
+    });
+
+    return newClusteredArtists;
+}
 
 
 
