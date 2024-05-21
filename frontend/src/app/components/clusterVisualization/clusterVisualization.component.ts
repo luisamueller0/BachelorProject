@@ -502,6 +502,7 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
     }
     this.selectionService.selectCountries(this.allCountries);
 
+    console.log(this.clusters)
     // Calculate degrees for each cluster
     this.calculateNodeDegreesForClusters();
 

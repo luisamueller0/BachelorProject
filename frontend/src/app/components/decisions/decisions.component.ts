@@ -81,7 +81,7 @@ export class DecisionsComponent implements OnInit {
       console.log('Artists fetched:', this.numberOfArtists);
   
       // Step 2: Update kOptions based on the fetched artists
-      const newCeil = Math.ceil(this.artists.length / 15);
+      const newCeil = Math.ceil(this.artists.length / 20);
       if (newCeil < 1 && this.artists.length > 0) {
         this.kOptions = { ...this.kOptions, ceil: 1 };  // Set ceil to 1 if calculation results in less than 1
       } else {
