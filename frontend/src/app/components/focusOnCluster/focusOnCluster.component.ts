@@ -45,7 +45,7 @@ export class FocusOnClusterComponent implements OnInit {
 
   // Sunburst properties
   private outerRadius: number = Math.min(this.width, this.height) / 2;
-  private sunburstThickness:number = 50;
+  private sunburstThickness:number = 100;
   private innerRadius: number = this.outerRadius - this.sunburstThickness;
 
   //Inner order:

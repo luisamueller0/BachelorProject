@@ -13,3 +13,6 @@
     font-family: 'Roboto', sans-serif;
     font-size: 20px; /* Redundant due to the global rule, but ensures body and html have the desired size */
   }
+  h1{
+    font-size: 35px;
+  }

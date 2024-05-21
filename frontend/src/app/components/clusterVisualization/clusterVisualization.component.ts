@@ -27,7 +27,7 @@ export class ClusterVisualizationComponent implements OnInit {
   private intraCommunityEdges: exhibited_with[][] = [];
   private interCommunityEdges: InterCommunityEdge[] = [];
   private clusterNodes: ClusterNode[] = [];
-  private allArtists: Artist[] = [];
+  public allArtists: Artist[] = [];
   private artistClusterMap: Map<number, ClusterNode> = new Map<number, ClusterNode>();
   private artistNodes: ArtistNode[][] = [];
   private selectedClusterNode: ClusterNode | null = null;
@@ -69,7 +69,7 @@ export class ClusterVisualizationComponent implements OnInit {
 
   constructor(private decisionService: DecisionService,
               private artistService: ArtistService,
-              private selectionService: SelectionService) {
+              private selectionService: SelectionService ){
     this.handleNodeClick = this.handleNodeClick.bind(this);
   }
 
@@ -113,6 +113,7 @@ export class ClusterVisualizationComponent implements OnInit {
   public getTitle(): string {
     return `Displaying ${this.allArtists.length} artists and ${this.clusters.length} clusters`;
   }
+
   private resizeSvg(): void {
     if (!this.g) return;
 
@@ -461,6 +462,7 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
       });
     });
     this.selectedCluster = allArtists;
+    this.allArtists = allArtists;
     this.selectionService.selectArtist(this.selectedCluster);
 
     switch(value){
@@ -494,6 +496,7 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
         break;
     }
     this.selectionService.selectCountries(this.allCountries);
+ 
 
     console.log(this.clusters)
     // Calculate degrees for each cluster

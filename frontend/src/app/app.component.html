@@ -3,17 +3,22 @@
     <div class="top-section">
       <div class="sidebar-left">
         <app-decisions></app-decisions>
-        <app-map></app-map> <!-- Additional map component -->
-      </div>
-      <div class="cluster-center">
-        <app-clusterVisualization></app-clusterVisualization>
-      </div>
-      <div class="sidebar-right">
+        <app-map></app-map>
         <app-map></app-map>
       </div>
-    </div>
-    <div class="bottom-section">
-      <app-barchart></app-barchart>
+      <div class="center-section">
+        <div class="cluster-center">
+          <app-clusterVisualization></app-clusterVisualization>
+        </div>
+        <div class="barchart-bottom">
+          <app-barchart></app-barchart>
+        </div>
+      </div>
+      <div class="sidebar-right">
+        <app-decisions></app-decisions>
+        <app-map></app-map>
+        <app-map></app-map>
+      </div>
     </div>
   </div>
 </div>
