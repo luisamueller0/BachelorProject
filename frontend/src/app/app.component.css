@@ -71,7 +71,7 @@
 }
 
 /* Specific component styles */
-app-clusterVisualization, app-decisions, app-barchart, app-map {
+app-clusterVisualization, app-decisions, app-barchart, app-map, app-focusOnCluster {
   width: 100%;
   height: 100%;
 }
