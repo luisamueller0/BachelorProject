@@ -12,6 +12,8 @@ import { NgxSliderModule } from '@angular-slider/ngx-slider';
 import { FormsModule } from '@angular/forms'; // Import FormsModule
 import { ClusterVisualizationComponent } from './components/clusterVisualization/clusterVisualization.component';
 import { MapComponent } from './components/map/map.component';
+import { FocusOnClusterComponent } from './components/focusOnCluster/focusOnCluster.component';
+import { VisualizationHandlerComponent } from './components/visualizationHandler/visualizationHandler.component';
 @NgModule({
   declarations: [
     AppComponent,
@@ -19,8 +21,9 @@ import { MapComponent } from './components/map/map.component';
     DecisionsComponent,
     BarchartComponent,
     ClusterVisualizationComponent,
-    MapComponent
-
+    MapComponent,
+    FocusOnClusterComponent,
+    VisualizationHandlerComponent
   ],
   imports: [
     BrowserModule,

@@ -5,7 +5,7 @@ import exhibited_with  from '../../models/exhibited_with';
 import { DecisionService } from '../../services/decision.service';
 import { Subscription } from 'rxjs';
 import { SelectionService } from '../../services/selection.service';
-import { Component, OnInit, ElementRef } from '@angular/core';
+import { Component, OnInit, Input, HostListener } from '@angular/core';
 interface CountryConnections {
   matrix: number[][];
   countryIndex: Map<string, number>;
@@ -18,6 +18,10 @@ interface CountryConnections {
 })
 export class FocusOnClusterComponent implements OnInit {
 
+
+  @Input() displayValue: string;
+  public isLoading: boolean = true;
+
   isLoading: boolean = true;
 
   //Data properties
@@ -26,27 +30,26 @@ export class FocusOnClusterComponent implements OnInit {
 
   //Selection properties
   private subscriptions: Subscription = new Subscription();
-  private currentOrder: string = '';
-  private currentSize: string = '';
-  private currentSunburst: string = '';
 
   //SVG properties
   private svg: any;
-  private margin = 50;
-  private width = 1000 - (this.margin * 2);
-  private height =  1000 - (this.margin * 2);
+  private g: any; // Group for zooming
+  private baseWidth: number = 0; // Adjusted width
+  private baseHeight: number = 0; // Adjusted height
+  private innerRadius: number = 0;
+  private outerRadius: number = 0;
 
-  //Decisions
-   private degreesMap: Map<number, number> = new Map<number, number>();
-  private totalExhibitionsMap: Map<number, number> = new Map<number, number>();
- private totalExhibitedArtworksMap: Map<number, number> = new Map<number, number>();
- private differentTechniquesMap: Map<number, number> = new Map<number, number>();
+  private edgeColorScale = d3.scaleSequential(d3.interpolateGreys).domain([0, 1]);
+
+
+  private degreesMap: Map<number, number> = new Map<number, number>();
+  private totalExhibitionsMap:  Map<number, number>= new Map<number, number>();
+  private totalExhibitedArtworksMap: Map<number, number> = new Map<number, number>();
+  private differentTechniquesMap:  Map<number, number>  = new Map<number, number>();
 
 
   // Sunburst properties
-  private outerRadius: number = Math.min(this.width, this.height) / 2;
   private sunburstThickness:number = 100;
-  private innerRadius: number = this.outerRadius - this.sunburstThickness;
 
   //Inner order:
   private regionOrder: string[] = ["North Europe", "Eastern Europe", "Southern Europe", "Western Europe", "Others"];
@@ -57,12 +60,10 @@ export class FocusOnClusterComponent implements OnInit {
   private nodes:ArtistNode[] = [];
   private edges: any;
   private selectedNode: [SVGCircleElement, string] | null = null;
+
   //Forces
   private simulation: d3.Simulation<ArtistNode, undefined> | null = null;
 
-// Create a color scale
-private edgeColorScale = d3.scaleSequential(d3.interpolateGreys) // You can use any color scale you prefer
-    .domain([0, 1]); // Adjust the domain based on your normalized values range
 
 
 constructor(private artistService: ArtistService,
@@ -77,372 +78,149 @@ ngOnInit(): void {
 
   this.subscriptions.add(this.decisionService.currentOrder.subscribe(order => {
     this.updateVisualization('order', order);
-    this.currentOrder = order;
   }));
 
   this.subscriptions.add(this.decisionService.currentSize.subscribe(size => {
     this.updateVisualization('size', size);
-    this.currentSize = size;
   }));
-
-  this.subscriptions.add(this.decisionService.currentThickness.subscribe(thickness => {
-    this.updateVisualization('thickness', thickness);
-  }));
-
-  this.subscriptions.add(this.decisionService.currentSunburst.subscribe(sunburst => {
-    this.updateVisualization('sunburst', sunburst);
-    this.currentSunburst = sunburst;
-  }));
-  this.subscriptions.add(this.decisionService.currentRange.subscribe(range => {
-    this.updateArtists(range);
-  }));
-
-  this.subscriptions.add(this.decisionService.currentK.subscribe(k => {
-    this.updateCluster(k);
-  }));
+  this.resizeSvg();
+  window.addEventListener('resize', this.onResize.bind(this));
 }
 
 ngOnDestroy() {
   this.subscriptions.unsubscribe();
+  window.removeEventListener('resize', this.onResize.bind(this));
+}
+
+@HostListener('window:resize', ['$event'])
+onResize(event: any) {
+  this.resizeSvg();
+}
+
+private resizeSvg(): void {
+  if (!this.svg) return;
+
+  const svgElement = d3.select("figure#network svg");
+  const width = window.innerWidth; // Use full window width
+  const height = window.innerHeight; // Use full window height
+
+  svgElement
+    .attr("width", width)
+    .attr("height", height);
+
+  this.baseWidth = width;
+  this.baseHeight = height;
 }
 
 
+
+
 private  loadInitialData() {
- 
-  this.artistService.getArtistsWithNationalityTechnique().subscribe((data) => {
-  this.artists = data[0];
-  this.relationships = data[1];
-  this.isLoading = false; // Set loading to false when data is loaded
+  this.isLoading = true; // Set loading to false when data is loaded
+  this.artists = this.selectionService.getClusterArtists();
+  this.relationships = this.selectionService.getClusterEdges();
   this.selectionService.selectArtist(this.artists);
 
-    
   // Create all the maps for the node sizes:
   const degrees = this.calculateNodeDegrees(this.relationships);
   const normalizedDegrees = this.normalizeSqrt(degrees);
   this.degreesMap = normalizedDegrees;
   this.createSvg();
-  this.drawSunburst('nationality');
+  this.drawSunburst(this.displayValue);
  //this.drawChordDiagram('nationality'); Chord Diagram
-  this.drawNetwork('nationality');
-
-  
-}, (error) => {
-  console.error('There was an error', error);
-  this.isLoading = false; // Make sure to set loading to false on error as well
-}); 
-
-
-
+  this.drawNetwork(this.displayValue);
 
 
 }
+
+
+
 
 
 private createSvg(): void {
   this.svg = d3.select("figure#network")
   .append("svg")
-  .attr("width", this.width + (this.margin * 2))
-  .attr("height", this.height + (this.margin * 2))
+  .attr("width", this.baseWidth)
+  .attr("height", this.baseHeight)
   .append("g")
-  .attr("transform", `translate(${this.width / 2 + this.margin}, ${this.height / 2 + this.margin})`);
+
+  this.resizeSvg();
 }
 
-updateCluster(k: number) {
-  const range = this.decisionService.getDecisionRange();
-  if(range.length !== 0){
-  console.log('range:', range)
-  console.log('k value:', k)
-  this.artistService.clusterAmountArtistsNationality(range, k).subscribe((data) => {
-    //console.log('k data', data)
 
-
-  });}
-}
-updateArtists(range:number[]){
- 
-  console.log('range:', range[0])
-
-
-
-}
 updateVisualization(type: string, value: string) {
   // React to the change
   
   console.log(`Updated ${type} to ${value}`);
-  if (this.svg) {
-    if (type === 'size') {
+  if (this.svg&&type === 'size') {
       this.updateNodeSize(value);
     }
-    if (type === 'sunburst') {
-      this.updateSunburst(value);
-      this.updateNodeSize(this.currentSize);
-    }
+  else if (type === 'order') {
   }
+}
+
+private calculateNormalizedMaps(metric: string): void {
+
+    let metricMap = new Map<number, number>();
+
+    if (metric === 'Amount of Exhibitions') {
+    
+        this.artists.forEach((artist: Artist) => {
+          metricMap.set(artist.id, artist.total_exhibited_artworks);
+        });
+        this.totalExhibitionsMap = this.normalizeLinear(metricMap);
+      
+    } else if (metric === 'Amount of different techniques') {
   
+        this.artists.forEach((artist: Artist) => {
+          metricMap.set(artist.id, artist.amount_techniques);
+        });
+        this.differentTechniquesMap = this.normalizeLinear(metricMap);
+      
+    } else if (metric === 'Amount of exhibited Artworks') {
 
-}
+        this.artists.forEach((artist: Artist) => {
+          metricMap.set(artist.id, artist.total_exhibited_artworks);
+        });
+        this.totalExhibitedArtworksMap = this.normalizeLinear(metricMap);
+      
+    } else if (metric === 'default: Importance (Degree)') {
 
-
-private drawChordDiagram(value: string): void {
-  const connections = this.calculateCountryConnections(value);
-  const outerRadius = this.innerRadius; // Slightly larger than the sunburst
-  const innerRadius = this.innerRadius - 30// Adjust thickness as needed
-  const { matrix, countryIndex } = connections;
-  // Create the chord layout
-  const chord = d3.chord()
-    .sortSubgroups(d3.descending)(matrix);
-
-  const arc = d3.arc()
-    .innerRadius(innerRadius)
-    .outerRadius(outerRadius);
-
-  const ribbon = d3.ribbon()
-    .radius(innerRadius);
-
-  // Append the group for the arcs
-  const group = this.svg.append("g")
-    .selectAll("g")
-    .data(chord.groups)
-    .enter().append("g");
-
-  // Draw the arcs
-  group.append("path")
-    .style("fill", (d:any) => this.countryCentroids[Array.from(countryIndex.keys())[d.index]].color)
-    .style("stroke", (d:any) => d3.rgb(this.countryCentroids[Array.from(countryIndex.keys())[d.index]].color.toString()).darker())
-    .style("opacity", 0.6)
-    .attr("d", arc);
-
-  // Draw the ribbons
-  this.svg.append("g")
-    .datum(chord)
-    .append("g")
-    .selectAll("path")
-    .data((d:any) => d)
-    .enter().append("path")
-    .attr("d", ribbon)
-    .style("fill", (d:any) => this.countryCentroids[Array.from(countryIndex.keys())[d.source.index]].color)
-    .style("opacity", 0.4);
-}
-
-private calculateCountryConnections(value: string): CountryConnections {
-  const matrix: number[][] = [];
-  const countryIndex = new Map<string, number>();
-
-  // Use regionOrder to ensure the correct order of countries based on region
-  let index = 0;
-  if(value === 'nationality'){
-  this.regionOrder.forEach(region => {
-    this.artists.filter(artist => artist.europeanRegionNationality === region).forEach(artist => {
-      if (!countryIndex.has(artist.nationality)) {
-        countryIndex.set(artist.nationality, index++);
-      }
-    });
-  });
-}
-
-  // Initialize the matrix
-  for (let i = 0; i < countryIndex.size; i++) {
-    matrix[i] = new Array(countryIndex.size).fill(0);
-  }
-
-  // Fill the matrix with connection data
-  this.relationships.forEach(rel => {
-    const countryA = this.artists.find(a => a.id === rel.startId)?.nationality;
-    const countryB = this.artists.find(a => a.id === rel.endId)?.nationality;
-    if (countryA && countryB && countryIndex.has(countryA) && countryIndex.has(countryB)) {
-      const i = countryIndex.get(countryA);
-      const j = countryIndex.get(countryB);
-      matrix[i!][j!] += 1;
-      matrix[j!][i!] += 1; // Bidirectional for visual symmetry
+        // Calculate degrees only if not already done
+        this.calculateNodeDegrees(this.relationships);
+        metricMap = this.degreesMap;
+      
     }
-  });
 
-  return { matrix, countryIndex };
-}
-
-
-
-private updateSunburst(value: string) {
-
-   // Remove existing SVG
-   d3.select("figure#network").select("svg").remove();
-
-  if(value === 'default: Artist (preferred) nationality'){
-    this.artistService.getArtistsWithNationalityTechnique().subscribe((data) => {
-      this.artists = data[0];
-      this.relationships = data[1];
-      this.isLoading = false; // Set loading to false when data is loaded
-      this.selectionService.selectArtist(this.artists);
-      // Create all the maps for the node sizes:
-      const degrees = this.calculateNodeDegrees(this.relationships);
-      const normalizedDegrees = this.normalizeLinear(degrees);
-      this.degreesMap = normalizedDegrees;
-      
-      this.createSvg();
-      this.drawSunburst('nationality');
-      this.drawNetwork('nationality');
-    }, (error) => {
-      console.error('There was an error', error);
-      this.isLoading = false; // Make sure to set loading to false on error as well
-    });
-  }
-  else if(value === 'artist birthcountry'){
-    this.artistService.getArtistsWithBirthcountryTechnique().subscribe((data) => {
-      this.artists = data[0];
-      this.relationships = data[1];
-      this.isLoading = false; // Set loading to false when data is loaded
-      this.selectionService.selectArtist(this.artists);
-      // Create all the maps for the node sizes:
-      const degrees = this.calculateNodeDegrees(this.relationships);
-      const normalizedDegrees = this.normalizeSqrt(degrees);
-      this.degreesMap = normalizedDegrees;
-      
-      this.createSvg();
-      this.drawSunburst('birthcountry');
-      this.drawNetwork('birthcountry');
-    }, (error) => {
-      console.error('There was an error', error);
-      this.isLoading = false; // Make sure to set loading to false on error as well
-    });
-  }
-  else if(value === 'artist deathcountry'){
-    this.artistService.getArtistsWithDeathcountryTechnique().subscribe((data) => {
-      this.artists = data[0];
-      this.relationships = data[1];
-      this.isLoading = false; // Set loading to false when data is loaded
-      this.selectionService.selectArtist(this.artists);
-      // Create all the maps for the node sizes:
-      const degrees = this.calculateNodeDegrees(this.relationships);
-      const normalizedDegrees = this.normalizeSqrt(degrees);
-      this.degreesMap = normalizedDegrees;
-      
-      this.createSvg();
-      this.drawSunburst('deathcountry');
-      this.drawNetwork('deathcountry');
-    }, (error) => {
-      console.error('There was an error', error);
-      this.isLoading = false; // Make sure to set loading to false on error as well
-    });
-  }
-  else if(value === 'artist most exhibited country'){
-    this.artistService.getArtistsWithMostExhibitedInTechnique().subscribe((data) => {
-      this.artists = data[0];
-      this.relationships = data[1];
-      this.isLoading = false; // Set loading to false when data is loaded
-      this.selectionService.selectArtist(this.artists);
-      // Create all the maps for the node sizes:
-      const degrees = this.calculateNodeDegrees(this.relationships);
-      const normalizedDegrees = this.normalizeSqrt(degrees);
-      this.degreesMap = normalizedDegrees;
-      this.createSvg();
-      this.drawSunburst('mostexhibited');
-      this.drawNetwork('mostexhibited');
-    }, (error) => {
-      console.error('There was an error', error);
-      this.isLoading = false; // Make sure to set loading to false on error as well
-    });
-  }
 }
 private updateNodeSize(value: string) {
-  if(value === 'Amount of Exhibitions'){
-if(this.totalExhibitionsMap.size === 0) {
-    // Create a Map<number, number> to hold the total exhibition values
-    const totalExhibitionsMap = new Map<number, number>();
-    this.artists.forEach(artist => {
-        totalExhibitionsMap.set(artist.id, artist.total_exhibitions);
-    });
-    // Normalize the values using the normalizeLinear function
-    const normalizedTotalExhibitions = this.normalizeLinear(totalExhibitionsMap);
-    this.totalExhibitionsMap = normalizedTotalExhibitions;
+  this.calculateNormalizedMaps(value);
+  let metricMap = new Map<number, number>();
+  switch (value) {
+    case 'Amount of Exhibitions':
+      metricMap = this.totalExhibitionsMap;
+      break;
+    case 'default: Importance (Degree)':
+      metricMap = this.degreesMap;
+      break;
+    case 'Amount of different techniques':
+      metricMap = this.differentTechniquesMap;
+      break;
+    case 'Amount of exhibited Artworks':
+      metricMap = this.totalExhibitedArtworksMap;
+      break;
   }
-    // Select all circles with the class 'node'
-    const circles = this.svg.selectAll('.node');
-
-    // Update the radius of each circle based on the normalized total exhibitions
-    circles.attr('r', (d: any) => {
-        // Retrieve the normalized value for the current artist from the map
-        const normalizedValue = this.totalExhibitionsMap.get(d.artist.id)||0;
-        // Use the normalized value to calculate the radius for the current circle
-        return this.calculateRadiusForNode(normalizedValue);
-    });
-   
-    
-}
-else if(value === "default: Importance (Degree)")
-  {
      // Select all circles with the class 'node'
-
      const circles = this.svg.selectAll('.node');
- 
+
      // Update the radius of each circle based on the normalized total exhibitions
      circles.attr('r', (d: any) => {
          // Retrieve the normalized value for the current artist from the map
-         const normalizedValue = this.degreesMap.get(d.artist.id)||0;
+         const normalizedValue = metricMap.get(d.artist.id)||0;
          // Use the normalized value to calculate the radius for the current circle
          return this.calculateRadiusForNode(normalizedValue);
      });
-  }
-  else if(value === 'Amount of different techniques'){
-    if(this.differentTechniquesMap.size === 0) {
-
-      
-        // Create a Map<number, number> to hold the total exhibition values
-        const differentTechniquesMap = new Map<number, number>();
-        this.artists.forEach(artist => {
-
-          differentTechniquesMap.set(artist.id, artist.distinct_techniques.length);
-        });
     
-        
-        // Normalize the values using the normalizeLinear function
-        const normalizeddifferentTechniquesMap = this.normalizeLinear(differentTechniquesMap);
-    
-        this.differentTechniquesMap = normalizeddifferentTechniquesMap
-      }
-     
-        // Select all circles with the class 'node'
-        const circles = this.svg.selectAll('.node');
-    
-        // Update the radius of each circle based on the normalized total exhibitions
-        circles.attr('r', (d: any) => {
-            // Retrieve the normalized value for the current artist from the map
-            const normalizedValue = this.differentTechniquesMap.get(d.artist.id)||0;
-            // Use the normalized value to calculate the radius for the current circle
-            return this.calculateRadiusForNode(normalizedValue);
-        });
-       
-        
-    }
-  else if(value === 'Amount of exhibited Artworks'){
-    if(this.totalExhibitedArtworksMap.size === 0) {
-
-      
-        // Create a Map<number, number> to hold the total exhibition values
-        const totalExhibitedArtworksMap = new Map<number, number>();
-        this.artists.forEach(artist => {
-            totalExhibitedArtworksMap.set(artist.id, artist.total_exhibited_artworks);
-        });
-    
-        
-        // Normalize the values using the normalizeLinear function
-        const normalizedTotalExhibitions = this.normalizeLinear(totalExhibitedArtworksMap);
-    
-        this.totalExhibitedArtworksMap = normalizedTotalExhibitions
-      }
- 
-        // Select all circles with the class 'node'
-        const circles = this.svg.selectAll('.node');
-    
-        // Update the radius of each circle based on the normalized total exhibitions
-        circles.attr('r', (d: any) => {
-            // Retrieve the normalized value for the current artist from the map
-            const normalizedValue = this.totalExhibitedArtworksMap.get(d.artist.id)||0;
-            // Use the normalized value to calculate the radius for the current circle
-            return this.calculateRadiusForNode(normalizedValue);
-        });
-       
-        
-    }
   this.resetSimulation();
   
 }
