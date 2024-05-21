@@ -81,7 +81,7 @@ export class DecisionsComponent implements OnInit {
       console.log('Artists fetched:', this.numberOfArtists);
   
       // Step 2: Update kOptions based on the fetched artists
-      const newCeil = Math.ceil(this.artists.length / 20);
+      const newCeil = Math.ceil(this.artists.length / 15);
       if (newCeil < 1 && this.artists.length > 0) {
         this.kOptions = { ...this.kOptions, ceil: 1 };  // Set ceil to 1 if calculation results in less than 1
       } else {
@@ -101,6 +101,7 @@ export class DecisionsComponent implements OnInit {
       // Fetch artists and update range
       await this.fetchArtistsAndUpdateRange();
       this.showK = true;  // Show the K slider after fetching artists
+      this.decisionService.changeDecisionRange(this.range);
 
       // Add a delay before resetting useRange to show the green check mark
       setTimeout(() => {

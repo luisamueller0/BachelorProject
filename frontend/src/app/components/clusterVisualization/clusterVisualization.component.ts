@@ -91,9 +91,6 @@ export class ClusterVisualizationComponent implements OnInit {
     this.subscriptions.add(this.decisionService.currentSunburst.subscribe(sunburst => {
       this.updateVisualization('sunburst', sunburst);
     }));
-    this.subscriptions.add(this.decisionService.currentRange.subscribe(range => {
-      this.updateArtists(range);
-    }));
 
     this.subscriptions.add(this.decisionService.currentK.subscribe(k => {
       this.updateCluster(k);
@@ -413,11 +410,6 @@ private calculateNodeRadius(artistId: number, normalizedMap: Map<number, number>
   }
 
 
-  private   updateArtists(range: any) {
-    const k = this.decisionService.getK();
-    this.updateCluster(k)
-    console.log(range);
-  }
 
   private   updateCluster(k: number) {
     if(this.firstK === -1){
@@ -426,6 +418,7 @@ private calculateNodeRadius(artistId: number, normalizedMap: Map<number, number>
     }
     console.log(k);
     const range = this.decisionService.getDecisionRange();
+    console.log('range:', range, 'k:', k)
     if(range.length !== 0){
 
        // Remove the existing SVG element
@@ -1127,16 +1120,24 @@ private onClusterClick(clusterNode: ClusterNode): void {
   }
   
   
-  private createEdgeColorScale(baseColor: string): d3.ScaleLinear<string, number> {
+  private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks: number): d3.ScaleLinear<string, number> {
     const lighterColor = d3.rgb(baseColor).brighter(4).toString(); // Make it more white
     const darkerColor = d3.rgb(baseColor).darker(2).toString();
-    return d3.scaleLinear<string, number>()
-      .domain([0, 1])
-      .range([lighterColor, darkerColor]);
+  
+    if (minArtworks === maxArtworks) {
+      // If all values are the same, return a scale that maps everything to the darker color
+      return d3.scaleLinear<string, number>()
+        .domain([0, 1])
+        .range([darkerColor, darkerColor]);
+    } else {
+      return d3.scaleLinear<string, number>()
+        .domain([minArtworks, maxArtworks])
+        .range([lighterColor, darkerColor]);
+    }
   }
+  
   // Artist node click handler
   private handleNodeClick(artistNode: ArtistNode, event: MouseEvent): void {
-    
     // Prevent the cluster click handler from executing
     this.isNodeClick = true;
     event.stopPropagation(); // Use the event object to stop propagation
@@ -1183,8 +1184,16 @@ private onClusterClick(clusterNode: ClusterNode): void {
       circle.style.stroke = 'black'; // Add black border
       circle.style.strokeWidth = '3px'; // Make the border thicker
   
+      // Calculate the minimum and maximum sharedExhibitionMinArtworks values
+      const sharedExhibitionMinArtworksValues: number[] = [];
+      this.g.selectAll(".artist-edge").each((d: any) => {
+        sharedExhibitionMinArtworksValues.push(d.sharedExhibitionMinArtworks);
+      });
+      const minArtworks = d3.min(sharedExhibitionMinArtworksValues) ?? 0;
+      const maxArtworks = d3.max(sharedExhibitionMinArtworksValues) ?? 1;
+  
       // Create a color scale for the edges connected to the selected node
-      const edgeColorScale = this.createEdgeColorScale(darkerColor.toString());
+      const edgeColorScale = this.createEdgeColorScale(darkerColor.toString(), minArtworks, maxArtworks);
   
       // Highlight edges connected to the selected node
       const selectedNodeId = artistNode.id;
@@ -1202,20 +1211,20 @@ private onClusterClick(clusterNode: ClusterNode): void {
         return d.source.id === selectedNodeId || d.target.id === selectedNodeId;
       }).style('stroke', (d: any) => edgeColorScale(d.sharedExhibitionMinArtworks));
   
-   // Set edges that are not connected to the selected node within the same cluster to none
-this.g.selectAll(".artist-edge").filter((d: any) => {
-  const clusterNode = this.artistClusterMap.get(artistNode.id);
-  if (!clusterNode) return false; // Safety check
-
-  const clusterId = clusterNode.clusterId;
-  const sourceClusterNode = this.artistClusterMap.get(d.source.id);
-  const targetClusterNode = this.artistClusterMap.get(d.target.id);
-
-  // Ensure both source and target nodes are within the same cluster
-  return (sourceClusterNode && sourceClusterNode.clusterId === clusterId) && (targetClusterNode && targetClusterNode.clusterId === clusterId) && 
-         (d.source.id !== selectedNodeId && d.target.id !== selectedNodeId);
-}).style('stroke', 'none'); // Set to none
-
+      // Set edges that are not connected to the selected node within the same cluster to none
+      this.g.selectAll(".artist-edge").filter((d: any) => {
+        const clusterNode = this.artistClusterMap.get(artistNode.id);
+        if (!clusterNode) return false; // Safety check
+  
+        const clusterId = clusterNode.clusterId;
+        const sourceClusterNode = this.artistClusterMap.get(d.source.id);
+        const targetClusterNode = this.artistClusterMap.get(d.target.id);
+  
+        // Ensure both source and target nodes are within the same cluster
+        return (sourceClusterNode && sourceClusterNode.clusterId === clusterId) && (targetClusterNode && targetClusterNode.clusterId === clusterId) && 
+               (d.source.id !== selectedNodeId && d.target.id !== selectedNodeId);
+      }).style('stroke', 'none'); // Set to none
+  
       // Add black border to connected nodes
       this.g.selectAll(".artist-node").each((d: any, i: number, nodes: any) => {
         if (connectedNodeIds.has(d.id)) {
@@ -1227,7 +1236,7 @@ this.g.selectAll(".artist-edge").filter((d: any) => {
   
       // Select the individual artist
       this.selectionService.selectArtist([artistNode.artist]);
-
+  
       const artist = artistNode.artist;
       const type = this.decisionService.getDecisionSunburst();
     
@@ -1245,7 +1254,6 @@ this.g.selectAll(".artist-edge").filter((d: any) => {
           this.selectionService.selectCountries([artist.most_exhibited_in])
           break;
       };
-          
   
       // Also select the cluster and intercommunity edges
       const clusterNode = this.artistClusterMap.get(artistNode.id);
@@ -1258,7 +1266,6 @@ this.g.selectAll(".artist-edge").filter((d: any) => {
     }
   }
   
-
 
   private repelFromCenterForce(artistNodes: ArtistNode[],centralNode: ArtistNode, radius: number, padding: number = 5): (alpha: number) => void {
     return function(alpha: number) {
