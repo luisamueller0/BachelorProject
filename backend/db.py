@@ -165,7 +165,9 @@ def load_json_data(file_path):
 
 def update_entriesTechniques(driver):
     data = load_json_data(file_path)
+    data  = [entry['n']['properties'] for entry in data]
     print("data read")
+  
     
     with driver.session() as session:
         session.run("""
