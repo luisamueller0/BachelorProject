@@ -14,7 +14,7 @@ export class SelectionService {
   private selectedArtist  = new BehaviorSubject<Artist[]>([]);
   private selectedCluster = new BehaviorSubject<Artist[]>([]);
   private selectedCountries = new BehaviorSubject<string[]>([]);
-  private selectedFocusCluster = new BehaviorSubject<[Artist[][], exhibited_with[][]]>([[[]], [[]]]);
+  private selectedFocusCluster = new BehaviorSubject<[Artist[][], exhibited_with[][]]|null>(null); // Change the initial value to undefined
   private selectedNode = new BehaviorSubject<Artist|null>(null);
   private selectedClusterEdges = new BehaviorSubject<exhibited_with[]>([]);
 

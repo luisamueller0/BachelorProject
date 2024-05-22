@@ -1,4 +1,4 @@
-import { Component, OnInit, OnChanges, SimpleChanges, HostListener, Input } from '@angular/core';
+import { Component, OnInit, OnChanges, SimpleChanges, HostListener, Input, ElementRef } from '@angular/core';
 import * as d3 from 'd3';
 import { Artist, ArtistNode, ClusterNode } from '../../models/artist';
 import exhibited_with from '../../models/exhibited_with';
@@ -30,6 +30,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   private baseWidth: number = 0; // Adjusted width
   private baseHeight: number = 0; // Adjusted height
   private minClusterRadius = 200; // Minimum radius for each cluster
+  private focusCluster: any = null;
 
   private edgeColorScale = d3.scaleSequential(d3.interpolateGreys).domain([0, 1]);
 
@@ -55,16 +56,15 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   private clusterCountryCentroids: { [clusterId: number]: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } } = {};
 
   constructor(private decisionService: DecisionService,
-              private selectionService: SelectionService) {
+              private selectionService: SelectionService,
+              private elementRef: ElementRef) {
     this.handleNodeClick = this.handleNodeClick.bind(this);
   }
 
   ngOnInit() {
-    this.subscriptions.add(this.decisionService.currentOrder.subscribe(order => {
-      this.updateVisualization('order', order);
-    }));
 
-    this.subscriptions.add(this.selectionService.currentFocusCluster.subscribe(this.loadInitialData.bind(this)));
+
+    this.subscriptions.add(this.selectionService.currentFocusCluster.subscribe(this.tryInitialize.bind(this)));
   }
 
   ngOnDestroy() {
@@ -76,48 +76,75 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   onResize(event: any) {
     this.resizeSvg();
   }
+  
 
   public getTitle(): string {
     return `Displaying ${this.allArtists.length} artists and ${this.clusters.length} clusters`;
   }
-
+  private createSvg(): void {
+    const container = d3.select(this.elementRef.nativeElement).select("figure#network");
+    const containerNode = container.node() as HTMLElement;
+  
+    if (containerNode) {
+      const width = containerNode.clientWidth;
+      const height = containerNode.clientHeight;
+  
+      this.svg = container
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .append("g");
+  
+      this.g = this.svg.append('g');
+  
+      this.g.append('g').attr('class', 'clusters');
+  
+      this.resizeSvg();
+  
+      console.log("SVG element created:", this.svg);
+    } else {
+      console.error('Container node is not found or not an Element');
+    }
+  }
+  
   private resizeSvg(): void {
     if (!this.g) return;
-
-    const svgElement = d3.select("figure#network svg");
-    const width = window.innerWidth; // Use full window width
-    const height = window.innerHeight; // Use full window height
-
-    svgElement
-      .attr("width", width)
-      .attr("height", height);
-
-    this.baseWidth = width;
-    this.baseHeight = height;
+  
+    const container = d3.select(this.elementRef.nativeElement).select("figure#network");
+    const containerNode = container.node() as HTMLElement;
+  
+    if (containerNode) {
+      const width = containerNode.clientWidth;
+      const height = containerNode.clientHeight;
+  
+      const svgElement = d3.select("figure#network svg");
+      svgElement
+        .attr("width", width)
+        .attr("height", height);
+  
+      this.baseWidth = width;
+      this.baseHeight = height-150;
+    } else {
+      console.error('Container node is not found or not an Element');
+    }
   }
+  
+  
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['displayValue']) {
       console.log('displayValue changed:', this.displayValue);
+      this.tryInitialize();
+    }
+  }
+  private tryInitialize() {
+    console.log('tryInitialize', this.selectionService.getFocusCluster())
+    if (this.displayValue && this.selectionService.getFocusCluster != null) {
       this.loadInitialData();
     }
   }
 
-  private createSvg(): void {
-    this.svg = d3.select("figure#network")
-      .append("svg")
-      .attr("width", this.baseWidth)
-      .attr("height", this.baseHeight)
-      .append("g");
-
-    this.g = this.svg.append('g');
-
-    this.g.append('g').attr('class', 'clusters');
-
-    this.resizeSvg();
-
-    console.log("SVG element created:", this.svg);
-  }
+ 
 
   private updateVisualization(type: string, value: any) {
     console.log(`Updated ${type} to ${value}`);
@@ -263,23 +290,27 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   }
 
   private loadInitialData() {
-    const focusCluster = this.selectionService.getFocusCluster();
-    const focusClusterArtists = focusCluster[0];
-    const focusClusterEdges = focusCluster[1];
-  
+    this.focusCluster = this.selectionService.getFocusCluster();
+    console.log('focus cluster:', this.focusCluster)
+    if(this.focusCluster == null){
+      return;
+    }
+    
+    const focusClusterArtists = this.focusCluster[0];
+    const focusClusterEdges = this.focusCluster[1];
+
     console.log('display focus:', this.displayValue);
     console.log('selected cluster focus', focusClusterArtists);
     console.log('selected edges', focusClusterEdges);
-  
+
     if (!focusClusterArtists || focusClusterArtists.length === 0) {
       console.log('No focus cluster artists found, aborting initialization.');
       return;
     }
-  
-    this.isLoading = true;
+
     this.clusters = focusClusterArtists;
     this.intraCommunityEdges = focusClusterEdges;
-  
+
     this.calculateNodeDegreesForClusters();
     this.globalColorScale = this.createGlobalColorScale(this.displayValue);
 
@@ -296,15 +327,20 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   private renderClusters(value: string): void {
     const maxSize = Math.max(...this.clusters.map(cluster => cluster.length));
     console.log(this.clusters);
+
+    const outerRadius= Math.min(this.baseWidth, this.baseHeight) / 2;
+  
+    const innerRadius = outerRadius - this.sunburstThickness;
+
+    outerRadius 
     const clusterNodes: ClusterNode[] = this.clusters.map((cluster, index) => {
-      const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, maxSize);
       return {
         clusterId: index,
         artists: cluster,
         outerRadius: outerRadius,
         innerRadius: innerRadius,
-        x: Math.random() * this.baseWidth - this.baseWidth / 2,
-        y: Math.random() * this.baseHeight - this.baseWidth / 2
+        x:  this.baseWidth / 2,
+        y:  this.baseHeight / 2 
       };
     });
 
@@ -842,16 +878,7 @@ else if(value === 'mostexhibited'){
   }
 
   // Used to generate the possible radius properties for each sunburst cluster
-  private createSunburstProperties(clusterSize: number, maxSize: number): [number, number] {
-    const minRadius = this.minClusterRadius; // Use the minimum cluster radius as the base
-    const maxRadius = Math.min(this.baseWidth, this.baseHeight) / 3; // Adjust max radius to fit within SVG dimensions
-  
-    // Calculate the proportional radius based on cluster size
-    const outerRadius = minRadius + ((maxRadius - minRadius) * (clusterSize / maxSize));
-    const innerRadius = outerRadius - this.sunburstThickness;
-  
-    return [outerRadius, innerRadius];
-  }
+
   
   
   private getClusterGroupDimensions(clusterGroup: any): { width: number, height: number } {
