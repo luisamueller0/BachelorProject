@@ -87,7 +87,9 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
 
   @ViewChild('mapContainer', { static: true }) private mapContainer!: ElementRef;
 
-  constructor(private http: HttpClient, private selectionService: SelectionService) { }
+  constructor(private http: HttpClient, private selectionService: SelectionService) { 
+    this.handleCountryClick = this.handleCountryClick.bind(this);
+  }
 
   ngOnInit(): void {
     this.setWidthHeight();
@@ -147,19 +149,34 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
         };
 
         const projection = d3.geoMercator()
+        
           .center([20, 52])
           .scale(900)
-          .translate([this.width / 2, this.height / 2]);
+          .translate([this.width / 2 + 100, this.height / 2 + 100]);
 
         const path = d3.geoPath().projection(projection);
+        
 
         this.countryBorders = this.g.selectAll('path')
-          .data(filteredData.features)
-          .enter()
-          .append('path')
-          .attr('d', path)
-          .attr('fill', (d: any) => this.getRegionColor(d.properties.name))
-          .attr('stroke', '#fff');
+        .data(filteredData.features)
+        .enter()
+        .append('path')
+        .attr('d', path)
+        .attr('fill', (d: any) => this.getRegionColor(d.properties.name))
+        .attr('stroke', '#fff')
+        .on('click', (event: MouseEvent, d: any) => this.handleCountryClick(d.properties.name, event))
+        .on('mouseover', (event: MouseEvent, d: any) => {
+          const element = d3.select(event.currentTarget as SVGPathElement);
+          const [x, y] = d3.pointer(event, window.document.body);
+          d3.select('#tooltip')
+            .style('display', 'block')
+            .style('left', `${x + 10}px`)
+            .style('top', `${y + 10}px`)
+            .html(`Country: ${d.properties.name} (${this.getKeyByValue(d.properties.name)})`);
+        })
+        .on('mouseout', () => {
+          d3.select('#tooltip').style('display', 'none');
+        });
 
        // Append country codes
 /* this.g.selectAll('text')
@@ -184,6 +201,21 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
       })
   );
 }
+
+private handleCountryClick(country: string, event: MouseEvent): void {
+ 
+
+  const countryOnMap = event.currentTarget as SVGPathElement;
+  console.log(country, this.getKeyByValue(country));
+  //this.selectionService.selectMapCountry(this.getKeyByValue(country));
+}
+
+private getKeyByValue(value: string): string | undefined {
+  return Object.keys(this.countryMap).find(key => this.countryMap[key] === value);
+}
+
+
+
 
   private updateCountryColors(selectedCountries: string[]): void {
     if (!this.countryBorders) return;
@@ -234,6 +266,10 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     return ""; // Return empty string or some default value if no match
   }
+
+
+
+
 
   private createLegend(): void {
     const legendData = [
