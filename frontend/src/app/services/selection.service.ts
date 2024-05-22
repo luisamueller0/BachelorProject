@@ -13,17 +13,19 @@ export class SelectionService {
 
   private selectedArtist  = new BehaviorSubject<Artist[]>([]);
   private selectedCluster = new BehaviorSubject<Artist[]>([]);
-  private selectedClusterEdges = new BehaviorSubject<exhibited_with[]>([]);
   private selectedCountries = new BehaviorSubject<string[]>([]);
-  private selectedClusterArtists = new BehaviorSubject<Artist[]>([]);
+  private selectedFocusCluster = new BehaviorSubject<[Artist[][], exhibited_with[][]]|null>(null); // Change the initial value to undefined
   private selectedNode = new BehaviorSubject<Artist|null>(null);
+  private selectedClusterEdges = new BehaviorSubject<exhibited_with[]>([]);
 
   currentArtist = this.selectedArtist.asObservable();
   currentCluster = this.selectedCluster.asObservable();
-  currentClusterEdges= this.selectedClusterEdges.asObservable();
+
   currentCountries = this.selectedCountries.asObservable();
   currentNode = this.selectedNode.asObservable();
-  currentClusterArtists = this.selectedClusterArtists.asObservable();
+  currentFocusCluster = this.selectedFocusCluster.asObservable();
+  currentClusterEdges= this.selectedClusterEdges.asObservable();
+
 
   selectArtist(artists:Artist[]) {
     this.selectedArtist.next(artists);
@@ -38,14 +40,9 @@ export class SelectionService {
     this.selectedCluster.next(cluster);
   }
 
-  selectClusterArtists(artists:Artist[]){
-    this.selectedClusterArtists.next(artists);
-  }
-
-  selectClusterEdges(edges:exhibited_with[]){
-    console.log('selected cluster edges', edges.length)
-    this.selectedClusterEdges.next(edges);
-  }
+  selectFocusCluster(cluster:[Artist[][], exhibited_with[][]]){
+    this.selectedFocusCluster.next(cluster);
+  };
 
   selectCountries(countries:string[]){
     this.selectedCountries.next(countries);
@@ -54,14 +51,18 @@ export class SelectionService {
   selectNode(node:Artist|null){
     this.selectedNode.next(node);
   }
-
+  selectClusterEdges(edges:exhibited_with[]){
+    console.log('selected cluster edges', edges.length)
+    this.selectedClusterEdges.next(edges);
+  }
 
   getClusterEdges(){
     return this.selectedClusterEdges.value;
   }
 
-  getClusterArtists(){
-    return this.selectedClusterArtists.value;
+
+  getFocusCluster(){
+    return this.selectedFocusCluster.value;
   }
 
   getNode(){

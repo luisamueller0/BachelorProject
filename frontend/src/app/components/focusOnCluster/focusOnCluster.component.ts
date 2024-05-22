@@ -1,4 +1,4 @@
-import { Component, OnInit, OnChanges, SimpleChanges, HostListener, Input } from '@angular/core';
+import { Component, OnInit, OnChanges, SimpleChanges, HostListener, Input, ElementRef } from '@angular/core';
 import * as d3 from 'd3';
 import { Artist, ArtistNode, ClusterNode } from '../../models/artist';
 import exhibited_with from '../../models/exhibited_with';
@@ -6,14 +6,13 @@ import { Subscription } from 'rxjs';
 import { DecisionService } from '../../services/decision.service';
 import { SelectionService } from '../../services/selection.service';
 
-
 @Component({
   selector: 'app-focusOnCluster',
   templateUrl: './focusOnCluster.component.html',
   styleUrls: ['./focusOnCluster.component.css']
 })
 export class FocusOnClusterComponent implements OnInit, OnChanges {
-  @Input() displayValue: string ='';
+  @Input() displayValue: string = '';
   public isLoading: boolean = true;
   private firstK: number = -1;
   private isIniatialized: boolean = false;
@@ -24,9 +23,6 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   private artistClusterMap: Map<number, ClusterNode> = new Map<number, ClusterNode>();
   private artistNodes: ArtistNode[][] = [];
 
- 
-  
-
   private subscriptions: Subscription = new Subscription();
 
   private svg: any;
@@ -34,6 +30,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   private baseWidth: number = 0; // Adjusted width
   private baseHeight: number = 0; // Adjusted height
   private minClusterRadius = 200; // Minimum radius for each cluster
+  private focusCluster: any = null;
 
   private edgeColorScale = d3.scaleSequential(d3.interpolateGreys).domain([0, 1]);
 
@@ -44,7 +41,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
 
   private sunburstThickness: number = 90;
 
-  private regionOrder: string[] = ["North Europe", "Eastern Europe", "Southern Europe", "Western Europe", "Others", "\N"];
+  private regionOrder: string[] = ["North Europe", "Eastern Europe", "Southern Europe", "Western Europe", "Others", "\\N"];
 
   private selectedNode: [SVGCircleElement, string] | null = null;
   private previousArtist: Artist | null = null;
@@ -59,21 +56,15 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   private clusterCountryCentroids: { [clusterId: number]: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } } = {};
 
   constructor(private decisionService: DecisionService,
-              private selectionService: SelectionService ){
+              private selectionService: SelectionService,
+              private elementRef: ElementRef) {
     this.handleNodeClick = this.handleNodeClick.bind(this);
   }
 
   ngOnInit() {
 
-    this.subscriptions.add(this.decisionService.currentOrder.subscribe(order => {
-      this.updateVisualization('order', order);
-    }));
 
-    this.subscriptions.add(this.selectionService.currentClusterArtists.subscribe(this.loadInitialData));
-
-    /* this.subscriptions.add(this.selectionService.currentNode.subscribe(node => { 
-      this.handleNodeClick(node);
-    })); */
+    this.subscriptions.add(this.selectionService.currentFocusCluster.subscribe(this.tryInitialize.bind(this)));
   }
 
   ngOnDestroy() {
@@ -85,52 +76,77 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   onResize(event: any) {
     this.resizeSvg();
   }
+  
 
   public getTitle(): string {
     return `Displaying ${this.allArtists.length} artists and ${this.clusters.length} clusters`;
   }
-
+  private createSvg(): void {
+    const container = d3.select(this.elementRef.nativeElement).select("figure#network");
+    const containerNode = container.node() as HTMLElement;
+  
+    if (containerNode) {
+      const width = containerNode.clientWidth;
+      const height = containerNode.clientHeight;
+  
+      this.svg = container
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .append("g");
+  
+      this.g = this.svg.append('g');
+  
+      this.g.append('g').attr('class', 'clusters');
+  
+      this.resizeSvg();
+  
+      console.log("SVG element created:", this.svg);
+    } else {
+      console.error('Container node is not found or not an Element');
+    }
+  }
+  
   private resizeSvg(): void {
     if (!this.g) return;
-
-    const svgElement = d3.select("figure#network svg");
-    const width = window.innerWidth; // Use full window width
-    const height = window.innerHeight; // Use full window height
-
-    svgElement
-      .attr("width", width)
-      .attr("height", height);
-
-    this.baseWidth = width;
-    this.baseHeight = height;
-
+  
+    const container = d3.select(this.elementRef.nativeElement).select("figure#network");
+    const containerNode = container.node() as HTMLElement;
+  
+    if (containerNode) {
+      const width = containerNode.clientWidth;
+      const height = containerNode.clientHeight;
+  
+      const svgElement = d3.select("figure#network svg");
+      svgElement
+        .attr("width", width)
+        .attr("height", height);
+  
+      this.baseWidth = width;
+      this.baseHeight = height-150;
+    } else {
+      console.error('Container node is not found or not an Element');
+    }
   }
+  
+  
 
   ngOnChanges(changes: SimpleChanges) {
-  if (changes['displayValue']) {
-    console.log('displayValue changed:', this.displayValue);
-    this.loadInitialData();
+    if (changes['displayValue']) {
+      console.log('displayValue changed:', this.displayValue);
+      this.tryInitialize();
+    }
   }
-}
-
-  private createSvg(): void {
-  
-    this.svg = d3.select("figure#network")
-      .append("svg")
-      .attr("width", this.baseWidth)
-      .attr("height", this.baseHeight)
-      .append("g");
-
-    this.g = this.svg.append('g');
-
-    this.g.append('g').attr('class', 'clusters');
-
-    this.resizeSvg();
-
-    console.log("SVG element created:", this.svg);
+  private tryInitialize() {
+    console.log('tryInitialize', this.selectionService.getFocusCluster())
+    if (this.displayValue && this.selectionService.getFocusCluster != null) {
+      this.loadInitialData();
+    }
   }
 
- private updateVisualization(type: string, value: any) {
+ 
+
+  private updateVisualization(type: string, value: any) {
     console.log(`Updated ${type} to ${value}`);
     if (this.isIniatialized) {
       if (type === 'size') {
@@ -141,57 +157,52 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
 
   private calculateNormalizedMaps(metric: string): { [clusterId: number]: Map<number, number> } {
     const normalizedMaps: { [clusterId: number]: Map<number, number> } = {};
-  
+
     this.clusters.forEach((cluster, clusterId) => {
       let metricMap = new Map<number, number>();
-  
+
       if (metric === 'Amount of Exhibitions') {
-      
-          cluster.forEach((artist: Artist) => {
-            metricMap.set(artist.id, artist.total_exhibited_artworks);
-          });
-          this.totalExhibitionsMap[clusterId] = this.normalizeLinear(metricMap);
-        
+        cluster.forEach((artist: Artist) => {
+          metricMap.set(artist.id, artist.total_exhibited_artworks);
+        });
+        this.totalExhibitionsMap[clusterId] = this.normalizeLinear(metricMap);
+
       } else if (metric === 'Amount of different techniques') {
-    
-          cluster.forEach((artist: Artist) => {
-            metricMap.set(artist.id, artist.amount_techniques);
-          });
-          this.differentTechniquesMap[clusterId] = this.normalizeLinear(metricMap);
-        
+        cluster.forEach((artist: Artist) => {
+          metricMap.set(artist.id, artist.amount_techniques);
+        });
+        this.differentTechniquesMap[clusterId] = this.normalizeLinear(metricMap);
+
       } else if (metric === 'Amount of exhibited Artworks') {
+        cluster.forEach((artist: Artist) => {
+          metricMap.set(artist.id, artist.total_exhibited_artworks);
+        });
+        this.totalExhibitedArtworksMap[clusterId] = this.normalizeLinear(metricMap);
 
-          cluster.forEach((artist: Artist) => {
-            metricMap.set(artist.id, artist.total_exhibited_artworks);
-          });
-          this.totalExhibitedArtworksMap[clusterId] = this.normalizeLinear(metricMap);
-        
       } else if (metric === 'default: Importance (Degree)') {
-
-          // Calculate degrees only if not already done
-          this.calculateNodeDegreesForClusters();
-          metricMap = this.degreesMap[clusterId];
-        
+        // Calculate degrees only if not already done
+        this.calculateNodeDegreesForClusters();
+        metricMap = this.degreesMap[clusterId];
       }
 
       normalizedMaps[clusterId] = this.normalizeLinear(metricMap);
     });
-  
+
     return normalizedMaps;
   }
-  
+
   private updateNodeSize(metric: string) {
     const normalizedMaps = this.calculateNormalizedMaps(metric);
-  
+
     // Select all clusters and update the nodes within each cluster
     this.g.selectAll(".cluster").each((cluster: ClusterNode, i: number, nodes: any[]) => {
       const clusterGroup = d3.select(nodes[i]);
       const clusterId = cluster.clusterId;
       const normalizedMap = normalizedMaps[clusterId];
-  
+
       // Array to store sizes of nodes in the current cluster
       const updatedSizes: number[] = [];
-  
+
       // Update the radius of each node in the cluster based on the normalized values
       clusterGroup.selectAll<SVGCircleElement, ArtistNode>(".artist-node")
         .attr('r', (d: ArtistNode) => {
@@ -201,16 +212,16 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
           updatedSizes[d.id] = radius;
           return radius;
         });
-  
+
       // Update the force simulation for the artist nodes without recreating the entire network
       this.updateSimulation(updatedSizes, clusterGroup, cluster);
     });
   }
-  
+
   private updateSimulation(updatedSizes: number[], clusterGroup: any, cluster: ClusterNode) {
     if (this.simulation[cluster.clusterId]) {
       const artistNodes = this.artistNodes[cluster.clusterId];
-  
+
       // Reset positions using the new function
       const degreeMap = this.degreesMap[cluster.clusterId];
       const metricMap = this.calculateNormalizedMaps(this.decisionService.getDecisionSize())[cluster.clusterId];
@@ -221,15 +232,14 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
         node.vx = 0;
         node.vy = 0;
       });
-  
+
       const edges = clusterGroup.selectAll(".artist-edge");
       const circles = clusterGroup.selectAll(".artist-node");
       const centralNode = artistNodes.reduce((maxNode, node) => {
         const degree = degreeMap.get(node.artist.id) || 0;
         return degree > (degreeMap.get(maxNode.artist.id) || 0) ? node : maxNode;
       }, artistNodes[0]);
-  
-  
+
       // Update the force simulation
       this.simulation[cluster.clusterId]
         .nodes(artistNodes)
@@ -238,9 +248,9 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
             return 0; // Exclude the central node from collision
           }
           return this.calculateCollisionRadius(updatedSizes[d.id] || 0);
-        }))        .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - 10)) // Add boundary force
-        .force("repelFromCenter", this.repelFromCenterForce(artistNodes, centralNode, updatedSizes[centralNode.id] || 0, 2)) // Add custom repel force
+        }))
         .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - 10)) // Add boundary force
+        .force("repelFromCenter", this.repelFromCenterForce(artistNodes, centralNode, updatedSizes[centralNode.id] || 0, 2)) // Add custom repel force
         .on("tick", () => {
           circles
             .attr('cx', (d: ArtistNode) => d.x)
@@ -251,13 +261,12 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
             .attr("x2", (d: any) => d.target.x)
             .attr("y2", (d: any) => d.target.y);
         });
-  
+
       // Restart the simulation with alpha
       this.simulation[cluster.clusterId].alpha(1).restart();
     }
   }
-  
-  
+
   private calculateNewPosition(artist: Artist, countryData: any, degreeMap: Map<number, number>, metricMap: Map<number, number>, cluster: ClusterNode, centerX: number, centerY: number): { x: number, y: number, radius: number, color: string | number } {
     const degree = degreeMap.get(artist.id) || 0;
     const radialScale = this.setupRadialScale(cluster.innerRadius);
@@ -274,60 +283,66 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
       color: this.globalColorScale(countryIndex)
     };
   }
-  
 
-
-private calculateNodeRadius(artistId: number, normalizedMap: Map<number, number>, innerRadius: number): number {
+  private calculateNodeRadius(artistId: number, normalizedMap: Map<number, number>, innerRadius: number): number {
     const normalizedValue = normalizedMap.get(artistId) || 0;
     return this.calculateRadiusForNode(normalizedValue, innerRadius);
-}
-
-  
-
-  
-private loadInitialData() {
-
-  console.log('display focus:', this.displayValue);
-  console.log('selected cluster focus', this.selectionService.getClusterArtists());
-  console.log('selected edges', this.selectionService.getClusterEdges());
-
-  if (this.selectionService.getClusterArtists().length === 0) {
-    return;
   }
-  this.isLoading = true;
-  this.clusters = [this.selectionService.getClusterArtists()];
-  this.intraCommunityEdges = [this.selectionService.getClusterEdges()];
-  
-  this.calculateNodeDegreesForClusters();
-  this.globalColorScale = this.createGlobalColorScale(this.displayValue);
 
-  this.initializeVisualization(this.displayValue);
-  this.isLoading = false;
-  this.isIniatialized = true;
-}
+  private loadInitialData() {
+    this.focusCluster = this.selectionService.getFocusCluster();
+    console.log('focus cluster:', this.focusCluster)
+    if(this.focusCluster == null){
+      return;
+    }
+    
+    const focusClusterArtists = this.focusCluster[0];
+    const focusClusterEdges = this.focusCluster[1];
+
+    console.log('display focus:', this.displayValue);
+    console.log('selected cluster focus', focusClusterArtists);
+    console.log('selected edges', focusClusterEdges);
+
+    if (!focusClusterArtists || focusClusterArtists.length === 0) {
+      console.log('No focus cluster artists found, aborting initialization.');
+      return;
+    }
+
+    this.clusters = focusClusterArtists;
+    this.intraCommunityEdges = focusClusterEdges;
+
+    this.calculateNodeDegreesForClusters();
+    this.globalColorScale = this.createGlobalColorScale(this.displayValue);
+
+    this.initializeVisualization(this.displayValue);
+    this.isLoading = false;
+    this.isIniatialized = true;
+  }
 
   private initializeVisualization(value: string) {
     this.createSvg();
     this.renderClusters(value); // Render clusters first
   }
 
- 
-  
   private renderClusters(value: string): void {
     const maxSize = Math.max(...this.clusters.map(cluster => cluster.length));
-console.log(this.clusters)
+    console.log(this.clusters);
+
+    const outerRadius= Math.min(this.baseWidth, this.baseHeight) / 2;
+  
+    const innerRadius = outerRadius - this.sunburstThickness;
+
+    outerRadius 
     const clusterNodes: ClusterNode[] = this.clusters.map((cluster, index) => {
-      const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, maxSize);
       return {
         clusterId: index,
         artists: cluster,
         outerRadius: outerRadius,
         innerRadius: innerRadius,
-        x: Math.random() * this.baseWidth - this.baseWidth / 2,
-        y: Math.random() * this.baseHeight - this.baseWidth / 2
+        x:  this.baseWidth / 2,
+        y:  this.baseHeight / 2 
       };
     });
-
 
     const clusterGroups = clusterNodes.map(clusterNode => this.createClusterGroup(clusterNode, value));
 
@@ -343,9 +358,9 @@ console.log(this.clusters)
         d3.select(this).selectAll("*").remove(); // Clear any existing content
         d3.select(this).append(() => clusterGroups[i]);
       });
-
-
   }
+
+
 
   private createClusterGroup(clusterNode: ClusterNode, value: string): SVGGElement {
     const arcGenerator = d3.arc<any>()
@@ -394,6 +409,7 @@ console.log(this.clusters)
         });
         break;
     }
+    console.log('countryMap focus:', countryMap)
   
     // Calculate angles for each nationality segment
     const countries = Array.from(countryMap.keys());
@@ -584,6 +600,7 @@ console.log(this.clusters)
       return degree > (degreeMap.get(maxNode.artist.id) || 0) ? node : maxNode;
     }, artistNodes[0]);
 
+    console.log('focus artists', artistNodes)
     const simulation = d3.forceSimulation(artistNodes)
     .force("collision", d3.forceCollide((d: any) => {
       if (d.id === centralNode.id) {
@@ -861,16 +878,7 @@ else if(value === 'mostexhibited'){
   }
 
   // Used to generate the possible radius properties for each sunburst cluster
-  private createSunburstProperties(clusterSize: number, maxSize: number): [number, number] {
-    const minRadius = this.minClusterRadius; // Use the minimum cluster radius as the base
-    const maxRadius = Math.min(this.baseWidth, this.baseHeight) / 3; // Adjust max radius to fit within SVG dimensions
-  
-    // Calculate the proportional radius based on cluster size
-    const outerRadius = minRadius + ((maxRadius - minRadius) * (clusterSize / maxSize));
-    const innerRadius = outerRadius - this.sunburstThickness;
-  
-    return [outerRadius, innerRadius];
-  }
+
   
   
   private getClusterGroupDimensions(clusterGroup: any): { width: number, height: number } {
