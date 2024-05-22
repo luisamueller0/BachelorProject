@@ -544,11 +544,11 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
             this.allCountries.push(artist.nationality)
           }
         });
-
+  
         const biggestCluster = this.clusters.reduce((max, cluster) => cluster.length > max.length ? cluster : max, this.clusters[0]);
         const biggestClusterId = this.clusters.findIndex(cluster => cluster === biggestCluster);
-        this.selectionService.selectClusterArtists(biggestCluster);
-        this.selectionService.selectClusterEdges(this.intraCommunityEdges[biggestClusterId]);
+        const biggestClusterEdges = this.intraCommunityEdges[biggestClusterId]
+        this.selectionService.selectFocusCluster([[biggestCluster], [biggestClusterEdges]]);
 
         
         this.selectionService.selectCountries(this.allCountries);

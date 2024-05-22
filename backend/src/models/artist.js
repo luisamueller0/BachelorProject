@@ -47,7 +47,7 @@ class Artist {
                 return region;
             }
         }
-        return null; // Return null if no region matches
+        return '\\N'; // Return null if no region matches
     }
 
 }
