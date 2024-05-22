@@ -2,7 +2,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
 
 * {
-    font-size: 20px;
+  font-family: 'Roboto', sans-serif;
+  font-weight:500;
+  font-size: 40px; 
+  color:#2a0052 ;
     box-sizing: border-box; /* Ensure padding and borders are included in the element's total width and height */
   }
   
@@ -10,15 +13,52 @@
   body, html {
     margin: 0;
     padding: 0;
-    font-family: 'Roboto', sans-serif;
-    font-size: 20px; /* Redundant due to the global rule, but ensures body and html have the desired size */
   }
   h1{
-    font-size: 35px;
+    font-size: 50px;
+    font-weight:600;
   }
+
+
+  .custom-slider.ngx-slider .ngx-slider-bar {
+    background-color: #a23fff !important; /* Custom color for the slider bar */
+}
+
+.custom-slider.ngx-slider .floor-label {
+  font-size: 40px !important; /* Custom color for the slider bar */
+  font-family: 'Roboto', sans-serif!important;
+}
+
+  
+.custom-slider .ngx-slider .ngx-slider-pointer {
+    background-color: #e5aeff !important; /* White pointers */
+    border-color:  #a23fff !important; /* Blue border around pointers */
+}
+
+.custom-slider .ngx-slider .ngx-slider-selection {
+    background-color: #a23fff !important; /* Custom color for the selected range */
+}
+
+.custom-slider .ngx-slider .ngx-slider-tick {
+    background-color: #e5aeff !important; /* Light blue color for the ticks */
+}
+
+.custom-slider .ngx-slider .ngx-slider-tick-label {
+    color: #a23fff!important; /* Darker purple color for the tick labels */
+}
+.custom-slider .ngx-slider .ngx-slider-span,
+.custom-slider .ngx-slider .ngx-slider-model-value,
+.custom-slider .ngx-slider .ngx-slider-high-value,
+.custom-slider .ngx-slider .ngx-slider-tick-value,
+.custom-slider .ngx-slider .ngx-slider-tick-legend {
+  color:#2a0052 !important;
+  font-weight:600!important;
+    font-size: 30px !important; /* Adjust font size as needed */
+}
 
   .tooltip {
     position: absolute;
+
     text-align: center;
     width: auto;
     height: auto;
@@ -30,5 +70,23 @@
     pointer-events: none; /* Prevents the tooltip from interfering with mouse events */
     opacity: 0.9;
     color: rgb(0, 0, 0);
+  }
+  
+  .svg-container {
+    display: inline-block;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .svg-content-responsive {
+    display: inline-block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
   }
   

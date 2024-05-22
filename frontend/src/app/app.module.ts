@@ -13,7 +13,6 @@ import { FormsModule } from '@angular/forms'; // Import FormsModule
 import { ClusterVisualizationComponent } from './components/clusterVisualization/clusterVisualization.component';
 import { MapComponent } from './components/map/map.component';
 import { FocusOnClusterComponent } from './components/focusOnCluster/focusOnCluster.component';
-import { VisualizationHandlerComponent } from './components/visualizationHandler/visualizationHandler.component';
 @NgModule({
   declarations: [
     AppComponent,
@@ -22,8 +21,7 @@ import { VisualizationHandlerComponent } from './components/visualizationHandler
     BarchartComponent,
     ClusterVisualizationComponent,
     MapComponent,
-    FocusOnClusterComponent,
-    VisualizationHandlerComponent
+    FocusOnClusterComponent
   ],
   imports: [
     BrowserModule,

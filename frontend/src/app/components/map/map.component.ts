@@ -152,7 +152,7 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
         
           .center([20, 52])
           .scale(900)
-          .translate([this.width / 2 + 100, this.height / 2 + 100]);
+          .translate([this.width / 2 - 300, this.height / 2 - 200]);
 
         const path = d3.geoPath().projection(projection);
         

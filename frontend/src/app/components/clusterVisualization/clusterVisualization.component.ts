@@ -50,7 +50,7 @@ export class ClusterVisualizationComponent implements OnInit {
   private totalExhibitedArtworksMap: { [clusterId: number]: Map<number, number> } = {};
   private differentTechniquesMap: { [clusterId: number]: Map<number, number> } = {};
 
-  private sunburstThickness: number = 90;
+  private sunburstThickness: number = 150;
 
   private regionOrder: string[] = ["North Europe", "Eastern Europe", "Southern Europe", "Western Europe", "Others"];
 
@@ -910,7 +910,7 @@ console.log(this.clusters)
       .attr("transform", (d: any) => `translate(${arcGenerator.centroid(d)})`)
       .attr("text-anchor", "middle")
       .text((d: any) => d.country)
-      .style("font-size", "35px")
+      .style("font-size", "60px")
       .style("fill", "white")     // Set the text color to white
    
   
@@ -1536,7 +1536,7 @@ private boundaryForce(artistNodes: ArtistNode[], innerRadius: number, padding: n
   }
 
   private calculateRadiusForNode(value: number, innerRadius: number): number {
-    const minRadius =10; // Minimum radius for the least connected node
+    const minRadius =25; // Minimum radius for the least connected node
     const maxRadius = innerRadius / 10; // Maximum radius for the most connected node
     const calculatedRadius = minRadius + (maxRadius - minRadius) * value;
   

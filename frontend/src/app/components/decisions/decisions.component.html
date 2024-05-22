@@ -32,7 +32,9 @@
   <div class="dropdown-group">
     <label class="dropdown-label">Select the range of exhibited artworks to filter artists:</label>
     <div class="dropdown-group2">
+      <div class="custom-slider">
       <ngx-slider [(value)]="range[0]" [(highValue)]="range[1]" [options]="options" (valueChange)="onRangeSliderChange()"></ngx-slider>
+    </div>
       <div class="checkbox-group">
         <input type="checkbox" id="confirmRange" [(ngModel)]="useRange" (change)="onRangeChange()" hidden/>
         <label for="confirmRange" class="custom-checkbox">
@@ -47,7 +49,9 @@
   <div class="dropdown-group">
     <label class="dropdown-label">Select amount of clusters (dependent on artists):</label>
     <div class="dropdown-group2">
+      <div class="custom-slider">
       <ngx-slider [(value)]="k" [options]="kOptions" (valueChange)="onKSliderChange()"></ngx-slider>
+    </div>
       <div class="checkbox-group">
         <input type="checkbox" id="confirmK" [(ngModel)]="useK" (change)="onKChange()" hidden/>
         <label for="confirmK" class="custom-checkbox">
