@@ -43,6 +43,8 @@ export class BarchartComponent implements OnInit, OnChanges {
   ngOnDestroy(): void {
     // Unsubscribe from all subscriptions to avoid memory leaks
     this.subscription.unsubscribe();
+    window.removeEventListener('resize', this.onResize.bind(this));
+
   }
 
   @HostListener('window:resize', ['$event'])
