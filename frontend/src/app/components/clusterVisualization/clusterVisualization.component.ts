@@ -33,6 +33,7 @@ export class ClusterVisualizationComponent implements OnInit {
   private selectedClusterNode: ClusterNode | null = null;
   private allCountries: string[] = [];
  private biggestClusterId: number = -1;
+
   
 
   private subscriptions: Subscription = new Subscription();
@@ -471,10 +472,6 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
     this.clusters.forEach((cluster, clusterIndex) => {
       allArtists.push(...cluster);
   
-      // Populate the artistClusterMap
-      cluster.forEach(artist => {
-        this.artistClusterMap.set(artist.id, this.clusterNodes[clusterIndex]);
-      });
     });
     this.selectedCluster = allArtists;
     this.allArtists = allArtists;
@@ -549,11 +546,6 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
         let allArtists:Artist[]= [];
         this.clusters.forEach((cluster, clusterIndex) => {
           allArtists.push(...cluster);
-      
-          // Populate the artistClusterMap
-          cluster.forEach(artist => {
-            this.artistClusterMap.set(artist.id, this.clusterNodes[clusterIndex]);
-          });
         });
         this.selectedCluster = allArtists;
         this.allArtists = allArtists;
@@ -637,6 +629,12 @@ console.log(this.clusters)
       });
 
       this.clusterNodes = clusterNodes;
+      this.clusters.forEach((cluster, clusterIndex) => {
+        // Populate the artistClusterMap
+        cluster.forEach(artist => {
+          this.artistClusterMap.set(artist.id, this.clusterNodes[clusterIndex]);
+        });
+      });
       const defaultFocusCluster = clusterNodes.find(clusterNode => clusterNode.clusterId === this.biggestClusterId);
       if(defaultFocusCluster){
         this.focusHandler(defaultFocusCluster);
@@ -1258,6 +1256,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
       // Set edges that are not connected to the selected node within the same cluster to none
       this.g.selectAll(".artist-edge").filter((d: any) => {
         const clusterNode = this.artistClusterMap.get(artistNode.id);
+        console.log('HALLO')
         if (!clusterNode) return false; // Safety check
   
         const clusterId = clusterNode.clusterId;
