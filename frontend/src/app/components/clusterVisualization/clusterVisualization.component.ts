@@ -32,7 +32,7 @@ export class ClusterVisualizationComponent implements OnInit {
   private artistNodes: ArtistNode[][] = [];
   private selectedClusterNode: ClusterNode | null = null;
   private allCountries: string[] = [];
- 
+ private biggestClusterId: number = -1;
   
 
   private subscriptions: Subscription = new Subscription();
@@ -464,6 +464,11 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
     this.selectedCluster = allArtists;
     this.allArtists = allArtists;
     this.selectionService.selectArtist(this.selectedCluster);
+    const biggestCluster = this.clusters.reduce((max, cluster) => cluster.length > max.length ? cluster : max, this.clusters[0]);
+    const biggestClusterId = this.clusters.findIndex(cluster => cluster === biggestCluster);
+    const biggestClusterEdges = this.intraCommunityEdges[biggestClusterId]
+    this.biggestClusterId = biggestClusterId;
+    this.selectionService.selectFocusCluster([[biggestCluster], [biggestClusterEdges]]);
 
     switch(value){
       case 'nationality':
@@ -547,6 +552,7 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
   
         const biggestCluster = this.clusters.reduce((max, cluster) => cluster.length > max.length ? cluster : max, this.clusters[0]);
         const biggestClusterId = this.clusters.findIndex(cluster => cluster === biggestCluster);
+        this.biggestClusterId = biggestClusterId;
         const biggestClusterEdges = this.intraCommunityEdges[biggestClusterId]
         this.selectionService.selectFocusCluster([[biggestCluster], [biggestClusterEdges]]);
 
@@ -582,15 +588,7 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
     this.renderInterCommunityEdges(); // Render inter-community edges next
   }
 
- 
-  
-  private calculateSvgDimensions(numClusters: number): { width: number, height: number } {
-    const clustersPerRow = Math.ceil(Math.sqrt(numClusters));
-    const clusterSpacing = this.minClusterRadius * 2;
-    const width = clustersPerRow * clusterSpacing;
-    const height = clustersPerRow * clusterSpacing;
-    return { width, height };
-  }
+
   
   private renderClusters(value: string): void {
     const maxSize = Math.max(...this.clusters.map(cluster => cluster.length));
@@ -624,6 +622,11 @@ console.log(this.clusters)
       });
 
       this.clusterNodes = clusterNodes;
+      const defaultFocusCluster = clusterNodes.find(clusterNode => clusterNode.clusterId === this.biggestClusterId);
+      if(defaultFocusCluster){
+        this.focusHandler(defaultFocusCluster);
+      }
+      
     // Simulate the clusters
     this.simulateClusters(clusterNodes);
   }
@@ -934,6 +937,16 @@ console.log(this.clusters)
   
     return clusterGroup.node() as SVGGElement;
   }
+
+  private focusHandler(clusterNode:ClusterNode){
+    
+        // Set the new cluster node as selected and change its border
+        this.selectedClusterNode = clusterNode;
+        this.g.selectAll(`.cluster-${clusterNode.clusterId} path`)
+          .style('stroke', 'black')
+          .style('stroke-width', '10px'); // Adjust the border width as needed
+ 
+  }
   // Cluster click handler
 // Cluster click handler
 private onClusterClick(clusterNode: ClusterNode): void {
@@ -959,6 +972,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
     this.selectionService.selectCluster(this.allArtists);
     this.selectionService.selectClusterEdges([]);
     this.selectionService.selectCountries(this.allCountries);
+    this.selectionService.selectFocusCluster([[selectedArtists], [selectedEdges]]);
 
   } else {
     // Reset the previous cluster node's border if there is one
@@ -971,7 +985,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
     this.selectedClusterNode = clusterNode;
     this.g.selectAll(`.cluster-${clusterNode.clusterId} path`)
       .style('stroke', 'black')
-      .style('stroke-width', '2px'); // Adjust the border width as needed
+      .style('stroke-width', '10px'); // Adjust the border width as needed
 
     // Select the new cluster node
     this.selectionService.selectArtist(selectedArtists);

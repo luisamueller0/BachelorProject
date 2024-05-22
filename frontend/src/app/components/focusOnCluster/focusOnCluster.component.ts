@@ -62,8 +62,6 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   }
 
   ngOnInit() {
-
-
     this.subscriptions.add(this.selectionService.currentFocusCluster.subscribe(this.tryInitialize.bind(this)));
   }
 
@@ -82,7 +80,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
     return `Displaying ${this.allArtists.length} artists and ${this.clusters.length} clusters`;
   }
   private createSvg(): void {
-    const container = d3.select(this.elementRef.nativeElement).select("figure#network");
+    const container = d3.select(this.elementRef.nativeElement).select(`figure#focusNetwork-${this.displayValue}`);
     const containerNode = container.node() as HTMLElement;
   
     if (containerNode) {
@@ -110,20 +108,20 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   private resizeSvg(): void {
     if (!this.g) return;
   
-    const container = d3.select(this.elementRef.nativeElement).select("figure#network");
+    const container = d3.select(this.elementRef.nativeElement).select(`figure#focusNetwork-${this.displayValue}`);
     const containerNode = container.node() as HTMLElement;
   
     if (containerNode) {
       const width = containerNode.clientWidth;
       const height = containerNode.clientHeight;
   
-      const svgElement = d3.select("figure#network svg");
+      const svgElement = d3.select(`figure#focusNetwork-${this.displayValue} svg`);
       svgElement
         .attr("width", width)
         .attr("height", height);
   
       this.baseWidth = width;
-      this.baseHeight = height-150;
+      this.baseHeight = height -100;
     } else {
       console.error('Container node is not found or not an Element');
     }
@@ -139,7 +137,8 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   }
   private tryInitialize() {
     console.log('tryInitialize', this.selectionService.getFocusCluster())
-    if (this.displayValue && this.selectionService.getFocusCluster != null) {
+    console.log('tryInitialize', this.displayValue)
+    if (this.selectionService.getFocusCluster != null) {
       this.loadInitialData();
     }
   }
@@ -290,6 +289,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   }
 
   private loadInitialData() {
+    d3.select(`figure#focusNetwork-${this.displayValue} svg`).remove();
     this.focusCluster = this.selectionService.getFocusCluster();
     console.log('focus cluster:', this.focusCluster)
     if(this.focusCluster == null){

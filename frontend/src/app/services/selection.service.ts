@@ -41,6 +41,8 @@ export class SelectionService {
   }
 
   selectFocusCluster(cluster:[Artist[][], exhibited_with[][]]){
+  console.log('selected focus cluster', cluster)
+  console.log('selected focus edges', exhibited_with)
     this.selectedFocusCluster.next(cluster);
   };
 
