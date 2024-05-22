@@ -3,7 +3,7 @@
   <h1 *ngIf="artists.length === 1">
     Technique distribution of Artist: {{ artists[0].firstname }} {{ artists[0].lastname }}
   </h1>
-  <figure id="bar"></figure>
+  <figure #barChart id="bar" class="svg-container" style="width: 100%; height: 100%;"></figure>
 </ng-container>
 
 <!-- Display loading indicator if data is still loading -->

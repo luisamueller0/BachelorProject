@@ -11,6 +11,7 @@ import { firstValueFrom } from 'rxjs';
   styleUrls: ['./decisions.component.css']
 })
 export class DecisionsComponent implements OnInit {
+  public linkExists: boolean = false;
 
   constructor(private decisionService: DecisionService, private artistService: ArtistService) { }
 
