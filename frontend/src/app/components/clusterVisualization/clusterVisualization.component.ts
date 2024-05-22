@@ -270,11 +270,12 @@ export class ClusterVisualizationComponent implements OnInit {
     if (this.simulation[cluster.clusterId]) {
       const artistNodes = this.artistNodes[cluster.clusterId];
   
+      const type = this.decisionService.getDecisionSunburst();
       // Reset positions using the new function
       const degreeMap = this.degreesMap[cluster.clusterId];
       const metricMap = this.calculateNormalizedMaps(this.decisionService.getDecisionSize())[cluster.clusterId];
       artistNodes.forEach(node => {
-        const newPos = this.calculateNewPosition(node.artist, node.countryData, degreeMap, metricMap, cluster, 0, 0);
+        const newPos = this.calculateNewPosition(type,node.artist, node.countryData, degreeMap, metricMap, cluster, 0, 0);
         node.x = newPos.x;
         node.y = newPos.y;
         node.vx = 0;
@@ -317,7 +318,7 @@ export class ClusterVisualizationComponent implements OnInit {
   }
   
   
-  private calculateNewPosition(artist: Artist, countryData: any, degreeMap: Map<number, number>, metricMap: Map<number, number>, cluster: ClusterNode, centerX: number, centerY: number): { x: number, y: number, radius: number, color: string | number } {
+  private calculateNewPosition(type: string, artist: Artist, countryData: any, degreeMap: Map<number, number>, metricMap: Map<number, number>, cluster: ClusterNode, centerX: number, centerY: number): { x: number, y: number, radius: number, color: string | number } {
     const degree = degreeMap.get(artist.id) || 0;
     const radialScale = this.setupRadialScale(cluster.innerRadius);
     const radial = radialScale(degree);
@@ -325,7 +326,21 @@ export class ClusterVisualizationComponent implements OnInit {
     const angle = countryData.middleAngle;
     const x = centerX + radial * Math.sin(angle);
     const y = centerY - radial * Math.cos(angle);
-    const countryIndex = this.countryIndexMap.get(artist.nationality) as number;
+    let countryIndex:number=0;
+    switch(type){
+    case 'nationality':
+      countryIndex = this.countryIndexMap.get(artist.nationality) as number;
+      break;
+    case 'birthcountry':
+      countryIndex = this.countryIndexMap.get(artist.birthcountry) as number;
+      break;
+    case 'deathcountry':
+      countryIndex = this.countryIndexMap.get(artist.deathcountry) as number;
+      break;
+    case 'mostexhibited':
+      countryIndex = this.countryIndexMap.get(artist.most_exhibited_in) as number;
+      break;
+    }
     return {
       x: x,
       y: y,
@@ -940,6 +955,7 @@ console.log(this.clusters)
 
   private focusHandler(clusterNode:ClusterNode){
     
+    this.selectionService.selectFocusCluster([[clusterNode.artists], [this.intraCommunityEdges[clusterNode.clusterId]]]);
         // Set the new cluster node as selected and change its border
         this.selectedClusterNode = clusterNode;
         this.g.selectAll(`.cluster-${clusterNode.clusterId} path`)
@@ -972,7 +988,8 @@ private onClusterClick(clusterNode: ClusterNode): void {
     this.selectionService.selectCluster(this.allArtists);
     this.selectionService.selectClusterEdges([]);
     this.selectionService.selectCountries(this.allCountries);
-    this.selectionService.selectFocusCluster([[selectedArtists], [selectedEdges]]);
+  
+   
 
   } else {
     // Reset the previous cluster node's border if there is one
@@ -991,6 +1008,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
     this.selectionService.selectArtist(selectedArtists);
     this.selectionService.selectCluster(selectedArtists);
     this.selectionService.selectClusterEdges(selectedEdges);
+    this.selectionService.selectFocusCluster([[selectedArtists], [selectedEdges]]);
     const countries:string[]= [];
     selectedArtists.forEach(artist => {
       switch(type){
@@ -1332,7 +1350,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
           countryData = countryCentroids[artist.most_exhibited_in];
           break;
       }
-      const newPos = this.calculateNewPosition(artist, countryData, degreeMap, metricMap, cluster, centerX, centerY);
+      const newPos = this.calculateNewPosition(value,artist, countryData, degreeMap, metricMap, cluster, centerX, centerY);
       return {
         id: artist.id,
         artist: artist,

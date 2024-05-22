@@ -63,6 +63,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
 
   ngOnInit() {
     this.subscriptions.add(this.selectionService.currentFocusCluster.subscribe(this.tryInitialize.bind(this)));
+    this.subscriptions.add(this.decisionService.currentSize.subscribe(size=> this.tryUpdate('size', size)));
   }
 
   ngOnDestroy() {
@@ -136,10 +137,15 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
     }
   }
   private tryInitialize() {
-    console.log('tryInitialize', this.selectionService.getFocusCluster())
-    console.log('tryInitialize', this.displayValue)
+
     if (this.selectionService.getFocusCluster != null) {
       this.loadInitialData();
+    }
+  }
+
+  private tryUpdate(type: string, value: any) {
+    if (this.selectionService.getFocusCluster != null) {
+      this.updateVisualization(type, value);
     }
   }
 
@@ -225,7 +231,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
       const degreeMap = this.degreesMap[cluster.clusterId];
       const metricMap = this.calculateNormalizedMaps(this.decisionService.getDecisionSize())[cluster.clusterId];
       artistNodes.forEach(node => {
-        const newPos = this.calculateNewPosition(node.artist, node.countryData, degreeMap, metricMap, cluster, 0, 0);
+        const newPos = this.calculateNewPosition(this.displayValue, node.artist, node.countryData, degreeMap, metricMap, cluster, 0, 0);
         node.x = newPos.x;
         node.y = newPos.y;
         node.vx = 0;
@@ -266,7 +272,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
     }
   }
 
-  private calculateNewPosition(artist: Artist, countryData: any, degreeMap: Map<number, number>, metricMap: Map<number, number>, cluster: ClusterNode, centerX: number, centerY: number): { x: number, y: number, radius: number, color: string | number } {
+  private calculateNewPosition(type:string,artist: Artist, countryData: any, degreeMap: Map<number, number>, metricMap: Map<number, number>, cluster: ClusterNode, centerX: number, centerY: number): { x: number, y: number, radius: number, color: string | number } {
     const degree = degreeMap.get(artist.id) || 0;
     const radialScale = this.setupRadialScale(cluster.innerRadius);
     const radial = radialScale(degree);
@@ -274,7 +280,22 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
     const angle = countryData.middleAngle;
     const x = centerX + radial * Math.sin(angle);
     const y = centerY - radial * Math.cos(angle);
-    const countryIndex = this.countryIndexMap.get(artist.nationality) as number;
+    let countryIndex:number=0;
+    switch(type){
+    case 'nationality':
+      countryIndex = this.countryIndexMap.get(artist.nationality) as number;
+      break;
+    case 'birthcountry':
+      countryIndex = this.countryIndexMap.get(artist.birthcountry) as number;
+      break;
+    case 'deathcountry':
+      countryIndex = this.countryIndexMap.get(artist.deathcountry) as number;
+      break;
+    case 'mostexhibited':
+      countryIndex = this.countryIndexMap.get(artist.most_exhibited_in) as number;
+      break;
+    }
+  
     return {
       x: x,
       y: y,
@@ -791,7 +812,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
           countryData = countryCentroids[artist.most_exhibited_in];
           break;
       }
-      const newPos = this.calculateNewPosition(artist, countryData, degreeMap, metricMap, cluster, centerX, centerY);
+      const newPos = this.calculateNewPosition(value, artist, countryData, degreeMap, metricMap, cluster, centerX, centerY);
       return {
         id: artist.id,
         artist: artist,
