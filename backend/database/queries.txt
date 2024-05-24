@@ -245,3 +245,22 @@ CALL gds.graph.project.cypher(
     {parameters: {nodes: nodes}}
 )YIELD graphName, nodeCount, relationshipCount
 RETURN graphName, nodeCount, relationshipCount
+
+
+TO calculate average time of an artists exhibitions:
+MATCH (a:Artist)-[r:EXHIBITED_MODIFIED]->(e:Exhibition)
+WHERE a.id = '1'
+WITH date(e.startdate) AS start_date, date(e.enddate) AS end_date
+WITH [(start_date.year + start_date.month/12 + start_date.day/365.25), 
+      (end_date.year + end_date.month/12 + end_date.day/365.25)] AS dates
+UNWIND dates AS date_in_decimal
+WITH avg(date_in_decimal) AS avg_date_decimal
+WITH toInteger(floor(avg_date_decimal)) AS avg_year,
+     toInteger(floor((avg_date_decimal - floor(avg_date_decimal)) * 12)) AS avg_month,
+     toInteger(floor((((avg_date_decimal - floor(avg_date_decimal)) * 12) - floor((avg_date_decimal - floor(avg_date_decimal)) * 12)) * 30)) AS avg_day
+RETURN date({year: avg_year, month: avg_month + 1, day: avg_day + 1}) AS AverageDate
+
+
+TO control when an artist cant be calculated if the dates are right:
+MATCH p=(a:Artist)-[r:EXHIBITED_MODIFIED]->(e:Exhibition)
+WHERE a.id = '23' RETURN e.startdate, e.enddate, e.id, e.organizer
