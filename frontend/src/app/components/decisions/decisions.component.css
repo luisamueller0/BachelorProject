@@ -2,8 +2,8 @@
 .dropdown-container {
     display: flex;
     flex-direction: column; /* Keeps the dropdown groups side by side */
-    padding: 50px; /* Adds padding around the container */
-    margin: 5px; /* Space from container to other elements */
+    padding: 0.5vw; /* Adds padding around the container */
+    margin: 0.2vw; /* Space from container to other elements */
     /* background-color: #f8f9fa;  Light grey background */
     border-radius: 8px; /* Rounded corners */
     /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); Subtle shadow */
@@ -22,21 +22,21 @@
 /* Styles for labels */
 .dropdown-label {
     font-weight:700;
-    margin-bottom: 5px; /* Space between label and dropdown */
+    margin-bottom: 0.02vw; /* Space between label and dropdown */
 
 }
 .info-text{
     color:red;
     font-weight:700;
-    font-size: 37px;
+    font-size: 0.5vw;
 }
 /* Styles for dropdowns */
 .dropdown {
-    padding: 8px 12px; /* Padding inside the dropdown */
+    padding: 0.5vw 0.7vw; /* Padding inside the dropdown */
     border-radius: 4px; /* Rounded borders for the dropdowns */
     border: 1px solid #ccc; /* Light grey border */
     background-color: #fff; /* White background color */
-    margin-bottom: 20px; /* Space between each dropdown */
+    margin-bottom: 0.5vh; /* Space between each dropdown */
     cursor: pointer; /* Cursor indicates it's clickable */
     
     outline: none; /* Removes the default focus outline */
@@ -55,7 +55,7 @@
 
 /* Example of styling option elements (optional, not all browsers allow this) */
 option {
-    padding: 20px; /* Adds padding inside options */
+    padding: 0.5vw; /* Adds padding inside options */
 }
 /* decisions.component.css */
 
@@ -73,12 +73,12 @@ option {
     color: grey; /* Revert text color to grey when not confirmed */
   }
   .dropdown-group2 {
-    margin-top:20px;
+    margin-top:0.5vh;
     display: flex;
     flex-direction: row; /* Aligns items horizontally */
     align-items: center; /* Centers items vertically */
     justify-content: start; /* Aligns items to the start of the row */
-    gap: 20px; /* Adds space between the slider and the checkbox */
+    gap: 0.5vw; /* Adds space between the slider and the checkbox */
    /* Adds vertical padding for better spacing */
 }
 /* Custom checkbox styles */
@@ -91,8 +91,8 @@ option {
 
 .custom-checkbox {
     cursor: pointer;
-    width: 40px; /* Width of the checkbox */
-    height: 40px; /* Height of the checkbox */
+    width: 0.5vw; /* Width of the checkbox */
+    height: 0.5vw; /* Height of the checkbox */
     border: 2px solid #ccc; /* Border for the checkbox */
     border-radius: 50%; /* Makes the checkbox circular */
     display: flex;
@@ -103,7 +103,7 @@ option {
 
 .custom-checkbox i {
     color: green; /* Icon color when active */
-    font-size: 40px; /* Size of the icon */
+    font-size: 1vw; /* Size of the icon */
 }
 
 .custom-checkbox:hover {
@@ -119,6 +119,6 @@ option {
 .green-label {
     color: green;
     font-weight: 700;
-    margin-top: 10px;
-    font-size: 37px;
+    margin-top: 0.5vh;
+    font-size: 0.5vw;
 }

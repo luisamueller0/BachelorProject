@@ -13,9 +13,9 @@ class Artist {
         this.id = Number(data.id); 
         this.firstname = data.firstname;
         this.lastname = data.lastname;
-        this.birthyear = this.calculateYear(data.birthdate.toString());
+        this.birthyear = data.birthyear;
         this.birthplace = data.birthplace;
-        this.deathyear = this.calculateYear(data.deathdate.toString());
+        this.deathyear = data.deathyear
         this.deathplace = data.deathplace;
         this.nationality = data.country;
         this.sex = data.sex;
@@ -23,49 +23,42 @@ class Artist {
         this.techniques = data.artForms;
         this.amount_techniques=data.amountArtForms;
         this.distinct_techniques=data.distinctArtForms;
-        this.europeanRegionNationality = this.determineRegion(data.country);
+        this.europeanRegionNationality = data.europeanRegionNationality
         this.most_exhibited_in = data.mostExhibitedInCountry;
-        this.europeanRegionMostExhibited = this.determineRegion(data.mostExhibitedInCountry);
+        this.europeanRegionMostExhibited =  data.europeanRegionMostExhibitedInCountry;
         this.most_exhibited_in_amount = data.mostExhibitedInCountryAmount;
         this.total_exhibited_artworks = data.TotalExhibitedArtworks;
         this.deathcountry = data.deathCountry;
-        this.europeanRegionDeath = this.determineRegion(data.deathCountry);
+        this.europeanRegionDeath = data.europeanRegionDeathCountry
         this.birthcountry = data.birthCountry;
-        this.europeanRegionBirth = this.determineRegion(data.birthCountry);
+        this.europeanRegionBirth = data.europeanRegionBirthCountry;
         this.total_exhibitions = data.TotalExhibitions;
         this.techniques_freq = data.artFormsFreq;
         this.cluster = -1; // Default value
+        this.overall_avg_date = data.overall_avg_date;
+        this.avg_start_date = data.avg_start_date;
+        this.avg_end_date = data.avg_end_date;
+        this.avg_duration = data.avg_duration;
     }
-    calculateYear(date) {
-        if (!date) return null; // Handle cases where birthdate is not provided
-        const year = parseInt(date.split('-')[0]);
-        return year;
-    }
-    determineRegion(countryCode) {
-        for (const region in europeanRegions) {
-            if (europeanRegions[region].includes(countryCode)) {
-                return region;
-            }
-        }
-        return '\\N'; // Return null if no region matches
-    }
+
 
 }
 
 // Define European regions based on country codes
-const europeanRegions = {
-    "North Europe": ["DK", "EE", "FI", "IE", "LT", "LV", "NO", "SE", "IS"],
-    "Western Europe": ["GB", "FR", "BE", "NL", "LU", "CH", "MC", "DE", "AT"], // Added DE, AT
-    "Southern Europe": ["PT", "ES", "IT", "GR", "HR", "BA", "RS", "ME", "SI", "MA", "GI"],
-    "Eastern Europe": ["RU", "UA", "BY", "BG", "RO", "MD", "AZ", "PL", "CZ", "SK", "HU"], // Added PL, CZ, SK, HU
+/*   const europeanRegions = {
+    "North Europe": ["DK", "EE", "FI", "IS", "IE", "LV", "LT", "NO", "SE"],
+    "Eastern Europe": ["AZ", "BY", "BG", "CZ", "HU", "MD", "PL", "RO", "RU", "SK", "UA"],
+    "Southern Europe": ["BA", "HR", "GI", "GR", "IT", "ME", "PT", "RS", "SI", "ES"],
+    "Western Europe": ["AT", "BE", "FR", "DE", "LU", "MC", "NL", "CH", "GB"],
     "Others": [
-      "US", "AU", "GE", "MX", "AM", "IL", "CL", "AR", "CA", "DO", "PE", "JP", "TR",
-      "BR", "ZA", "NZ", "VE", "GT", "UY", "SV", "PY", "IN", "PF", "KZ", "UZ", "VN", 
-      "NA", "JO", "IR", "KH", "JM", "SA", "DZ", "CN", "EG", "VI", "ID", "CU", "TN", 
-      "MQ", "MU", "LK", "EC", "SG", "BL", "TH", "BO"
-    ]
-  };
-  
+        "US", "AU", "GE", "MX", "AM", "IL", "CL", "AR", "CA", "DO", "PE", "JP", "TR",
+        "BR", "ZA", "NZ", "VE", "GT", "UY", "SV", "PY", "IN", "PF", "KZ", "UZ", "VN", 
+        "NA", "JO", "IR", "KH", "JM", "SA", "DZ", "CN", "EG", "VI", "ID", "CU", "TN", 
+        "MQ", "MU", "LK", "EC", "SG", "BL", "TH", "BO"
+      ]
+    }; */
+
+
 /*   const allCountries = [
     "GB", "ID", "UA", "CH", "RU", "NL", "DE", "BY", "IT", "LT", "US", "HU", "FR", "AU", "BE", "CZ", "AT", "NO", 
     "GR", "SE", "PL", "LV", "FI", "ES", "MD", "CA", "BG", "GE", "DZ", "MX", "AZ", "RO", "EE", "DK", "AR", "UY", 

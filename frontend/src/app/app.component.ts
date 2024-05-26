@@ -8,7 +8,7 @@ import { DecisionService } from './services/decision.service';
   styleUrl: './app.component.css'
 })
 export class AppComponent {
-  title = 'frontend';
+  title = 'artvis';
 
   private subscriptions: Subscription = new Subscription();
   public value1: string ='birthcountry';

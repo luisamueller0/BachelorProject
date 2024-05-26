@@ -4,7 +4,7 @@
 * {
   font-family: 'Roboto', sans-serif;
   font-weight:500;
-  font-size: 40px; 
+  font-size: 1vw; 
   color:#2a0052 ;
     box-sizing: border-box; /* Ensure padding and borders are included in the element's total width and height */
   }
@@ -15,7 +15,7 @@
     padding: 0;
   }
   h1{
-    font-size: 50px;
+    font-size: 2vw;
     font-weight:600;
   }
 
@@ -25,7 +25,7 @@
 }
 
 .custom-slider.ngx-slider .floor-label {
-  font-size: 40px !important; /* Custom color for the slider bar */
+  font-size: 0.5vw !important; /* Custom color for the slider bar */
   font-family: 'Roboto', sans-serif!important;
 }
 
@@ -53,7 +53,7 @@
 .custom-slider .ngx-slider .ngx-slider-tick-legend {
   color:#2a0052 !important;
   font-weight:600!important;
-    font-size: 30px !important; /* Adjust font size as needed */
+    font-size: 0.5vw !important; /* Adjust font size as needed */
 }
 
 .tooltip {
@@ -61,7 +61,7 @@
   text-align: center;
   width: auto;
   height: auto;
-  padding: 8px;
+  padding: 0.02vw;
   background: rgb(204, 204, 204);
   font-weight: 600;
   border: 0px;
