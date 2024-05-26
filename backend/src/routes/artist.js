@@ -111,6 +111,18 @@ artist.get('/amount/mostexhibitedincountry/technique', async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+artist.get('/amount', async (req, res) => {
+    const minLimit = req.query.minLimit;
+    const maxLimit = req.query.maxLimit;
+    
+    try {
+        const result = await artistModel.findAllRange(minLimit,maxLimit);
+        res.json(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
 artist.get('/cluster/nationality', async (req, res) => {
     const minLimit = req.query.minLimit;
     const maxLimit = req.query.maxLimit;
@@ -157,6 +169,20 @@ artist.get('/cluster/mostexhibited', async (req, res) => {
 
     try {
         const result = await artistModel.spectralClusteringMostExhibited(minLimit, maxLimit, k);
+        res.json(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+artist.get('/cluster', async (req, res) => {
+    const minLimit = req.query.minLimit;
+    const maxLimit = req.query.maxLimit;
+    const k = parseInt(req.query.k); // Parse k parameter as integer
+
+    try {
+        const result = await artistModel.spectralClusteringRange(minLimit, maxLimit, k);
         res.json(result);
     } catch (error) {
         console.error(error);

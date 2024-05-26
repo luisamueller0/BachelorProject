@@ -16,7 +16,7 @@ def get_all_artists(driver):
         result = session.run(
             """
             MATCH (a:Artist)
-            RETURN a.id AS artist_id, a.country AS nat, a.birth AS birth, a.death AS death, a.most AS most
+            RETURN a.id AS artist_id, a.country AS nat, a.birthCountry AS birth, a.deathCountry AS death, a.mostExhibitedInCountry AS most
             """
         )
         return [{"artist_id": record["artist_id"], "nat": record["nat"], "birth": record["birth"], "death": record["death"], "most": record["most"]} for record in result]

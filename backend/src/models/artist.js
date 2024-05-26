@@ -89,6 +89,8 @@ class exhibited_with {
     }
 } 
 
+
+
 const findAllNationalityTechnique = async () => {
     const { session } = require('../db');
     return await dbSemaphore.runExclusive(async () => {
@@ -835,6 +837,21 @@ const streamQuery = async (query, params) => {
     });
 };
 
+const findAllRange = async (minLimit, maxLimit) => {
+    const query = `
+        MATCH (a:Artist)
+        WHERE a.TotalExhibitedArtworks >= $minLimit AND a.TotalExhibitedArtworks <= $maxLimit
+        WITH a
+        WITH collect(a) AS selectedArtists
+
+        UNWIND selectedArtists AS a
+        MATCH p=(a)-[r:EXHIBITED_WITH]-(b)
+        WHERE b IN selectedArtists
+        RETURN p
+    `;
+    return streamQuery(query, { minLimit: parseInt(minLimit), maxLimit: parseInt(maxLimit) });
+};
+
 
 
 
@@ -908,6 +925,25 @@ async function spectralClusteringMostExhibited(min, max, k) {
     }
 }
 
+async function spectralClusteringRange(min, max, k) {
+    try {
+        // To only retrieve the artists, when min/max got changed
+        if(latestMinLimit!=min || latestMaxLimit!=max)    {
+            const [artists, relationships] = await findAllRange(min, max);
+            latestArtists = artists;
+            latestRelationships = relationships;
+            latestMinLimit=min;
+            latestMaxLimit=max;
+            latestValue = 'nationality';
+            console.log( latestMinLimit, latestMaxLimit)
+        }
+        const artistsWithClusters= await spectralClustering(latestArtists, latestRelationships, k);
+
+        return artistsWithClusters;
+    } catch (error) {
+        console.error(error);
+    }
+}
 
 
 
@@ -924,5 +960,7 @@ module.exports = {
     spectralClusteringNationality,
     spectralClusteringBirthcountry,
     spectralClusteringDeathcountry,
-    spectralClusteringMostExhibited
+    spectralClusteringMostExhibited,
+    findAllRange,
+    spectralClusteringRange
 };

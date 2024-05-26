@@ -17,7 +17,7 @@ export class DecisionsComponent implements OnInit {
 
   ngOnInit() {
     // Fetch default data from the database and set it as default values
-    this.artistService.getAmountArtistsWithNationalityTechnique(this.range).subscribe((data) => {
+    this.artistService.getArtistsWithRange(this.range).subscribe((data) => {
       this.artists = data[0];
       this.numberOfArtists = this.artists.length;
       console.log('fetched');
@@ -27,7 +27,7 @@ export class DecisionsComponent implements OnInit {
   }
 
   artists: Artist[] = [];
-  range: number[] = [200, 400];  // Initial range values
+  range: number[] = [100, 400];  // Initial range values
   options: Options = {
     floor: 1,
     ceil: 400,

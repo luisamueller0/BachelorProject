@@ -53,7 +53,7 @@ export class ClusterVisualizationComponent implements OnInit {
 
   private sunburstThickness: number = 150;
 
-  private regionOrder: string[] = ["North Europe", "Eastern Europe", "Southern Europe", "Western Europe", "Others"];
+  private regionOrder: string[] = ["North Europe", "Eastern Europe", "Southern Europe", "Western Europe", "Others","\\N"];
 
   private selectedNode: [SVGCircleElement, string] | null = null;
   private selectedCluster: any = null;
@@ -363,71 +363,74 @@ private calculateNodeRadius(artistId: number, normalizedMap: Map<number, number>
     const range = this.decisionService.getDecisionRange();
     const k = this.decisionService.getK();
     console.log('sunburst value:', value, 'range:', range, 'k:', k)
-     // Remove the existing SVG element
-     d3.select("figure#network").select("svg").remove();
-
-    if(value === 'nationality'){
-      this.isLoading = true;
-      this.artistService.clusterAmountArtistsNationality(range, k).subscribe((data) => {
-      const clusters = data[0];
-      const intraCommunityEdges = data[1] as exhibited_with[][];
-      const interCommunityEdges = data[2] as exhibited_with[];
-      this.loadNewData(clusters, intraCommunityEdges, interCommunityEdges, value);
-
-    }, error => {
-      console.error('There was an error', error);
-      this.isLoading = false;
-    });
-
-    }
-    else if(value === 'birthcountry'){
-      this.isLoading = true;
-      this.artistService.clusterAmountArtistsBirthcountry(range, k).subscribe((data) => {
-      const clusters = data[0];
-      const intraCommunityEdges = data[1] as exhibited_with[][];
-      const interCommunityEdges = data[2] as exhibited_with[];
-      this.loadNewData(clusters, intraCommunityEdges, interCommunityEdges, value);
-
-    }, error => {
-      console.error('There was an error', error);
-      this.isLoading = false;
-    });
-
-    }
-    else if(value === 'deathcountry'){
-      this.isLoading = true;
-      this.artistService.clusterAmountArtistsDeathcountry(range, k).subscribe((data) => {
-      const clusters = data[0];
-      const intraCommunityEdges = data[1] as exhibited_with[][];
-      const interCommunityEdges = data[2] as exhibited_with[];
-      this.loadNewData(clusters, intraCommunityEdges, interCommunityEdges, value);
-
-    }, error => {
-      console.error('There was an error', error);
-      this.isLoading = false;
-    });
-
-    }
-    else if(value === 'mostexhibited'){
-      this.isLoading = true;
-      this.artistService.clusterAmountArtistsMostExhibited(range, k).subscribe((data) => {
-      const clusters = data[0];
-      const intraCommunityEdges = data[1] as exhibited_with[][];
-      const interCommunityEdges = data[2] as exhibited_with[];
-      this.loadNewData(clusters, intraCommunityEdges, interCommunityEdges, value);
-
-    }, error => {
-      console.error('There was an error', error);
-      this.isLoading = false;
-    });
-    }
-  
-     
+    this.changeCluster(value);
 
   }
 
 
+private changeCluster(value: string){
+    // Remove the existing SVG element
+    d3.select("figure#network").select("svg").remove();
+    let allArtists:Artist[]= [];
+    this.clusters.forEach((cluster, clusterIndex) => {
+      allArtists.push(...cluster);
+  
+    });
+    this.selectedCluster = allArtists;
+    this.allArtists = allArtists;
+    this.selectionService.selectArtist(this.selectedCluster);
+    const biggestCluster = this.clusters.reduce((max, cluster) => cluster.length > max.length ? cluster : max, this.clusters[0]);
+    const biggestClusterId = this.clusters.findIndex(cluster => cluster === biggestCluster);
+    const biggestClusterEdges = this.intraCommunityEdges[biggestClusterId]
+    this.biggestClusterId = biggestClusterId;
+    this.selectionService.selectFocusCluster([[biggestCluster], [biggestClusterEdges]]);
 
+    switch(value){
+      case 'nationality':
+        this.allArtists.forEach(artist => {
+          if(!this.allCountries.includes(artist.nationality)){
+            this.allCountries.push(artist.nationality)
+          }
+        });
+        break;
+      case 'birthcountry':
+        this.allArtists.forEach(artist => {
+          if(!this.allCountries.includes(artist.birthcountry)){
+            this.allCountries.push(artist.birthcountry)
+          }
+        });
+        break;
+      case 'deathcountry':
+        this.allArtists.forEach(artist => {
+          if(!this.allCountries.includes(artist.deathcountry)){
+            this.allCountries.push(artist.deathcountry)
+          }
+        });
+        break;
+      case 'mostexhibited':
+        this.allArtists.forEach(artist => {
+          if(!this.allCountries.includes(artist.most_exhibited_in)){
+            this.allCountries.push(artist.most_exhibited_in)
+          }
+        });
+        break;
+    }
+    this.selectionService.selectCountries(this.allCountries);
+ 
+
+    console.log(this.clusters)
+    // Calculate degrees for each cluster
+    this.calculateNodeDegreesForClusters();
+
+    // Call createGlobalColorScale after clusters are initialized
+    this.globalColorScale = this.createGlobalColorScale(value);
+
+    this.initializeVisualization(value);
+    this.isLoading = false;
+
+  
+  
+}
   private   updateCluster(k: number) {
     if(this.firstK === -1){
       this.firstK = this.firstK + 1;
@@ -441,7 +444,7 @@ private calculateNodeRadius(artistId: number, normalizedMap: Map<number, number>
        // Remove the existing SVG element
     d3.select("figure#network").select("svg").remove();
       this.isLoading = true;
-      this.artistService.clusterAmountArtistsNationality(range, k).subscribe((data) => {
+      this.artistService.clusterAmountArtists(range, k).subscribe((data) => {
       const clusters = data[0];
       const intraCommunityEdges = data[1] as exhibited_with[][];
       const interCommunityEdges = data[2] as exhibited_with[];
@@ -530,7 +533,7 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
   private loadInitialData() {
    
     // Fetch data from backend
-    this.artistService.clusterAmountArtistsNationality([200, 400], 5)
+    this.artistService.clusterAmountArtists([200, 400], 5)
       .subscribe(data => {
         console.log(data);
         this.clusters = data[0];

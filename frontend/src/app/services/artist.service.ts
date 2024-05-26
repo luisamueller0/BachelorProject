@@ -17,6 +17,23 @@ export class ArtistService {
   constructor(private http: HttpClient) { }
 
 
+  getArtistsWithRange(range:number[]):Observable<any[][]>{
+    console.log(range)
+    const [minLimit, maxLimit] = range;
+    const params = new HttpParams()
+      .set('minLimit', minLimit.toString())
+      .set('maxLimit', maxLimit.toString());
+    return this.http.get<any[][]>(this.dataUrl+ '/artist/amount', { params }).pipe(shareReplay());
+  }
+  clusterAmountArtists(range:number[], k:number):Observable<any[][]>{
+    const params = new HttpParams()
+    .set('minLimit', JSON.stringify(range[0]))
+    .set('maxLimit', JSON.stringify(range[1]))
+    .set('k', JSON.stringify(k));
+
+  return this.http.get<any[][]>(this.dataUrl+ '/artist/cluster', { params }).pipe(shareReplay());
+
+  }
 
   getArtistsWithNationalityTechnique():Observable<any[][]>{
     return this.http.get<any[][]>(this.dataUrl+ '/artist/nationality/technique').pipe(shareReplay())
