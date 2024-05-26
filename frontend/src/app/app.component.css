@@ -20,7 +20,7 @@
 .top-section {
   display: flex;
   width: 100%;
-  height: 100%; /* Takes up the full height */
+  height: 100%;
   justify-content: space-between;
 }
 
@@ -33,14 +33,15 @@
   overflow: hidden;
 }
 
-.sidebar-left app-decisions, .sidebar-left app-map{
-  height: 33.33%; /* Each section takes up 1/3 of the height */
+.sidebar-left app-decisions, .sidebar-left app-map {
+  height: 33.33%;
   width: 100%;
   border: 1px solid #e5aeff;
   box-sizing: border-box;
 }
-.sidebar-right app-focusOnCluster{
-  height: 33.33%; /* Each section takes up 1/3 of the height */
+
+.sidebar-right app-focusOnCluster {
+  height: 33.33%;
   width: 100%;
 }
 
@@ -59,28 +60,27 @@
 .network-section h1 {
   width: 100%;
   text-align: center;
-  margin-bottom: 2vh; /* Remove default margin */
-  /* Add padding for better appearance */
+  margin-bottom: 2vh;
 }
 
 .network-section app-focusOnCluster {
   width: 100%;
-  flex: 1; /* Make it take the remaining space */
+  flex: 1;
 }
 
 .center-section {
-  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  max-width: 60%;
+  width: 60%;
+  height: 100%;
   border: 1px solid #e5aeff;
   box-sizing: border-box;
 }
 
 .cluster-center {
-  height: 66.66%; /* Takes up 2/3 of the height */
+  height: 66.66%;
   width: 100%;
   display: flex;
   justify-content: center;
@@ -91,16 +91,15 @@
 }
 
 .barchart-bottom {
-  height: 33.33%; /* Takes up 1/3 of the height */
+  height: 33.33%;
   width: 100%;
   border: 1px solid #e5aeff;
   box-sizing: border-box;
-  display: flex; /* Added to ensure flex properties */
-  align-items: center; /* Center align items */
-  justify-content: center; /* Center align items */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Specific component styles */
 app-clusterVisualization, app-decisions, app-barchart, app-map, app-focusOnCluster {
   width: 100%;
   height: 100%;

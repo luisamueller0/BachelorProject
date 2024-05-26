@@ -1,12 +1,15 @@
-<ng-container *ngIf="!isLoading">
-  <h1 *ngIf="artists.length > 1">Overview of Techniques of all {{ artists.length }} artists</h1>
-  <h1 *ngIf="artists.length === 1">
-    Technique distribution of Artist: {{ artists[0].firstname }} {{ artists[0].lastname }}
-  </h1>
-  <figure #barChart id="bar" class="svg-container" style="width: 100%; height: 100%;"></figure>
-</ng-container>
+<div class="barchart-container" #barChart>
+  <ng-container *ngIf="!isLoading">
+    <h1 *ngIf="artists.length > 1">Overview of Techniques of all {{ artists.length }} artists</h1>
+    <h1 *ngIf="artists.length === 1">
+      Technique distribution of Artist: {{ artists[0].firstname }} {{ artists[0].lastname }}
+    </h1>
 
-<!-- Display loading indicator if data is still loading -->
-<div *ngIf="isLoading">
-  <p>Loading...</p>
+  </ng-container>
+      <figure class="svg-container"></figure>
+
+  <!-- Display loading indicator if data is still loading -->
+  <div *ngIf="isLoading">
+    <p>Loading...</p>
+  </div>
 </div>

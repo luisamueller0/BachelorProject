@@ -4,7 +4,7 @@
 * {
   font-family: 'Roboto', sans-serif;
   font-weight:500;
-  font-size: 1vw; 
+  font-size: 0.5vw; 
   color:#2a0052 ;
     box-sizing: border-box; /* Ensure padding and borders are included in the element's total width and height */
   }
@@ -15,7 +15,7 @@
     padding: 0;
   }
   h1{
-    font-size: 2vw;
+    font-size: 1vw;
     font-weight:600;
   }
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, ViewChild, ElementRef, OnChanges, HostListener } from '@angular/core';
+import { Component, OnInit, Input, ViewChild, ElementRef, OnChanges, OnDestroy, HostListener } from '@angular/core';
 import * as d3 from 'd3';
 import { Artist } from '../../models/artist';
 import { SelectionService } from '../../services/selection.service';
@@ -9,17 +9,16 @@ import { Subscription } from 'rxjs';
   templateUrl: './barchart.component.html',
   styleUrls: ['./barchart.component.css']
 })
-export class BarchartComponent implements OnInit, OnChanges {
-  @ViewChild('barChart')
-  private chartContainer: ElementRef | null = null;
+export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
+  @ViewChild('barChart', { static: true }) private chartContainer!: ElementRef;
   private subscription: Subscription = new Subscription();
 
   artists: Artist[] = [];
-  isLoading: boolean = true; // Add a loading indicator
+  isLoading: boolean = true;
   private svg: any;
   private contentWidth: number = 0;
   private contentHeight: number = 0;
-  private margin = { top: 20, right: 30, bottom: 450, left: 150 }; // Adjust bottom margin for rotated labels
+  private margin = { top: 20, right: 30, bottom: 100, left: 150 };
 
   constructor(private selectionService: SelectionService) { }
 
@@ -28,84 +27,83 @@ export class BarchartComponent implements OnInit, OnChanges {
       this.selectionService.currentArtist.subscribe((artists: Artist[]) => {
         this.artists = artists;
         this.isLoading = false;
-        this.createSvg();
-        this.drawBars();
+        this.updateChart();
       })
     );
+    window.addEventListener('resize', this.onResize.bind(this));
   }
 
   ngOnChanges(): void {
-    this.createSvg();
-    this.drawBars();
+    this.updateChart();
     this.isLoading = false;
   }
 
   ngOnDestroy(): void {
-    // Unsubscribe from all subscriptions to avoid memory leaks
     this.subscription.unsubscribe();
     window.removeEventListener('resize', this.onResize.bind(this));
-
   }
 
   @HostListener('window:resize', ['$event'])
-  onResize(event: any) {
+  onResize(): void {
+    this.updateChart();
+  }
+
+  private updateChart(): void {
+    if (!this.chartContainer) return;
+
     this.createSvg();
     this.drawBars();
   }
 
   private createSvg(): void {
-    d3.select("figure#bar svg").remove();
+    d3.select(this.chartContainer.nativeElement).select("svg").remove();
 
-    const element = this.chartContainer?.nativeElement;
+    const element = this.chartContainer.nativeElement;
+    const width = element.offsetWidth - this.margin.left - this.margin.right;
+    const height = element.offsetHeight - this.margin.top - this.margin.bottom;
+
     this.svg = d3.select(element).append('svg')
-      .attr('width', element.offsetWidth)
-      .attr('height', element.offsetHeight);
-
-    this.contentWidth = element.offsetWidth - this.margin.left - this.margin.right;
-    this.contentHeight = element.offsetHeight - this.margin.top - this.margin.bottom;
-
-    // Create a group element to apply margins and translate the drawing area
-    this.svg = this.svg.append("g")
+      .attr('width', '100%')
+      .attr('height', '100%')
+      .attr('viewBox', `0 0 ${element.offsetWidth} ${element.offsetHeight}`)
+      .append("g")
       .attr("transform", `translate(${this.margin.left},${this.margin.top})`);
+
+    this.contentWidth = width;
+    this.contentHeight = height;
   }
 
   private drawBars(): void {
-    // Calculate technique distribution
-    // Clear the previous content before drawing new bars
+    if (!this.artists.length) return;
+
     const techniqueDistribution = this.calculateTechniqueDistribution(this.artists);
 
-    // Create the X-axis band scale
     const x = d3.scaleBand()
       .domain(Array.from(techniqueDistribution.keys()))
       .range([0, this.contentWidth])
       .padding(0.2);
 
-    // Draw the X-axis on the DOM
     this.svg.append("g")
-      .attr("transform", "translate(0," + this.contentHeight + ")")
+      .attr("transform", `translate(0,${this.contentHeight})`)
       .call(d3.axisBottom(x))
       .selectAll("text")
       .attr("transform", "translate(-10,0)rotate(-45)")
       .style("text-anchor", "end");
 
-    // Filter out undefined values and convert to number array
     const techniqueValues = Array.from(techniqueDistribution.values())
       .filter(value => typeof value === 'number') as number[];
 
-    // Create the Y-axis band scale
     const y = d3.scaleLinear()
-      .domain([0, d3.max(techniqueValues) || 0]) // Handle the case when techniqueValues is empty
+      .domain([0, d3.max(techniqueValues) || 0])
       .range([this.contentHeight, 0]);
 
-    // Draw the Y-axis on the DOM
     this.svg.append("g")
       .call(d3.axisLeft(y));
 
     const colorScale = d3.scaleSequential()
-      .domain([0, Array.from(techniqueDistribution.keys()).length - 1]) // Adjust for zero-based index
+      .domain([0, Array.from(techniqueDistribution.keys()).length - 1])
       .interpolator(d3.interpolateRdPu);
 
-    // Create and fill the bars
     this.svg.selectAll("bars")
       .data(Array.from(techniqueDistribution.entries()))
       .enter()
@@ -117,7 +115,6 @@ export class BarchartComponent implements OnInit, OnChanges {
       .attr("fill", (d: any, i: number) => colorScale(i));
   }
 
-  // Function to calculate technique distribution
   private calculateTechniqueDistribution(artists: Artist[]): Map<string, number> {
     const techniqueDistribution = new Map<string, number>();
     artists.forEach((artist) => {
