@@ -576,7 +576,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
       .append("line")
       .attr("class", "artist-edge")
       .style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks))
-      .style('stroke-width', 2)
+      .style('stroke-width', 1)
       .attr('x1', (d: any) => d.source.x)
       .attr('y1', (d: any) => d.source.y)
       .attr('x2', (d: any) => d.target.x)
@@ -632,7 +632,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
       return this.calculateCollisionRadius(sizes[d.id] || 0);
     }))
     .force("repelFromCenter", this.repelFromCenterForce(artistNodes, centralNode, sizes[centralNode.id] || 0, 2)) // Add custom repel force
-    .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - 10)) // Add boundary force
+    .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - 2)) // Add boundary force
     .on("tick", () => {
       this.g.selectAll('.artist-node')
         .attr('cx', (d: any) => d.x)
@@ -911,7 +911,7 @@ else if(value === 'mostexhibited'){
   
   
   // Define the boundary force
-private boundaryForce(artistNodes: ArtistNode[], innerRadius: number, padding: number = 10): (alpha: number) => void {
+private boundaryForce(artistNodes: ArtistNode[], innerRadius: number, padding: number =2): (alpha: number) => void {
   return function(alpha: number) {
     artistNodes.forEach((d: any) => {
       const distance = Math.sqrt(d.x * d.x + d.y * d.y);
@@ -1019,11 +1019,11 @@ private boundaryForce(artistNodes: ArtistNode[], innerRadius: number, padding: n
   private setupRadialScale(innerRadius: number): d3.ScaleLinear<number, number> {
     return d3.scaleLinear()
       .domain([0, 1])  // Normalized degree
-      .range([innerRadius - 10, 10]);
+      .range([innerRadius-2, 10]);
   }
 
   private calculateRadiusForNode(value: number, innerRadius: number): number {
-    const minRadius =5; // Minimum radius for the least connected node
+    const minRadius =2; // Minimum radius for the least connected node
     const maxRadius = innerRadius / 10; // Maximum radius for the most connected node
     const calculatedRadius = minRadius + (maxRadius - minRadius) * value;
   

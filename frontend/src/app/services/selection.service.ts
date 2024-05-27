@@ -11,7 +11,7 @@ import exhibited_with from '../models/exhibited_with';
 export class SelectionService {
   constructor() {}
 
-  private selectedArtist  = new BehaviorSubject<Artist[]>([]);
+  private selectedArtist  = new BehaviorSubject<Artist[]|null>(null);
   private selectedCluster = new BehaviorSubject<Artist[]>([]);
   private selectedCountries = new BehaviorSubject<string[]>([]);
   private selectedFocusCluster = new BehaviorSubject<[Artist[][], exhibited_with[][]]|null>(null); // Change the initial value to undefined
@@ -27,7 +27,7 @@ export class SelectionService {
   currentClusterEdges= this.selectedClusterEdges.asObservable();
 
 
-  selectArtist(artists:Artist[]) {
+  selectArtist(artists:Artist[]|null) {
     this.selectedArtist.next(artists);
     console.log(this.selectedArtist.value)
   }

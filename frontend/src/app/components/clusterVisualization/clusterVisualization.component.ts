@@ -378,7 +378,7 @@ private changeCluster(value: string){
     });
     this.selectedCluster = allArtists;
     this.allArtists = allArtists;
-    this.selectionService.selectArtist(this.selectedCluster);
+    this.selectionService.selectArtist(null);
     const biggestCluster = this.clusters.reduce((max, cluster) => cluster.length > max.length ? cluster : max, this.clusters[0]);
     const biggestClusterId = this.clusters.findIndex(cluster => cluster === biggestCluster);
     const biggestClusterEdges = this.intraCommunityEdges[biggestClusterId]
@@ -478,7 +478,6 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
     });
     this.selectedCluster = allArtists;
     this.allArtists = allArtists;
-    this.selectionService.selectArtist(this.selectedCluster);
     const biggestCluster = this.clusters.reduce((max, cluster) => cluster.length > max.length ? cluster : max, this.clusters[0]);
     const biggestClusterId = this.clusters.findIndex(cluster => cluster === biggestCluster);
     const biggestClusterEdges = this.intraCommunityEdges[biggestClusterId]
@@ -986,7 +985,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
 
     // Clear the selection
     this.selectedClusterNode = null;
-    this.selectionService.selectArtist(this.allArtists);
+    this.selectionService.selectArtist(null);
     this.selectionService.selectCluster(this.allArtists);
     this.selectionService.selectClusterEdges([]);
     this.selectionService.selectCountries(this.allCountries);
@@ -1200,7 +1199,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
       circle.style.fill = this.selectedNode[1];
       circle.style.opacity = '1'; // Remove border
       this.selectedNode = null; // Clear the selected node
-      this.selectionService.selectArtist(this.allArtists); // Reset the selection
+      this.selectionService.selectArtist(null); // Reset the selection
       this.selectionService.selectCluster(this.allArtists); // Reset the cluster selection
       this.selectionService.selectClusterEdges([]); // Reset the edges selection
       // Reset edge colors

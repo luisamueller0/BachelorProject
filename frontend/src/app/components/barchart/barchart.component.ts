@@ -3,6 +3,8 @@ import * as d3 from 'd3';
 import { Artist } from '../../models/artist';
 import { SelectionService } from '../../services/selection.service';
 import { Subscription } from 'rxjs';
+import { DecisionService } from '../../services/decision.service';
+import { ArtistService } from '../../services/artist.service';
 
 @Component({
   selector: 'app-barchart',
@@ -11,9 +13,11 @@ import { Subscription } from 'rxjs';
 })
 export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
   @ViewChild('barChart', { static: true }) private chartContainer!: ElementRef;
-  private subscription: Subscription = new Subscription();
+  private subscriptions: Subscription = new Subscription();
 
-  artists: Artist[] = [];
+  allArtists: Artist[] = [];
+  selectedArtists: Artist[] | null = [];
+  nonselectedArtists: Artist[] = [];
   isLoading: boolean = true;
   private svg: any;
   private contentWidth: number = 0;
@@ -27,17 +31,63 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
     left: 5
   };
 
-  constructor(private selectionService: SelectionService) { }
+  // Define the order of techniques
+  private techniquesOrder: string[] = [
+    "drawing",
+    "drawing: chalk",
+    "drawing: charcoal",
+    "drawing: pen and ink",
+    "painting",
+    "painting: aquarelle",
+    "painting: gouache",
+    "painting: oil",
+    "painting: tempera",
+    "mural painting",
+    "mural painting: fresco",
+    "pastel",
+    "mixed media",
+    "monotype",
+    "other medium"
+  ];
+
+  // Define the color scale using d3.interpolatePlasma
+  private techniqueColorScale = d3.scaleOrdinal<string, string>()
+    .domain(this.techniquesOrder)
+    .range(this.techniquesOrder.map((d, i) => d3.interpolatePlasma(i / this.techniquesOrder.length)));
+
+  // Define the color scale for selected artists with adjusted opacity
+  private selectedTechniqueColorScale = d3.scaleOrdinal<string, string>()
+    .domain(this.techniquesOrder)
+    .range(this.techniquesOrder.map((d, i) => d3.color(d3.interpolatePlasma(i / this.techniquesOrder.length))?.copy({ opacity: 0.7 })!.toString() || ''));
+
+  constructor(private selectionService: SelectionService,
+    private decisionService: DecisionService,
+    private artistService: ArtistService
+  ) { }
 
   ngOnInit(): void {
-    this.subscription.add(
-      this.selectionService.currentArtist.subscribe((artists: Artist[]) => {
-        this.artists = artists;
+    const currentRange = this.decisionService.getDecisionRange();
+    this.artistService.getArtistsWithRange(currentRange).subscribe((data) => {
+      this.allArtists = data[0];
+      this.isLoading = false;
+      this.updateChart();
+    }, error => {
+      console.error('There was an error', error);
+      this.isLoading = false;
+    });
+
+    this.subscriptions.add(
+      this.selectionService.currentArtist.subscribe((artists: Artist[] | null) => {
+        this.selectedArtists = artists;
         this.isLoading = false;
         this.updateChart();
       })
     );
+
     window.addEventListener('resize', this.onResize.bind(this));
+    this.subscriptions.add(this.decisionService.currentK.subscribe(k => {
+      this.updateOverview();
+    }));
   }
 
   ngOnChanges(): void {
@@ -46,7 +96,7 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.subscription.unsubscribe();
+    this.subscriptions.unsubscribe();
     window.removeEventListener('resize', this.onResize.bind(this));
   }
 
@@ -61,6 +111,17 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
     this.createSvg();
     this.drawBars();
   }
+
+  private updateOverview(): void {
+    const currentRange = this.decisionService.getDecisionRange();
+    this.artistService.getArtistsWithRange(currentRange).subscribe((data) => {
+      this.allArtists = data[0];
+      this.updateChart();
+    }, error => {
+      console.error('There was an error', error);
+      this.isLoading = false;
+    });
+  };
 
   private createSvg(): void {
     d3.select(this.chartContainer.nativeElement).select("svg").remove();
@@ -87,47 +148,82 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private drawBars(): void {
-    if (!this.artists.length) return;
-
-    const techniqueDistribution = this.calculateTechniqueDistribution(this.artists);
-
+    if (!this.allArtists.length) return;
+  
+    // Ensure selectedArtists is treated as an empty array if null
+    const selectedArtists = this.selectedArtists || [];
+  
+    if (selectedArtists.length === 0) {
+      this.nonselectedArtists = this.allArtists;
+    } else {
+      this.nonselectedArtists = this.allArtists.filter(artist => !selectedArtists.find(a => a.id === artist.id));
+    }
+  
+    const nonselectedTechniqueDistribution = this.calculateTechniqueDistribution(this.nonselectedArtists);
+    const selectedTechniqueDistribution = this.calculateTechniqueDistribution(selectedArtists);
+  
+    const combinedData = this.prepareStackedData(nonselectedTechniqueDistribution, selectedTechniqueDistribution);
+  
     const x = d3.scaleBand()
-      .domain(Array.from(techniqueDistribution.keys()))
+      .domain(this.techniquesOrder)
       .range([0, this.contentWidth])
       .padding(0.2);
-
-    this.svg.append("g")
+  
+    const xAxis = this.svg.append("g")
       .attr("transform", `translate(0,${this.contentHeight})`)
       .call(d3.axisBottom(x))
       .selectAll("text")
       .attr("transform", "translate(-10,0)rotate(-45)")
-      .style("text-anchor", "end");
-
-    const techniqueValues = Array.from(techniqueDistribution.values())
-      .filter(value => typeof value === 'number') as number[];
-
+      .style("text-anchor", "end")
+      .style("font-weight", '700');
+  
+    if (selectedArtists.length > 0) {
+      xAxis
+        .style("font-weight", (d: string) => this.isTechniqueSelected(d, selectedArtists) ? 'bold' : '700')
+        .style("opacity", (d: string) => this.isTechniqueSelected(d, selectedArtists) ? 1 : 0.7);
+    }
+  
+    const maxTechniqueValue: number = d3.max(combinedData, d => d.nonselectedArtists + d.selectedArtists) || 0;
     const y = d3.scaleLinear()
-      .domain([0, d3.max(techniqueValues) || 0])
+      .domain([0, maxTechniqueValue])
       .range([this.contentHeight, 0]);
-
+  
     this.svg.append("g")
       .call(d3.axisLeft(y));
-
-    const colorScale = d3.scaleSequential()
-      .domain([0, Array.from(techniqueDistribution.keys()).length - 1])
-      .interpolator(d3.interpolateRdPu);
-
-    this.svg.selectAll("bars")
-      .data(Array.from(techniqueDistribution.entries()))
-      .enter()
-      .append("rect")
-      .attr("x", (d: any) => x(d[0]))
-      .attr("y", (d: any) => y(d[1]))
+  
+    const stack = d3.stack()
+      .keys(['nonselectedArtists', 'selectedArtists']);
+  
+    const stackedData = stack(combinedData);
+  
+    const bars = this.svg.append("g")
+      .selectAll("g")
+      .data(stackedData)
+      .enter().append("g")
+      .attr("fill", (d:any, i:number) => i === 0 ? this.techniqueColorScale : this.selectedTechniqueColorScale)
+      .selectAll("rect")
+      .data((d:any) => d)
+      .enter().append("rect")
+      .attr("x", (d:any) => x(d.data.technique) || 0)
+      .attr("y", (d:any) => y(d[1]))
+      .attr("height", (d:any) => y(d[0]) - y(d[1]))
       .attr("width", x.bandwidth())
-      .attr("height", (d: any) => this.contentHeight - y(d[1]))
-      .attr("fill", (d: any, i: number) => colorScale(i));
+      .attr("fill", (d:any, i:number, nodes:any) => {
+        const seriesIndex = nodes[i].parentNode.__data__.key;
+        return seriesIndex === 'nonselectedArtists'
+          ? this.techniqueColorScale(d.data.technique)
+          : this.selectedTechniqueColorScale(d.data.technique);
+      });
+  
+    // Debug statements
+    console.log('Combined Data:', combinedData);
+    console.log('Stacked Data:', stackedData);
   }
-
+  
+  private isTechniqueSelected(technique: string, selectedArtists: Artist[]): boolean {
+    return selectedArtists.some(artist => artist.techniques.includes(technique));
+  }
+  
   private calculateTechniqueDistribution(artists: Artist[]): Map<string, number> {
     const techniqueDistribution = new Map<string, number>();
     artists.forEach((artist) => {
@@ -137,22 +233,20 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
     });
     return techniqueDistribution;
   }
+  
+  private prepareStackedData(nonselectedTechniqueDistribution: Map<string, number>, selectedTechniqueDistribution: Map<string, number>): any[] {
+    const combinedData: any[] = [];
+  
+    this.techniquesOrder.forEach(technique => {
+      const nonselectedCount = nonselectedTechniqueDistribution.get(technique) || 0;
+      const selectedCount = selectedTechniqueDistribution.get(technique) || 0;
+      combinedData.push({
+        technique,
+        nonselectedArtists: nonselectedCount,
+        selectedArtists: selectedCount
+      });
+    });
+  
+    return combinedData;
+  }
 }
-
-/* const techniques = [
-  "drawing",
-  "drawing: chalk",
-  "drawing: charcoal",
-  "drawing: pen and ink",
-  "painting",
-  "painting: aquarelle",
-  "painting: gouache",
-  "painting: oil",
-  "painting: tempera",
-  "mural painting",
-  "mural painting: fresco",
-  "pastel",
-  "mixed media",
-  "monotype",
-  "other medium",
-]; */
