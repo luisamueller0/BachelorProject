@@ -5,6 +5,7 @@ import exhibited_with from '../../models/exhibited_with';
 import { Subscription } from 'rxjs';
 import { DecisionService } from '../../services/decision.service';
 import { SelectionService } from '../../services/selection.service';
+import { ArtistService } from '../../services/artist.service';
 
 @Component({
   selector: 'app-focusOnCluster',
@@ -50,14 +51,15 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   private simulation: d3.Simulation<ArtistNode, undefined>[] = [];
 
   private countryIndexMap = new Map<string, number>();
-  private globalColorScale: d3.ScaleSequential<string, number> = d3.scaleSequential(d3.interpolateSpectral);
+  
   private init = -1;
 
   private clusterCountryCentroids: { [clusterId: number]: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } } = {};
 
   constructor(private decisionService: DecisionService,
               private selectionService: SelectionService,
-              private elementRef: ElementRef) {
+              private elementRef: ElementRef,
+              private artistService: ArtistService) {
     this.handleNodeClick = this.handleNodeClick.bind(this);
   }
 
@@ -305,7 +307,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
       x: x,
       y: y,
       radius: this.calculateRadiusForNode(nodeRadius, cluster.innerRadius),
-      color: this.globalColorScale(countryIndex)
+      color: this.artistService.getCountryColor(countryData.country,1) 
     };
   }
 
@@ -338,8 +340,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
     this.intraCommunityEdges = focusClusterEdges;
 
     this.calculateNodeDegreesForClusters();
-    this.globalColorScale = this.createGlobalColorScale(this.displayValue);
-
+    
     this.initializeVisualization(this.displayValue);
     this.isLoading = false;
     this.isIniatialized = true;
@@ -471,7 +472,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
         middleAngle,
         innerRadius: clusterNode.innerRadius,
         outerRadius: clusterNode.outerRadius,
-        color: this.globalColorScale(countryIndex) // Get color from ordinal scale
+        color: this.artistService.getCountryColor(country,1)  // Get color from ordinal scale
       };
     });
   
