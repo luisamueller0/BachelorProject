@@ -64,7 +64,6 @@ export class ClusterVisualizationComponent implements OnInit {
   private clusterSimulation: d3.Simulation<ClusterNode, undefined> | null = d3.forceSimulation<ClusterNode>();
 
   private countryIndexMap = new Map<string, number>();
-  private globalColorScale: d3.ScaleSequential<string, number> = d3.scaleSequential(d3.interpolateSpectral);
 
   private clusterCountryCentroids: { [clusterId: number]: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } } = {};
 
@@ -346,7 +345,7 @@ export class ClusterVisualizationComponent implements OnInit {
       x: x,
       y: y,
       radius: this.calculateRadiusForNode(nodeRadius, cluster.innerRadius),
-      color: this.globalColorScale(countryIndex)
+      color: this.artistService.getCountryColor(countryData.country,1)
     };
   }
   
@@ -422,8 +421,6 @@ private changeCluster(value: string){
     // Calculate degrees for each cluster
     this.calculateNodeDegreesForClusters();
 
-    // Call createGlobalColorScale after clusters are initialized
-    this.globalColorScale = this.createGlobalColorScale(value);
 
     this.initializeVisualization(value);
     this.isLoading = false;
@@ -522,8 +519,6 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
     // Calculate degrees for each cluster
     this.calculateNodeDegreesForClusters();
 
-    // Call createGlobalColorScale after clusters are initialized
-    this.globalColorScale = this.createGlobalColorScale(value);
 
     this.initializeVisualization(value);
     this.isLoading = false;
@@ -583,8 +578,7 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
         // Calculate degrees for each cluster
         this.calculateNodeDegreesForClusters();
 
-        // Call createGlobalColorScale after clusters are initialized
-        this.globalColorScale = this.createGlobalColorScale('nationality');
+      
 
       
         this.initializeVisualization('nationality');
@@ -907,7 +901,7 @@ console.log(this.clusters)
         middleAngle,
         innerRadius: clusterNode.innerRadius,
         outerRadius: clusterNode.outerRadius,
-        color: this.globalColorScale(countryIndex) // Get color from ordinal scale
+        color: this.artistService.getCountryColor(country,1) // Get color from ordinal scale
       };
     });
   

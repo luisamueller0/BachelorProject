@@ -158,19 +158,41 @@ public europeanRegions = {
 public getRegionColorScale(region: string): (t: number) => string {
   switch(region) {
     case "North Europe":
-      return d3.interpolateBlues;
+      return this.interpolateCustomBlues;
     case "Eastern Europe":
-      return d3.interpolateGreens;
+      return this.interpolateCustomGreens;
     case "Southern Europe":
-      return d3.interpolatePurples;
+      return this.interpolateCustomPurples;
     case "Western Europe":
-      return d3.interpolateReds;
+      return this.interpolateCustomReds;
     case "Others":
-      return d3.interpolateOranges;
+      return this.interpolateCustomOranges;
     default:
       return d3.interpolateGreys; // Default color scale if region is not found
   }
 }
+
+private interpolateCustomBlues(t: number): string {
+  return d3.interpolateRgb("#194D33", "#78B9F2")(t); // Light blue to dark blue
+}
+
+private interpolateCustomGreens(t: number): string {
+  return d3.interpolateRgb("#95ED87", "#00261c")(t); // Light blue to dark blue
+}
+
+private interpolateCustomPurples(t: number): string {
+  return d3.interpolateRgb("#9768d1", "#36175e")(t); // Light blue to dark blue
+}
+
+private interpolateCustomReds(t: number): string {
+  return d3.interpolateRgb("#FAA700", "#470004")(t); // Light blue to dark blue
+}
+
+private interpolateCustomOranges(t: number): string {
+  return d3.interpolateRgb("#FAA700", "#95ED87")(t); // Light blue to dark blue
+}
+
+
 
 public getCountryColor(countryName: string | undefined, opacity: number): string {
   if (countryName === undefined) return d3.interpolateGreys(0.5); // Default color for undefined countries
