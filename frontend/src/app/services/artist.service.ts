@@ -156,45 +156,95 @@ public europeanRegions = {
 };
 
 public getRegionColorScale(region: string): (t: number) => string {
-  switch(region) {
+  switch (region) {
     case "North Europe":
-      return this.interpolateCustomBlues;
+      return this.getColorScale(this.cyanColorPalette);
     case "Eastern Europe":
-      return this.interpolateCustomGreens;
+      return this.getColorScale(this.blueColorPalette);
     case "Southern Europe":
-      return this.interpolateCustomPurples;
+      return this.getColorScale(this.purpleColorPalette);
     case "Western Europe":
-      return this.interpolateCustomReds;
+      return this.getColorScale(this.pinkColorPalette);
     case "Others":
-      return this.interpolateCustomOranges;
+      return this.interpolateCustomGreens;
     default:
       return d3.interpolateGreys; // Default color scale if region is not found
   }
-}
-
-private interpolateCustomBlues(t: number): string {
-  return d3.interpolateRgb("#194D33", "#78B9F2")(t); // Light blue to dark blue
 }
 
 private interpolateCustomGreens(t: number): string {
   return d3.interpolateRgb("#95ED87", "#00261c")(t); // Light blue to dark blue
 }
 
-private interpolateCustomPurples(t: number): string {
-  return d3.interpolateRgb("#9768d1", "#36175e")(t); // Light blue to dark blue
-}
-
-private interpolateCustomReds(t: number): string {
-  return d3.interpolateRgb("#FAA700", "#470004")(t); // Light blue to dark blue
-}
-
-private interpolateCustomOranges(t: number): string {
-  return d3.interpolateRgb("#FAA700", "#95ED87")(t); // Light blue to dark blue
+// Function to create a color scale from a given color palette
+private getColorScale(palette: string[]): (t: number) => string {
+  return (t: number) => {
+    const index = Math.round(t * (palette.length - 1));
+    return palette[index];
+  };
 }
 
 
+private cyanColorPalette: string[] = [
+  "#00767a",
+  "#1b8387",
+  "#2d9094",
+  "#3c9da1",
+  "#4aaaae",
+  "#57b7bb",
+  "#65c5c9",
+  "#72d3d7",
+  "#7fe1e5"
+];
 
-public getCountryColor(countryName: string | undefined, opacity: number): string {
+private blueColorPalette: string[] = [
+  "#0f1d26",
+  "#0f3347",
+  "#004c6d",
+  "#1c5c7e",
+  "#306d8f",
+  "#427ea1",
+  "#538fb3",
+  "#64a1c6",
+  "#75b3d9",
+  "#87c6ec",
+  "#98d9ff"
+];
+
+
+
+
+private purpleColorPalette: string[] = [
+  "#250c310",
+  "#49006a",
+  "#5d1f7b",
+  "#71378c",
+  "#854e9d",
+  "#9965af",
+  "#ad7cc1",
+  "#c194d3",
+  "#d5ace5",
+  "#eac5f8"
+];
+
+private pinkColorPalette: string[] = [
+  "#e7298a",
+  "#eb4594",
+  "#ef5a9d",
+  "#f36da7",
+  "#f67eb1",
+  "#f98eba",
+  "#fb9ec4",
+  "#fdaecd",
+  "#ffbdd7"
+];
+
+
+
+
+
+// Function to get color based on country and region
+public getCountryColor(countryName: string | undefined, opacity: number = 1): string {
   if (countryName === undefined) return d3.interpolateGreys(0.5); // Default color for undefined countries
 
   for (const [region, countries] of Object.entries(this.europeanRegions)) {

@@ -175,13 +175,11 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
       .selectAll("text")
       .attr("transform", "translate(-10,0)rotate(-45)")
       .style("text-anchor", "end")
-      .style("font-weight", '500');
+      .style("font-weight", '700')
+      .style("color", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? 'black' : 'lightgray') : 'black')
+      .style("font-weight", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? 'bold' : '700') : '700');
+
   
-    if (selectedArtists.length > 0) {
-      xAxis
-        .style("font-weight", (d: string) => this.isTechniqueSelected(d, selectedArtists) ? 'bold' : '500')
-        .style("opacity", (d: string) => this.isTechniqueSelected(d, selectedArtists) ? 1 : 0.3);
-    }
     
     xAxis.style("opacity", (d: string) => this.hasTechniqueValue(d, combinedData) ? 1 : 0.3);
   

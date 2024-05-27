@@ -498,7 +498,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
       .attr("transform", (d: any) => `translate(${arcGenerator.centroid(d)})`)
       .attr("text-anchor", "middle")
       .text((d: any) => d.country)
-      .style("font-size", "1vw")
+      .style("font-size", "0.5vw")
       .style("fill", "white")     // Set the text color to white
    
   
