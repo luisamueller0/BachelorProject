@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Subscription, fromEvent } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 import { SelectionService } from '../../services/selection.service';
+import { ArtistService } from '../../services/artist.service';
 
 @Component({
   selector: 'app-map',
@@ -37,57 +38,14 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
     "San Marino", "Republic of Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Ukraine", "England", "Kosovo"
   ];
 
-  private countryMap : { [key: string]: string } = {
-    "AL": "Albania",
-    "AD": "Andorra",
-    "AT": "Austria",
-    "BY": "Belarus",
-    "BE": "Belgium",
-    "BA": "Bosnia and Herzegovina",
-    "BG": "Bulgaria",
-    "HR": "Croatia",
-    "CY": "Cyprus",
-    "CZ": "Czech Republic",
-    "DK": "Denmark",
-    "EE": "Estonia",
-    "FI": "Finland",
-    "FR": "France",
-    "DE": "Germany",
-    "GR": "Greece",
-    "HU": "Hungary",
-    "IS": "Iceland",
-    "IE": "Ireland",
-    "IT": "Italy",
-    "LV": "Latvia",
-    "LI": "Liechtenstein",
-    "LT": "Lithuania",
-    "LU": "Luxembourg",
-    "MT": "Malta",
-    "MD": "Moldova",
-    "MC": "Monaco",
-    "ME": "Montenegro",
-    "NL": "Netherlands",
-    "MK": "Macedonia",
-    "NO": "Norway",
-    "PL": "Poland",
-    "PT": "Portugal",
-    "RO": "Romania",
-    "RU": "Russia",
-    "SM": "San Marino",
-    "RS": "Republic of Serbia",
-    "SK": "Slovakia",
-    "SI": "Slovenia",
-    "ES": "Spain",
-    "SE": "Sweden",
-    "CH": "Switzerland",
-    "UA": "Ukraine",
-    "GB": "England",
-    "XK": "Kosovo"
-  };
+  private countryMap : { [key: string]: string } = this.artistService.countryMap;
+   
 
   @ViewChild('mapContainer', { static: true }) private mapContainer!: ElementRef;
 
-  constructor(private http: HttpClient, private selectionService: SelectionService) { 
+  constructor(private http: HttpClient, private selectionService: SelectionService,
+    private artistService: ArtistService
+  ) { 
     this.handleCountryClick = this.handleCountryClick.bind(this);
   }
 
@@ -105,7 +63,7 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
   ngAfterViewInit(): void {
     this.createSvg();
     this.drawMap();
-    this.createLegend();
+    //this.createLegend();
   }
 
   ngOnDestroy(): void {
@@ -162,7 +120,7 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
         .enter()
         .append('path')
         .attr('d', path)
-        .attr('fill', (d: any) => this.getRegionColor(d.properties.name))
+        .attr('fill', (d: any) => this.artistService.getCountryColor(this.artistService.getCountrycode(d.properties.name),1))
         .attr('stroke', '#fff')
         .on('click', (event: MouseEvent, d: any) => this.handleCountryClick(d.properties.name, event))
         .on('mouseover', (event: MouseEvent, d: any) => {
@@ -210,7 +168,7 @@ private handleCountryClick(country: string, event: MouseEvent): void {
   //this.selectionService.selectMapCountry(this.getKeyByValue(country));
 }
 
-private getKeyByValue(value: string): string | undefined {
+private getKeyByValue(value: string): string |undefined {
   return Object.keys(this.countryMap).find(key => this.countryMap[key] === value);
 }
 
@@ -223,54 +181,19 @@ private getKeyByValue(value: string): string | undefined {
     this.countryBorders
       .attr('fill', (d: any) => {
         const countryCode = Object.keys(this.countryMap).find(key => this.countryMap[key] === d.properties.name);
-        const regionColor = this.regionColors[this.getRegionKey(d.properties.name)];
-        const darkerColor = this.darkerRegionColors[this.getRegionKey(d.properties.name)];
-        return (countryCode && selectedCountries.includes(countryCode)) ? regionColor : darkerColor;
-      })
-      .attr('stroke', (d: any) => {
-        const countryCode = Object.keys(this.countryMap).find(key => this.countryMap[key] === d.properties.name);
-        const regionColor = this.regionColors[this.getRegionKey(d.properties.name)];
-        const darkerColor = this.darkerRegionColors[this.getRegionKey(d.properties.name)];
-        return (countryCode && selectedCountries.includes(countryCode)) ? 'black' : '#fff';
-      })
-      .attr('stroke-width', (d: any) => {
-        const countryCode = Object.keys(this.countryMap).find(key => this.countryMap[key] === d.properties.name);
-        return (countryCode && selectedCountries.includes(countryCode)) ? '3px' : '1px';
+        const base = this.artistService.getCountryColor(countryCode,1);
+        const unselected = this.artistService.getCountryColor(countryCode,0.05);
+        return (countryCode && selectedCountries.includes(countryCode)) ? base: unselected;
       });
   }
 
-  private getRegionColor(countryName: string): string {
-    if (this.europeanCountries.includes(countryName)) {
-      if (["Denmark", "Estonia", "Finland", "Iceland", "Ireland", "Latvia", "Lithuania", "Norway", "Sweden", "England"].includes(countryName)) {
-        return this.darkerRegionColors["North Europe"];
-      } else if (["Austria", "Belgium", "France", "Germany", "Liechtenstein", "Luxembourg", "Monaco", "Netherlands", "Switzerland"].includes(countryName)) {
-        return this.darkerRegionColors["Western Europe"];
-      } else if (["Albania", "Andorra", "Bosnia and Herzegovina", "Croatia", "Cyprus", "Greece", "Italy", "Malta", "Montenegro", "Macedonia", "Portugal", "San Marino", "Republic of Serbia", "Slovenia", "Spain", "Kosovo"].includes(countryName)) {
-        return this.darkerRegionColors["Southern Europe"];
-      } else if (["Belarus", "Bulgaria", "Czech Republic", "Hungary", "Moldova", "Poland", "Romania", "Russia", "Slovakia", "Ukraine"].includes(countryName)) {
-        return this.darkerRegionColors["Eastern Europe"];
-      }
-    }
-    return '#ccc'; // Default color for countries not in the list
-  }
-
-  private getRegionKey(countryName: string): string {
-    if (["Denmark", "Estonia", "Finland", "Iceland", "Ireland", "Latvia", "Lithuania", "Norway", "Sweden", "England"].includes(countryName)) {
-      return "North Europe";
-    } else if (["Austria", "Belgium", "France", "Germany", "Liechtenstein", "Luxembourg", "Monaco", "Netherlands", "Switzerland"].includes(countryName)) {
-      return "Western Europe";
-    } else if (["Albania", "Andorra", "Bosnia and Herzegovina", "Croatia", "Cyprus", "Greece", "Italy", "Malta", "Montenegro", "Macedonia", "Portugal", "San Marino", "Republic of Serbia", "Slovenia", "Spain","Kosovo"].includes(countryName)) {
-      return "Southern Europe";
-    } else if (["Belarus", "Bulgaria", "Czech Republic", "Hungary", "Moldova", "Poland", "Romania", "Russia", "Slovakia", "Ukraine"].includes(countryName)) {
-      return "Eastern Europe";
-    }
-    return ""; // Return empty string or some default value if no match
-  }
 
 
 
 
 
+
+/* 
   private createLegend(): void {
     const legendData = [
       { region: "North Europe (selected/unselected)", color: this.regionColors["North Europe"], darkerColor: this.darkerRegionColors["North Europe"] },
@@ -348,7 +271,7 @@ private getKeyByValue(value: string): string | undefined {
   .style('fill', '#000')
   .style('font-family', 'Roboto, sans-serif'); // Apply the Roboto font family
 }
-  
+   */
   
 
   @HostListener('window:resize')

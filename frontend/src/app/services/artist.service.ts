@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable, shareReplay } from 'rxjs';
 import { Artist } from '../models/artist';
 import exhibited_with from '../models/exhibited_with';
+import * as d3 from 'd3';
 
 @Injectable({
   providedIn: 'root'
@@ -141,7 +142,165 @@ export class ArtistService {
   }
 
 
-  
+public europeanRegions = {
+  "North Europe": ["DK", "EE", "FI", "IS", "IE", "LV", "LT", "NO", "SE"],
+  "Eastern Europe": ["AZ", "BY", "BG", "CZ", "HU", "MD", "PL", "RO", "RU", "SK", "UA"],
+  "Southern Europe": ["BA", "HR", "GI", "GR", "IT", "ME", "PT", "RS", "SI", "ES"],
+  "Western Europe": ["AT", "BE", "FR", "DE", "LU", "MC", "NL", "CH", "GB"],
+  "Others": [
+    "US", "AU", "GE", "MX", "AM", "IL", "CL", "AR", "CA", "DO", "PE", "JP", "TR",
+    "BR", "ZA", "NZ", "VE", "GT", "UY", "SV", "PY", "IN", "PF", "KZ", "UZ", "VN", 
+    "NA", "JO", "IR", "KH", "JM", "SA", "DZ", "CN", "EG", "VI", "ID", "CU", "TN", 
+    "MQ", "MU", "LK", "EC", "SG", "BL", "TH", "BO"
+  ]
+};
+
+public getRegionColorScale(region: string): (t: number) => string {
+  switch(region) {
+    case "North Europe":
+      return d3.interpolateBlues;
+    case "Eastern Europe":
+      return d3.interpolateGreens;
+    case "Southern Europe":
+      return d3.interpolatePurples;
+    case "Western Europe":
+      return d3.interpolateReds;
+    case "Others":
+      return d3.interpolateOranges;
+    default:
+      return d3.interpolateGreys; // Default color scale if region is not found
+  }
+}
+
+public getCountryColor(countryName: string | undefined, opacity: number): string {
+  if (countryName === undefined) return d3.interpolateGreys(0.5); // Default color for undefined countries
+
+  for (const [region, countries] of Object.entries(this.europeanRegions)) {
+    const index = countries.indexOf(countryName);
+    if (index !== -1) {
+      const colorScale = this.getRegionColorScale(region);
+      const t = index / (countries.length - 1); // Calculate interpolation factor
+      let color = d3.color(colorScale(t));
+      if (color) {
+        color.opacity = opacity;
+        return color.toString();
+      }
+    }
+  }
+
+  let defaultColor = d3.color(d3.interpolateGreys(0.5));
+  if (defaultColor) {
+    defaultColor.opacity = opacity;
+    return defaultColor.toString();
+  }
+  return d3.interpolateGreys(0.5); // Fallback
+}
+
+public countryMap : { [key: string]: string } = {
+  "AL": "Albania",
+  "AD": "Andorra",
+  "AT": "Austria",
+  "BY": "Belarus",
+  "BE": "Belgium",
+  "BA": "Bosnia and Herzegovina",
+  "BG": "Bulgaria",
+  "HR": "Croatia",
+  "CY": "Cyprus",
+  "CZ": "Czech Republic",
+  "DK": "Denmark",
+  "EE": "Estonia",
+  "FI": "Finland",
+  "FR": "France",
+  "DE": "Germany",
+  "GR": "Greece",
+  "HU": "Hungary",
+  "IS": "Iceland",
+  "IE": "Ireland",
+  "IT": "Italy",
+  "LV": "Latvia",
+  "LI": "Liechtenstein",
+  "LT": "Lithuania",
+  "LU": "Luxembourg",
+  "MT": "Malta",
+  "MD": "Moldova",
+  "MC": "Monaco",
+  "ME": "Montenegro",
+  "NL": "Netherlands",
+  "MK": "Macedonia",
+  "NO": "Norway",
+  "PL": "Poland",
+  "PT": "Portugal",
+  "RO": "Romania",
+  "RU": "Russia",
+  "SM": "San Marino",
+  "RS": "Republic of Serbia",
+  "SK": "Slovakia",
+  "SI": "Slovenia",
+  "ES": "Spain",
+  "SE": "Sweden",
+  "CH": "Switzerland",
+  "UA": "Ukraine",
+  "GB": "England",
+  "XK": "Kosovo",
+  "AZ": "Azerbaijan",
+  "GI": "Gibraltar",
+  "US": "United States",
+  "AU": "Australia",
+  "GE": "Georgia",
+  "MX": "Mexico",
+  "AM": "Armenia",
+  "IL": "Israel",
+  "CL": "Chile",
+  "AR": "Argentina",
+  "CA": "Canada",
+  "DO": "Dominican Republic",
+  "PE": "Peru",
+  "JP": "Japan",
+  "TR": "Turkey",
+  "BR": "Brazil",
+  "ZA": "South Africa",
+  "NZ": "New Zealand",
+  "VE": "Venezuela",
+  "GT": "Guatemala",
+  "UY": "Uruguay",
+  "SV": "El Salvador",
+  "PY": "Paraguay",
+  "IN": "India",
+  "PF": "French Polynesia",
+  "KZ": "Kazakhstan",
+  "UZ": "Uzbekistan",
+  "VN": "Vietnam",
+  "NA": "Namibia",
+  "JO": "Jordan",
+  "IR": "Iran",
+  "KH": "Cambodia",
+  "JM": "Jamaica",
+  "SA": "Saudi Arabia",
+  "DZ": "Algeria",
+  "CN": "China",
+  "EG": "Egypt",
+  "VI": "Virgin Islands",
+  "ID": "Indonesia",
+  "CU": "Cuba",
+  "TN": "Tunisia",
+  "MQ": "Martinique",
+  "MU": "Mauritius",
+  "LK": "Sri Lanka",
+  "EC": "Ecuador",
+  "SG": "Singapore",
+  "BL": "Saint Barthélemy",
+  "TH": "Thailand",
+  "BO": "Bolivia"
+};
+
+public getCountrycode(fullName: string): string | undefined {
+  for (const [code, name] of Object.entries(this.countryMap)) {
+    if (name.toLowerCase() === fullName.toLowerCase()) {
+      return code;
+    }
+  }
+  return undefined; // Return undefined if the country name is not found
+}
 
 
   
