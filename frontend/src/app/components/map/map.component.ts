@@ -19,16 +19,6 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
   private subscription: Subscription = new Subscription();
   private countryBorders: any;
 
-  private regionColors: { [key: string]: string } = {
-    "North Europe": "#6e40aa",
-    "Western Europe": "#ee4395",
-    "Southern Europe": "#ff8c38",
-    "Eastern Europe": "#aff05b"
-  };
-
-  private darkerRegionColors: { [key: string]: string } = Object.fromEntries(
-    Object.entries(this.regionColors).map(([key, color]) => [key, d3.color(color)!.darker(1).toString()])
-  );
 
   private europeanCountries: string[] = [
     "Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia",

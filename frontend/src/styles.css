@@ -18,7 +18,20 @@
     font-size: 1vw;
     font-weight:600;
   }
+  .custom-slider{
+    height: 0.5 vw!important;
+  }
+  .custom-slider ngx-slider ngx-slider-bar {
+    height: 0.5vw !important; /* Custom height for the slider bar */
+      }
+          .custom-slider .ngx-slider ngx-slider-span ngx-slider-bar ngx-slider-selection{
+            height: 0.5vw !important; /* Custom height for the slider bar */
 
+    }
+  
+  .custom-slider .ngx-slider .ngx-slider-bar-wrapper {
+    height: 0.5vw !important; /* Custom height for the slider bar */
+  }
 
   .custom-slider.ngx-slider .ngx-slider-bar {
     background-color: #a23fff !important; /* Custom color for the slider bar */

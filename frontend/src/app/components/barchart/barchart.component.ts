@@ -15,6 +15,8 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
   @ViewChild('barChart', { static: true }) private chartContainer!: ElementRef;
   private subscriptions: Subscription = new Subscription();
 
+
+  
   allArtists: Artist[] = [];
   selectedArtists: Artist[] | null = [];
   nonselectedArtists: Artist[] = [];
