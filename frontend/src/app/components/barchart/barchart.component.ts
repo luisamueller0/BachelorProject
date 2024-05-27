@@ -175,13 +175,15 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
       .selectAll("text")
       .attr("transform", "translate(-10,0)rotate(-45)")
       .style("text-anchor", "end")
-      .style("font-weight", '700');
+      .style("font-weight", '500');
   
     if (selectedArtists.length > 0) {
       xAxis
-        .style("font-weight", (d: string) => this.isTechniqueSelected(d, selectedArtists) ? 'bold' : '700')
-        .style("opacity", (d: string) => this.isTechniqueSelected(d, selectedArtists) ? 1 : 0.7);
+        .style("font-weight", (d: string) => this.isTechniqueSelected(d, selectedArtists) ? 'bold' : '500')
+        .style("opacity", (d: string) => this.isTechniqueSelected(d, selectedArtists) ? 1 : 0.3);
     }
+    
+    xAxis.style("opacity", (d: string) => this.hasTechniqueValue(d, combinedData) ? 1 : 0.3);
   
     const maxTechniqueValue: number = d3.max(combinedData, d => d.nonselectedArtists + d.selectedArtists) || 0;
     const y = d3.scaleLinear()
@@ -222,6 +224,11 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
   
   private isTechniqueSelected(technique: string, selectedArtists: Artist[]): boolean {
     return selectedArtists.some(artist => artist.techniques.includes(technique));
+  }
+
+  private hasTechniqueValue(technique: string, combinedData: any[]): boolean {
+    const dataEntry = combinedData.find(d => d.technique === technique);
+    return dataEntry ? (dataEntry.nonselectedArtists > 0 || dataEntry.selectedArtists > 0) : false;
   }
   
   private calculateTechniqueDistribution(artists: Artist[]): Map<string, number> {

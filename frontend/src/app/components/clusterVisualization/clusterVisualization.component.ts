@@ -448,6 +448,7 @@ private changeCluster(value: string){
       const clusters = data[0];
       const intraCommunityEdges = data[1] as exhibited_with[][];
       const interCommunityEdges = data[2] as exhibited_with[];
+      
       const value = this.decisionService.getDecisionSunburst();
       this.loadNewData(clusters, intraCommunityEdges, interCommunityEdges, value);
 
@@ -536,6 +537,10 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
       .subscribe(data => {
         console.log(data);
         this.clusters = data[0];
+        this.clusters[4].forEach(artist => {
+          console.log('LOS')
+          console.log('LOS artist:', artist.id, 'average date', artist.overall_avg_date, 'average duration', artist.avg_duration)
+        });
         console.log('artists',this.clusters)
         this.intraCommunityEdges = data[1] as exhibited_with[][];
         const interCommunityEdgesRaw = data[2] as exhibited_with[];
@@ -595,7 +600,7 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
   private initializeVisualization(value: string) {
     this.createSvg();
     this.renderClusters(value); // Render clusters first
-    this.renderInterCommunityEdges(); // Render inter-community edges next
+    
   }
 
 
