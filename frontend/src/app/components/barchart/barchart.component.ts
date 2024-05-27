@@ -18,7 +18,14 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
   private svg: any;
   private contentWidth: number = 0;
   private contentHeight: number = 0;
-  private margin = { top: 20, right: 30, bottom: 100, left: 150 };
+
+  // Margins in vw and vh
+  private margin = {
+    top: 2,
+    right: 3,
+    bottom: 5,
+    left: 5
+  };
 
   constructor(private selectionService: SelectionService) { }
 
@@ -59,15 +66,21 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
     d3.select(this.chartContainer.nativeElement).select("svg").remove();
 
     const element = this.chartContainer.nativeElement;
-    const width = element.offsetWidth - this.margin.left - this.margin.right;
-    const height = element.offsetHeight - this.margin.top - this.margin.bottom;
+    const margin = {
+      top: this.margin.top * window.innerHeight / 100,
+      right: this.margin.right * window.innerWidth / 100,
+      bottom: this.margin.bottom * window.innerHeight / 100,
+      left: this.margin.left * window.innerWidth / 100
+    };
+    const width = element.offsetWidth - margin.left - margin.right;
+    const height = element.offsetHeight - margin.top - margin.bottom;
 
     this.svg = d3.select(element).append('svg')
       .attr('width', '100%')
       .attr('height', '100%')
       .attr('viewBox', `0 0 ${element.offsetWidth} ${element.offsetHeight}`)
       .append("g")
-      .attr("transform", `translate(${this.margin.left},${this.margin.top})`);
+      .attr("transform", `translate(${margin.left},${margin.top})`);
 
     this.contentWidth = width;
     this.contentHeight = height;
@@ -125,7 +138,6 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
     return techniqueDistribution;
   }
 }
-
 
 /* const techniques = [
   "drawing",

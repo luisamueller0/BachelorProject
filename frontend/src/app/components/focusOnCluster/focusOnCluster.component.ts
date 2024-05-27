@@ -27,8 +27,8 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
 
   private svg: any;
   private g: any; // Group for zooming
-  private baseWidth: number = 0; // Adjusted width
-  private baseHeight: number = 0; // Adjusted height
+  private baseWidth: number = 500; // Adjusted width
+  private baseHeight: number = 200; // Adjusted height
   private minClusterRadius = 200; // Minimum radius for each cluster
   private focusCluster: any = null;
 
@@ -39,7 +39,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   private totalExhibitedArtworksMap: { [clusterId: number]: Map<number, number> } = {};
   private differentTechniquesMap: { [clusterId: number]: Map<number, number> } = {};
 
-  private sunburstThickness: number = 90;
+  private sunburstThickness: number = 20;
 
   private regionOrder: string[] = ["North Europe", "Eastern Europe", "Southern Europe", "Western Europe", "Others", "\\N"];
 
@@ -74,6 +74,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   @HostListener('window:resize', ['$event'])
   onResize(event: any) {
     this.resizeSvg();
+    this.tryInitialize();
   }
   
 
@@ -94,7 +95,8 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
         .attr("height", height)
         .append("g");
   
-      this.g = this.svg.append('g');
+      this.g = this.svg.append('g')
+        .attr('transform', `translate(${width / 2}, ${height / 2})`); // Center the group element
   
       this.g.append('g').attr('class', 'clusters');
   
@@ -105,6 +107,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
       console.error('Container node is not found or not an Element');
     }
   }
+  
   
   private resizeSvg(): void {
     if (!this.g) return;
@@ -122,7 +125,9 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
         .attr("height", height);
   
       this.baseWidth = width;
-      this.baseHeight = height -100;
+      this.baseHeight = height;
+  
+      this.g.attr('transform', `translate(${width / 2}, ${height / 2})`); // Re-center the group element
     } else {
       console.error('Container node is not found or not an Element');
     }
@@ -345,29 +350,27 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
     this.renderClusters(value); // Render clusters first
   }
 
+  
   private renderClusters(value: string): void {
     const maxSize = Math.max(...this.clusters.map(cluster => cluster.length));
     console.log(this.clusters);
-
-    const outerRadius= Math.min(this.baseWidth, this.baseHeight) / 2;
   
+    const outerRadius = Math.min(this.baseWidth, this.baseHeight) / 2;
     const innerRadius = outerRadius - this.sunburstThickness;
-
-    outerRadius 
+  
     const clusterNodes: ClusterNode[] = this.clusters.map((cluster, index) => {
       return {
         clusterId: index,
         artists: cluster,
         outerRadius: outerRadius,
         innerRadius: innerRadius,
-        x:  this.baseWidth / 2,
-        y:  this.baseHeight / 2 
+        x: 0, // Center relative to the group transformation
+        y: 0 // Center relative to the group transformation
       };
     });
-
+  
     const clusterGroups = clusterNodes.map(clusterNode => this.createClusterGroup(clusterNode, value));
-
-    // Bind the data to the cluster elements using d3.join()
+  
     this.g.select('.clusters').selectAll(".cluster")
       .data(clusterNodes)
       .join(
@@ -375,13 +378,12 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
         (update: any) => update,
         (exit: any) => exit.remove()
       )
-      .each(function (this: any, d: any, i: number) { // Add type annotation to 'this'
-        d3.select(this).selectAll("*").remove(); // Clear any existing content
+      .each(function (this: any, d: any, i: number) { 
+        d3.select(this).selectAll("*").remove(); 
         d3.select(this).append(() => clusterGroups[i]);
       });
   }
-
-
+  
 
   private createClusterGroup(clusterNode: ClusterNode, value: string): SVGGElement {
     const arcGenerator = d3.arc<any>()
@@ -495,7 +497,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
       .attr("transform", (d: any) => `translate(${arcGenerator.centroid(d)})`)
       .attr("text-anchor", "middle")
       .text((d: any) => d.country)
-      .style("font-size", "35px")
+      .style("font-size", "1vw")
       .style("fill", "white")     // Set the text color to white
    
   
@@ -1021,7 +1023,7 @@ private boundaryForce(artistNodes: ArtistNode[], innerRadius: number, padding: n
   }
 
   private calculateRadiusForNode(value: number, innerRadius: number): number {
-    const minRadius =10; // Minimum radius for the least connected node
+    const minRadius =5; // Minimum radius for the least connected node
     const maxRadius = innerRadius / 10; // Maximum radius for the most connected node
     const calculatedRadius = minRadius + (maxRadius - minRadius) * value;
   

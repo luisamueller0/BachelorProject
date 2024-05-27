@@ -51,7 +51,7 @@ export class ClusterVisualizationComponent implements OnInit {
   private totalExhibitedArtworksMap: { [clusterId: number]: Map<number, number> } = {};
   private differentTechniquesMap: { [clusterId: number]: Map<number, number> } = {};
 
-  private sunburstThickness: number = 150;
+  private sunburstThickness: number = 50;
 
   private regionOrder: string[] = ["North Europe", "Eastern Europe", "Southern Europe", "Western Europe", "Others","\\N"];
 
@@ -537,6 +537,7 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
       .subscribe(data => {
         console.log(data);
         this.clusters = data[0];
+        console.log('artists',this.clusters)
         this.intraCommunityEdges = data[1] as exhibited_with[][];
         const interCommunityEdgesRaw = data[2] as exhibited_with[];
         console.log('intercommunity edges:', interCommunityEdgesRaw);
@@ -929,7 +930,7 @@ console.log(this.clusters)
       .attr("transform", (d: any) => `translate(${arcGenerator.centroid(d)})`)
       .attr("text-anchor", "middle")
       .text((d: any) => d.country)
-      .style("font-size", "60px")
+      .style("font-size", "1vw")
       .style("fill", "white")     // Set the text color to white
    
   
@@ -1166,20 +1167,24 @@ private onClusterClick(clusterNode: ClusterNode): void {
   
   
   private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks: number): d3.ScaleLinear<string, number> {
-    const lighterColor = d3.rgb(baseColor).brighter(4).toString(); // Make it more white
-    const darkerColor = d3.rgb(baseColor).darker(2).toString();
+    const baseColorRGB = d3.rgb(baseColor);
+    const lighterColor = d3.color(baseColorRGB.toString());
+    if (lighterColor) {
+        lighterColor.opacity = 0.1; // Set the opacity to 0.3 (30%)
+    }
+  
   
     if (minArtworks === maxArtworks) {
       // If all values are the same, return a scale that maps everything to the darker color
       return d3.scaleLinear<string, number>()
         .domain([0, 1])
-        .range([darkerColor, darkerColor]);
+        .range([baseColor, baseColor]);
     } else {
       return d3.scaleLinear<string, number>()
         .domain([minArtworks, maxArtworks])
-        .range([lighterColor, darkerColor]);
+        .range([lighterColor?.toString() || baseColor, baseColor]);
     }
-  }
+}
   
   // Artist node click handler
   private handleNodeClick(artistNode: ArtistNode, event: MouseEvent): void {
@@ -1193,8 +1198,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
     if (this.selectedNode && this.selectedNode[0] === circle) {
       // If it's the same node, deselect it
       circle.style.fill = this.selectedNode[1];
-      circle.style.stroke = 'none'; // Remove border
-      circle.style.strokeWidth = '1px'; // Reset border width
+      circle.style.opacity = '1'; // Remove border
       this.selectedNode = null; // Clear the selected node
       this.selectionService.selectArtist(this.allArtists); // Reset the selection
       this.selectionService.selectCluster(this.allArtists); // Reset the cluster selection
@@ -1202,7 +1206,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
       // Reset edge colors
       this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
       // Reset connected nodes' borders
-      this.g.selectAll(".artist-node").style('stroke', 'none').style('stroke-width', '1px'); // Reset border width
+      this.g.selectAll(".artist-node").style('opacity','1');  // Reset border width
       this.selectionService.selectCountries(this.allCountries);
     } else {
       // If it's a different node or no node is currently selected
@@ -1216,7 +1220,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
         // Reset edge colors
         this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
         // Reset connected nodes' borders
-        this.g.selectAll(".artist-node").style('stroke', 'none').style('stroke-width', '1px'); // Reset border width
+        this.g.selectAll(".artist-node").style('opacity','1'); // Reset border width
       }
   
       // Set the new node as the selected node and change its color
@@ -1226,8 +1230,6 @@ private onClusterClick(clusterNode: ClusterNode): void {
       const originalColor = d3.color(circle.style.fill) as d3.RGBColor;
       const darkerColor = d3.rgb(originalColor).darker(1); // Adjust the darkness factor as needed
       circle.style.fill = darkerColor.toString(); // Change the fill color to the darker shade
-      circle.style.stroke = 'black'; // Add black border
-      circle.style.strokeWidth = '3px'; // Make the border thicker
   
       // Calculate the minimum and maximum sharedExhibitionMinArtworks values
       const sharedExhibitionMinArtworksValues: number[] = [];
@@ -1271,14 +1273,17 @@ private onClusterClick(clusterNode: ClusterNode): void {
                (d.source.id !== selectedNodeId && d.target.id !== selectedNodeId);
       }).style('stroke', 'none'); // Set to none
   
-      // Add black border to connected nodes
+       // Change opacity of not connected nodes within the same cluster
+    const clusterNode2 = this.artistClusterMap.get(artistNode.id);
+    if (clusterNode2) {
+      const clusterId = clusterNode2.clusterId;
       this.g.selectAll(".artist-node").each((d: any, i: number, nodes: any) => {
-        if (connectedNodeIds.has(d.id)) {
-          d3.select(nodes[i])
-            .style('stroke', 'black')
-            .style('stroke-width', '3px'); // Make the border thicker
+        const nodeCluster = this.artistClusterMap.get(d.id);
+        if (!connectedNodeIds.has(d.id) && d.id !== selectedNodeId && nodeCluster && nodeCluster.clusterId === clusterId) {
+          d3.select(nodes[i]).style('opacity', '0.3'); 
         }
       });
+    }
   
       // Select the individual artist
       this.selectionService.selectArtist([artistNode.artist]);
@@ -1570,8 +1575,8 @@ private boundaryForce(artistNodes: ArtistNode[], innerRadius: number, padding: n
   }
 
   private calculateRadiusForNode(value: number, innerRadius: number): number {
-    const minRadius =25; // Minimum radius for the least connected node
-    const maxRadius = innerRadius / 10; // Maximum radius for the most connected node
+    const minRadius =5; // Minimum radius for the least connected node
+    const maxRadius = innerRadius / 8; // Maximum radius for the most connected node
     const calculatedRadius = minRadius + (maxRadius - minRadius) * value;
   
     return calculatedRadius;

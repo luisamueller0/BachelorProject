@@ -26,6 +26,10 @@ interface ArtistData {
   europeanRegionBirth: string;
   total_exhibitions:number;
   cluster: number;
+  overall_avg_date: Date;
+  avg_start_date: Date;
+  avg_end_date: Date;
+  avg_duration: number;
   }
 
   interface ArtistNode extends d3.SimulationNodeDatum{
@@ -78,6 +82,10 @@ interface ArtistData {
     europeanRegionBirth: string;
     total_exhibitions:number;
     cluster: number;
+    overall_avg_date: Date;
+    avg_start_date: Date;
+    avg_end_date: Date;
+    avg_duration: number;
   
     constructor(data: ArtistData) {
       this.id = Number(data.id);
@@ -105,6 +113,10 @@ interface ArtistData {
       this.europeanRegionBirth = data.europeanRegionBirth;
       this.total_exhibitions = data.total_exhibitions;
       this.cluster = data.cluster;
+      this.overall_avg_date = new Date(data.overall_avg_date);
+      this.avg_start_date = new Date(data.avg_start_date);
+      this.avg_end_date = new Date(data.avg_end_date);
+      this.avg_duration = data.avg_duration;
     }
   
     convertToMap(data:any): Map<string, number> {// Iterate through each data object

@@ -60,7 +60,7 @@
 .network-section h1 {
   width: 100%;
   text-align: center;
-  margin-bottom: 2vh;
+  margin-bottom: 0.1vh;
 }
 
 .network-section app-focusOnCluster {
