@@ -379,12 +379,12 @@ private changeCluster(value: string){
     this.allArtists = allArtists;
     this.selectionService.selectAllArtists(this.allArtists)
     this.selectionService.selectArtists(null);
-    const biggestCluster = this.clusters.reduce((max, cluster) => cluster.length > max.length ? cluster : max, this.clusters[0]);
+  /*   const biggestCluster = this.clusters.reduce((max, cluster) => cluster.length > max.length ? cluster : max, this.clusters[0]);
     const biggestClusterId = this.clusters.findIndex(cluster => cluster === biggestCluster);
     const biggestClusterEdges = this.intraCommunityEdges[biggestClusterId]
     this.biggestClusterId = biggestClusterId;
     this.selectionService.selectFocusCluster([[biggestCluster], [biggestClusterEdges]]);
-
+ */
     switch(value){
       case 'nationality':
         this.allArtists.forEach(artist => {
@@ -479,11 +479,11 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
     this.allArtists = allArtists;
     this.selectionService.selectArtists(null);
     this.selectionService.selectAllArtists(this.allArtists);
-    const biggestCluster = this.clusters.reduce((max, cluster) => cluster.length > max.length ? cluster : max, this.clusters[0]);
+   /*  const biggestCluster = this.clusters.reduce((max, cluster) => cluster.length > max.length ? cluster : max, this.clusters[0]);
     const biggestClusterId = this.clusters.findIndex(cluster => cluster === biggestCluster);
     const biggestClusterEdges = this.intraCommunityEdges[biggestClusterId]
     this.biggestClusterId = biggestClusterId;
-    this.selectionService.selectFocusCluster([[biggestCluster], [biggestClusterEdges]]);
+    this.selectionService.selectFocusCluster([[biggestCluster], [biggestClusterEdges]]); */
 
     switch(value){
       case 'nationality':
@@ -564,12 +564,12 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
           }
         });
   
-        const biggestCluster = this.clusters.reduce((max, cluster) => cluster.length > max.length ? cluster : max, this.clusters[0]);
+  /*       const biggestCluster = this.clusters.reduce((max, cluster) => cluster.length > max.length ? cluster : max, this.clusters[0]);
         const biggestClusterId = this.clusters.findIndex(cluster => cluster === biggestCluster);
         this.biggestClusterId = biggestClusterId;
         const biggestClusterEdges = this.intraCommunityEdges[biggestClusterId]
         this.selectionService.selectFocusCluster([[biggestCluster], [biggestClusterEdges]]);
-
+ */
         
         this.selectionService.selectCountries(this.allCountries);
 
@@ -641,10 +641,7 @@ console.log(this.clusters)
           this.artistClusterMap.set(artist.id, this.clusterNodes[clusterIndex]);
         });
       });
-      const defaultFocusCluster = clusterNodes.find(clusterNode => clusterNode.clusterId === this.biggestClusterId);
-      if(defaultFocusCluster){
-        this.focusHandler(defaultFocusCluster);
-      }
+     
       
     // Simulate the clusters
     this.simulateClusters(clusterNodes);
@@ -993,6 +990,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
     this.selectionService.selectCluster(this.allArtists);
     this.selectionService.selectClusterEdges([]);
     this.selectionService.selectCountries(this.allCountries);
+    this.selectionService.selectFocusCluster(null);
   
    
 

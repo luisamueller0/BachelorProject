@@ -211,9 +211,9 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
       .attr("width", x.bandwidth())
       .attr("fill", (d:any, i:number, nodes:any) => {
         const seriesIndex = nodes[i].parentNode.__data__.key;
-        return seriesIndex === 'selectedArtists' && selectedArtists.length > 0
-          ? this.techniqueColorScale(d.data.technique)
-          : this.unselectedTechniqueColorScale(d.data.technique);
+        return seriesIndex === 'nonselectedArtists' && selectedArtists.length > 0
+          ? this.unselectedTechniqueColorScale(d.data.technique)
+          : this.techniqueColorScale(d.data.technique);
       });
   
     // Debug statements

@@ -15,6 +15,7 @@ import { ArtistService } from '../../services/artist.service';
 export class FocusOnClusterComponent implements OnInit, OnChanges {
   @Input() displayValue: string = '';
   public isLoading: boolean = true;
+  public noClusterSelected: boolean = true;
   private firstK: number = -1;
   private isIniatialized: boolean = false;
 
@@ -145,8 +146,10 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   }
   private tryInitialize() {
 
+    this.noClusterSelected = true;
     if (this.selectionService.getFocusCluster != null) {
       this.loadInitialData();
+      this.noClusterSelected = false;
     }
   }
 
