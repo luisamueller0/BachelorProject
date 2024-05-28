@@ -146,10 +146,10 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   }
   private tryInitialize() {
 
-    this.noClusterSelected = true;
+   
     if (this.selectionService.getFocusCluster != null) {
       this.loadInitialData();
-      this.noClusterSelected = false;
+      
     }
   }
 
@@ -323,10 +323,13 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
     d3.select(`figure#focusNetwork-${this.displayValue} svg`).remove();
     this.focusCluster = this.selectionService.getFocusCluster();
     console.log('focus cluster:', this.focusCluster)
-    if(this.focusCluster == null){
+    if(this.focusCluster === null){
+      console.log('hallo')
+      this.noClusterSelected = true;
       return;
     }
-    
+    console.log('HALLO')
+    this.noClusterSelected = false;
     const focusClusterArtists = this.focusCluster[0];
     const focusClusterEdges = this.focusCluster[1];
 
