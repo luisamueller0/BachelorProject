@@ -113,7 +113,7 @@ private  loadInitialData() {
   this.artists = data[0];
   this.relationships = data[1];
   this.isLoading = false; // Set loading to false when data is loaded
-  this.selectionService.selectArtist(this.artists);
+  this.selectionService.selectArtists(this.artists);
 
     
   // Create all the maps for the node sizes:
@@ -272,7 +272,7 @@ private updateSunburst(value: string) {
       this.artists = data[0];
       this.relationships = data[1];
       this.isLoading = false; // Set loading to false when data is loaded
-      this.selectionService.selectArtist(this.artists);
+      this.selectionService.selectArtists(this.artists);
       // Create all the maps for the node sizes:
       const degrees = this.calculateNodeDegrees(this.relationships);
       const normalizedDegrees = this.normalizeLinear(degrees);
@@ -291,7 +291,7 @@ private updateSunburst(value: string) {
       this.artists = data[0];
       this.relationships = data[1];
       this.isLoading = false; // Set loading to false when data is loaded
-      this.selectionService.selectArtist(this.artists);
+      this.selectionService.selectArtists(this.artists);
       // Create all the maps for the node sizes:
       const degrees = this.calculateNodeDegrees(this.relationships);
       const normalizedDegrees = this.normalizeSqrt(degrees);
@@ -310,7 +310,7 @@ private updateSunburst(value: string) {
       this.artists = data[0];
       this.relationships = data[1];
       this.isLoading = false; // Set loading to false when data is loaded
-      this.selectionService.selectArtist(this.artists);
+      this.selectionService.selectArtists(this.artists);
       // Create all the maps for the node sizes:
       const degrees = this.calculateNodeDegrees(this.relationships);
       const normalizedDegrees = this.normalizeSqrt(degrees);
@@ -329,7 +329,7 @@ private updateSunburst(value: string) {
       this.artists = data[0];
       this.relationships = data[1];
       this.isLoading = false; // Set loading to false when data is loaded
-      this.selectionService.selectArtist(this.artists);
+      this.selectionService.selectArtists(this.artists);
       // Create all the maps for the node sizes:
       const degrees = this.calculateNodeDegrees(this.relationships);
       const normalizedDegrees = this.normalizeSqrt(degrees);
@@ -1047,14 +1047,14 @@ private calculateCollisionRadius(size: number): number {
 
 private handleNodeClick(node: ArtistNode, event: MouseEvent): void {
   console.log('Clicked on:', node.artist);
-  this.selectionService.selectArtist([node.artist]);
+  this.selectionService.selectArtists([node.artist]);
   const circle = event.currentTarget as SVGCircleElement;
 // Check if the currently selected node is the same as the clicked node
 if (this.selectedNode && this.selectedNode[0] === circle) {
   // If it's the same node, deselect it
   circle.style.fill = this.selectedNode[1];
   this.selectedNode = null;  // Clear the selected node
-  this.selectionService.selectArtist(this.artists);  // Reset the selection
+  this.selectionService.selectArtists(this.artists);  // Reset the selection
   // Reset edge colors
   this.edges.style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks))
 } else {

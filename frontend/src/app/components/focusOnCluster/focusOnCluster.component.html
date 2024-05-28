@@ -1,6 +1,8 @@
 
 
 <figure id="focusNetwork-{{displayValue}}" style="width: 100%; height: 100%;"></figure>
-
+<div *ngIf="isLoading" class="loading-container">
+    <div class="loading-spinner"></div>
+  </div>
 <div id="tooltip" class="tooltip" style="display: none;"></div>
 

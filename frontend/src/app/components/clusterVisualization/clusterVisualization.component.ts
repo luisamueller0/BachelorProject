@@ -377,7 +377,8 @@ private changeCluster(value: string){
     });
     this.selectedCluster = allArtists;
     this.allArtists = allArtists;
-    this.selectionService.selectArtist(null);
+    this.selectionService.selectAllArtists(this.allArtists)
+    this.selectionService.selectArtists(null);
     const biggestCluster = this.clusters.reduce((max, cluster) => cluster.length > max.length ? cluster : max, this.clusters[0]);
     const biggestClusterId = this.clusters.findIndex(cluster => cluster === biggestCluster);
     const biggestClusterEdges = this.intraCommunityEdges[biggestClusterId]
@@ -476,6 +477,8 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
     });
     this.selectedCluster = allArtists;
     this.allArtists = allArtists;
+    this.selectionService.selectArtists(null);
+    this.selectionService.selectAllArtists(this.allArtists);
     const biggestCluster = this.clusters.reduce((max, cluster) => cluster.length > max.length ? cluster : max, this.clusters[0]);
     const biggestClusterId = this.clusters.findIndex(cluster => cluster === biggestCluster);
     const biggestClusterEdges = this.intraCommunityEdges[biggestClusterId]
@@ -552,6 +555,7 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
         });
         this.selectedCluster = allArtists;
         this.allArtists = allArtists;
+        this.selectionService.selectAllArtists(allArtists);
         
         // Add for map a list of all countries
         this.allArtists.forEach(artist => {
@@ -571,7 +575,7 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
 
         
        
-        this.selectionService.selectArtist(this.selectedCluster);
+        //this.selectionService.selectArtist(this.selectedCluster);
 
         
 
@@ -985,7 +989,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
 
     // Clear the selection
     this.selectedClusterNode = null;
-    this.selectionService.selectArtist(null);
+    this.selectionService.selectArtists(null);
     this.selectionService.selectCluster(this.allArtists);
     this.selectionService.selectClusterEdges([]);
     this.selectionService.selectCountries(this.allCountries);
@@ -1006,7 +1010,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
       .style('stroke-width', '10px'); // Adjust the border width as needed
 
     // Select the new cluster node
-    this.selectionService.selectArtist(selectedArtists);
+    this.selectionService.selectArtists(selectedArtists);
     this.selectionService.selectCluster(selectedArtists);
     this.selectionService.selectClusterEdges(selectedEdges);
     this.selectionService.selectFocusCluster([[selectedArtists], [selectedEdges]]);
@@ -1199,7 +1203,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
       circle.style.fill = this.selectedNode[1];
       circle.style.opacity = '1'; // Remove border
       this.selectedNode = null; // Clear the selected node
-      this.selectionService.selectArtist(null); // Reset the selection
+      this.selectionService.selectArtists(null); // Reset the selection
       this.selectionService.selectCluster(this.allArtists); // Reset the cluster selection
       this.selectionService.selectClusterEdges([]); // Reset the edges selection
       // Reset edge colors
@@ -1285,7 +1289,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
     }
   
       // Select the individual artist
-      this.selectionService.selectArtist([artistNode.artist]);
+      this.selectionService.selectArtists([artistNode.artist]);
   
       const artist = artistNode.artist;
       const type = this.decisionService.getDecisionSunburst();

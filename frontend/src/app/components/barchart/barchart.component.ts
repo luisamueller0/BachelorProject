@@ -29,7 +29,7 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
   private margin = {
     top: 2,
     right: 3,
-    bottom: 5,
+    bottom: 8,
     left: 5
   };
 
@@ -68,33 +68,26 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
   ) { }
 
   ngOnInit(): void {
-    const currentRange = this.decisionService.getDecisionRange();
-    this.artistService.getArtistsWithRange(currentRange).subscribe((data) => {
-      this.allArtists = data[0];
-      this.isLoading = false;
-      this.updateChart();
-    }, error => {
-      console.error('There was an error', error);
-      this.isLoading = false;
-    });
+    this.subscriptions.add(
+      this.selectionService.currentAllArtists.subscribe((artists: Artist[] | null) => {
+        this.allArtists = artists || [];
+        this.tryInitialize();
+      })
+    );
 
     this.subscriptions.add(
-      this.selectionService.currentArtist.subscribe((artists: Artist[] | null) => {
+      this.selectionService.currentArtists.subscribe((artists: Artist[] | null) => {
         this.selectedArtists = artists;
-        this.isLoading = false;
-        this.updateChart();
+        this.tryInitialize();
       })
     );
 
     window.addEventListener('resize', this.onResize.bind(this));
-    this.subscriptions.add(this.decisionService.currentK.subscribe(k => {
-      this.updateOverview();
-    }));
+  
   }
 
   ngOnChanges(): void {
-    this.updateChart();
-    this.isLoading = false;
+    this.tryInitialize();
   }
 
   ngOnDestroy(): void {
@@ -109,30 +102,36 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
 
   private updateChart(): void {
     if (!this.chartContainer) return;
+    this.tryInitialize();
 
-    this.createSvg();
-    this.drawBars();
+   
   }
 
-  private updateOverview(): void {
-    const currentRange = this.decisionService.getDecisionRange();
-    this.artistService.getArtistsWithRange(currentRange).subscribe((data) => {
-      this.allArtists = data[0];
-      this.updateChart();
-    }, error => {
-      console.error('There was an error', error);
-      this.isLoading = false;
-    });
+  tryInitialize(): void {
+    if(this.allArtists.length === 0){
+      this.isLoading = true;
+      return;
+    }else{
+      this.createChart();
+    }
+    
   };
 
-  private createSvg(): void {
-    d3.select(this.chartContainer.nativeElement).select("svg").remove();
+  private createChart(): void {
+    this.createSvg();
+    this.drawBars();
+    this.isLoading = false;
+  }
 
-    const element = this.chartContainer.nativeElement;
+  private createSvg(): void {
+     // Remove any existing SVG elements
+     d3.select(this.chartContainer.nativeElement).select("figure.svg-container").select("svg").remove();
+
+     const element = this.chartContainer.nativeElement.querySelector('figure.svg-container');
     const margin = {
       top: this.margin.top * window.innerHeight / 100,
       right: this.margin.right * window.innerWidth / 100,
-      bottom: this.margin.bottom * window.innerHeight / 100,
+      bottom: this.margin.bottom * window.innerWidth / 100,
       left: this.margin.left * window.innerWidth / 100
     };
     const width = element.offsetWidth - margin.left - margin.right;

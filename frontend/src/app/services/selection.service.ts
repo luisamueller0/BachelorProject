@@ -11,15 +11,17 @@ import exhibited_with from '../models/exhibited_with';
 export class SelectionService {
   constructor() {}
 
-  private selectedArtist  = new BehaviorSubject<Artist[]|null>(null);
+  private allArtists = new BehaviorSubject<Artist[]|null>(null);
+  private selectedArtists  = new BehaviorSubject<Artist[]|null>(null);
   private selectedCluster = new BehaviorSubject<Artist[]>([]);
   private selectedCountries = new BehaviorSubject<string[]>([]);
   private selectedFocusCluster = new BehaviorSubject<[Artist[][], exhibited_with[][]]|null>(null); // Change the initial value to undefined
   private selectedNode = new BehaviorSubject<Artist|null>(null);
   private selectedClusterEdges = new BehaviorSubject<exhibited_with[]>([]);
 
-  currentArtist = this.selectedArtist.asObservable();
+  currentArtists = this.selectedArtists.asObservable();
   currentCluster = this.selectedCluster.asObservable();
+  currentAllArtists = this.allArtists.asObservable();
 
   currentCountries = this.selectedCountries.asObservable();
   currentNode = this.selectedNode.asObservable();
@@ -27,13 +29,16 @@ export class SelectionService {
   currentClusterEdges= this.selectedClusterEdges.asObservable();
 
 
-  selectArtist(artists:Artist[]|null) {
-    this.selectedArtist.next(artists);
-    console.log(this.selectedArtist.value)
+  selectArtists(artists:Artist[]|null) {
+    this.selectedArtists.next(artists);
+    
   }
-  selectOverview(artists:Artist[]){
-    this.selectedArtist.next(artists);
+
+  selectAllArtists(artists:Artist[]|null){
+    this.allArtists.next(artists);
+
   }
+ 
 
   selectCluster(cluster:Artist[]){
     console.log('selected cluster', cluster.length)
