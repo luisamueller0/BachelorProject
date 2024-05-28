@@ -27,7 +27,7 @@ export class DecisionsComponent implements OnInit {
   }
 
   artists: Artist[] = [];
-  range: number[] = [100, 400];  // Initial range values
+  range: number[] = [200, 400];  // Initial range values
   options: Options = {
     floor: 1,
     ceil: 400,

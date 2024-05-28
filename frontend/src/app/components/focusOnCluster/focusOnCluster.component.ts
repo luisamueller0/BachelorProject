@@ -670,6 +670,26 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
    // Artist node click handler
 // Artist node click handler
 private handleFocus(artist: Artist | null): void {
+  let defs = this.svg.append('defs');
+
+  let filter = defs.append('filter')
+      .attr('id', 'shadow')
+      .attr('x', '-50%')
+      .attr('y', '-50%')
+      .attr('width', '200%')
+      .attr('height', '200%');
+  
+  filter.append('feDropShadow')
+      .attr('dx', 0)
+      .attr('dy', 0)
+      .attr('stdDeviation', 4)
+      .attr('flood-color', 'black')
+      .attr('flood-opacity', 0.8);
+  
+  let feMerge = filter.append('feMerge');
+  feMerge.append('feMergeNode');
+  feMerge.append('feMergeNode')
+      .attr('in', 'SourceGraphic');
   console.log('focus artist:', artist);
 
   // Function to reset selected nodes and edges
@@ -681,6 +701,8 @@ private handleFocus(artist: Artist | null): void {
     }
     this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
     this.g.selectAll(".artist-node").style('opacity', '1'); // Reset opacity
+    this.g.selectAll(".artist-node").style('filter','');  // Reset border width
+
   };
 
   // If the artist is null, reset everything
@@ -710,7 +732,8 @@ private handleFocus(artist: Artist | null): void {
   // Darken the original color for the selected node
   const originalColor = d3.color(selectedCircle.style.fill) as d3.RGBColor;
   const darkerColor = d3.rgb(originalColor).darker(1); // Adjust the darkness factor as needed
-  selectedCircle.style.fill = darkerColor.toString(); // Change the fill color to the darker shade
+  //selectedCircle.style.fill = darkerColor.toString(); // Change the fill color to the darker shade
+  selectedCircle.style.filter = 'url(#shadow)';
 
   // Calculate the minimum and maximum sharedExhibitionMinArtworks values
   const sharedExhibitionMinArtworksValues: number[] = [];

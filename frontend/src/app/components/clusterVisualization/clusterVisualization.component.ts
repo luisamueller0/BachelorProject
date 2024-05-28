@@ -1219,6 +1219,27 @@ private onClusterClick(clusterNode: ClusterNode): void {
   
   // Artist node click handler
   private handleNodeClick(artistNode: ArtistNode, event: MouseEvent): void {
+    let defs = this.svg.append('defs');
+
+    let filter = defs.append('filter')
+        .attr('id', 'shadow')
+        .attr('x', '-50%')
+        .attr('y', '-50%')
+        .attr('width', '200%')
+        .attr('height', '200%');
+    
+    filter.append('feDropShadow')
+        .attr('dx', 0)
+        .attr('dy', 0)
+        .attr('stdDeviation', 4)
+        .attr('flood-color', 'black')
+        .attr('flood-opacity', 0.8);
+    
+    let feMerge = filter.append('feMerge');
+    feMerge.append('feMergeNode');
+    feMerge.append('feMergeNode')
+        .attr('in', 'SourceGraphic');
+    
     // Prevent the cluster click handler from executing
     this.isNodeClick = true;
     event.stopPropagation(); // Use the event object to stop propagation
@@ -1241,6 +1262,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
       this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
       // Reset connected nodes' borders
       this.g.selectAll(".artist-node").style('opacity','1');  // Reset border width
+      this.g.selectAll(".artist-node").style('filter','');  // Reset border width
       this.selectionService.selectCountries(this.allCountries);
       
     } else {
@@ -1259,10 +1281,18 @@ private onClusterClick(clusterNode: ClusterNode): void {
       // Set the new node as the selected node and change its color
       this.selectedNode = [circle, circle.style.fill];
   
+
+      // Create SVG container
+
+     
+
+
       // Darken the original color for the selected node
       const originalColor = d3.color(circle.style.fill) as d3.RGBColor;
+      circle.style.filter = 'url(#shadow)';
       const darkerColor = d3.rgb(originalColor).darker(1); // Adjust the darkness factor as needed
-      circle.style.fill = darkerColor.toString(); // Change the fill color to the darker shade
+      const darkerColorString = darkerColor.toString();
+      //circle.style.fill = darkerColor.toString(); // Change the fill color to the darker shade
   
       // Calculate the minimum and maximum sharedExhibitionMinArtworks values
       const sharedExhibitionMinArtworksValues: number[] = [];
