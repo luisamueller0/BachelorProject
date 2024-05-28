@@ -28,9 +28,9 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
   // Margins in vw and vh
   private margin = {
     top: 2,
-    right: 3,
+    right: 1,
     bottom: 8,
-    left: 5
+    left: 3
   };
 
   // Define the order of techniques
@@ -58,7 +58,7 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
     .range(this.techniquesOrder.map((d, i) => d3.interpolatePlasma(i / this.techniquesOrder.length)));
 
   // Define the color scale for selected artists with adjusted opacity
-  private selectedTechniqueColorScale = d3.scaleOrdinal<string, string>()
+  private unselectedTechniqueColorScale = d3.scaleOrdinal<string, string>()
     .domain(this.techniquesOrder)
     .range(this.techniquesOrder.map((d, i) => d3.color(d3.interpolatePlasma(i / this.techniquesOrder.length))?.copy({ opacity: 0.7 })!.toString() || ''));
 
@@ -201,7 +201,7 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
       .selectAll("g")
       .data(stackedData)
       .enter().append("g")
-      .attr("fill", (d:any, i:number) => i === 0 ? this.techniqueColorScale : this.selectedTechniqueColorScale)
+      .attr("fill", (d:any, i:number) => i === 0 && selectedArtists.length > 0 ?  this.unselectedTechniqueColorScale : this.techniqueColorScale)
       .selectAll("rect")
       .data((d:any) => d)
       .enter().append("rect")
@@ -211,9 +211,9 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
       .attr("width", x.bandwidth())
       .attr("fill", (d:any, i:number, nodes:any) => {
         const seriesIndex = nodes[i].parentNode.__data__.key;
-        return seriesIndex === 'nonselectedArtists'
+        return seriesIndex === 'selectedArtists' && selectedArtists.length > 0
           ? this.techniqueColorScale(d.data.technique)
-          : this.selectedTechniqueColorScale(d.data.technique);
+          : this.unselectedTechniqueColorScale(d.data.technique);
       });
   
     // Debug statements
