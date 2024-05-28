@@ -18,11 +18,12 @@ export class SelectionService {
   private selectedFocusCluster = new BehaviorSubject<[Artist[][], exhibited_with[][]]|null>(null); // Change the initial value to undefined
   private selectedNode = new BehaviorSubject<Artist|null>(null);
   private selectedClusterEdges = new BehaviorSubject<exhibited_with[]>([]);
+  private selectedFocusArtist = new BehaviorSubject<Artist|null>(null);
 
   currentArtists = this.selectedArtists.asObservable();
   currentCluster = this.selectedCluster.asObservable();
   currentAllArtists = this.allArtists.asObservable();
-
+  currentFocusArtist = this.selectedFocusArtist.asObservable();
   currentCountries = this.selectedCountries.asObservable();
   currentNode = this.selectedNode.asObservable();
   currentFocusCluster = this.selectedFocusCluster.asObservable();
@@ -31,12 +32,14 @@ export class SelectionService {
 
   selectArtists(artists:Artist[]|null) {
     this.selectedArtists.next(artists);
-    
   }
 
   selectAllArtists(artists:Artist[]|null){
     this.allArtists.next(artists);
+  }
 
+  selectFocusArtist(artist:Artist|null){
+    this.selectedFocusArtist.next(artist);
   }
  
 
@@ -61,6 +64,10 @@ export class SelectionService {
   selectClusterEdges(edges:exhibited_with[]){
     console.log('selected cluster edges', edges.length)
     this.selectedClusterEdges.next(edges);
+  }
+
+  getFocusArtist(){
+    return this.selectedFocusArtist.value;
   }
 
   getClusterEdges(){

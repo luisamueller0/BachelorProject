@@ -955,15 +955,45 @@ console.log(this.clusters)
     return clusterGroup.node() as SVGGElement;
   }
 
-  private focusHandler(clusterNode:ClusterNode){
-    
-    this.selectionService.selectFocusCluster([[clusterNode.artists], [this.intraCommunityEdges[clusterNode.clusterId]]]);
-        // Set the new cluster node as selected and change its border
-        this.selectedClusterNode = clusterNode;
-        this.g.selectAll(`.cluster-${clusterNode.clusterId} path`)
-          .style('stroke', 'black')
-          .style('stroke-width', '10px'); // Adjust the border width as needed
+
+  private resetClusterFocus(): void {
+    if(this.selectedClusterNode){
+       // Reset the selected cluster node's border
+       this.g.selectAll(`.cluster-${this.selectedClusterNode.clusterId} path`)
+       .style('stroke', 'none');
  
+     // Clear the selection
+     this.selectedClusterNode = null;
+     this.selectionService.selectCluster(this.allArtists);
+     this.selectionService.selectClusterEdges([]);
+     this.selectionService.selectFocusCluster(null);
+    }
+  }
+  private focusHandler(clusterNode:ClusterNode){
+   
+    const selectedArtists = clusterNode.artists;
+    const selectedEdges = this.intraCommunityEdges[clusterNode.clusterId];
+  
+
+      // Reset the previous cluster node's border if there is one
+      if (this.selectedClusterNode) {
+        this.g.selectAll(`.cluster-${this.selectedClusterNode.clusterId} path`)
+          .style('stroke', 'none');
+      }
+  
+      // Set the new cluster node as selected and change its border
+      this.selectedClusterNode = clusterNode;
+      this.g.selectAll(`.cluster-${clusterNode.clusterId} path`)
+        .style('stroke', 'black')
+        .style('stroke-width', '10px'); // Adjust the border width as needed
+  
+      // Select the new cluster node
+      this.selectionService.selectCluster(selectedArtists);
+      this.selectionService.selectClusterEdges(selectedEdges);
+      this.selectionService.selectFocusCluster([[selectedArtists], [selectedEdges]]);
+   
+      
+    
   }
   // Cluster click handler
 // Cluster click handler
@@ -1204,11 +1234,15 @@ private onClusterClick(clusterNode: ClusterNode): void {
       this.selectionService.selectArtists(null); // Reset the selection
       this.selectionService.selectCluster(this.allArtists); // Reset the cluster selection
       this.selectionService.selectClusterEdges([]); // Reset the edges selection
+      this.selectionService.selectFocusArtist(null); // Reset the focus artist selection
+      this.selectionService.selectFocusCluster(null); // Reset the focus cluster selection
+      this.resetClusterFocus(); // Reset the cluster focus
       // Reset edge colors
       this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
       // Reset connected nodes' borders
       this.g.selectAll(".artist-node").style('opacity','1');  // Reset border width
       this.selectionService.selectCountries(this.allCountries);
+      
     } else {
       // If it's a different node or no node is currently selected
       if (this.selectedNode) {
@@ -1216,8 +1250,6 @@ private onClusterClick(clusterNode: ClusterNode): void {
         const previousNode = this.selectedNode[0];
         const previousColor = this.selectedNode[1];
         previousNode.style.fill = previousColor;
-        previousNode.style.stroke = 'none'; // Remove border
-        previousNode.style.strokeWidth = '1px'; // Reset border width
         // Reset edge colors
         this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
         // Reset connected nodes' borders
@@ -1245,6 +1277,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
   
       // Highlight edges connected to the selected node
       const selectedNodeId = artistNode.id;
+      
       const connectedNodeIds: Set<Number> = new Set<Number>();
       this.g.selectAll(".artist-edge").each((d: any) => {
         if (d.source.id === selectedNodeId) {
@@ -1284,8 +1317,12 @@ private onClusterClick(clusterNode: ClusterNode): void {
           d3.select(nodes[i]).style('opacity', '0.3'); 
         }
       });
+      
+      this.focusHandler(clusterNode2);
     }
+   
   
+    this.selectionService.selectFocusArtist(artistNode.artist);
       // Select the individual artist
       this.selectionService.selectArtists([artistNode.artist]);
   

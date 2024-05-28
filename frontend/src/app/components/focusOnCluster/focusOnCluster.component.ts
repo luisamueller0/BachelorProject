@@ -24,6 +24,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   public allArtists: Artist[] = [];
   private artistClusterMap: Map<number, ClusterNode> = new Map<number, ClusterNode>();
   private artistNodes: ArtistNode[][] = [];
+  private focusArtist: Artist | null = null;
 
   private subscriptions: Subscription = new Subscription();
 
@@ -67,6 +68,9 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   ngOnInit() {
     this.subscriptions.add(this.selectionService.currentFocusCluster.subscribe(this.tryInitialize.bind(this)));
     this.subscriptions.add(this.decisionService.currentSize.subscribe(size=> this.tryUpdate('size', size)));
+    this.subscriptions.add(this.selectionService.currentFocusArtist.subscribe(artist => this.handleFocus(artist)));
+
+    
   }
 
   ngOnDestroy() {
@@ -655,26 +659,122 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   this.simulation[cluster.clusterId] = simulation;
   simulation.alpha(1).restart();
 
+  this.focusArtist = this.selectionService.getFocusArtist();
+   
+    
+  this.handleFocus(this.focusArtist);
+  
+
  
   }
-  
-  
-  private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks: number): d3.ScaleLinear<string, number> {
-    const lighterColor = d3.rgb(baseColor).brighter(4).toString(); // Make it more white
-    const darkerColor = d3.rgb(baseColor).darker(2).toString();
-  
-    if (minArtworks === maxArtworks) {
-      // If all values are the same, return a scale that maps everything to the darker color
-      return d3.scaleLinear<string, number>()
-        .domain([0, 1])
-        .range([darkerColor, darkerColor]);
-    } else {
-      return d3.scaleLinear<string, number>()
-        .domain([minArtworks, maxArtworks])
-        .range([lighterColor, darkerColor]);
+   // Artist node click handler
+// Artist node click handler
+private handleFocus(artist: Artist | null): void {
+  console.log('focus artist:', artist);
+
+  // Function to reset selected nodes and edges
+  const resetSelection = () => {
+    if (this.selectedNode) {
+      const previousNode = this.selectedNode[0];
+      previousNode.style.fill = this.selectedNode[1];
+      this.selectedNode = null;
     }
+    this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
+    this.g.selectAll(".artist-node").style('opacity', '1'); // Reset opacity
+  };
+
+  // If the artist is null, reset everything
+  if (artist === null) {
+    this.previousArtist = null;
+    resetSelection();
+    return;
   }
-  
+
+  // If a different artist is selected, reset the previous selection
+  if (this.selectedNode && this.previousArtist && this.previousArtist.id !== artist.id) {
+    resetSelection();
+  }
+
+  this.previousArtist = artist;
+
+  // Find the node that matches the artist.id
+  const selectedCircle = this.g.selectAll(".artist-node").filter((d: any) => d.artist.id === artist.id).node() as SVGCircleElement;
+
+  if (!selectedCircle) {
+    return; // If no node is found, exit the function
+  }
+
+  // Set the new node as the selected node and change its color
+  this.selectedNode = [selectedCircle, selectedCircle.style.fill];
+
+  // Darken the original color for the selected node
+  const originalColor = d3.color(selectedCircle.style.fill) as d3.RGBColor;
+  const darkerColor = d3.rgb(originalColor).darker(1); // Adjust the darkness factor as needed
+  selectedCircle.style.fill = darkerColor.toString(); // Change the fill color to the darker shade
+
+  // Calculate the minimum and maximum sharedExhibitionMinArtworks values
+  const sharedExhibitionMinArtworksValues: number[] = [];
+  this.g.selectAll(".artist-edge").each((d: any) => {
+    sharedExhibitionMinArtworksValues.push(d.sharedExhibitionMinArtworks);
+  });
+  const minArtworks = d3.min(sharedExhibitionMinArtworksValues) ?? 0;
+  const maxArtworks = d3.max(sharedExhibitionMinArtworksValues) ?? 1;
+
+  // Create a color scale for the edges connected to the selected node
+  const edgeColorScale = this.createEdgeColorScale(darkerColor.toString(), minArtworks, maxArtworks);
+
+  // Highlight edges connected to the selected node
+  const selectedNodeId = artist.id;
+  const connectedNodeIds: Set<number> = new Set<number>();
+  this.g.selectAll(".artist-edge").each((d: any) => {
+    if (d.source.id === selectedNodeId) {
+      connectedNodeIds.add(d.target.id);
+    } else if (d.target.id === selectedNodeId) {
+      connectedNodeIds.add(d.source.id);
+    }
+  });
+
+  this.g.selectAll(".artist-edge").filter((d: any) => {
+    return d.source.id === selectedNodeId || d.target.id === selectedNodeId;
+  }).style('stroke', (d: any) => edgeColorScale(d.sharedExhibitionMinArtworks));
+
+ // Set edges that are not connected to the selected node within the same cluster to none
+ this.g.selectAll(".artist-edge").filter((d: any) => {
+  // Ensure both source and target nodes are within the same cluster
+  return (d.source.id !== selectedNodeId && d.target.id !== selectedNodeId);
+}).style('stroke', 'none'); // Set to none
+
+  // Add black border to connected nodes
+  this.g.selectAll(".artist-node").each((d: any, i: number, nodes: any) => {
+    if (connectedNodeIds.has(d.id)) {
+      d3.select(nodes[i])
+; // Make the border thicker
+    } else if (d.id !== selectedNodeId) {
+      // Change opacity of nodes not connected to the selected node
+      d3.select(nodes[i]).style('opacity', '0.3');
+    }
+  });
+}
+
+private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks: number): d3.ScaleLinear<string, number> {
+  const baseColorRGB = d3.rgb(baseColor);
+  const lighterColor = d3.color(baseColorRGB.toString());
+  if (lighterColor) {
+      lighterColor.opacity = 0.1; // Set the opacity to 0.3 (30%)
+  }
+
+
+  if (minArtworks === maxArtworks) {
+    // If all values are the same, return a scale that maps everything to the darker color
+    return d3.scaleLinear<string, number>()
+      .domain([0, 1])
+      .range([baseColor, baseColor]);
+  } else {
+    return d3.scaleLinear<string, number>()
+      .domain([minArtworks, maxArtworks])
+      .range([lighterColor?.toString() || baseColor, baseColor]);
+  }
+}
   // Artist node click handler
   private handleNodeClick(artist: Artist | null): void {
     if(this.init == -1){
