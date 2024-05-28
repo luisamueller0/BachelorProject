@@ -73,7 +73,7 @@ option {
     color: grey; /* Revert text color to grey when not confirmed */
   }
   .dropdown-group2 {
-    margin-top:0.5vh;
+    margin-top:0.2vh;
     display: flex;
     flex-direction: row; /* Aligns items horizontally */
     align-items: center; /* Centers items vertically */
@@ -91,8 +91,8 @@ option {
 
 .custom-checkbox {
     cursor: pointer;
-    width: 0.5vw; /* Width of the checkbox */
-    height: 0.5vw; /* Height of the checkbox */
+    width: 1vw; /* Width of the checkbox */
+    height: 1vw; /* Height of the checkbox */
     border: 2px solid #ccc; /* Border for the checkbox */
     border-radius: 50%; /* Makes the checkbox circular */
     display: flex;
@@ -121,4 +121,66 @@ option {
     font-weight: 700;
     margin-top: 0.5vh;
     font-size: 0.5vw;
+}
+
+/*slider*/
+
+
+
+      
+
+
+::ng-deep .custom-slider .ngx-slider .ngx-slider-bar {
+    background: #e5aeff;
+    height: 2px;
+}
+
+::ng-deep .custom-slider .ngx-slider .ngx-slider-selection {
+    background:#a23fff;
+}
+
+::ng-deep .custom-slider .ngx-slider .ngx-slider-pointer {
+    width: 0.5vw;
+    height: 1vw;
+    top: auto; /* to remove the default positioning */
+    bottom: 0;
+    background-color: #a23fff;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+}
+
+::ng-deep .custom-slider .ngx-slider .ngx-slider-pointer:after {
+    display: none;
+}
+
+::ng-deep .custom-slider .ngx-slider .ngx-slider-bubble {
+    bottom: 14px;
+}
+
+::ng-deep .custom-slider .ngx-slider .ngx-slider-limit {
+    font-weight: bold;
+    color: #a23fff;
+}
+
+::ng-deep .custom-slider .ngx-slider .ngx-slider-tick {
+    width: 1px;
+    height: 10px;
+    margin-left: 4px;
+    border-radius: 0;
+    background: #e5aeff;
+    top: -1px;
+}
+
+::ng-deep .custom-slider .ngx-slider .ngx-slider-tick.ngx-slider-selected {
+    background: #e5aeff;
+}
+
+::ng-deep .custom-slider .ngx-slider .ngx-slider-span,
+.custom-slider .ngx-slider .ngx-slider-model-value,
+.custom-slider .ngx-slider .ngx-slider-high-value,
+.custom-slider .ngx-slider .ngx-slider-tick-value,
+.custom-slider .ngx-slider .ngx-slider-tick-legend {
+   color: #2a0052;
+font-weight:600!important;
+  font-size: 0.5vw !important; /* Adjust font size as needed */
 }

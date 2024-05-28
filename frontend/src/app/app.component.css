@@ -34,7 +34,7 @@
 }
 
 .sidebar-left app-decisions, .sidebar-left app-map {
-  height: 33.33%;
+  height: 50%;
   width: 100%;
   border: 1px solid #e5aeff;
   box-sizing: border-box;
