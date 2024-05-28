@@ -507,14 +507,14 @@ function calculateCentroids(data, clusters, k) {
     );
 }
 
-function kMeansClustering(data, k, minClusterSize) {
+function kMeansClustering(data, k) {
     const maxIterations = 500;
     let bestCentroids = [];
     let bestClusterAssignments = [];
     let minTotalDistance = Infinity;
 
     for (let initialization = 0; initialization < 10; initialization++) { // Try multiple random initializations
-        let centroids = initializeCentroids(data, k);
+        let centroids = initializeCentroidsPlusPlus(data, k);
         let clusterAssignments = [];
 
         for (let iteration = 0; iteration < maxIterations; iteration++) {
@@ -537,54 +537,11 @@ function kMeansClustering(data, k, minClusterSize) {
         }
     }
 
-    // Ensure each cluster meets the minimum size requirement
-    let clusterSizes = new Array(k).fill(0);
-    bestClusterAssignments.forEach(clusterIndex => {
-        clusterSizes[clusterIndex]++;
-    });
-
-    // Reassign points until each cluster has at least minClusterSize points
-    for (let i = 0; i < k; i++) {
-        while (clusterSizes[i] < minClusterSize) {
-            // Find the point farthest from its centroid in cluster i
-            let farthestPointIndex = -1;
-            let maxDistance = -1;
-
-            data.forEach((point, index) => {
-                if (bestClusterAssignments[index] === i) {
-                    const distance = euclideanDistance(point, bestCentroids[i]);
-                    if (distance > maxDistance) {
-                        maxDistance = distance;
-                        farthestPointIndex = index;
-                    }
-                }
-            });
-
-            // Reassign the farthest point to the nearest cluster
-            let minDistance = Infinity;
-            let nearestClusterIndex = -1;
-            for (let j = 0; j < k; j++) {
-                if (j !== i) {
-                    const distance = euclideanDistance(data[farthestPointIndex], bestCentroids[j]);
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        nearestClusterIndex = j;
-                    }
-                }
-            }
-
-            // Reassign the point to the nearest cluster
-            bestClusterAssignments[farthestPointIndex] = nearestClusterIndex;
-            clusterSizes[i]--;
-            clusterSizes[nearestClusterIndex]++;
-        }
-    }
-
     return bestClusterAssignments;
 }
 
-function initializeCentroids(data, k) {
-    const centroids = [data[Math.floor(Math.random() * data.length)]]; // Start with one random centroid
+function initializeCentroidsPlusPlus(data, k) {
+    const centroids = [data[Math.floor(Math.random() * data.length)]];
     for (let i = 1; i < k; i++) {
         const distances = data.map(point => Math.min(...centroids.map(centroid => euclideanDistance(point, centroid))));
         const totalDistance = distances.reduce((a, b) => a + b, 0);
@@ -601,6 +558,7 @@ function initializeCentroids(data, k) {
     }
     return centroids;
 }
+
 
 function assignPointsToCentroids(data, centroids) {
     const clusterAssignments = [];

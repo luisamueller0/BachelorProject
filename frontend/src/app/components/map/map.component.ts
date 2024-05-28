@@ -27,6 +27,7 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
     "Montenegro", "Netherlands", "Macedonia", "Norway", "Poland", "Portugal", "Romania", "Russia",
     "San Marino", "Republic of Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Ukraine", "England", "Kosovo"
   ];
+ 
 
   private countryMap : { [key: string]: string } = this.artistService.countryMap;
    
@@ -53,7 +54,7 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
   ngAfterViewInit(): void {
     this.createSvg();
     this.drawMap();
-    //this.createLegend();
+    this.createLegend();
   }
 
   ngOnDestroy(): void {
@@ -177,19 +178,19 @@ private getKeyByValue(value: string): string |undefined {
       });
   }
 
+  
 
 
 
 
 
 
-/* 
   private createLegend(): void {
     const legendData = [
-      { region: "North Europe (selected/unselected)", color: this.regionColors["North Europe"], darkerColor: this.darkerRegionColors["North Europe"] },
-      { region: "Western Europe (selected/unselected)", color: this.regionColors["Western Europe"], darkerColor: this.darkerRegionColors["Western Europe"] },
-      { region: "Southern Europe (selected/unselected)", color: this.regionColors["Southern Europe"], darkerColor: this.darkerRegionColors["Southern Europe"] },
-      { region: "Eastern Europe (selected/unselected)", color: this.regionColors["Eastern Europe"], darkerColor: this.darkerRegionColors["Eastern Europe"] },
+      { region: "North Europe", colorScale: this.artistService.getRegionColorScale("North Europe") },
+      { region: "Eastern Europe", colorScale: this.artistService.getRegionColorScale("Eastern Europe") },
+      { region: "Southern Europe", colorScale: this.artistService.getRegionColorScale("Southern Europe") },
+      { region: "Western Europe", colorScale: this.artistService.getRegionColorScale("Western Europe") }
     ];
   
     const legendWidth = 500;
@@ -205,70 +206,73 @@ private getKeyByValue(value: string): string |undefined {
     const legendY = svgHeight - legendHeight - margin;
   
     const legend = this.svg.append('g')
-      .attr('class', 'legend')
-      .attr('transform', `translate(${legendX}, ${legendY})`);
-  
-  
-    // Add white background for the legend
-    legend.append('rect')
-      .attr('x', 0)
-      .attr('y', 0)
-      .attr('width', legendWidth)
-      .attr('height', legendHeight)
-      .attr('fill', '#fff')
-      .attr('stroke', '#000')
-      .attr('stroke-width', 2)
-      .attr('rx', 10)
-      .attr('ry', 10);
-  
-    // Add legend items
-    const legendItems = legend.selectAll('.legend-item')
-      .data(legendData)
-      .enter()
-      .append('g')
-      .attr('class', 'legend-item')
-      .attr('transform', (d: any, i: number) => `translate(10, ${i * 40 + 10})`);
-  
-    // Draw boxes with two triangles for each legend item
-    legendItems.append('rect')
-      .attr('x', 0)
-      .attr('y', 0)
-      .attr('width', 30)
-      .attr('height', 30)
-      .attr('fill', 'none')
-      .attr('stroke', '#000')
-      .attr('stroke-width', 2)
-      .attr('rx', 5)
-      .attr('ry', 5);
-  
-    legendItems.append('polygon')
-      .attr('points', '0,0 30,0 0,30')
-      .attr('fill', (d: any) => d.color);
-  
-    legendItems.append('polygon')
-      .attr('points', '30,0 30,30 0,30')
-      .attr('fill', (d: any) => d.darkerColor);
-  
-    // Add text for each legend item
+    .attr('class', 'legend')
+    .attr('transform', `translate(${legendX}, ${legendY})`);
 
-  legendItems.append('text')
-  .attr('x', 40)
-  .attr('y', 15)
-  .attr('dy', '.35em')
-  .text((d: any) => d.region)
-  .style('font-size', '25px')
-  .style('font-weight', '550')
-  .style('fill', '#000')
-  .style('font-family', 'Roboto, sans-serif'); // Apply the Roboto font family
+// Add white background for the legend
+legend.append('rect')
+    .attr('x', 0)
+    .attr('y', 0)
+    .attr('width', legendWidth)
+    .attr('height', legendHeight)
+    .attr('fill', '#fff')
+    .attr('stroke', '#000')
+    .attr('stroke-width', 2)
+    .attr('rx', 10)
+    .attr('ry', 10);
+
+// Add legend items
+const legendItems = legend.selectAll('.legend-item')
+    .data(legendData)
+    .enter()
+    .append('g')
+    .attr('class', 'legend-item')
+    .attr('transform', (d:any, i:number) => `translate(10, ${i * 40 + 10})`);
+
+// Create gradients
+const defs = this.svg.append('defs');
+legendData.forEach(d => {
+    const gradientId = `gradient-${d.region.replace(/\s+/g, '-')}`;
+    const gradient = defs.append('linearGradient')
+        .attr('id', gradientId)
+        .attr('x1', '0%')
+        .attr('y1', '0%')
+        .attr('x2', '100%')
+        .attr('y2', '0%');
+
+    // Create gradient stops
+    for (let j = 0; j <= 10; j++) {
+        gradient.append('stop')
+            .attr('offset', `${j * 10}%`)
+            .attr('stop-color', d.colorScale(j / 10));
+    }
+});
+
+// Add gradient rects to legend items
+legendItems.append('rect')
+    .attr('x', 0)
+    .attr('y', 0)
+    .attr('width', 100)
+    .attr('height', 30)
+    .attr('fill', (d:any) => `url(#gradient-${d.region.replace(/\s+/g, '-')})`);
+
+// Add text for each legend item
+legendItems.append('text')
+    .attr('x', 110)
+    .attr('y', 15)
+    .attr('dy', '.35em')
+    .text((d:any) => d.region)
+    .style('font-size', '14px')
+    .style('font-weight', 'bold')
+    .style('fill', '#000')
+    .style('font-family', 'Roboto, sans-serif');
 }
-   */
-  
 
-  @HostListener('window:resize')
-  onResize(): void {
-    this.setWidthHeight();
-    this.svg
-      .attr('width', this.width)
-      .attr('height', this.height);
-  }
+@HostListener('window:resize')
+onResize(): void {
+this.setWidthHeight();
+this.svg
+    .attr('width', this.width)
+    .attr('height', this.height);
+}
 }

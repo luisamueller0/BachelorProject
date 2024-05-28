@@ -929,6 +929,7 @@ console.log(this.clusters)
       .attr("text-anchor", "middle")
       .text((d: any) => d.country)
       .style("font-size", "1vw")
+      .style("font-weight", "bold")
       .style("fill", "white")     // Set the text color to white
    
   

@@ -499,6 +499,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
       .attr("text-anchor", "middle")
       .text((d: any) => d.country)
       .style("font-size", "0.5vw")
+      .style("font-weight", "bold")
       .style("fill", "white")     // Set the text color to white
    
   

@@ -176,6 +176,8 @@ private interpolateCustomGreens(t: number): string {
   return d3.interpolateRgb("#95ED87", "#00261c")(t); // Light blue to dark blue
 }
 
+
+
 // Function to create a color scale from a given color palette
 private getColorScale(palette: string[]): (t: number) => string {
   return (t: number) => {
@@ -215,7 +217,7 @@ private blueColorPalette: string[] = [
 
 
 private purpleColorPalette: string[] = [
-  "#250c310",
+  "#250c31",
   "#49006a",
   "#5d1f7b",
   "#71378c",
