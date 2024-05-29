@@ -30,6 +30,7 @@ interface ArtistData {
   avg_start_date: Date;
   avg_end_date: Date;
   avg_duration: number;
+  participated_in_exhibition:number[];
   }
 
   interface ArtistNode extends d3.SimulationNodeDatum{
@@ -86,6 +87,7 @@ interface ArtistData {
     avg_start_date: Date;
     avg_end_date: Date;
     avg_duration: number;
+    participated_in_exhibition:number[];
   
     constructor(data: ArtistData) {
       this.id = Number(data.id);
@@ -117,6 +119,7 @@ interface ArtistData {
       this.avg_start_date = new Date(data.avg_start_date);
       this.avg_end_date = new Date(data.avg_end_date);
       this.avg_duration = data.avg_duration;
+      this.participated_in_exhibition = data.participated_in_exhibition;
     }
   
     convertToMap(data:any): Map<string, number> {// Iterate through each data object

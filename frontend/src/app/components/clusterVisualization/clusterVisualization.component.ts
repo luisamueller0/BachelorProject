@@ -95,6 +95,7 @@ export class ClusterVisualizationComponent implements OnInit {
     this.subscriptions.add(this.decisionService.currentK.subscribe(k => {
       this.updateCluster(k);
     }));
+    this.subscriptions.add(this.decisionService.currentSearchedArtistId.subscribe((id:number|null) => this.highlightArtistNode(id)));
 
     this.resizeSvg();
     window.addEventListener('resize', this.onResize.bind(this));
@@ -110,6 +111,65 @@ export class ClusterVisualizationComponent implements OnInit {
     this.resizeSvg();
   }
 
+  private highlightArtistNode(id: number | null) {
+    if(id === null){
+      this.g.selectAll(".artist-node").style('filter', '');
+      return;
+    }
+   
+      let defs = this.svg.append('defs');
+    
+      let filter = defs.append('filter')
+          .attr('id', 'shadow')
+          .attr('x', '-50%')
+          .attr('y', '-50%')
+          .attr('width', '200%')
+          .attr('height', '200%');
+      
+      filter.append('feDropShadow')
+          .attr('dx', 0)
+          .attr('dy', 0)
+          .attr('stdDeviation', 4)
+          .attr('flood-color', 'black')
+          .attr('flood-opacity', 0.8);
+      
+      let feMerge = filter.append('feMerge');
+      feMerge.append('feMergeNode');
+      feMerge.append('feMergeNode')
+          .attr('in', 'SourceGraphic');
+
+          const clusterNode2 = this.artistClusterMap.get(id);
+          if (clusterNode2) {
+            this.focusHandler(clusterNode2);
+          }
+            
+            
+    
+ // Assert that id is a number
+ const numericId: number = id.valueOf();
+    
+          console.log('selected HALLO', typeof numericId)
+         
+      // Find the node that matches the artist.id
+      const selectedCircle = this.g.selectAll(".artist-node").filter((d: any) => d.artist.id.toString() === id).node() as SVGCircleElement;
+    
+      console.log('selectedCircle:',selectedCircle)
+      if (!selectedCircle) {
+        return; // If no node is found, exit the function
+      }
+    
+      // Set the new node as the selected node and change its color
+      this.selectedNode = [selectedCircle, selectedCircle.style.fill];
+    
+      // Darken the original color for the selected node
+      const originalColor = d3.color(selectedCircle.style.fill) as d3.RGBColor;
+      const darkerColor = d3.rgb(originalColor).darker(1); // Adjust the darkness factor as needed
+      //selectedCircle.style.fill = darkerColor.toString(); // Change the fill color to the darker shade
+      selectedCircle.style.filter = 'url(#shadow)';
+    
+    
+    
+  }
   public getTitle(): string {
     return `Displaying ${this.allArtists.length} artists and ${this.clusters.length} clusters`;
   }
@@ -179,8 +239,6 @@ export class ClusterVisualizationComponent implements OnInit {
     this.g.append('g').attr('class', 'inter-community-edges');
 
     this.resizeSvg();
-
-    console.log("SVG element created:", this.svg);
   }
 
  private updateVisualization(type: string, value: any) {
@@ -418,7 +476,6 @@ private changeCluster(value: string){
     this.selectionService.selectCountries(this.allCountries);
  
 
-    console.log(this.clusters)
     // Calculate degrees for each cluster
     this.calculateNodeDegreesForClusters();
 
@@ -434,9 +491,9 @@ private changeCluster(value: string){
       this.firstK = this.firstK + 1;
       return;
     }
-    console.log(k);
+  
     const range = this.decisionService.getDecisionRange();
-    console.log('range:', range, 'k:', k)
+
     if(range.length !== 0){
 
        // Remove the existing SVG element
@@ -518,7 +575,6 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
     this.selectionService.selectCountries(this.allCountries);
  
 
-    console.log(this.clusters)
     // Calculate degrees for each cluster
     this.calculateNodeDegreesForClusters();
 
@@ -531,18 +587,14 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
   private loadInitialData() {
    
     // Fetch data from backend
-    this.artistService.clusterAmountArtists([200, 400], 5)
+    this.artistService.clusterAmountArtists([200, 2217], 7)
       .subscribe(data => {
-        console.log(data);
+    
         this.clusters = data[0];
-        this.clusters[4].forEach(artist => {
-          console.log('LOS')
-          console.log('LOS artist:', artist.id, 'average date', artist.overall_avg_date, 'average duration', artist.avg_duration)
-        });
-        console.log('artists',this.clusters)
+
         this.intraCommunityEdges = data[1] as exhibited_with[][];
         const interCommunityEdgesRaw = data[2] as exhibited_with[];
-        console.log('intercommunity edges:', interCommunityEdgesRaw);
+    
         this.interCommunityEdges = interCommunityEdgesRaw.map(edge => ({
           source: edge.startId,
           target: edge.endId,
@@ -1074,7 +1126,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
       const artists = cluster.artists;
       const relationships = this.intraCommunityEdges[cluster.clusterId];
       const size = this.decisionService.getDecisionSize();
-      console.log('size:', size)
+   
       const metricMap = this.calculateNormalizedMaps(size)[cluster.clusterId];
       const degreeMap = this.degreesMap[cluster.clusterId] || new Map<number, number>();
   
@@ -1122,9 +1174,9 @@ private onClusterClick(clusterNode: ClusterNode): void {
       .append("line")
       .attr("class", "artist-edge")
       .style('stroke', (d: any) => {
-        console.log('hallo')
+   
         const clusterId = cluster.clusterId; // Assuming you have access to the current cluster ID
-        console.log('hallo',this.intraCommunityEdges[clusterId].length )
+     
         return this.intraCommunityEdges[clusterId].length === 2 ? 'black' : this.edgeColorScale(d.sharedExhibitionMinArtworks);
       })
       .style('stroke-width', 2)
@@ -1257,8 +1309,6 @@ private onClusterClick(clusterNode: ClusterNode): void {
       // If it's the same node, deselect it
       const clusterId = this.selectedClusterNode ? this.selectedClusterNode.clusterId : -1;
       this.g.selectAll(".artist-edge").style('stroke', (d: any)  => {
-        console.log('hallo') // Assuming you have access to the current cluster ID
-        console.log('hallo',this.intraCommunityEdges[clusterId].length )
         return this.intraCommunityEdges[clusterId].length === 2 ? 'black' : this.edgeColorScale(d.sharedExhibitionMinArtworks);
       })
       circle.style.fill = this.selectedNode[1];
@@ -1330,7 +1380,6 @@ private onClusterClick(clusterNode: ClusterNode): void {
         }
       });
   
-      console.log(connectedNodeIds);
       this.g.selectAll(".artist-edge").filter((d: any) => {
         return d.source.id === selectedNodeId || d.target.id === selectedNodeId;
       }).style('stroke', (d: any) => edgeColorScale(d.sharedExhibitionMinArtworks));
@@ -1338,7 +1387,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
       // Set edges that are not connected to the selected node within the same cluster to none
       this.g.selectAll(".artist-edge").filter((d: any) => {
         const clusterNode = this.artistClusterMap.get(artistNode.id);
-        console.log('HALLO')
+       
         if (!clusterNode) return false; // Safety check
   
         const clusterId = clusterNode.clusterId;

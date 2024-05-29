@@ -40,7 +40,7 @@ export class DecisionsComponent implements OnInit {
       (data) => {
         this.artists = data[0];
         this.numberOfArtists = this.artists.length;
-        console.log('fetched');
+    
       },
       (error) => {
         console.error('Error fetching default data:', error);
@@ -56,7 +56,7 @@ export class DecisionsComponent implements OnInit {
         }));
         // Initialize Fuse.js for fuzzy search with actual data
         this.fuse.setCollection(allArtistArray);
-        console.log('fetched');
+   
       },
       (error) => {
         console.error('Error fetching default data:', error);
@@ -73,10 +73,10 @@ export class DecisionsComponent implements OnInit {
   };
   showK = false; // Show the K slider after fetching artists
   useRange = false; // whether to use the selected range
-  k: number = 5; // Initial K value
+  k: number = 7; // Initial K value
   kOptions: Options = {
     floor: 1,
-    ceil: 5,
+    ceil: 7,
     step: 1,
   };
   useK = false; // whether to use the selected K
@@ -125,7 +125,6 @@ export class DecisionsComponent implements OnInit {
       const data = await firstValueFrom(this.artistService.getAmountArtistsWithNationalityTechnique(this.range));
       this.artists = data[0];
       this.numberOfArtists = this.artists.length;
-      console.log('Artists fetched:', this.numberOfArtists);
 
       // Step 2: Update kOptions based on the fetched artists
       const newCeil = Math.ceil(this.artists.length / 15);
@@ -142,7 +141,7 @@ export class DecisionsComponent implements OnInit {
   async onRangeChange() {
     if (this.useRange) {
       this.rangeChanged = false; // Reset the rangeChanged flag
-      console.log('Range confirmed: ', this.range);
+    
 
       // Fetch artists and update range
       await this.fetchArtistsAndUpdateRange();
@@ -160,7 +159,7 @@ export class DecisionsComponent implements OnInit {
     if (this.useK) {
       this.kChanged = false; // Reset the kChanged flag
       this.decisionService.changeK(this.k);
-      console.log('k:', this.k);
+   
       this.showK = false;
     }
     // Add a delay before resetting useK to show the green check mark
@@ -181,19 +180,29 @@ export class DecisionsComponent implements OnInit {
   onArtistSearch() {
     if (this.searchQuery.trim() === '') {
       this.filteredArtists = [];
+      this.notInCurrentRange = false;
+      this.decisionService.changeSearchedArtistId(null);
       return;
     }
-    console.log('Searched',this.searchQuery)
+  
     // Perform fuzzy search
     const results = this.fuse.search(this.searchQuery);
     this.filteredArtists = results.map((result) => result.item);
   }
 
   selectArtist(artist: { id: number; name: string; artworks: number }) {
-    console.log('Searched',artist)
+   
     this.searchedArtist = artist;
     this.searchQuery = artist.name;
     this.filteredArtists = [];
-    this.notInCurrentRange = !this.artists.some((a) => a.id === artist.id);
+    if(this.allArtists.has(artist.id)){
+      this.notInCurrentRange = false;
+      this.decisionService.changeSearchedArtistId(artist.id as number);
+    }else{
+      this.decisionService.changeSearchedArtistId(null);
+      this.notInCurrentRange = true;
+
+    }
+    
   }
 }

@@ -39,6 +39,7 @@ class Artist {
         this.avg_start_date = data.avg_start_date;
         this.avg_end_date = data.avg_end_date;
         this.avg_duration = data.avg_duration;
+        this.participated_in_exhibition = data.participated_in_exhibition;
     }
 
 

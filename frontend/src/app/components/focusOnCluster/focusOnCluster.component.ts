@@ -109,7 +109,6 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   
       this.resizeSvg();
   
-      console.log("SVG element created:", this.svg);
     } else {
       console.error('Container node is not found or not an Element');
     }
@@ -144,7 +143,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['displayValue']) {
-      console.log('displayValue changed:', this.displayValue);
+    
       this.tryInitialize();
     }
   }
@@ -326,20 +325,17 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   private loadInitialData() {
     d3.select(`figure#focusNetwork-${this.displayValue} svg`).remove();
     this.focusCluster = this.selectionService.getFocusCluster();
-    console.log('focus cluster:', this.focusCluster)
+  
     if(this.focusCluster === null){
-      console.log('hallo')
+   
       this.noClusterSelected = true;
       return;
     }
-    console.log('HALLO')
+
     this.noClusterSelected = false;
     const focusClusterArtists = this.focusCluster[0];
     const focusClusterEdges = this.focusCluster[1];
 
-    console.log('display focus:', this.displayValue);
-    console.log('selected cluster focus', focusClusterArtists);
-    console.log('selected edges', focusClusterEdges);
 
     if (!focusClusterArtists || focusClusterArtists.length === 0) {
       console.log('No focus cluster artists found, aborting initialization.');
@@ -364,7 +360,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   
   private renderClusters(value: string): void {
     const maxSize = Math.max(...this.clusters.map(cluster => cluster.length));
-    console.log(this.clusters);
+  
   
     const outerRadius = Math.min(this.baseWidth, this.baseHeight) / 2;
     const innerRadius = outerRadius - this.sunburstThickness;
@@ -443,7 +439,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
         });
         break;
     }
-    console.log('countryMap focus:', countryMap)
+   
   
     // Calculate angles for each nationality segment
     const countries = Array.from(countryMap.keys());
@@ -540,7 +536,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
       const artists = cluster.artists;
       const relationships = this.intraCommunityEdges[cluster.clusterId];
       const size = this.decisionService.getDecisionSize();
-      console.log('size:', size)
+  
       const metricMap = this.calculateNormalizedMaps(size)[cluster.clusterId];
       const degreeMap = this.degreesMap[cluster.clusterId] || new Map<number, number>();
   
@@ -588,9 +584,9 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
       .append("line")
       .attr("class", "artist-edge")
       .style('stroke', (d: any) => {
-        console.log('hallo')
+    
         const clusterId = cluster.clusterId; // Assuming you have access to the current cluster ID
-        console.log('hallo',this.intraCommunityEdges[clusterId].length )
+  
         return this.intraCommunityEdges[clusterId].length === 2 ? 'black' : this.edgeColorScale(d.sharedExhibitionMinArtworks);
       })
       .style('stroke-width', 1)
@@ -640,7 +636,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
       return degree > (degreeMap.get(maxNode.artist.id) || 0) ? node : maxNode;
     }, artistNodes[0]);
 
-    console.log('focus artists', artistNodes)
+
     const simulation = d3.forceSimulation(artistNodes)
     .force("collision", d3.forceCollide((d: any) => {
       if (d.id === centralNode.id) {
@@ -695,7 +691,7 @@ private handleFocus(artist: Artist | null): void {
   feMerge.append('feMergeNode');
   feMerge.append('feMergeNode')
       .attr('in', 'SourceGraphic');
-  console.log('focus artist:', artist);
+
 
   // Function to reset selected nodes and edges
   const resetSelection = () => {
@@ -820,8 +816,6 @@ private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks
       }
       const clusterId = 0;
       this.g.selectAll(".artist-edge").style('stroke', (d: any)  => {
-        console.log('hallo') // Assuming you have access to the current cluster ID
-        console.log('hallo',this.intraCommunityEdges[clusterId].length )
         return this.intraCommunityEdges[clusterId].length === 2 ? 'black' : this.edgeColorScale(d.sharedExhibitionMinArtworks);
       })
       this.g.selectAll(".artist-node").style('stroke', 'none').style('stroke-width', '1px'); // Reset border width

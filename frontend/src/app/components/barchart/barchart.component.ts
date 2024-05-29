@@ -216,9 +216,6 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
           : this.techniqueColorScale(d.data.technique);
       });
   
-    // Debug statements
-    console.log('Combined Data:', combinedData);
-    console.log('Stacked Data:', stackedData);
   }
   
   private isTechniqueSelected(technique: string, selectedArtists: Artist[]): boolean {

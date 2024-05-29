@@ -12,7 +12,8 @@ export class DecisionService {
   private sizeSource = new BehaviorSubject<string>('default: Importance (Degree)');
   private thicknessSource = new BehaviorSubject<string>('');
   private rangeSource = new BehaviorSubject<number[]>([200,2217]); // Default range
-  private kSource = new BehaviorSubject<number>(5); 
+  private kSource = new BehaviorSubject<number>(7); 
+  private searchedArtistId = new BehaviorSubject<number| null>(null);
 
   currentSunburst = this.sunburstSource.asObservable();
   currentOrder = this.orderSource.asObservable();
@@ -20,12 +21,16 @@ export class DecisionService {
   currentThickness = this.thicknessSource.asObservable();
   currentRange = this.rangeSource.asObservable();
   currentK = this.kSource.asObservable();
+  currentSearchedArtistId = this.searchedArtistId.asObservable();
 
   changeDecisionSunburst(sunburst: string) {
     this.sunburstSource.next(sunburst);
   }
   changeDecisionOrder(order: string) {
     this.orderSource.next(order);
+  }
+  changeSearchedArtistId(id: number | null) {
+    this.searchedArtistId.next(id);
   }
 
   changeDecisionSize(size: string) {
