@@ -1446,7 +1446,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
       this.g.selectAll(".artist-node").each((d: any, i: number, nodes: any) => {
         const nodeCluster = this.artistClusterMap.get(d.id);
         if (!connectedNodeIds.has(d.id) && d.id !== selectedNodeId && nodeCluster && nodeCluster.clusterId === clusterId) {
-          d3.select(nodes[i]).style('opacity', '0.3');
+          d3.select(nodes[i]).style('opacity', '0.2');
         }
       });
   

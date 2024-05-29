@@ -7,6 +7,10 @@
   padding: 0;
   margin: 0;
 }
+.separate-container {
+  margin-top: 20px;
+  width: 100%;
+}
 
 .wrapper {
   display: flex;
@@ -100,7 +104,7 @@
   justify-content: center;
 }
 
-app-clusterVisualization, app-decisions, app-barchart, app-map, app-focusOnCluster {
+app-clusterVisualization, app-exhibitionVisualization, app-decisions, app-barchart, app-map, app-focusOnCluster {
   width: 100%;
   height: 100%;
 }

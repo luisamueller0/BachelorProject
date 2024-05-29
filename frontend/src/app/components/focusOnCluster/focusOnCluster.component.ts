@@ -671,6 +671,9 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
    // Artist node click handler
 // Artist node click handler
 private handleFocus(artist: Artist | null): void {
+  if(!this.isIniatialized){
+    return;
+  }
   let defs = this.svg.append('defs');
 
   let filter = defs.append('filter')
@@ -775,7 +778,7 @@ private handleFocus(artist: Artist | null): void {
 ; // Make the border thicker
     } else if (d.id !== selectedNodeId) {
       // Change opacity of nodes not connected to the selected node
-      d3.select(nodes[i]).style('opacity', '0.3');
+      d3.select(nodes[i]).style('opacity', '0.2');
     }
   });
 }
