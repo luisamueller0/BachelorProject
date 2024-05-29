@@ -19,6 +19,32 @@
     align-items: left; /* Centers items in the group */
 }
 
+
+/* Custom styles for autocomplete list */
+.autocomplete-list {
+    max-height: 10vh; /* Adjust this value as needed */
+    overflow-y: auto; /* Adds vertical scrollbar if needed */
+    background-color: white;
+    border: 1px solid #7e24c7;
+    border-radius: 8px;
+    box-shadow: 0 0 0 0.2rem rgba(66, 9, 133, 0.25);
+    
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    position: relative;
+    z-index: 1000;
+    
+}
+
+.autocomplete-list li {
+    padding: 0.5vw;
+    cursor: pointer;
+}
+
+.autocomplete-list li:hover {
+    background-color: #e5e5e5;
+}
 /* Styles for labels */
 .dropdown-label {
     font-weight:700;

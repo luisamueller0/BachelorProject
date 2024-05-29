@@ -749,6 +749,37 @@ const findAllMostExhibitedInTechniqueAmount = async (minLimit, maxLimit) => {
     `;
     return streamQuery(query, { minLimit: parseInt(minLimit), maxLimit: parseInt(maxLimit) });
 };
+
+const findAllArtists = async () => {
+
+    const { session } = require('../db');
+    const query = `MATCH (n:Artist) RETURN n.id as id, n.firstname as firstname, n.lastname as lastname, n.TotalExhibitedArtworks  as artworks`;
+    return await dbSemaphore.runExclusive(async () => {
+    const result = await session.run(query);
+
+    return await processArtists(result);
+
+    });
+}
+
+
+const processArtists = (result) => {
+    const artists = [];
+    
+    result.records.forEach(record => {
+        const id = record.get('id');
+        const firstname = record.get('firstname');
+        const lastname = record.get('lastname');
+        const artworks = record.get('artworks');
+        artists.push({ id, firstname, lastname,artworks });
+    });
+   
+
+    return artists;
+};
+
+
+
 const streamQuery = async (query, params) => {
     const { session } = require('../db');
     return await dbSemaphore.runExclusive(async () => {
@@ -922,5 +953,6 @@ module.exports = {
     spectralClusteringDeathcountry,
     spectralClusteringMostExhibited,
     findAllRange,
-    spectralClusteringRange
+    spectralClusteringRange,
+    findAllArtists
 };

@@ -62,12 +62,29 @@
     <div *ngIf="showK" class="info-text">Before visualization updates choose amount of clusters for {{ numberOfArtists }} artists.</div>
     <div *ngIf="kChanged" class="green-label">To apply, click on the checkbox on the right</div>
   </div>
+
+ 
+  <div class="dropdown-group">
+    <label for="artistSearch" class="dropdown-label">Search for an artist:</label>
+    <input
+      type="text"
+      id="artistSearch"
+      [(ngModel)]="searchQuery"
+      (input)="onArtistSearch()"
+      placeholder="Type artist name..."
+      class="dropdown"
+    />
+    <ul *ngIf="filteredArtists.length > 0" class="autocomplete-list">
+      <li *ngFor="let artist of filteredArtists" (click)="selectArtist(artist)">
+        {{ artist.name }}
+      </li>
+    </ul>
+    <div *ngIf="notInCurrentRange && searchedArtist !== null" class="info-text">
+      Artist you are searching for is currently not displayed in the cluster. Change the range to {{ searchedArtist.artworks }}.
+    </div>
+  </div>
 </div>
 
-<div *ngIf="linkExists">
-  <p> </p>
-</div>
-<div *ngIf="!linkExists">
-  <p> </p>
-</div>
+
+
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet">

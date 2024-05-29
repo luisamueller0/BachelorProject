@@ -18,6 +18,22 @@ export class ArtistService {
   constructor(private http: HttpClient) { }
 
 
+  getAllArtists(): Observable<any[]> {
+    return this.http.get<any[]>(this.dataUrl + '/artist/').pipe(shareReplay());
+  }
+
+  turnIntoMap(array: any[]): Map<number, { name: string, artworks: number }> {
+    const idNameMap = new Map<number, { name: string, artworks: number }>();
+  
+    array.forEach((item: any) => {
+      const { id, firstname, lastname, artworks } = item; // Assuming the array elements have an age property
+      idNameMap.set(id, { name: `${firstname} ${lastname}`, artworks: artworks});
+    });
+  
+    return idNameMap;
+  }
+  
+
   getArtistsWithRange(range:number[]):Observable<any[][]>{
     console.log(range)
     const [minLimit, maxLimit] = range;
