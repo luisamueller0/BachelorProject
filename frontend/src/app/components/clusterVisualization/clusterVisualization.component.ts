@@ -111,7 +111,31 @@ export class ClusterVisualizationComponent implements OnInit {
     this.resizeSvg();
   }
 
+
+  
   private highlightArtistNode(id: number | null) {
+    if (id === null) {
+      this.g.selectAll(".artist-node").style('filter', '');
+      return;
+    }
+  
+    const selectedCircle = this.g.selectAll(".artist-node").filter((d: any) => d.artist.id.toString() === id).node() as SVGCircleElement;
+    if (!selectedCircle) {
+      return; // If no node is found, exit the function
+    }
+  
+    const selectedNodeData = d3.select(selectedCircle).datum() as ArtistNode;
+    const simulatedEvent = new MouseEvent("click", {
+      bubbles: true,
+      cancelable: true,
+      view: window
+    });
+  
+    console.log('selectedNodeData:',selectedNodeData)
+    console.log('selected event:',simulatedEvent)
+    this.handleNodeClick(selectedNodeData, simulatedEvent);
+  }
+/*   private highlightArtistNode(id: number | null) {
     if(id === null){
       this.g.selectAll(".artist-node").style('filter', '');
       return;
@@ -138,22 +162,30 @@ export class ClusterVisualizationComponent implements OnInit {
       feMerge.append('feMergeNode')
           .attr('in', 'SourceGraphic');
 
-          const clusterNode2 = this.artistClusterMap.get(id);
-          if (clusterNode2) {
-            this.focusHandler(clusterNode2);
-          }
-            
-            
-    
+        
  // Assert that id is a number
  const numericId: number = id.valueOf();
     
           console.log('selected HALLO', typeof numericId)
          
       // Find the node that matches the artist.id
+      const selectedNodeId = this.g.selectAll(".artist-node").filter((d: any) => d.artist.id.toString() === id).node().__data__.artist.id;
+     // console.log('selected',artistNode.__data__.artist.id)
+
       const selectedCircle = this.g.selectAll(".artist-node").filter((d: any) => d.artist.id.toString() === id).node() as SVGCircleElement;
+
+      console.log('selectedCircle:',selectedCircle.id)
     
       console.log('selectedCircle:',selectedCircle)
+      const clusterNode2 = this.artistClusterMap.get(selectedNodeId);
+      if (clusterNode2) {
+        this.focusHandler(clusterNode2);
+      }
+
+
+        
+        
+
       if (!selectedCircle) {
         return; // If no node is found, exit the function
       }
@@ -166,10 +198,21 @@ export class ClusterVisualizationComponent implements OnInit {
       const darkerColor = d3.rgb(originalColor).darker(1); // Adjust the darkness factor as needed
       //selectedCircle.style.fill = darkerColor.toString(); // Change the fill color to the darker shade
       selectedCircle.style.filter = 'url(#shadow)';
+
+      // Zoom into the selected node
+  const zoomLevel = 20; // Adjust the zoom level as needed
+  const { width, height } = this.svg.node().getBBox();
+  const x = parseFloat(selectedCircle.getAttribute('cx') || '0');
+  const y = parseFloat(selectedCircle.getAttribute('cy') || '0');
+  const transform = d3.zoomIdentity.translate(width / 2 - zoomLevel * x, height / 2 - zoomLevel * y).scale(zoomLevel);
+
+  this.svg.transition()
+    .duration(750)
+    .call(d3.zoom().transform, transform);
     
     
     
-  }
+  } */
   public getTitle(): string {
     return `Displaying ${this.allArtists.length} artists and ${this.clusters.length} clusters`;
   }
@@ -1276,176 +1319,151 @@ private onClusterClick(clusterNode: ClusterNode): void {
 }
   
   // Artist node click handler
+
+  
   private handleNodeClick(artistNode: ArtistNode, event: MouseEvent): void {
     let defs = this.svg.append('defs');
-
+  
     let filter = defs.append('filter')
-        .attr('id', 'shadow')
-        .attr('x', '-50%')
-        .attr('y', '-50%')
-        .attr('width', '200%')
-        .attr('height', '200%');
-    
+      .attr('id', 'shadow')
+      .attr('x', '-50%')
+      .attr('y', '-50%')
+      .attr('width', '200%')
+      .attr('height', '200%');
+  
     filter.append('feDropShadow')
-        .attr('dx', 0)
-        .attr('dy', 0)
-        .attr('stdDeviation', 4)
-        .attr('flood-color', 'black')
-        .attr('flood-opacity', 0.8);
-    
+      .attr('dx', 0)
+      .attr('dy', 0)
+      .attr('stdDeviation', 4)
+      .attr('flood-color', 'black')
+      .attr('flood-opacity', 0.8);
+  
     let feMerge = filter.append('feMerge');
     feMerge.append('feMergeNode');
     feMerge.append('feMergeNode')
-        .attr('in', 'SourceGraphic');
-    
-    // Prevent the cluster click handler from executing
+      .attr('in', 'SourceGraphic');
+  
     this.isNodeClick = true;
-    event.stopPropagation(); // Use the event object to stop propagation
   
-    const circle = event.currentTarget as SVGCircleElement;
+    const circle = d3.selectAll(".artist-node").filter((d: any) => d.id === artistNode.id).node() as SVGCircleElement;
   
-    // Check if the currently selected node is the same as the clicked node
     if (this.selectedNode && this.selectedNode[0] === circle) {
-      // If it's the same node, deselect it
-      const clusterId = this.selectedClusterNode ? this.selectedClusterNode.clusterId : -1;
-      this.g.selectAll(".artist-edge").style('stroke', (d: any)  => {
-        return this.intraCommunityEdges[clusterId].length === 2 ? 'black' : this.edgeColorScale(d.sharedExhibitionMinArtworks);
-      })
-      circle.style.fill = this.selectedNode[1];
-      circle.style.opacity = '1'; // Remove border
-      this.selectedNode = null; // Clear the selected node
-      this.selectionService.selectArtists(null); // Reset the selection
-      this.selectionService.selectCluster(this.allArtists); // Reset the cluster selection
-      this.selectionService.selectClusterEdges([]); // Reset the edges selection
-      this.selectionService.selectFocusArtist(null); // Reset the focus artist selection
-      this.selectionService.selectFocusCluster(null); // Reset the focus cluster selection
-      this.resetClusterFocus(); // Reset the cluster focus
-      // Reset edge colors
-    
-
-      // Reset connected nodes' borders
-      this.g.selectAll(".artist-node").style('opacity','1');  // Reset border width
-      this.g.selectAll(".artist-node").style('filter','');  // Reset border width
-      this.selectionService.selectCountries(this.allCountries);
-      
+      this.resetNodeSelection();
     } else {
-      // If it's a different node or no node is currently selected
-      if (this.selectedNode) {
-        // Reset the previous node's color if another node was selected before
-        const previousNode = this.selectedNode[0];
-        const previousColor = this.selectedNode[1];
-        previousNode.style.fill = previousColor;
-        // Reset edge colors
-        this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
-        // Reset connected nodes' borders
-        this.g.selectAll(".artist-node").style('opacity','1'); // Reset border width
+      this.selectNode(artistNode, circle);
+    }
+  }
+  
+  private resetNodeSelection() {
+    if(this.selectedNode){
+    const previousNode = this.selectedNode[0];
+    const previousColor = this.selectedNode[1];
+    
+    previousNode.style.fill = previousColor;
+    }
+    this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
+  
+    this.g.selectAll(".artist-node").style('opacity', '1');
+  
+    this.selectedNode = null;
+    this.selectionService.selectArtists(null);
+    this.selectionService.selectCluster(this.allArtists);
+    this.selectionService.selectClusterEdges([]);
+    this.selectionService.selectFocusArtist(null);
+    this.selectionService.selectCountries(this.allCountries);
+  }
+  
+  private selectNode(artistNode: ArtistNode, circle: SVGCircleElement) {
+    if (this.selectedNode) {
+      const previousNode = this.selectedNode[0];
+      const previousColor = this.selectedNode[1];
+      previousNode.style.fill = previousColor;
+      this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
+      this.g.selectAll(".artist-node").style('opacity', '1');
+    }
+  
+    this.selectedNode = [circle, circle.style.fill];
+    circle.style.filter = 'url(#shadow)';
+  
+    const originalColor = d3.color(circle.style.fill) as d3.RGBColor;
+    const darkerColor = d3.rgb(originalColor).darker(1);
+  
+    const sharedExhibitionMinArtworksValues: number[] = [];
+    this.g.selectAll(".artist-edge").each((d: any) => {
+      sharedExhibitionMinArtworksValues.push(d.sharedExhibitionMinArtworks);
+    });
+  
+    const minArtworks = d3.min(sharedExhibitionMinArtworksValues) ?? 0;
+    const maxArtworks = d3.max(sharedExhibitionMinArtworksValues) ?? 1;
+    const edgeColorScale = this.createEdgeColorScale(darkerColor.toString(), minArtworks, maxArtworks);
+  
+    const selectedNodeId = artistNode.id;
+    const connectedNodeIds: Set<number> = new Set<number>();
+    this.g.selectAll(".artist-edge").each((d: any) => {
+      if (d.source.id === selectedNodeId) {
+        connectedNodeIds.add(d.target.id);
+      } else if (d.target.id === selectedNodeId) {
+        connectedNodeIds.add(d.source.id);
       }
+    });
   
-      // Set the new node as the selected node and change its color
-      this.selectedNode = [circle, circle.style.fill];
+    this.g.selectAll(".artist-edge").filter((d: any) => {
+      return d.source.id === selectedNodeId || d.target.id === selectedNodeId;
+    }).style('stroke', (d: any) => edgeColorScale(d.sharedExhibitionMinArtworks));
   
-
-      // Create SVG container
-
-     
-
-
-      // Darken the original color for the selected node
-      const originalColor = d3.color(circle.style.fill) as d3.RGBColor;
-      circle.style.filter = 'url(#shadow)';
-      const darkerColor = d3.rgb(originalColor).darker(1); // Adjust the darkness factor as needed
-      const darkerColorString = darkerColor.toString();
-      //circle.style.fill = darkerColor.toString(); // Change the fill color to the darker shade
+    this.g.selectAll(".artist-edge").filter((d: any) => {
+      const clusterNode = this.artistClusterMap.get(artistNode.id);
+      if (!clusterNode) return false;
+      const clusterId = clusterNode.clusterId;
+      const sourceClusterNode = this.artistClusterMap.get(d.source.id);
+      const targetClusterNode = this.artistClusterMap.get(d.target.id);
   
-      // Calculate the minimum and maximum sharedExhibitionMinArtworks values
-      const sharedExhibitionMinArtworksValues: number[] = [];
-      this.g.selectAll(".artist-edge").each((d: any) => {
-        sharedExhibitionMinArtworksValues.push(d.sharedExhibitionMinArtworks);
-      });
-      const minArtworks = d3.min(sharedExhibitionMinArtworksValues) ?? 0;
-      const maxArtworks = d3.max(sharedExhibitionMinArtworksValues) ?? 1;
+      return (sourceClusterNode && sourceClusterNode.clusterId === clusterId) && (targetClusterNode && targetClusterNode.clusterId === clusterId) && (d.source.id !== selectedNodeId && d.target.id !== selectedNodeId);
+    }).style('stroke', 'none');
   
-      // Create a color scale for the edges connected to the selected node
-      const edgeColorScale = this.createEdgeColorScale(darkerColor.toString(), minArtworks, maxArtworks);
-  
-      // Highlight edges connected to the selected node
-      const selectedNodeId = artistNode.id;
-      
-      const connectedNodeIds: Set<Number> = new Set<Number>();
-      this.g.selectAll(".artist-edge").each((d: any) => {
-        if (d.source.id === selectedNodeId) {
-          connectedNodeIds.add(d.target.id);
-        } else if (d.target.id === selectedNodeId) {
-          connectedNodeIds.add(d.source.id);
-        }
-      });
-  
-      this.g.selectAll(".artist-edge").filter((d: any) => {
-        return d.source.id === selectedNodeId || d.target.id === selectedNodeId;
-      }).style('stroke', (d: any) => edgeColorScale(d.sharedExhibitionMinArtworks));
-  
-      // Set edges that are not connected to the selected node within the same cluster to none
-      this.g.selectAll(".artist-edge").filter((d: any) => {
-        const clusterNode = this.artistClusterMap.get(artistNode.id);
-       
-        if (!clusterNode) return false; // Safety check
-  
-        const clusterId = clusterNode.clusterId;
-        const sourceClusterNode = this.artistClusterMap.get(d.source.id);
-        const targetClusterNode = this.artistClusterMap.get(d.target.id);
-  
-        // Ensure both source and target nodes are within the same cluster
-        return (sourceClusterNode && sourceClusterNode.clusterId === clusterId) && (targetClusterNode && targetClusterNode.clusterId === clusterId) && 
-               (d.source.id !== selectedNodeId && d.target.id !== selectedNodeId);
-      }).style('stroke', 'none'); // Set to none
-  
-       // Change opacity of not connected nodes within the same cluster
     const clusterNode2 = this.artistClusterMap.get(artistNode.id);
     if (clusterNode2) {
       const clusterId = clusterNode2.clusterId;
       this.g.selectAll(".artist-node").each((d: any, i: number, nodes: any) => {
         const nodeCluster = this.artistClusterMap.get(d.id);
         if (!connectedNodeIds.has(d.id) && d.id !== selectedNodeId && nodeCluster && nodeCluster.clusterId === clusterId) {
-          d3.select(nodes[i]).style('opacity', '0.3'); 
+          d3.select(nodes[i]).style('opacity', '0.3');
         }
       });
-      
+  
       this.focusHandler(clusterNode2);
     }
-   
   
     this.selectionService.selectFocusArtist(artistNode.artist);
-      // Select the individual artist
-      this.selectionService.selectArtists([artistNode.artist]);
+    this.selectionService.selectArtists([artistNode.artist]);
   
-      const artist = artistNode.artist;
-      const type = this.decisionService.getDecisionSunburst();
-    
-      switch(type){
-        case 'nationality':
-          this.selectionService.selectCountries([artist.nationality])
-          break;
-        case 'birthcountry':
-          this.selectionService.selectCountries([artist.birthcountry])
-          break;
-        case 'deathcountry':
-          this.selectionService.selectCountries([artist.deathcountry])
-          break;
-        case 'mostexhibited':
-          this.selectionService.selectCountries([artist.most_exhibited_in])
-          break;
-      };
+    const artist = artistNode.artist;
+    const type = this.decisionService.getDecisionSunburst();
   
-      // Also select the cluster and intercommunity edges
-      const clusterNode = this.artistClusterMap.get(artistNode.id);
-      if (clusterNode) {
-        const selectedClusterArtists = clusterNode.artists;
-        const selectedClusterEdges = this.intraCommunityEdges[clusterNode.clusterId];
-        this.selectionService.selectCluster(selectedClusterArtists);
-        this.selectionService.selectClusterEdges(selectedClusterEdges);
-      }
+    switch (type) {
+      case 'nationality':
+        this.selectionService.selectCountries([artist.nationality]);
+        break;
+      case 'birthcountry':
+        this.selectionService.selectCountries([artist.birthcountry]);
+        break;
+      case 'deathcountry':
+        this.selectionService.selectCountries([artist.deathcountry]);
+        break;
+      case 'mostexhibited':
+        this.selectionService.selectCountries([artist.most_exhibited_in]);
+        break;
+    };
+  
+    const clusterNode = this.artistClusterMap.get(artistNode.id);
+    if (clusterNode) {
+      const selectedClusterArtists = clusterNode.artists;
+      const selectedClusterEdges = this.intraCommunityEdges[clusterNode.clusterId];
+      this.selectionService.selectCluster(selectedClusterArtists);
+      this.selectionService.selectClusterEdges(selectedClusterEdges);
     }
   }
+  
   
 
   private repelFromCenterForce(artistNodes: ArtistNode[],centralNode: ArtistNode, radius: number, padding: number = 5): (alpha: number) => void {
