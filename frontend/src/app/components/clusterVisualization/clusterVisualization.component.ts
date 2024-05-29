@@ -1360,13 +1360,32 @@ private onClusterClick(clusterNode: ClusterNode): void {
     const previousColor = this.selectedNode[1];
     
     previousNode.style.fill = previousColor;
-    }
+     // Retrieve the bound data using D3's datum function
+     const previousArtistNodeData = d3.select(previousNode).datum() as ArtistNode;
+     const previousArtistNodeId = previousArtistNodeData.id;
+     console.log('selected artist node', previousArtistNodeData.id)
+ 
+     const clusterNode = this.artistClusterMap.get(previousArtistNodeId);
+     if (clusterNode) {
+       this.selectionService.selectArtists(clusterNode.artists);
+     } else {
+       this.selectionService.selectArtists(null);
+     }
+   } else {
+     this.selectionService.selectArtists(null);
+   }
+    
     this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
   
     this.g.selectAll(".artist-node").style('opacity', '1');
+    this.g.selectAll(".artist-node").style('filter', '');
   
+
+   
+  
+    
     this.selectedNode = null;
-    this.selectionService.selectArtists(null);
+    //this.selectionService.selectArtists(null);
     this.selectionService.selectCluster(this.allArtists);
     this.selectionService.selectClusterEdges([]);
     this.selectionService.selectFocusArtist(null);

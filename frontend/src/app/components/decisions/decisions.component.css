@@ -180,7 +180,7 @@ option {
 }
 
 ::ng-deep .custom-slider .ngx-slider .ngx-slider-bubble {
-    bottom: 14px;
+    bottom: 2vh;
 }
 
 ::ng-deep .custom-slider .ngx-slider .ngx-slider-limit {
