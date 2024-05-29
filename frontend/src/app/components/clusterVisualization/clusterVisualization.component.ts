@@ -1121,7 +1121,12 @@ private onClusterClick(clusterNode: ClusterNode): void {
       .enter()
       .append("line")
       .attr("class", "artist-edge")
-      .style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks))
+      .style('stroke', (d: any) => {
+        console.log('hallo')
+        const clusterId = cluster.clusterId; // Assuming you have access to the current cluster ID
+        console.log('hallo',this.intraCommunityEdges[clusterId].length )
+        return this.intraCommunityEdges[clusterId].length === 2 ? 'black' : this.edgeColorScale(d.sharedExhibitionMinArtworks);
+      })
       .style('stroke-width', 2)
       .attr('x1', (d: any) => d.source.x)
       .attr('y1', (d: any) => d.source.y)
@@ -1207,6 +1212,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
   
     if (minArtworks === maxArtworks) {
       // If all values are the same, return a scale that maps everything to the darker color
+      console.log('minArtworks === maxArtworks')
       return d3.scaleLinear<string, number>()
         .domain([0, 1])
         .range([baseColor, baseColor]);
@@ -1249,6 +1255,12 @@ private onClusterClick(clusterNode: ClusterNode): void {
     // Check if the currently selected node is the same as the clicked node
     if (this.selectedNode && this.selectedNode[0] === circle) {
       // If it's the same node, deselect it
+      const clusterId = this.selectedClusterNode ? this.selectedClusterNode.clusterId : -1;
+      this.g.selectAll(".artist-edge").style('stroke', (d: any)  => {
+        console.log('hallo') // Assuming you have access to the current cluster ID
+        console.log('hallo',this.intraCommunityEdges[clusterId].length )
+        return this.intraCommunityEdges[clusterId].length === 2 ? 'black' : this.edgeColorScale(d.sharedExhibitionMinArtworks);
+      })
       circle.style.fill = this.selectedNode[1];
       circle.style.opacity = '1'; // Remove border
       this.selectedNode = null; // Clear the selected node
@@ -1259,7 +1271,8 @@ private onClusterClick(clusterNode: ClusterNode): void {
       this.selectionService.selectFocusCluster(null); // Reset the focus cluster selection
       this.resetClusterFocus(); // Reset the cluster focus
       // Reset edge colors
-      this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
+    
+
       // Reset connected nodes' borders
       this.g.selectAll(".artist-node").style('opacity','1');  // Reset border width
       this.g.selectAll(".artist-node").style('filter','');  // Reset border width

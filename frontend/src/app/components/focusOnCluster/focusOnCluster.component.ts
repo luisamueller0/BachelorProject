@@ -587,7 +587,12 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
       .enter()
       .append("line")
       .attr("class", "artist-edge")
-      .style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks))
+      .style('stroke', (d: any) => {
+        console.log('hallo')
+        const clusterId = cluster.clusterId; // Assuming you have access to the current cluster ID
+        console.log('hallo',this.intraCommunityEdges[clusterId].length )
+        return this.intraCommunityEdges[clusterId].length === 2 ? 'black' : this.edgeColorScale(d.sharedExhibitionMinArtworks);
+      })
       .style('stroke-width', 1)
       .attr('x1', (d: any) => d.source.x)
       .attr('y1', (d: any) => d.source.y)
@@ -813,7 +818,12 @@ private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks
         previousNode.style.strokeWidth = '1px'; // Reset border width
         this.selectedNode = null;
       }
-      this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
+      const clusterId = 0;
+      this.g.selectAll(".artist-edge").style('stroke', (d: any)  => {
+        console.log('hallo') // Assuming you have access to the current cluster ID
+        console.log('hallo',this.intraCommunityEdges[clusterId].length )
+        return this.intraCommunityEdges[clusterId].length === 2 ? 'black' : this.edgeColorScale(d.sharedExhibitionMinArtworks);
+      })
       this.g.selectAll(".artist-node").style('stroke', 'none').style('stroke-width', '1px'); // Reset border width
     };
   
