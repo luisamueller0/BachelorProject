@@ -42,7 +42,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   private totalExhibitedArtworksMap: { [clusterId: number]: Map<number, number> } = {};
   private differentTechniquesMap: { [clusterId: number]: Map<number, number> } = {};
 
-  private sunburstThickness: number = 20;
+
 
   private regionOrder: string[] = ["North Europe", "Eastern Europe", "Southern Europe", "Western Europe", "Others", "\\N"];
 
@@ -100,15 +100,13 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
         .append("svg")
         .attr("width", width)
         .attr("height", height)
-        .append("g");
-  
-      this.g = this.svg.append('g')
+        .append("g")
         .attr('transform', `translate(${width / 2}, ${height / 2})`); // Center the group element
   
+        this.baseWidth=width;
+        this.baseHeight=height;
+      this.g = this.svg.append('g');
       this.g.append('g').attr('class', 'clusters');
-  
-      this.resizeSvg();
-  
     } else {
       console.error('Container node is not found or not an Element');
     }
@@ -258,6 +256,8 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
         return degree > (degreeMap.get(maxNode.artist.id) || 0) ? node : maxNode;
       }, artistNodes[0]);
 
+      const padding = window.innerWidth/100*0.2;
+
       // Update the force simulation
       this.simulation[cluster.clusterId]
         .nodes(artistNodes)
@@ -267,7 +267,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
           }
           return this.calculateCollisionRadius(updatedSizes[d.id] || 0);
         }))
-        .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - 10)) // Add boundary force
+        .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - padding)) // Add boundary force
         .force("repelFromCenter", this.repelFromCenterForce(artistNodes, centralNode, updatedSizes[centralNode.id] || 0, 2)) // Add custom repel force
         .on("tick", () => {
           circles
@@ -361,9 +361,10 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   private renderClusters(value: string): void {
     const maxSize = Math.max(...this.clusters.map(cluster => cluster.length));
   
-  
+    const sunburstThickness =2* window.innerWidth/100;
     const outerRadius = Math.min(this.baseWidth, this.baseHeight) / 2;
-    const innerRadius = outerRadius - this.sunburstThickness;
+    const innerRadius = outerRadius - sunburstThickness;
+    
    
 
     const clusterNodes: ClusterNode[] = this.clusters.map((cluster, index) => {
@@ -508,7 +509,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
       .attr("transform", (d: any) => `translate(${arcGenerator.centroid(d)})`)
       .attr("text-anchor", "middle")
       .text((d: any) => d.country)
-      .style("font-size", "0.5vw")
+     
       .style("font-weight", "bold")
       .style("fill", "white")     // Set the text color to white
    
@@ -593,7 +594,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   
         return this.intraCommunityEdges[clusterId].length === 2 ? 'black' : this.edgeColorScale(d.sharedExhibitionMinArtworks);
       })
-      .style('stroke-width', 1)
+      .style('stroke-width', '0.1vw')
       .attr('x1', (d: any) => d.source.x)
       .attr('y1', (d: any) => d.source.y)
       .attr('x2', (d: any) => d.target.x)
@@ -639,7 +640,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
       const degree = degreeMap.get(node.artist.id) || 0;
       return degree > (degreeMap.get(maxNode.artist.id) || 0) ? node : maxNode;
     }, artistNodes[0]);
-
+    const padding = window.innerWidth/100*0.2;
 
     const simulation = d3.forceSimulation(artistNodes)
     .force("collision", d3.forceCollide((d: any) => {
@@ -649,7 +650,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
       return this.calculateCollisionRadius(sizes[d.id] || 0);
     }))
     .force("repelFromCenter", this.repelFromCenterForce(artistNodes, centralNode, sizes[centralNode.id] || 0, 2)) // Add custom repel force
-    .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - 2)) // Add boundary force
+    .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - padding)) // Add boundary force
     .on("tick", () => {
       this.g.selectAll('.artist-node')
         .attr('cx', (d: any) => d.x)
@@ -1053,7 +1054,8 @@ else if(value === 'mostexhibited'){
   
   
   // Define the boundary force
-private boundaryForce(artistNodes: ArtistNode[], innerRadius: number, padding: number =2): (alpha: number) => void {
+private boundaryForce(artistNodes: ArtistNode[], innerRadius: number): (alpha: number) => void {
+  const padding = window.innerWidth/100*0.2;
   return function(alpha: number) {
     artistNodes.forEach((d: any) => {
       const distance = Math.sqrt(d.x * d.x + d.y * d.y);
@@ -1159,14 +1161,16 @@ private boundaryForce(artistNodes: ArtistNode[], innerRadius: number, padding: n
   }
 
   private setupRadialScale(innerRadius: number): d3.ScaleLinear<number, number> {
+    const padding = window.innerWidth/100*0.2;
     return d3.scaleLinear()
       .domain([0, 1])  // Normalized degree
-      .range([innerRadius-2, 10]);
+      .range([innerRadius-padding, 10]);
   }
 
   private calculateRadiusForNode(value: number, innerRadius: number): number {
-    const minRadius =2; // Minimum radius for the least connected node
-    const maxRadius = innerRadius / 10; // Maximum radius for the most connected node
+    
+    const minRadius =window.innerWidth/100*0.2; // Minimum radius for the least connected node
+    const maxRadius = window.innerWidth/100*0.8; // Maximum radius for the most connected node
     const calculatedRadius = minRadius + (maxRadius - minRadius) * value;
   
     return calculatedRadius;

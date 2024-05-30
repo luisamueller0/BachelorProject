@@ -34,7 +34,7 @@ export class ClusterVisualizationComponent implements OnInit {
   private selectedClusterNode: ClusterNode | null = null;
   private allCountries: string[] = [];
  private biggestClusterId: number = -1;
- private margin={top: 10, right: 10, bottom: 10, left: 10};
+ private margin={top: 2, right: 2, bottom: 2, left: 4};
 
   
 
@@ -53,7 +53,7 @@ export class ClusterVisualizationComponent implements OnInit {
   private totalExhibitedArtworksMap: { [clusterId: number]: Map<number, number> } = {};
   private differentTechniquesMap: { [clusterId: number]: Map<number, number> } = {};
 
-  private sunburstThickness: number = 50;
+  
 
   private regionOrder: string[] = ["North Europe", "Eastern Europe", "Southern Europe", "Western Europe", "Others","\\N"];
 
@@ -112,6 +112,24 @@ export class ClusterVisualizationComponent implements OnInit {
   onResize(event: any) {
     this.updateNetwork();
   }
+
+  private createXAxis(xScale: d3.ScaleTime<number, number>) {
+    const xAxis = d3.axisBottom(xScale);
+  
+    this.svg.append('g')
+      .attr('class', 'x-axis')
+      .attr('transform', `translate(0, ${this.baseHeight})`)
+      .call(xAxis);
+  }
+  
+  private createYAxis(yScale: d3.ScaleLinear<number, number>) {
+    const yAxis = d3.axisLeft(yScale);
+  
+    this.svg.append('g')
+      .attr('class', 'y-axis')
+      .call(yAxis);
+  }
+  
   
   private createScatterPlotScales(clusterNodes: ClusterNode[]) {
     clusterNodes.forEach(cluster => {console.log('scales hallo',cluster.meanBirthDate)});
@@ -383,6 +401,7 @@ export class ClusterVisualizationComponent implements OnInit {
       }, artistNodes[0]);
   
   
+      const padding = window.innerWidth/100*0.2;
       // Update the force simulation
       this.simulation[cluster.clusterId]
         .nodes(artistNodes)
@@ -391,9 +410,9 @@ export class ClusterVisualizationComponent implements OnInit {
             return 0; // Exclude the central node from collision
           }
           return this.calculateCollisionRadius(updatedSizes[d.id] || 0);
-        }))        .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - 10)) // Add boundary force
+        }))        .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - padding)) // Add boundary force
         .force("repelFromCenter", this.repelFromCenterForce(artistNodes, centralNode, updatedSizes[centralNode.id] || 0, 2)) // Add custom repel force
-        .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - 10)) // Add boundary force
+        .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - padding)) // Add boundary force
         .on("tick", () => {
           circles
             .attr('cx', (d: ArtistNode) => d.x)
@@ -693,7 +712,10 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
   console.log('scales:',xScale, yScale)
   // Create and draw the scatter plot
   this.createScatterPlotGroup();
+  this.createXAxis(xScale);
+  this.createYAxis(yScale);
   this.drawScatterPlotPoints(clusterNodes, xScale, yScale); 
+
   }
 
 
@@ -1051,7 +1073,7 @@ console.log(this.clusters)
       .attr("transform", (d: any) => `translate(${arcGenerator.centroid(d)})`)
       .attr("text-anchor", "middle")
       .text((d: any) => d.country)
-      .style("font-size", "1vw")
+   
       .style("font-weight", "bold")
       .style("fill", "white")     // Set the text color to white
    
@@ -1107,7 +1129,7 @@ console.log(this.clusters)
       this.selectedClusterNode = clusterNode;
       this.g.selectAll(`.cluster-${clusterNode.clusterId} path`)
         .style('stroke', 'black')
-        .style('stroke-width', '10px'); // Adjust the border width as needed
+        .style('stroke-width', '0.5vw'); // Adjust the border width as needed
   
       // Select the new cluster node
       this.selectionService.selectCluster(selectedArtists);
@@ -1157,7 +1179,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
     this.selectedClusterNode = clusterNode;
     this.g.selectAll(`.cluster-${clusterNode.clusterId} path`)
       .style('stroke', 'black')
-      .style('stroke-width', '10px'); // Adjust the border width as needed
+      .style('stroke-width', '0.5vw'); // Adjust the border width as needed
 
     // Select the new cluster node
     this.selectionService.selectArtists(selectedArtists);
@@ -1249,7 +1271,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
      
         return this.intraCommunityEdges[clusterId].length === 2 ? 'black' : this.edgeColorScale(d.sharedExhibitionMinArtworks);
       })
-      .style('stroke-width', 2)
+      .style('stroke-width', '0.1vw')
       .attr('x1', (d: any) => d.source.x)
       .attr('y1', (d: any) => d.source.y)
       .attr('x2', (d: any) => d.target.x)
@@ -1291,6 +1313,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
   
     const sizes = this.getNodeSize(clusterGroup);
     const { width: clusterWidth, height: clusterHeight } = this.getClusterGroupDimensions(clusterGroup);
+    const padding = window.innerWidth/100*0.2;
 
     const centralNode = artistNodes.reduce((maxNode, node) => {
       const degree = degreeMap.get(node.artist.id) || 0;
@@ -1305,7 +1328,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
       return this.calculateCollisionRadius(sizes[d.id] || 0);
     }))
     .force("repelFromCenter", this.repelFromCenterForce(artistNodes, centralNode, sizes[centralNode.id] || 0, 2)) // Add custom repel force
-    .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - 10)) // Add boundary force
+    .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - padding)) // Add boundary force
     .on("tick", () => {
       this.g.selectAll('.artist-node')
         .attr('cx', (d: any) => d.x)
@@ -1642,9 +1665,11 @@ else if(value === 'mostexhibited'){
     const minRadius = this.minClusterRadius; // Use the minimum cluster radius as the base
     const maxRadius = Math.min(this.baseWidth, this.baseHeight) / 3; // Adjust max radius to fit within SVG dimensions
   
+    const sunburstThickness =2* window.innerWidth/100;
+  
     // Calculate the proportional radius based on cluster size
     const outerRadius = minRadius + ((maxRadius - minRadius) * (clusterSize / maxSize));
-    const innerRadius = outerRadius - this.sunburstThickness;
+    const innerRadius = outerRadius - sunburstThickness;
   
     return [outerRadius, innerRadius];
   }
@@ -1657,7 +1682,8 @@ else if(value === 'mostexhibited'){
   
   
   // Define the boundary force
-private boundaryForce(artistNodes: ArtistNode[], innerRadius: number, padding: number = 10): (alpha: number) => void {
+private boundaryForce(artistNodes: ArtistNode[], innerRadius: number): (alpha: number) => void {
+  const padding = window.innerWidth/100*0.2;
   return function(alpha: number) {
     artistNodes.forEach((d: any) => {
       const distance = Math.sqrt(d.x * d.x + d.y * d.y);
@@ -1763,14 +1789,16 @@ private boundaryForce(artistNodes: ArtistNode[], innerRadius: number, padding: n
   }
 
   private setupRadialScale(innerRadius: number): d3.ScaleLinear<number, number> {
+    const padding = window.innerWidth/100*0.2;
     return d3.scaleLinear()
       .domain([0, 1])  // Normalized degree
-      .range([innerRadius - 10, 10]);
+      .range([innerRadius - padding, 10]);
   }
 
   private calculateRadiusForNode(value: number, innerRadius: number): number {
-    const minRadius =5; // Minimum radius for the least connected node
-    const maxRadius = innerRadius / 8; // Maximum radius for the most connected node
+    
+    const minRadius =0.2 * window.innerWidth/100; // Minimum radius for the least connected node
+    const maxRadius =window.innerWidth/100; // Maximum radius for the most connected node
     const calculatedRadius = minRadius + (maxRadius - minRadius) * value;
   
     return calculatedRadius;
