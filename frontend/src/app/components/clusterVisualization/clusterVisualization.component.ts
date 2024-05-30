@@ -132,7 +132,7 @@ export class ClusterVisualizationComponent implements OnInit {
   
   
   private createScatterPlotScales(clusterNodes: ClusterNode[]) {
-    clusterNodes.forEach(cluster => {console.log('scales hallo',cluster.meanBirthDate)});
+   
     const birthDates = clusterNodes.map(cluster => cluster.meanBirthDate);
     const exhibitedArtworks = clusterNodes.map(cluster => cluster.totalExhibitedArtworks);
   
@@ -481,7 +481,8 @@ private calculateNodeRadius(artistId: number, normalizedMap: Map<number, number>
 
 private changeCluster(value: string){
     // Remove the existing SVG element
-    d3.select("figure#network").select("svg").remove();
+    d3.select(this.networkContainer.nativeElement).select("figure.network-container").select("svg").remove();
+
     let allArtists:Artist[]= [];
     this.clusters.forEach((cluster, clusterIndex) => {
       allArtists.push(...cluster);
@@ -709,12 +710,13 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
     const clusterNodes = this.renderClusters(value); // Render clusters first
      // Calculate scales
   const { xScale, yScale } = this.createScatterPlotScales(clusterNodes);
-  console.log('scales:',xScale, yScale)
+ 
   // Create and draw the scatter plot
   this.createScatterPlotGroup();
   this.createXAxis(xScale);
   this.createYAxis(yScale);
   this.drawScatterPlotPoints(clusterNodes, xScale, yScale); 
+  
 
   }
 
@@ -742,19 +744,19 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
     const meanTimestamp = totalWeight ? weightedSumDate / totalWeight : new Date(1910, 0, 1).getTime(); // Default to 1910 if no weight
     const meanDate = new Date(meanTimestamp); // Convert back to Date object
     const meanDate2 = new Date(meanTimestamp2); // Convert back to Date object
-    console.log('cluster average', meanDate, totalExhibitedArtworks);
+   /*  console.log('cluster average', meanDate, totalExhibitedArtworks);
     console.log('cluster birth', meanDate2, totalExhibitedArtworks);
-  
+   */
     return [meanDate, meanDate2, totalExhibitedArtworks];
   }
   
   private renderClusters(value: string): ClusterNode[] {
     const maxSize = Math.max(...this.clusters.map(cluster => cluster.length));
-console.log(this.clusters)
+
     const clusterNodes: ClusterNode[] = this.clusters.map((cluster, index) => {
       const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, maxSize);
       const [meanAvgDate, meanBirthDate,totalExhibitedArtworks] = this.calculateClusterMetrics(cluster);
-      console.log('scales', meanAvgDate, meanBirthDate,totalExhibitedArtworks)
+     
       return {
         clusterId: index,
         artists: cluster,

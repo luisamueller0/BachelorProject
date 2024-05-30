@@ -1,4 +1,5 @@
-<div class="barchart-container" #barChart>
+
+<div class="exhibition-container" #exhibition>
   <ng-container *ngIf="!isLoading">
     <h1 *ngIf="!selectedArtists">Overview of Techniques of all {{ allArtists.length }} artists</h1>
     <h1 *ngIf="selectedArtists && selectedArtists.length > 1">Overview of Techniques of Cluster with {{ selectedArtists.length }} artists</h1>
@@ -7,7 +8,7 @@
     </h1>
 
   </ng-container>
-      <figure class="svg-container"></figure>
+      <figure class="exhibition-svg-container"></figure>
 
   <!-- Display loading indicator if data is still loading -->
   <div *ngIf="isLoading" class="loading-container">

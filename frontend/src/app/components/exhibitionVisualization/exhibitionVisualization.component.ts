@@ -5,6 +5,8 @@ import { Component, OnInit, Input, ViewChild, ElementRef, OnChanges, OnDestroy, 
   import { Subscription } from 'rxjs';
   import { DecisionService } from '../../services/decision.service';
   import { ArtistService } from '../../services/artist.service';
+import { ExhibitionService } from '../../services/exhibition.service';
+import { Exhibition } from '../../models/exhibition';
   
 @Component({
   selector: 'app-exhibitionVisualization',
@@ -12,10 +14,12 @@ import { Component, OnInit, Input, ViewChild, ElementRef, OnChanges, OnDestroy, 
   styleUrls: ['./exhibitionVisualization.component.css']
 })
 export class ExhibitionVisualizationComponent implements OnInit, OnChanges, OnDestroy {
-    @ViewChild('barChart', { static: true }) private chartContainer!: ElementRef;
+    @ViewChild('exhibition', { static: true }) private exhibitionContainer!: ElementRef;
     private subscriptions: Subscription = new Subscription();
   
   
+    allExhibitions: Exhibition[] = [];
+    exhibitions: Exhibition[] = [];
     
     allArtists: Artist[] = [];
     selectedArtists: Artist[] | null = [];
@@ -64,10 +68,15 @@ export class ExhibitionVisualizationComponent implements OnInit, OnChanges, OnDe
   
     constructor(private selectionService: SelectionService,
       private decisionService: DecisionService,
-      private artistService: ArtistService
+      private exhibitionService: ExhibitionService
     ) { }
   
     ngOnInit(): void {
+      this.exhibitionService.getAllExhibitions().subscribe((exhibitions) => {
+        this.allExhibitions = exhibitions;
+        console.log(this.allExhibitions)
+       });
+
       this.subscriptions.add(
         this.selectionService.currentAllArtists.subscribe((artists: Artist[] | null) => {
           this.allArtists = artists || [];
@@ -101,20 +110,38 @@ export class ExhibitionVisualizationComponent implements OnInit, OnChanges, OnDe
     }
   
     private updateChart(): void {
-      if (!this.chartContainer) return;
+      if (!this.exhibitionContainer) return;
       this.tryInitialize();
   
      
     }
+
+    
   
     tryInitialize(): void {
       if(this.allArtists.length === 0){
         this.isLoading = true;
         return;
       }else{
+        this.retrieveWantedExhibitions();
         this.createChart();
       }
       
+    };
+
+    private retrieveWantedExhibitions(): void {
+      const wantedExhibitionIds = this.allArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()));
+      console.log('Wanted Exhibition IDs:', wantedExhibitionIds);
+      console.log('Types of Wanted Exhibition IDs:', wantedExhibitionIds.map(id => typeof id));
+      
+      this.exhibitions = this.allExhibitions.filter(exhibition => {
+        const isIncluded = wantedExhibitionIds.includes(exhibition.id.toString());
+
+        return isIncluded;
+      });
+      console.log('Filtered Exhibitions:', this.exhibitions);
+      
+
     };
   
     private createChart(): void {
@@ -125,9 +152,9 @@ export class ExhibitionVisualizationComponent implements OnInit, OnChanges, OnDe
   
     private createSvg(): void {
        // Remove any existing SVG elements
-       d3.select(this.chartContainer.nativeElement).select("figure.svg-container").select("svg").remove();
+       d3.select(this.exhibitionContainer.nativeElement).select("figure.exhibition-svg-container").select("svg").remove();
   
-       const element = this.chartContainer.nativeElement.querySelector('figure.svg-container');
+       const element = this.exhibitionContainer.nativeElement.querySelector('figure.exhibition-svg-container');
       const margin = {
         top: this.margin.top * window.innerHeight / 100,
         right: this.margin.right * window.innerWidth / 100,

@@ -2,19 +2,31 @@ const dbSemaphore = require('../semaphoreHandler');
 const math = require('mathjs');
 const { session } = require('../db');  // Ensure this is correctly importing the session
 
-
-
 class Exhibition {
     constructor(data) {
         this.id = Number(data.id); 
-        this.start_date = data.startdate;
-        this.end_date = data.enddate;
+        this.start_date = formatDateString(data.startdate);
+        this.end_date = formatDateString(data.enddate);
         this.name = data.title;
         this.took_place_in_country = data.tookPlaceInCountry;
         this.type = data.type;
+        this.duration = data.duration;
+        this.exhibited_artists = data.exhibited_artists;
     }
+}
 
-
+function formatDateString(dateString) {
+    const date = new Date(dateString);
+  
+    const dateOptions = {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    };
+  
+    const formattedDate = date.toLocaleDateString('en-US', dateOptions);
+    const formattedTime = '00:00:00'; // Fixed time value
+    return `${formattedDate} ${formattedTime}`;
 }
 
 const findAllExhibitions = async () => {
@@ -28,9 +40,7 @@ const findAllExhibitions = async () => {
     } catch (error) {
         console.error('Error finding exhibitions:', error);
         throw error;
-    } finally {
-        session.close();  // Ensure the session is closed after the query
-    }
+    } 
 };
 
 const processExhibitions = (result) => {
