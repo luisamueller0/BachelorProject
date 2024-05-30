@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, Input, ViewChild, ElementRef, OnChanges, OnDestroy, HostListener } from '@angular/core';
 import * as d3 from 'd3';
 import { Artist, ArtistNode, ClusterNode } from '../../models/artist';
 import exhibited_with from '../../models/exhibited_with';
@@ -698,7 +698,7 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
   }
 
 
-  private calculateClusterMetrics(artists: Artist[]): [Date, number] {
+  private calculateClusterMetrics(artists: Artist[]): [Date, Date,number] {
   
     let totalExhibitedArtworks = 0;
     let weightedSumDate = 0;
@@ -707,10 +707,8 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
     let weightedSumDate2 = 0;
   
     artists.forEach(artist => {
-      console.log(typeof artist.overall_avg_date);
       const overallAvgDate = new Date(artist.overall_avg_date).getTime(); // Convert overall_avg_date to timestamp
       const birthYearDate = new Date(artist.birthyear).getTime(); // Convert birthyear to timestamp
-      console.log( artist.birthyear)
   
       totalExhibitedArtworks += artist.total_exhibited_artworks;
       weightedSumDate += overallAvgDate * artist.total_exhibited_artworks;
@@ -726,7 +724,7 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
     console.log('cluster average', meanDate, totalExhibitedArtworks);
     console.log('cluster birth', meanDate2, totalExhibitedArtworks);
   
-    return [meanDate, totalExhibitedArtworks];
+    return [meanDate, meanDate2, totalExhibitedArtworks];
   }
   
   private renderClusters(value: string): void {
@@ -734,7 +732,7 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
 console.log(this.clusters)
     const clusterNodes: ClusterNode[] = this.clusters.map((cluster, index) => {
       const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, maxSize);
-      const [meanDate, totalExhibitedArtworks] = this.calculateClusterMetrics(cluster);
+      const [meanAvgDate, meanBirthDate,totalExhibitedArtworks] = this.calculateClusterMetrics(cluster);
       return {
         clusterId: index,
         artists: cluster,
@@ -742,7 +740,8 @@ console.log(this.clusters)
         innerRadius: innerRadius,
         x: Math.random() * this.baseWidth - this.baseWidth / 2,
         y: Math.random() * this.baseHeight - this.baseWidth / 2,
-        meanDate: meanDate, // Initialize with a default date,
+        meanAvgDate: meanAvgDate, // Initialize with a default date,
+        meanBirthDate: meanBirthDate,
         totalExhibitedArtworks: totalExhibitedArtworks
       };
     });

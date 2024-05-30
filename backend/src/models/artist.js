@@ -54,17 +54,11 @@ function formatDateString(dateString) {
       day: 'numeric'
     };
   
-    const timeOptions = {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    };
-  
     const formattedDate = date.toLocaleDateString('en-US', dateOptions);
-    const formattedTime = date.toLocaleTimeString('en-US', timeOptions);
+    const formattedTime = '00:00:00'; // Fixed time value
     return `${formattedDate} ${formattedTime}`;
   }
+  
   
 
 

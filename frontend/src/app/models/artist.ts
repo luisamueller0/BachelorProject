@@ -55,8 +55,9 @@ interface ArtistData {
     innerRadius: number;
     x: number;
     y: number;
-    meanDate: Date;
+    meanAvgDate: Date;
     totalExhibitedArtworks: number;
+    meanBirthDate: Date;
   }
   
   
