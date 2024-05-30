@@ -88,6 +88,8 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   public getTitle(): string {
     return `Displaying ${this.allArtists.length} artists and ${this.clusters.length} clusters`;
   }
+
+
   private createSvg(): void {
     const container = d3.select(this.elementRef.nativeElement).select(`figure#focusNetwork-${this.displayValue}`);
     const containerNode = container.node() as HTMLElement;
@@ -101,12 +103,13 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
         .attr("width", width)
         .attr("height", height)
         .append("g")
-        .attr('transform', `translate(${width / 2}, ${height / 2})`); // Center the group element
+        
   
         this.baseWidth=width;
         this.baseHeight=height;
-      this.g = this.svg.append('g');
-      this.g.append('g').attr('class', 'clusters');
+      this.g = this.svg.append('g')
+      .attr('transform', `translate(${width / 2}, ${height / 2})`); // Center the group element
+      this.g.append('g').attr('class', 'clusters')
     } else {
       console.error('Container node is not found or not an Element');
     }
