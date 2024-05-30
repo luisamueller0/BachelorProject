@@ -1,4 +1,4 @@
-import { Component, OnInit, OnChanges, SimpleChanges, HostListener, Input, ElementRef } from '@angular/core';
+import { Component, OnInit, OnChanges, SimpleChanges, HostListener, Input, ElementRef, AfterViewInit } from '@angular/core';
 import * as d3 from 'd3';
 import { Artist, ArtistNode, ClusterNode } from '../../models/artist';
 import exhibited_with from '../../models/exhibited_with';
@@ -12,7 +12,7 @@ import { ArtistService } from '../../services/artist.service';
   templateUrl: './focusOnCluster.component.html',
   styleUrls: ['./focusOnCluster.component.css']
 })
-export class FocusOnClusterComponent implements OnInit, OnChanges {
+export class FocusOnClusterComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() displayValue: string = '';
   public isLoading: boolean = true;
   public noClusterSelected: boolean = true;
@@ -72,6 +72,12 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
 
     
   }
+  ngAfterViewInit() {
+    this.createSvg();
+    this.resizeSvg();
+    this.tryInitialize();
+  }
+  
 
   ngOnDestroy() {
     this.subscriptions.unsubscribe();
@@ -259,7 +265,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
         return degree > (degreeMap.get(maxNode.artist.id) || 0) ? node : maxNode;
       }, artistNodes[0]);
 
-      const padding = window.innerWidth/100*0.2;
+      const padding = window.innerWidth/100*0.1;
 
       // Update the force simulation
       this.simulation[cluster.clusterId]
@@ -364,7 +370,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
   private renderClusters(value: string): void {
     const maxSize = Math.max(...this.clusters.map(cluster => cluster.length));
   
-    const sunburstThickness =2* window.innerWidth/100;
+    const sunburstThickness =1.4* window.innerWidth/100;
     const outerRadius = Math.min(this.baseWidth, this.baseHeight) / 2;
     const innerRadius = outerRadius - sunburstThickness;
     
@@ -643,7 +649,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
       const degree = degreeMap.get(node.artist.id) || 0;
       return degree > (degreeMap.get(maxNode.artist.id) || 0) ? node : maxNode;
     }, artistNodes[0]);
-    const padding = window.innerWidth/100*0.2;
+    const padding = window.innerWidth/100*0.1;
 
     const simulation = d3.forceSimulation(artistNodes)
     .force("collision", d3.forceCollide((d: any) => {
@@ -1058,7 +1064,7 @@ else if(value === 'mostexhibited'){
   
   // Define the boundary force
 private boundaryForce(artistNodes: ArtistNode[], innerRadius: number): (alpha: number) => void {
-  const padding = window.innerWidth/100*0.2;
+  const padding = window.innerWidth/100*0.1;
   return function(alpha: number) {
     artistNodes.forEach((d: any) => {
       const distance = Math.sqrt(d.x * d.x + d.y * d.y);
@@ -1172,8 +1178,8 @@ private boundaryForce(artistNodes: ArtistNode[], innerRadius: number): (alpha: n
 
   private calculateRadiusForNode(value: number, innerRadius: number): number {
     
-    const minRadius =window.innerWidth/100*0.2; // Minimum radius for the least connected node
-    const maxRadius = window.innerWidth/100*0.8; // Maximum radius for the most connected node
+    const minRadius =window.innerWidth/100*0.1; // Minimum radius for the least connected node
+    const maxRadius = window.innerWidth/100*0.7; // Maximum radius for the most connected node
     const calculatedRadius = minRadius + (maxRadius - minRadius) * value;
   
     return calculatedRadius;
