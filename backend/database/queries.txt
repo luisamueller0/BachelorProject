@@ -204,6 +204,15 @@ WHERE r.AmountExhibitedArtworks = maxArtworks AND exists(b.tookPlaceInCountry)
 SET a.mostExhibitedInCountry = b.tookPlaceInCountry
 => this worked for 6708 artists
 
+
+LATER:
+MATCH (a:Artist)-[r:EXHIBITED_MODIFIED]->(b:Exhibition)
+WHERE b.country IS NOT NULL
+WITH a, MAX(r.AmountExhibitedArtworks) AS maxArtworks
+MATCH (a)-[r:EXHIBITED_MODIFIED]->(b:Exhibition)
+WHERE r.AmountExhibitedArtworks = maxArtworks AND b.country IS NOT NULL
+SET a.mostExhibitedInCountry = b.country
+
 FOR COMMUNITY DETECTION
 ^^^^^^^^^^^^^^^^^^^^^^
 // First, collect the necessary nodes and relationships into lists

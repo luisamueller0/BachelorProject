@@ -1,283 +1,286 @@
 import { Component, OnInit, Input, ViewChild, ElementRef, OnChanges, OnDestroy, HostListener } from '@angular/core';
-  import * as d3 from 'd3';
-  import { Artist } from '../../models/artist';
-  import { SelectionService } from '../../services/selection.service';
-  import { Subscription } from 'rxjs';
-  import { DecisionService } from '../../services/decision.service';
-  import { ArtistService } from '../../services/artist.service';
+import * as d3 from 'd3';
+import { Artist } from '../../models/artist';
+import { SelectionService } from '../../services/selection.service';
+import { Subscription } from 'rxjs';
 import { ExhibitionService } from '../../services/exhibition.service';
 import { Exhibition } from '../../models/exhibition';
-  
+import { ArtistService } from '../../services/artist.service';
+
 @Component({
   selector: 'app-exhibitionVisualization',
   templateUrl: './exhibitionVisualization.component.html',
   styleUrls: ['./exhibitionVisualization.component.css']
 })
 export class ExhibitionVisualizationComponent implements OnInit, OnChanges, OnDestroy {
-    @ViewChild('exhibition', { static: true }) private exhibitionContainer!: ElementRef;
-    private subscriptions: Subscription = new Subscription();
-  
-  
-    allExhibitions: Exhibition[] = [];
-    exhibitions: Exhibition[] = [];
-    
-    allArtists: Artist[] = [];
-    selectedArtists: Artist[] | null = [];
-    nonselectedArtists: Artist[] = [];
-    isLoading: boolean = true;
-    private svg: any;
-    private contentWidth: number = 0;
-    private contentHeight: number = 0;
-  
-    // Margins in vw and vh
-    private margin = {
-      top: 2,
-      right: 1,
-      bottom: 8,
-      left: 3
-    };
-  
-    // Define the order of techniques
-    private techniquesOrder: string[] = [
-      "drawing",
-      "drawing: chalk",
-      "drawing: charcoal",
-      "drawing: pen and ink",
-      "painting",
-      "painting: aquarelle",
-      "painting: gouache",
-      "painting: oil",
-      "painting: tempera",
-      "mural painting",
-      "mural painting: fresco",
-      "pastel",
-      "mixed media",
-      "monotype",
-      "other medium"
-    ];
-  
-    // Define the color scale using d3.interpolatePlasma
-    private techniqueColorScale = d3.scaleOrdinal<string, string>()
-      .domain(this.techniquesOrder)
-      .range(this.techniquesOrder.map((d, i) => d3.interpolatePlasma(i / this.techniquesOrder.length)));
-  
-    // Define the color scale for selected artists with adjusted opacity
-    private unselectedTechniqueColorScale = d3.scaleOrdinal<string, string>()
-      .domain(this.techniquesOrder)
-      .range(this.techniquesOrder.map((d, i) => d3.color(d3.interpolatePlasma(i / this.techniquesOrder.length))?.copy({ opacity: 0.7 })!.toString() || ''));
-  
-    constructor(private selectionService: SelectionService,
-      private decisionService: DecisionService,
-      private exhibitionService: ExhibitionService
-    ) { }
-  
-    ngOnInit(): void {
-      this.exhibitionService.getAllExhibitions().subscribe((exhibitions) => {
-        this.allExhibitions = exhibitions;
-        console.log(this.allExhibitions)
-       });
+  @ViewChild('exhibition', { static: true }) private exhibitionContainer!: ElementRef;
+  private subscriptions: Subscription = new Subscription();
 
-      this.subscriptions.add(
-        this.selectionService.currentAllArtists.subscribe((artists: Artist[] | null) => {
-          this.allArtists = artists || [];
-          this.tryInitialize();
-        })
-      );
-  
-      this.subscriptions.add(
-        this.selectionService.currentArtists.subscribe((artists: Artist[] | null) => {
-          this.selectedArtists = artists;
-          this.tryInitialize();
-        })
-      );
-  
-      window.addEventListener('resize', this.onResize.bind(this));
-    
-    }
-  
-    ngOnChanges(): void {
+  allExhibitions: Exhibition[] = [];
+  exhibitions: Exhibition[] = [];
+  allArtists: Artist[] = [];
+  selectedArtists: Artist[] | null = [];
+  nonselectedArtists: Artist[] = [];
+  isLoading: boolean = true;
+  private svg: any;
+  private contentWidth: number = 0;
+  private contentHeight: number = 0;
+
+  // Margins in vw and vh
+  private margin = {
+    top: 4,
+    right: 10, // Increase right margin to accommodate legend
+    bottom: 2,
+    left: 8
+  };
+
+  constructor(private selectionService: SelectionService,
+              private exhibitionService: ExhibitionService,
+              private artistService: ArtistService) { }
+
+  ngOnInit(): void {
+    this.exhibitionService.getAllExhibitions().subscribe((exhibitions) => {
+      this.allExhibitions = exhibitions;
       this.tryInitialize();
-    }
-  
-    ngOnDestroy(): void {
-      this.subscriptions.unsubscribe();
-      window.removeEventListener('resize', this.onResize.bind(this));
-    }
-  
-    @HostListener('window:resize', ['$event'])
-    onResize(): void {
-      this.updateChart();
-    }
-  
-    private updateChart(): void {
-      if (!this.exhibitionContainer) return;
-      this.tryInitialize();
-  
-     
-    }
+    });
 
-    
-  
-    tryInitialize(): void {
-      if(this.allArtists.length === 0){
-        this.isLoading = true;
-        return;
-      }else{
-        this.retrieveWantedExhibitions();
-        this.createChart();
-      }
-      
-    };
+    this.subscriptions.add(
+      this.selectionService.currentAllArtists.subscribe((artists: Artist[] | null) => {
+        this.allArtists = artists || [];
+        this.tryInitialize();
+      })
+    );
 
-    private retrieveWantedExhibitions(): void {
-      const wantedExhibitionIds = this.allArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()));
-      console.log('Wanted Exhibition IDs:', wantedExhibitionIds);
-      console.log('Types of Wanted Exhibition IDs:', wantedExhibitionIds.map(id => typeof id));
-      
-      this.exhibitions = this.allExhibitions.filter(exhibition => {
-        const isIncluded = wantedExhibitionIds.includes(exhibition.id.toString());
+    this.subscriptions.add(
+      this.selectionService.currentArtists.subscribe((artists: Artist[] | null) => {
+        this.selectedArtists = artists;
+        this.tryInitialize();
+      })
+    );
 
-        return isIncluded;
-      });
-      console.log('Filtered Exhibitions:', this.exhibitions);
-      
+    window.addEventListener('resize', this.onResize.bind(this));
+  }
 
-    };
-  
-    private createChart(): void {
-      this.createSvg();
-      this.drawBars();
-      this.isLoading = false;
-    }
-  
-    private createSvg(): void {
-       // Remove any existing SVG elements
-       d3.select(this.exhibitionContainer.nativeElement).select("figure.exhibition-svg-container").select("svg").remove();
-  
-       const element = this.exhibitionContainer.nativeElement.querySelector('figure.exhibition-svg-container');
-      const margin = {
-        top: this.margin.top * window.innerHeight / 100,
-        right: this.margin.right * window.innerWidth / 100,
-        bottom: this.margin.bottom * window.innerWidth / 100,
-        left: this.margin.left * window.innerWidth / 100
-      };
-      const width = element.offsetWidth - margin.left - margin.right;
-      const height = element.offsetHeight - margin.top - margin.bottom;
-  
-      this.svg = d3.select(element).append('svg')
-        .attr('width', '100%')
-        .attr('height', '100%')
-        .attr('viewBox', `0 0 ${element.offsetWidth} ${element.offsetHeight}`)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
-  
-      this.contentWidth = width;
-      this.contentHeight = height;
-    }
-  
-    private drawBars(): void {
-      if (!this.allArtists.length) return;
-    
-      // Ensure selectedArtists is treated as an empty array if null
-      const selectedArtists = this.selectedArtists || [];
-    
-      if (selectedArtists.length === 0) {
-        this.nonselectedArtists = this.allArtists;
-      } else {
-        this.nonselectedArtists = this.allArtists.filter(artist => !selectedArtists.find(a => a.id === artist.id));
-      }
-    
-      const nonselectedTechniqueDistribution = this.calculateTechniqueDistribution(this.nonselectedArtists);
-      const selectedTechniqueDistribution = this.calculateTechniqueDistribution(selectedArtists);
-    
-      const combinedData = this.prepareStackedData(nonselectedTechniqueDistribution, selectedTechniqueDistribution);
-    
-      const x = d3.scaleBand()
-        .domain(this.techniquesOrder)
-        .range([0, this.contentWidth])
-        .padding(0.2);
-    
-      const xAxis = this.svg.append("g")
-        .attr("transform", `translate(0,${this.contentHeight})`)
-        .call(d3.axisBottom(x))
-        .selectAll("text")
-        .attr("transform", "translate(-10,0)rotate(-45)")
-        .style("text-anchor", "end")
-        .style("font-weight", '700')
-        .style("color", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? 'black' : 'lightgray') : 'black')
-        .style("font-weight", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? 'bold' : '700') : '700');
-  
-    
-      
-      xAxis.style("opacity", (d: string) => this.hasTechniqueValue(d, combinedData) ? 1 : 0.3);
-    
-      const maxTechniqueValue: number = d3.max(combinedData, d => d.nonselectedArtists + d.selectedArtists) || 0;
-      const y = d3.scaleLinear()
-        .domain([0, maxTechniqueValue])
-        .range([this.contentHeight, 0]);
-    
-      this.svg.append("g")
-        .call(d3.axisLeft(y));
-    
-      const stack = d3.stack()
-        .keys(['nonselectedArtists', 'selectedArtists']);
-    
-      const stackedData = stack(combinedData);
-    
-      const bars = this.svg.append("g")
-        .selectAll("g")
-        .data(stackedData)
-        .enter().append("g")
-        .attr("fill", (d:any, i:number) => i === 0 && selectedArtists.length > 0 ?  this.unselectedTechniqueColorScale : this.techniqueColorScale)
-        .selectAll("rect")
-        .data((d:any) => d)
-        .enter().append("rect")
-        .attr("x", (d:any) => x(d.data.technique) || 0)
-        .attr("y", (d:any) => y(d[1]))
-        .attr("height", (d:any) => y(d[0]) - y(d[1]))
-        .attr("width", x.bandwidth())
-        .attr("fill", (d:any, i:number, nodes:any) => {
-          const seriesIndex = nodes[i].parentNode.__data__.key;
-          return seriesIndex === 'nonselectedArtists' && selectedArtists.length > 0
-            ? this.unselectedTechniqueColorScale(d.data.technique)
-            : this.techniqueColorScale(d.data.technique);
-        });
-    
-    }
-    
-    private isTechniqueSelected(technique: string, selectedArtists: Artist[]): boolean {
-      return selectedArtists.some(artist => artist.techniques.includes(technique));
-    }
-  
-    private hasTechniqueValue(technique: string, combinedData: any[]): boolean {
-      const dataEntry = combinedData.find(d => d.technique === technique);
-      return dataEntry ? (dataEntry.nonselectedArtists > 0 || dataEntry.selectedArtists > 0) : false;
-    }
-    
-    private calculateTechniqueDistribution(artists: Artist[]): Map<string, number> {
-      const techniqueDistribution = new Map<string, number>();
-      artists.forEach((artist) => {
-        artist.techniques.forEach((technique) => {
-          techniqueDistribution.set(technique, (techniqueDistribution.get(technique) || 0) + 1);
-        });
-      });
-      return techniqueDistribution;
-    }
-    
-    private prepareStackedData(nonselectedTechniqueDistribution: Map<string, number>, selectedTechniqueDistribution: Map<string, number>): any[] {
-      const combinedData: any[] = [];
-    
-      this.techniquesOrder.forEach(technique => {
-        const nonselectedCount = nonselectedTechniqueDistribution.get(technique) || 0;
-        const selectedCount = selectedTechniqueDistribution.get(technique) || 0;
-        combinedData.push({
-          technique,
-          nonselectedArtists: nonselectedCount,
-          selectedArtists: selectedCount
-        });
-      });
-    
-      return combinedData;
+  ngOnChanges(): void {
+    this.tryInitialize();
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+    window.removeEventListener('resize', this.onResize.bind(this));
+  }
+
+  @HostListener('window:resize', ['$event'])
+  onResize(): void {
+    this.updateChart();
+  }
+
+  private updateChart(): void {
+    if (!this.exhibitionContainer) return;
+    this.tryInitialize();
+  }
+
+  private tryInitialize(): void {
+    if (this.allArtists.length === 0 || this.allExhibitions.length === 0) {
+      this.isLoading = true;
+      return;
+    } else {
+      this.retrieveWantedExhibitions();
+      this.createChart();
     }
   }
+
+  private retrieveWantedExhibitions(): void {
+    const wantedExhibitionIds = this.allArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()));
+    this.exhibitions = this.allExhibitions.filter(exhibition => wantedExhibitionIds.includes(exhibition.id.toString()));
+  }
+
+  private createChart(): void {
+    this.createSvg();
+    this.drawTimeline();
+    this.isLoading = false;
+  }
+
+  private createSvg(): void {
+    d3.select(this.exhibitionContainer.nativeElement).select("figure.exhibition-svg-container").select("svg").remove();
+
+    const element = this.exhibitionContainer.nativeElement.querySelector('figure.exhibition-svg-container');
+    const margin = {
+      top: this.margin.top * window.innerHeight / 100,
+      right: this.margin.right * window.innerWidth / 100,
+      bottom: this.margin.bottom * window.innerWidth / 100,
+      left: this.margin.left * window.innerWidth / 100
+    };
+    const width = element.offsetWidth - margin.left - margin.right;
+    const height = element.offsetHeight - margin.top - margin.bottom;
+
+    this.svg = d3.select(element).append('svg')
+      .attr('width', '100%')
+      .attr('height', '100%')
+      .attr('viewBox', `0 0 ${element.offsetWidth} ${element.offsetHeight}`)
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    this.contentWidth = width;
+    this.contentHeight = height;
+  }
+
+  private drawTimeline(): void {
+    const timelineData = this.exhibitions.map(exhibition => ({
+      name: exhibition.name,
+      start: new Date(exhibition.start_date).getTime(),
+      end: new Date(exhibition.end_date).getTime(),
+      duration: new Date(exhibition.end_date).getTime() - new Date(exhibition.start_date).getTime(),
+      amountParticipants: exhibition.exhibited_artists,
+      country: exhibition.took_place_in_country,
+      normalizedParticipants: 0 // Add this property for initialization
+    }));
   
+    const normalizedParticipants = this.normalizeLogarithmically(timelineData.map(d => d.amountParticipants));
+  
+    timelineData.forEach((d, i) => {
+      d.normalizedParticipants = normalizedParticipants[i];
+    });
+  
+    const groupedByCountry = d3.group(timelineData, d => d.country);
+    const sortedCountries = Array.from(groupedByCountry.entries())
+      .sort(([, a], [, b]) => d3.descending(a.reduce((sum, d) => sum + d.duration, 0), b.reduce((sum, d) => sum + d.duration, 0)))
+      .map(([country]) => country);
+  
+    const xScale = d3.scaleTime()
+      .domain([d3.min(timelineData, d => d.start)!, d3.max(timelineData, d => d.end)!])
+      .range([0, this.contentWidth]);
+  
+    const yScale = d3.scaleBand()
+      .domain(timelineData.map((d, i) => i.toString()))
+      .range([0, this.contentHeight])
+      .padding(0.1);
+  
+    const colorScale = d3.scaleSequential(d3.interpolatePlasma)
+      .domain([0, 1]); // Normalized participants are between 0 and 1
+  
+    // Create x-axis with grid lines at the top
+    const xAxis = d3.axisTop(xScale).tickSize(-this.contentHeight);
+  
+    const xAxisGroup = this.svg.append('g')
+      .call(xAxis)
+      .attr('transform', `translate(0,0)`)
+      .selectAll("text")
+      .style("text-anchor", "end")
+      .attr("dx", "-.8em")
+      .attr("dy", ".15em")
+      .attr("transform", "rotate(65)");
+  
+    // Change the color of the grid lines on the x-axis
+    this.svg.selectAll('.tick line')
+      .attr('stroke', 'lightblue');  // Change this to the desired color
+  
+    const extraSpace = 0.5 * window.innerWidth / 100; // 0.5vw space between countries
+  
+    let yOffset = 0;
+    sortedCountries.forEach((country, index) => {
+      const exhibitions = groupedByCountry.get(country)!;
+      exhibitions.sort((a, b) => d3.ascending(a.start, b.start));
+  
+      const countryColor = this.artistService.getCountryColor(country, 0.1); // Lighter background color
+  
+      // Draw background for the country section
+      this.svg.append('rect')
+        .attr('x', 0)
+        .attr('y', yOffset)
+        .attr('width', this.contentWidth)
+        .attr('height', exhibitions.length * yScale.bandwidth())
+        .attr('fill', countryColor);
+  
+      // Add country label
+      this.svg.append('text')
+        .attr('class', 'label')
+        .attr('x', -10)
+        .attr('y', yOffset + (exhibitions.length * yScale.bandwidth() / 2))
+        .attr('dy', '.35em')
+        .attr('text-anchor', 'end')
+        .attr('fill', this.artistService.getCountryColor(country))
+        .text(this.artistService.countryMap[country] || country);
+  
+      // Draw bars for each exhibition
+      exhibitions.forEach(exhibition => {
+        this.svg.append('rect')
+          .attr('class', 'bar')
+          .attr('x', xScale(exhibition.start))
+          .attr('y', yOffset)
+          .attr('width', xScale(exhibition.end) - xScale(exhibition.start))
+          .attr('height', yScale.bandwidth())
+          .attr('fill', colorScale(exhibition.normalizedParticipants));
+        yOffset += yScale.bandwidth();
+      });
+  
+      yOffset += extraSpace; // Extra space between different country groups
+    });
+  
+    // Add legend
+    const legendHeight = 200;
+    const legendWidth = 20;
+    const legendX = this.contentWidth + 20; // Position legend to the right of the chart
+    const legendY = this.contentHeight - legendHeight - 20; // Position legend near the bottom right corner
+  
+    const legend = this.svg.append('g')
+      .attr('transform', `translate(${legendX}, ${legendY})`);
+  
+    // Legend title
+    legend.append('text')
+      .attr('x', 0)
+      .attr('y', -10)
+      .attr('text-anchor', 'start')
+      .attr('font-weight', 'bold')
+      .text('Participants');
+  
+    // Create gradient for legend
+    const defs = this.svg.append('defs');
+    const linearGradient = defs.append('linearGradient')
+      .attr('id', 'linear-gradient')
+      .attr('x1', '0%')
+      .attr('y1', '100%')
+      .attr('x2', '0%')
+      .attr('y2', '0%');
+  
+    const stops = d3.range(0, 1.01, 0.01).map((t: number) => ({
+      offset: `${t * 100}%`,
+      color: colorScale(t)
+    }));
+  
+    linearGradient.selectAll('stop')
+      .data(stops)
+      .enter().append('stop')
+      .attr('offset', (d: { offset: string; color: string }) => d.offset)
+      .attr('stop-color', (d: { offset: string; color: string }) => d.color);
+  
+    // Draw legend
+    legend.append('rect')
+      .attr('width', legendWidth)
+      .attr('height', legendHeight)
+      .style('fill', 'url(#linear-gradient)');
+  
+    // Legend axis
+    const legendScale = d3.scaleLinear()
+      .domain(d3.extent(timelineData, d => d.normalizedParticipants) as [number, number])
+      .range([legendHeight, 0]);
+  
+    const legendAxis = d3.axisRight(legendScale)
+      .ticks(6);
+  
+    legend.append('g')
+      .attr('transform', `translate(${legendWidth}, 0)`)
+      .call(legendAxis);
+  }
+  
+
+  
+
+
+  private normalizeLogarithmically(values: number[]): number[] {
+    const logMaxValue = Math.log1p(Math.max(...values));
+    const logMinValue = Math.log1p(Math.min(...values));
+    const range = logMaxValue - logMinValue;
+    return values.map(value => (Math.log1p(value) - logMinValue) / range); // Normalize by dividing by the max degree
+  }
+}
