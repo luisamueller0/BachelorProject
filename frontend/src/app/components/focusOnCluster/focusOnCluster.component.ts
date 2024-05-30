@@ -357,22 +357,44 @@ export class FocusOnClusterComponent implements OnInit, OnChanges {
     this.renderClusters(value); // Render clusters first
   }
 
+  private calculateClusterMetrics(artists: Artist[]): [Date, number] {
+    
+    let totalExhibitedArtworks = 0;
+    let weightedSumDate = 0;
+    let totalWeight = 0;
+
+    artists.forEach(artist => {
+      const timestamp = artist.overall_avg_date.getTime(); // Convert date to timestamp
+      totalExhibitedArtworks += artist.total_exhibited_artworks;
+      weightedSumDate += timestamp * artist.total_exhibited_artworks;
+      totalWeight += artist.total_exhibited_artworks;
+    });
+
+    const meanTimestamp = totalWeight ? weightedSumDate / totalWeight : new Date(1910, 0, 1).getTime(); // Default to 1910 if no weight
+    const meanDate = new Date(meanTimestamp); // Convert back to Date object
+
+    return [meanDate, totalExhibitedArtworks];
   
+}
   private renderClusters(value: string): void {
     const maxSize = Math.max(...this.clusters.map(cluster => cluster.length));
   
   
     const outerRadius = Math.min(this.baseWidth, this.baseHeight) / 2;
     const innerRadius = outerRadius - this.sunburstThickness;
-  
+   
+
     const clusterNodes: ClusterNode[] = this.clusters.map((cluster, index) => {
+      const [meanDate, totalExhibitedArtworks] = this.calculateClusterMetrics(cluster);
       return {
         clusterId: index,
         artists: cluster,
         outerRadius: outerRadius,
         innerRadius: innerRadius,
         x: 0, // Center relative to the group transformation
-        y: 0 // Center relative to the group transformation
+        y: 0,// Center relative to the group transformation
+        meanDate: meanDate, // Initialize with a default date,
+        totalExhibitedArtworks: totalExhibitedArtworks
       };
     });
   

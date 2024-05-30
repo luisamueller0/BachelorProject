@@ -634,6 +634,7 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
       .subscribe(data => {
     
         this.clusters = data[0];
+        console.log('clusters:',this.clusters )
 
         this.intraCommunityEdges = data[1] as exhibited_with[][];
         const interCommunityEdgesRaw = data[2] as exhibited_with[];
@@ -697,19 +698,52 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
   }
 
 
+  private calculateClusterMetrics(artists: Artist[]): [Date, number] {
+  
+    let totalExhibitedArtworks = 0;
+    let weightedSumDate = 0;
+    let totalWeight = 0;
+    let totalWeight2 = 0;
+    let weightedSumDate2 = 0;
+  
+    artists.forEach(artist => {
+      console.log(typeof artist.overall_avg_date);
+      const overallAvgDate = new Date(artist.overall_avg_date).getTime(); // Convert overall_avg_date to timestamp
+      const birthYearDate = new Date(artist.birthyear).getTime(); // Convert birthyear to timestamp
+      console.log( artist.birthyear)
+  
+      totalExhibitedArtworks += artist.total_exhibited_artworks;
+      weightedSumDate += overallAvgDate * artist.total_exhibited_artworks;
+      weightedSumDate2 += birthYearDate * artist.total_exhibited_artworks;
+      totalWeight2 += artist.total_exhibited_artworks;
+      totalWeight += artist.total_exhibited_artworks;
+    });
+  
+    const meanTimestamp2 = totalWeight2 ? weightedSumDate2 / totalWeight2 : new Date(1910, 0, 1).getTime(); // Default to 1910 if no weight
+    const meanTimestamp = totalWeight ? weightedSumDate / totalWeight : new Date(1910, 0, 1).getTime(); // Default to 1910 if no weight
+    const meanDate = new Date(meanTimestamp); // Convert back to Date object
+    const meanDate2 = new Date(meanTimestamp2); // Convert back to Date object
+    console.log('cluster average', meanDate, totalExhibitedArtworks);
+    console.log('cluster birth', meanDate2, totalExhibitedArtworks);
+  
+    return [meanDate, totalExhibitedArtworks];
+  }
   
   private renderClusters(value: string): void {
     const maxSize = Math.max(...this.clusters.map(cluster => cluster.length));
 console.log(this.clusters)
     const clusterNodes: ClusterNode[] = this.clusters.map((cluster, index) => {
       const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, maxSize);
+      const [meanDate, totalExhibitedArtworks] = this.calculateClusterMetrics(cluster);
       return {
         clusterId: index,
         artists: cluster,
         outerRadius: outerRadius,
         innerRadius: innerRadius,
         x: Math.random() * this.baseWidth - this.baseWidth / 2,
-        y: Math.random() * this.baseHeight - this.baseWidth / 2
+        y: Math.random() * this.baseHeight - this.baseWidth / 2,
+        meanDate: meanDate, // Initialize with a default date,
+        totalExhibitedArtworks: totalExhibitedArtworks
       };
     });
 

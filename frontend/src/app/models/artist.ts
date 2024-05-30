@@ -26,9 +26,9 @@ interface ArtistData {
   europeanRegionBirth: string;
   total_exhibitions:number;
   cluster: number;
-  overall_avg_date: Date;
-  avg_start_date: Date;
-  avg_end_date: Date;
+  overall_avg_date: string;
+  avg_start_date: string;
+  avg_end_date: string;
   avg_duration: number;
   participated_in_exhibition:number[];
   }
@@ -55,13 +55,16 @@ interface ArtistData {
     innerRadius: number;
     x: number;
     y: number;
+    meanDate: Date;
+    totalExhibitedArtworks: number;
   }
+  
   
   class Artist {
     id: number;
     firstname: string;
     lastname: string;
-    birthyear:string;
+    birthyear:Date;
     birthplace: string;
     deathyear: string;
     deathplace: string;
@@ -93,7 +96,7 @@ interface ArtistData {
       this.id = Number(data.id);
       this.firstname = data.firstname;
       this.lastname = data.lastname;
-      this.birthyear = data.birthyear;
+      this.birthyear = new Date(data.birthyear);
       this.birthplace = data.birthplace;
       this.deathyear = data.deathyear;
       this.deathplace = data.deathplace;
@@ -116,12 +119,14 @@ interface ArtistData {
       this.total_exhibitions = data.total_exhibitions;
       this.cluster = data.cluster;
       this.overall_avg_date = new Date(data.overall_avg_date);
-      this.avg_start_date = new Date(data.avg_start_date);
-      this.avg_end_date = new Date(data.avg_end_date);
+      this.avg_start_date = new Date (data.avg_start_date);
+      this.avg_end_date = new Date (data.avg_end_date);
       this.avg_duration = data.avg_duration;
       this.participated_in_exhibition = data.participated_in_exhibition;
     }
   
+  
+    
     convertToMap(data:any): Map<string, number> {// Iterate through each data object
       const techniquesFreqMap = new Map<string, number>(); // Create a new Map
       data.forEach((item:any) => {

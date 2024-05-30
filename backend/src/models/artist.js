@@ -13,7 +13,7 @@ class Artist {
         this.id = Number(data.id); 
         this.firstname = data.firstname;
         this.lastname = data.lastname;
-        this.birthyear = data.birthyear;
+        this.birthyear = formatDateString(data.birthdate);
         this.birthplace = data.birthplace;
         this.deathyear = data.deathyear
         this.deathplace = data.deathplace;
@@ -35,7 +35,7 @@ class Artist {
         this.total_exhibitions = data.TotalExhibitions;
         this.techniques_freq = data.artFormsFreq;
         this.cluster = -1; // Default value
-        this.overall_avg_date = data.overall_avg_date;
+        this.overall_avg_date =formatDateString(data.overall_avg_date);
         this.avg_start_date = data.avg_start_date;
         this.avg_end_date = data.avg_end_date;
         this.avg_duration = data.avg_duration;
@@ -44,6 +44,30 @@ class Artist {
 
 
 }
+
+function formatDateString(dateString) {
+    const date = new Date(dateString);
+  
+    const dateOptions = {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    };
+  
+    const timeOptions = {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    };
+  
+    const formattedDate = date.toLocaleDateString('en-US', dateOptions);
+    const formattedTime = date.toLocaleTimeString('en-US', timeOptions);
+    return `${formattedDate} ${formattedTime}`;
+  }
+  
+
+
 
 // Define European regions based on country codes
 /*   const europeanRegions = {

@@ -48,7 +48,7 @@ export class ArtistService {
     .set('maxLimit', JSON.stringify(range[1]))
     .set('k', JSON.stringify(k));
 
-  return this.http.get<any[][]>(this.dataUrl+ '/artist/cluster', { params }).pipe(shareReplay());
+  return this.http.get<[any[][]]>(this.dataUrl+ '/artist/cluster', { params }).pipe(shareReplay());
 
   }
 
