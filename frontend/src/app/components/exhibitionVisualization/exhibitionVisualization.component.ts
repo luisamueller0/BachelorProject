@@ -103,7 +103,7 @@ export class ExhibitionVisualizationComponent implements OnInit, OnChanges, OnDe
 
   private createSvg(): void {
     d3.select(this.exhibitionContainer.nativeElement).select("figure.exhibition-svg-container").select("svg").remove();
-
+  
     const element = this.exhibitionContainer.nativeElement.querySelector('figure.exhibition-svg-container');
     const margin = {
       top: this.margin.top * window.innerHeight / 100,
@@ -112,19 +112,26 @@ export class ExhibitionVisualizationComponent implements OnInit, OnChanges, OnDe
       left: this.margin.left * window.innerWidth / 100
     };
     const width = element.offsetWidth - margin.left - margin.right;
-    const height = element.offsetHeight - margin.top - margin.bottom;
-
+  
+    // Calculate the height based on the number of countries and exhibitions
+    const numExhibitions = this.exhibitions.length;
+    const numCountries = new Set(this.exhibitions.map(exhibition => exhibition.took_place_in_country)).size;
+    const barHeight = 2; // Height of each bar
+    const extraSpace = 2 * window.innerWidth / 100; // Space between countries
+    const calculatedHeight = (numExhibitions * barHeight) + (numCountries * extraSpace) + margin.top + margin.bottom;
+  
+    const height = Math.max(element.offsetHeight, calculatedHeight);
+  
     this.svg = d3.select(element).append('svg')
-      .attr('width', '100%')
-      .attr('height', '100%')
-      .attr('viewBox', `0 0 ${element.offsetWidth} ${element.offsetHeight}`)
+      .attr('width', element.offsetWidth)
+      .attr('height', height)
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
-
+  
     this.contentWidth = width;
-    this.contentHeight = height;
+    this.contentHeight = height - margin.top - margin.bottom;
   }
-
+  
   private drawTimeline(): void {
     const timelineData = this.exhibitions.map(exhibition => ({
       name: exhibition.name,
@@ -144,7 +151,7 @@ export class ExhibitionVisualizationComponent implements OnInit, OnChanges, OnDe
   
     const groupedByCountry = d3.group(timelineData, d => d.country);
     const sortedCountries = Array.from(groupedByCountry.entries())
-      .sort(([, a], [, b]) => d3.descending(a.reduce((sum, d) => sum + d.duration, 0), b.reduce((sum, d) => sum + d.duration, 0)))
+      .sort(([, a], [, b]) => d3.descending(a.length, b.length)) // Sort by number of exhibitions
       .map(([country]) => country);
   
     const xScale = d3.scaleTime()
@@ -175,7 +182,7 @@ export class ExhibitionVisualizationComponent implements OnInit, OnChanges, OnDe
     this.svg.selectAll('.tick line')
       .attr('stroke', 'lightblue');  // Change this to the desired color
   
-    const extraSpace = 0.5 * window.innerWidth / 100; // 0.5vw space between countries
+    const extraSpace = 0.5 * window.innerWidth / 100; // 2vw space between countries
   
     let yOffset = 0;
     sortedCountries.forEach((country, index) => {
@@ -260,13 +267,14 @@ export class ExhibitionVisualizationComponent implements OnInit, OnChanges, OnDe
       .attr('height', legendHeight)
       .style('fill', 'url(#linear-gradient)');
   
-    // Legend axis
+    // Legend axis with normalized values from 0 to 1
     const legendScale = d3.scaleLinear()
-      .domain(d3.extent(timelineData, d => d.normalizedParticipants) as [number, number])
+      .domain([0, 1])
       .range([legendHeight, 0]);
   
     const legendAxis = d3.axisRight(legendScale)
-      .ticks(6);
+      .ticks(6)
+      .tickFormat(d3.format(".1f")); // Format ticks to show one decimal place
   
     legend.append('g')
       .attr('transform', `translate(${legendWidth}, 0)`)
