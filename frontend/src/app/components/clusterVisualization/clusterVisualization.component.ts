@@ -165,7 +165,7 @@ export class ClusterVisualizationComponent implements OnInit {
       .attr('cx', (d:any) => xScale(d.meanBirthDate))
       .attr('cy', (d:any) => yScale(d.totalExhibitedArtworks))
       .attr('r', 5) // Adjust the radius as needed
-      .attr('fill', 'steelblue')
+      .attr('fill', 'gray')
       .on('click', (event:any, d:any) => this.onClusterClick(d)); // Attach the cluster click handler
   }
   

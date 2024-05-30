@@ -193,7 +193,7 @@ private getKeyByValue(value: string): string |undefined {
       { region: "Western Europe", colorScale: this.artistService.getRegionColorScale("Western Europe") }
     ];
   
-    const legendWidth = 500;
+    const legendWidth = 350;
     const legendHeight = legendData.length * 40 + 10;
     const margin = 20; // Margin from the bottom and right sides
   
@@ -262,9 +262,9 @@ legendItems.append('text')
     .attr('y', 15)
     .attr('dy', '.35em')
     .text((d:any) => d.region)
-    .style('font-size', '14px')
+    .style('font-size', '1.5vw')
     .style('font-weight', 'bold')
-    .style('fill', '#000')
+    
     .style('font-family', 'Roboto, sans-serif');
 }
 
