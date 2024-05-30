@@ -19,6 +19,7 @@ interface InterCommunityEdge extends d3.SimulationLinkDatum<ClusterNode> {
   styleUrls: ['./clusterVisualization.component.css']
 })
 export class ClusterVisualizationComponent implements OnInit {
+  @ViewChild('network', { static: true }) private networkContainer!: ElementRef;
   public isLoading: boolean = true;
   private firstK: number = -1;
   private isIniatialized: boolean = false;
@@ -108,10 +109,15 @@ export class ClusterVisualizationComponent implements OnInit {
 
   @HostListener('window:resize', ['$event'])
   onResize(event: any) {
+    this.updateNetwork();
+  }
+  
+
+
+  private updateNetwork(): void {
+    if (!this.networkContainer) return;
     this.resizeSvg();
   }
-
-
   
   private highlightArtistNode(id: number | null) {
     if (id === null) {
@@ -135,105 +141,30 @@ export class ClusterVisualizationComponent implements OnInit {
     console.log('selected event:',simulatedEvent)
     this.handleNodeClick(selectedNodeData, simulatedEvent);
   }
-/*   private highlightArtistNode(id: number | null) {
-    if(id === null){
-      this.g.selectAll(".artist-node").style('filter', '');
-      return;
-    }
-   
-      let defs = this.svg.append('defs');
-    
-      let filter = defs.append('filter')
-          .attr('id', 'shadow')
-          .attr('x', '-50%')
-          .attr('y', '-50%')
-          .attr('width', '200%')
-          .attr('height', '200%');
-      
-      filter.append('feDropShadow')
-          .attr('dx', 0)
-          .attr('dy', 0)
-          .attr('stdDeviation', 4)
-          .attr('flood-color', 'black')
-          .attr('flood-opacity', 0.8);
-      
-      let feMerge = filter.append('feMerge');
-      feMerge.append('feMergeNode');
-      feMerge.append('feMergeNode')
-          .attr('in', 'SourceGraphic');
 
-        
- // Assert that id is a number
- const numericId: number = id.valueOf();
-    
-          console.log('selected HALLO', typeof numericId)
-         
-      // Find the node that matches the artist.id
-      const selectedNodeId = this.g.selectAll(".artist-node").filter((d: any) => d.artist.id.toString() === id).node().__data__.artist.id;
-     // console.log('selected',artistNode.__data__.artist.id)
-
-      const selectedCircle = this.g.selectAll(".artist-node").filter((d: any) => d.artist.id.toString() === id).node() as SVGCircleElement;
-
-      console.log('selectedCircle:',selectedCircle.id)
-    
-      console.log('selectedCircle:',selectedCircle)
-      const clusterNode2 = this.artistClusterMap.get(selectedNodeId);
-      if (clusterNode2) {
-        this.focusHandler(clusterNode2);
-      }
-
-
-        
-        
-
-      if (!selectedCircle) {
-        return; // If no node is found, exit the function
-      }
-    
-      // Set the new node as the selected node and change its color
-      this.selectedNode = [selectedCircle, selectedCircle.style.fill];
-    
-      // Darken the original color for the selected node
-      const originalColor = d3.color(selectedCircle.style.fill) as d3.RGBColor;
-      const darkerColor = d3.rgb(originalColor).darker(1); // Adjust the darkness factor as needed
-      //selectedCircle.style.fill = darkerColor.toString(); // Change the fill color to the darker shade
-      selectedCircle.style.filter = 'url(#shadow)';
-
-      // Zoom into the selected node
-  const zoomLevel = 20; // Adjust the zoom level as needed
-  const { width, height } = this.svg.node().getBBox();
-  const x = parseFloat(selectedCircle.getAttribute('cx') || '0');
-  const y = parseFloat(selectedCircle.getAttribute('cy') || '0');
-  const transform = d3.zoomIdentity.translate(width / 2 - zoomLevel * x, height / 2 - zoomLevel * y).scale(zoomLevel);
-
-  this.svg.transition()
-    .duration(750)
-    .call(d3.zoom().transform, transform);
-    
-    
-    
-  } */
   public getTitle(): string {
     return `Displaying ${this.allArtists.length} artists and ${this.clusters.length} clusters`;
   }
 
   private resizeSvg(): void {
     if (!this.g) return;
-
-    const svgElement = d3.select("figure#network svg");
-    const width = window.innerWidth; // Use full window width
-    const height = window.innerHeight; // Use full window height
-
+  
+   
+    const svgElement = d3.select(this.networkContainer.nativeElement).select("#figure.network-container").select('svg');
+    console.log('svg',SVGGElement)
+    const width = this.networkContainer.nativeElement.offsetWidth;
+    const height = this.networkContainer.nativeElement.offsetHeight;
+  
     svgElement
       .attr("width", width)
       .attr("height", height);
-
+  
     this.baseWidth = width;
     this.baseHeight = height;
-
+  
     this.zoomToFitClusters();
   }
-
+  
   private zoomToFitClusters(): void {
     if (!this.g) return;
 
@@ -259,30 +190,41 @@ export class ClusterVisualizationComponent implements OnInit {
 
   private createSvg(): void {
     const zoom: d3.ZoomBehavior<Element, unknown> = d3.zoom<Element, unknown>()
-      .scaleExtent([0.1, 10]) // Adjust the zoom range as needed
+      .scaleExtent([0.1, 10])
       .on('zoom', (event: any) => {
         this.g.attr('transform', event.transform);
       })
       .filter((event: any) => {
-        // Allow zooming with mousewheel, pinch, and double-click, but prevent zooming with right click and dragging
         return (!event.ctrlKey || event.type === 'wheel') && event.button === 0;
       })
-      .wheelDelta((event: WheelEvent) => -event.deltaY * (event.deltaMode === 1 ? 0.005 : 0.002)); // Adjust zoom sensitivity
-
-    this.svg = d3.select("figure#network")
-      .append("svg")
+      .wheelDelta((event: WheelEvent) => -event.deltaY * (event.deltaMode === 1 ? 0.005 : 0.002));
+  
+      
+    const element = this.networkContainer.nativeElement.querySelector('figure.network-container');
+    console.log('svg element:',element)
+    const margin = { top: 0, right: 0, bottom: 0, left: 0 };
+    const width = element.offsetWidth - margin.left - margin.right;
+    const height = element.offsetHeight - margin.top - margin.bottom;
+    console.log('svg', width, height)
+  
+    this.svg = d3.select(element).append('svg')
+      .attr('width', '100%')
+      .attr('height', '100%')
+      .attr('viewBox', `0 0 ${element.offsetWidth} ${element.offsetHeight}`)
       .call(zoom as any)
-      .attr("width", this.baseWidth)
-      .attr("height", this.baseHeight)
-      .append("g");
-
+      .append("g")
+     
+  
     this.g = this.svg.append('g');
-
     this.g.append('g').attr('class', 'clusters');
     this.g.append('g').attr('class', 'inter-community-edges');
-
-    this.resizeSvg();
+  
+    this.baseWidth = width;
+    this.baseHeight = height;
+  
+    this.zoomToFitClusters();
   }
+  
 
  private updateVisualization(type: string, value: any) {
     console.log(`Updated ${type} to ${value}`);

@@ -1,17 +1,16 @@
-.loading-message {
-  font-size: 500px;
-  font-weight: bold;
-  text-align: center;
-  margin-top: 50px;
-  color:red;
-}
+
 .container {
   width: 100%;
   height: 100%;
   position: relative;
+  background-color: aqua;
 }
 
 .network-container {
   width: 100%;
   height: 100%;
+}
+
+.noMargin{
+  margin-top:0px;
 }

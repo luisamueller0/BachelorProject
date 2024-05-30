@@ -14,15 +14,17 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh; /* Full height of the viewport */
+  height:100%;
 }
 
 .loading-spinner {
-  border: 20px solid #f3f3f3; /* Light grey border */
-  border-top: 20px solid #7e24c7; /* Dark purple border */
+  border: 2vw solid #f3f3f3; /* Light grey border */
+  border-top: 2vw solid #7e24c7; /* Dark purple border */
   border-radius: 50%;
-  width: 200px;
-  height: 200px;
+  width: 10vw;
+  height: 10vw;
+  margin-top:4%;
+  margin-bottom:4%;
   animation: spin 2s linear infinite; /* Spin animation */
 }
 

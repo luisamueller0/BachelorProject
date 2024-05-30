@@ -7,6 +7,7 @@
   padding: 0;
   margin: 0;
 }
+
 .separate-container {
   margin-top: 20px;
   width: 100%;
@@ -44,12 +45,7 @@
   box-sizing: border-box;
 }
 
-.sidebar-right app-focusOnCluster {
-  height: 33.33%;
-  width: 100%;
-}
-
-.network-section {
+.sidebar-right .network-section {
   width: 100%;
   height: 33.33%;
   border: 1px solid #e5aeff;
@@ -84,14 +80,13 @@
 }
 
 .cluster-center {
-  height: 66.66%;
+  height: 66.67%;
   width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
   border: 1px solid #e5aeff;
   box-sizing: border-box;
-  overflow: hidden;
 }
 
 .barchart-bottom {
