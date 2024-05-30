@@ -34,6 +34,7 @@ export class ClusterVisualizationComponent implements OnInit {
   private selectedClusterNode: ClusterNode | null = null;
   private allCountries: string[] = [];
  private biggestClusterId: number = -1;
+ private margin={top: 10, right: 10, bottom: 10, left: 10};
 
   
 
@@ -112,7 +113,46 @@ export class ClusterVisualizationComponent implements OnInit {
     this.updateNetwork();
   }
   
+  private createScatterPlotScales(clusterNodes: ClusterNode[]) {
+    clusterNodes.forEach(cluster => {console.log('scales hallo',cluster.meanBirthDate)});
+    const birthDates = clusterNodes.map(cluster => cluster.meanBirthDate);
+    const exhibitedArtworks = clusterNodes.map(cluster => cluster.totalExhibitedArtworks);
+  
 
+    const xScale = d3.scaleTime()
+      .domain(d3.extent(birthDates) as [Date, Date])
+      .range([0, this.baseWidth]);
+  
+    const yScale = d3.scaleLinear()
+      .domain([0, d3.max(exhibitedArtworks) as number])
+      .range([this.baseHeight, 0]);
+  
+    return { xScale, yScale };
+  }
+
+  private createScatterPlotGroup(): void {
+    this.svg.append('g')
+      .attr('class', 'scatter-plot')
+      .attr('transform', `translate(${this.margin.left},${this.margin.top})`);
+  }
+  
+  private drawScatterPlotPoints(clusterNodes: ClusterNode[], xScale: d3.ScaleTime<number, number>, yScale: d3.ScaleLinear<number, number>) {
+    const scatterPlotGroup = this.svg.select('.scatter-plot');
+  
+    scatterPlotGroup.selectAll('.point')
+      .data(clusterNodes)
+      .enter()
+      .append('circle')
+      .attr('class', 'point')
+      .attr('cx', (d:any) => xScale(d.meanBirthDate))
+      .attr('cy', (d:any) => yScale(d.totalExhibitedArtworks))
+      .attr('r', 5) // Adjust the radius as needed
+      .attr('fill', 'steelblue')
+      .on('click', (event:any, d:any) => this.onClusterClick(d)); // Attach the cluster click handler
+  }
+  
+
+  
 
   private updateNetwork(): void {
     if (!this.networkContainer) return;
@@ -204,8 +244,14 @@ export class ClusterVisualizationComponent implements OnInit {
   
       
     const element = this.networkContainer.nativeElement.querySelector('figure.network-container');
-    console.log('svg element:',element)
-    const margin = { top: 10, right: 10, bottom: 10, left: 10 };
+   
+
+  const margin = {
+    top: this.margin.top * window.innerHeight / 100,
+    right: this.margin.right * window.innerWidth / 100,
+    bottom: this.margin.bottom * window.innerWidth / 100,
+    left: this.margin.left * window.innerWidth / 100
+  };
     const width = element.offsetWidth - margin.left - margin.right;
     const height = element.offsetHeight - margin.top - margin.bottom;
     console.log('svg', width, height)
@@ -641,8 +687,13 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
 
   private initializeVisualization(value: string) {
     this.createSvg();
-    this.renderClusters(value); // Render clusters first
-    
+    const clusterNodes = this.renderClusters(value); // Render clusters first
+     // Calculate scales
+  const { xScale, yScale } = this.createScatterPlotScales(clusterNodes);
+  console.log('scales:',xScale, yScale)
+  // Create and draw the scatter plot
+  this.createScatterPlotGroup();
+  this.drawScatterPlotPoints(clusterNodes, xScale, yScale); 
   }
 
 
@@ -675,12 +726,13 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
     return [meanDate, meanDate2, totalExhibitedArtworks];
   }
   
-  private renderClusters(value: string): void {
+  private renderClusters(value: string): ClusterNode[] {
     const maxSize = Math.max(...this.clusters.map(cluster => cluster.length));
 console.log(this.clusters)
     const clusterNodes: ClusterNode[] = this.clusters.map((cluster, index) => {
       const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, maxSize);
       const [meanAvgDate, meanBirthDate,totalExhibitedArtworks] = this.calculateClusterMetrics(cluster);
+      console.log('scales', meanAvgDate, meanBirthDate,totalExhibitedArtworks)
       return {
         clusterId: index,
         artists: cluster,
@@ -694,6 +746,8 @@ console.log(this.clusters)
       };
     });
 
+
+    
 
     const clusterGroups = clusterNodes.map(clusterNode => this.createClusterGroup(clusterNode, value));
 
@@ -721,6 +775,7 @@ console.log(this.clusters)
       
     // Simulate the clusters
     this.simulateClusters(clusterNodes);
+    return clusterNodes;
   }
 
   private findClusterNodeById(id: number): number {
@@ -728,19 +783,10 @@ console.log(this.clusters)
   }
 
   private simulateClusters(clusterNodes: ClusterNode[]): void {
-    const links: InterCommunityEdge[] = this.interCommunityEdges;
-
-    // Define a scale to adjust the link distance based on shared exhibitions
-    const linkDistanceScale = d3.scaleLinear()
-      .domain(d3.extent(links, d => d.sharedExhibitionMinArtworks) as [number, number])
-      .range([50, 300]); // Adjust these values as needed for your visualization
-
+   
     this.clusterSimulation = d3.forceSimulation<ClusterNode>(clusterNodes)
       .force("collision", d3.forceCollide<ClusterNode>().radius(d => d.outerRadius))
-      .force("link", d3.forceLink<ClusterNode, InterCommunityEdge>(links)
-        .id(d => d.clusterId)
-        .distance(d => linkDistanceScale(d.sharedExhibitionMinArtworks))
-      )
+    
       .force("x", d3.forceX((d:ClusterNode) => (d.clusterId % 2 === 0 ? 500 : -500)).strength(0.7)) // Increase strength and offset
       .force("y", d3.forceY(0).strength(0.05)) // Reduce strength of y force
       .on("tick", () => this.ticked());
