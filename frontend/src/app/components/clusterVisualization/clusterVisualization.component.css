@@ -8,9 +8,17 @@
 
 .network-container {
   width: 100%;
-  height: 100%;
+  height: calc(100% - 2vw); /* Adjusting for the height of the heading */
+  margin: 0;
+  padding: 0;
+  position: relative;
+
 }
 
+
+svg {
+  display: block;
+}
 .noMargin{
   margin-top:0px;
 }

@@ -98,7 +98,7 @@ export class ClusterVisualizationComponent implements OnInit {
     }));
     this.subscriptions.add(this.decisionService.currentSearchedArtistId.subscribe((id:number|null) => this.highlightArtistNode(id)));
 
-    this.resizeSvg();
+   
     window.addEventListener('resize', this.onResize.bind(this));
   }
 
@@ -116,7 +116,8 @@ export class ClusterVisualizationComponent implements OnInit {
 
   private updateNetwork(): void {
     if (!this.networkContainer) return;
-    this.resizeSvg();
+    const value=this.decisionService.getDecisionSunburst();
+    this.loadNewData(this.clusters,this.intraCommunityEdges,this.interCommunityEdges,value)
   }
   
   private highlightArtistNode(id: number | null) {
@@ -146,7 +147,7 @@ export class ClusterVisualizationComponent implements OnInit {
     return `Displaying ${this.allArtists.length} artists and ${this.clusters.length} clusters`;
   }
 
-  private resizeSvg(): void {
+/*   private resizeSvg(): void {
     if (!this.g) return;
   
    
@@ -164,8 +165,8 @@ export class ClusterVisualizationComponent implements OnInit {
   
     this.zoomToFitClusters();
   }
-  
-  private zoomToFitClusters(): void {
+   */
+ /*  private zoomToFitClusters(): void {
     if (!this.g) return;
 
     const bounds = this.g.node().getBBox();
@@ -186,9 +187,11 @@ export class ClusterVisualizationComponent implements OnInit {
     this.svg.transition()
       .duration(750)
       .call(d3.zoom().transform, d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale));
-  }
+  } */
 
   private createSvg(): void {
+    d3.select(this.networkContainer.nativeElement).select("figure.network-container").select("svg").remove();
+
     const zoom: d3.ZoomBehavior<Element, unknown> = d3.zoom<Element, unknown>()
       .scaleExtent([0.1, 10])
       .on('zoom', (event: any) => {
@@ -202,7 +205,7 @@ export class ClusterVisualizationComponent implements OnInit {
       
     const element = this.networkContainer.nativeElement.querySelector('figure.network-container');
     console.log('svg element:',element)
-    const margin = { top: 0, right: 0, bottom: 0, left: 0 };
+    const margin = { top: 10, right: 10, bottom: 10, left: 10 };
     const width = element.offsetWidth - margin.left - margin.right;
     const height = element.offsetHeight - margin.top - margin.bottom;
     console.log('svg', width, height)
@@ -213,6 +216,7 @@ export class ClusterVisualizationComponent implements OnInit {
       .attr('viewBox', `0 0 ${element.offsetWidth} ${element.offsetHeight}`)
       .call(zoom as any)
       .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
      
   
     this.g = this.svg.append('g');
@@ -222,7 +226,7 @@ export class ClusterVisualizationComponent implements OnInit {
     this.baseWidth = width;
     this.baseHeight = height;
   
-    this.zoomToFitClusters();
+   // this.zoomToFitClusters();
   }
   
 
@@ -501,17 +505,19 @@ private changeCluster(value: string){
     }
   }
 
-private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][], interCommunityEdges: exhibited_with[], value: string){
+private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][], interCommunityEdges: exhibited_with[]|InterCommunityEdge[], value: string){
     // Remove the existing SVG element
-    d3.select("figure#network").select("svg").remove();
+    
     this.clusters = clusters;
     this.intraCommunityEdges = intraCommunityEdges;
-    this.interCommunityEdges = interCommunityEdges.map(edge => ({
-      source: edge.startId,
-      target: edge.endId,
-      sharedExhibitionMinArtworks: edge.sharedExhibitionMinArtworks
-    }));
-
+    if (Array.isArray(interCommunityEdges) && interCommunityEdges.length > 0) {
+      if (interCommunityEdges[0] instanceof exhibited_with) {
+        this.interCommunityEdges = (interCommunityEdges as exhibited_with[]).map(edge => ({
+          source: edge.startId,
+          target: edge.endId,
+          sharedExhibitionMinArtworks: edge.sharedExhibitionMinArtworks,
+        }));
+      }}
     let allArtists:Artist[]= [];
     this.clusters.forEach((cluster, clusterIndex) => {
       allArtists.push(...cluster);
