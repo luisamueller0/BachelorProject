@@ -195,14 +195,18 @@ export class DecisionsComponent implements OnInit {
     this.searchedArtist = artist;
     this.searchQuery = artist.name;
     this.filteredArtists = [];
-    if(this.allArtists.has(artist.id)){
-      this.notInCurrentRange = false;
-      this.decisionService.changeSearchedArtistId(artist.id as number);
-    }else{
-      this.decisionService.changeSearchedArtistId(null);
-      this.notInCurrentRange = true;
+       // Check if the artist is in the current range
+    
+  const artistInRange = this.artists.find(a => a.id.toString() === artist.id.toString());
 
-    }
+  if (artistInRange) {
+    this.notInCurrentRange = false;
+    this.decisionService.changeSearchedArtistId(artist.id as number);
+  } else {
+    this.decisionService.changeSearchedArtistId(null);
+    this.notInCurrentRange = true;
+  }
+
     
   }
 }
