@@ -101,21 +101,23 @@ export class FocusOnClusterComponent implements OnInit, OnChanges, AfterViewInit
     const containerNode = container.node() as HTMLElement;
   
     if (containerNode) {
-      const width = containerNode.clientWidth;
+      const width = containerNode.clientWidth -30;
       const height = containerNode.clientHeight;
   
       this.svg = container
         .append("svg")
         .attr("width", width)
         .attr("height", height)
+        .style("display", "block")  // Ensure the SVG is a block element
+        .style("margin", "0 auto")  // Center the SVG horizontally
         .append("g")
-        
+        .attr("transform", `translate(${width / 2}, ${height / 2})`);  // Center the group element
   
-        this.baseWidth=width;
-        this.baseHeight=height;
+      this.baseWidth = width;
+      this.baseHeight = height;
       this.g = this.svg.append('g')
-      .attr('transform', `translate(${width / 2}, ${height / 2})`); // Center the group element
-      this.g.append('g').attr('class', 'clusters')
+          // Center the group element
+      this.g.append('g').attr('class', 'clusters');
     } else {
       console.error('Container node is not found or not an Element');
     }
@@ -371,7 +373,7 @@ export class FocusOnClusterComponent implements OnInit, OnChanges, AfterViewInit
     const maxSize = Math.max(...this.clusters.map(cluster => cluster.length));
   
     const sunburstThickness =1.4* window.innerWidth/100;
-    const outerRadius = Math.min(this.baseWidth, this.baseHeight) / 2;
+    const outerRadius = (Math.min(this.baseWidth, this.baseHeight)-20) / 2;
     const innerRadius = outerRadius - sunburstThickness;
     
    
