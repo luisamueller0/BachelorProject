@@ -28,7 +28,7 @@ export class ExhibitionVisualizationComponent implements OnInit, OnChanges, OnDe
 
   // Margins in vw and vh
   private margin = {
-    top: 4,
+    top: 5,
     right: 10, // Increase right margin to accommodate legend
     bottom: 2,
     left: 8
@@ -215,7 +215,7 @@ export class ExhibitionVisualizationComponent implements OnInit, OnChanges, OnDe
           .attr('class', 'bar')
           .attr('x', xScale(exhibition.start))
           .attr('y', yOffset)
-          .attr('width', xScale(exhibition.end) - xScale(exhibition.start))
+          .attr('width', xScale(exhibition.end) - xScale(exhibition.start) === 0 ? 1 : xScale(exhibition.end) - xScale(exhibition.start))
           .attr('height', yScale.bandwidth())
           .attr('fill', colorScale(exhibition.normalizedParticipants));
         yOffset += yScale.bandwidth();
