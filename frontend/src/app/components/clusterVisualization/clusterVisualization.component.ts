@@ -648,6 +648,12 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
       .subscribe(data => {
     
         this.clusters = data[0];
+        this.clusters.forEach((cluster, clusterIndex) => {
+          console.log('Cluster ', clusterIndex, ':')
+          cluster.forEach(artist => {
+            console.log(artist.firstname, artist.lastname, clusterIndex)
+          });
+        });
         console.log('clusters:',this.clusters )
 
         this.intraCommunityEdges = data[1] as exhibited_with[][];
