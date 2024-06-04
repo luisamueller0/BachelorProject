@@ -12,6 +12,9 @@
   margin-top: 20px;
   width: 100%;
 }
+app-decisions{
+   overflow:hidden;
+}
 
 .wrapper {
   display: flex;

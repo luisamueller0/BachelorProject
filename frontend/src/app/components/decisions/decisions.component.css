@@ -2,8 +2,8 @@
 .dropdown-container {
     display: flex;
     flex-direction: column; /* Keeps the dropdown groups side by side */
-    padding: 0.5vw; /* Adds padding around the container */
-    margin: 0.2vw; /* Space from container to other elements */
+    padding: 0.2vw; /* Adds padding around the container */
+    margin: 0.1vw; /* Space from container to other elements */
     /* background-color: #f8f9fa;  Light grey background */
     border-radius: 8px; /* Rounded corners */
     /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); Subtle shadow */
@@ -12,6 +12,8 @@
 
 /* Styles for each dropdown group */
 .dropdown-group {
+    padding-left:0.4vw;
+    padding-right:0.4vw;
     display: flex;
     width: 100%;
     margin: auto; /* Centers the container within its parent */
@@ -22,10 +24,13 @@
 
 /* Custom styles for autocomplete list */
 .autocomplete-list {
-    max-height: 10vh; /* Adjust this value as needed */
+    max-height: 15vh; /* Adjust this value as needed */
     overflow-y: auto; /* Adds vertical scrollbar if needed */
     background-color: white;
     border: 1px solid #7e24c7;
+    scrollbar-color: #7e24c7 white;
+   
+  scrollbar-width: thin;
     border-radius: 8px;
     box-shadow: 0 0 0 0.2rem rgba(66, 9, 133, 0.25);
     
@@ -38,7 +43,7 @@
 }
 
 .autocomplete-list li {
-    padding: 0.5vw;
+    
     cursor: pointer;
 }
 
@@ -58,15 +63,28 @@
 }
 /* Styles for dropdowns */
 .dropdown {
-    padding: 0.5vw 0.7vw; /* Padding inside the dropdown */
+    padding: 0.2vw 0.5vw; /* Padding inside the dropdown */
     border-radius: 4px; /* Rounded borders for the dropdowns */
     border: 1px solid #ccc; /* Light grey border */
     background-color: #fff; /* White background color */
-    margin-bottom: 0.5vh; /* Space between each dropdown */
+    margin-bottom: 1vh; /* Space between each dropdown */
     cursor: pointer; /* Cursor indicates it's clickable */
     
     outline: none; /* Removes the default focus outline */
     width: 100%; /* Ensures dropdowns use the full width of their group container */
+}
+#artistSearch{
+   
+        padding: 0.2vw 0.5vw; /* Padding inside the dropdown */
+        border-radius: 4px; /* Rounded borders for the dropdowns */
+        border: 1px solid #ccc; /* Light grey border */
+        background-color: #fff; /* White background color */
+        margin-bottom: 1vh; /* Space between each dropdown */
+        cursor: pointer; /* Cursor indicates it's clickable */
+        
+        outline: none; /* Removes the default focus outline */
+        width: 100%; /* Ensures dropdowns use the full width of their group container */
+    
 }
 
 .dropdown:hover {
@@ -80,9 +98,7 @@
 }
 
 /* Example of styling option elements (optional, not all browsers allow this) */
-option {
-    padding: 0.5vw; /* Adds padding inside options */
-}
+
 /* decisions.component.css */
 
 /* Customizing ngx-slider */

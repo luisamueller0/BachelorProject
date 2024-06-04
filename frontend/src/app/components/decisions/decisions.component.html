@@ -1,5 +1,25 @@
 <div class="dropdown-container">
   <div class="dropdown-group">
+    <label for="artistSearch" class="dropdown-label">Search for an artist:</label>
+    <input
+      type="text"
+      id="artistSearch"
+      [(ngModel)]="searchQuery"
+      (input)="onArtistSearch()"
+      placeholder="Type artist name..."
+      class="dropdown"
+    />
+    <ul *ngIf="filteredArtists.length > 0" class="autocomplete-list">
+      <li *ngFor="let artist of filteredArtists" (click)="selectArtist(artist)">
+        {{ artist.name }}
+      </li>
+    </ul>
+    <div *ngIf="notInCurrentRange && searchedArtist !== null" class="info-text">
+      Artist you are searching for is currently not displayed in the cluster. Change the range to {{ searchedArtist.artworks }}.
+    </div>
+  </div>
+</div>
+  <div class="dropdown-group">
     <label for="dropdown" class="dropdown-label">Select sunburst categories:</label>
     <select class="dropdown" (change)="onSunburstChange($event)">
       <option *ngFor="let option of SunburstOptions" [value]="option">{{ option }}</option>
@@ -30,7 +50,7 @@
 -->
   <!-- Addition of ngx-slider for selecting range -->
   <div class="dropdown-group">
-    <label class="dropdown-label">Select the range of exhibited artworks to filter artists:</label>
+    <label class="dropdown-label">Select the range of attended exhibitions to filter artists:</label>
     <div class="dropdown-group2">
       <div class="custom-slider">
       <ngx-slider [(value)]="range[0]" [(highValue)]="range[1]" [options]="options" (valueChange)="onRangeSliderChange()"></ngx-slider>
@@ -64,26 +84,7 @@
   </div>
 
  
-  <div class="dropdown-group">
-    <label for="artistSearch" class="dropdown-label">Search for an artist:</label>
-    <input
-      type="text"
-      id="artistSearch"
-      [(ngModel)]="searchQuery"
-      (input)="onArtistSearch()"
-      placeholder="Type artist name..."
-      class="dropdown"
-    />
-    <ul *ngIf="filteredArtists.length > 0" class="autocomplete-list">
-      <li *ngFor="let artist of filteredArtists" (click)="selectArtist(artist)">
-        {{ artist.name }}
-      </li>
-    </ul>
-    <div *ngIf="notInCurrentRange && searchedArtist !== null" class="info-text">
-      Artist you are searching for is currently not displayed in the cluster. Change the range to {{ searchedArtist.artworks }}.
-    </div>
-  </div>
-</div>
+ 
 
 
 
