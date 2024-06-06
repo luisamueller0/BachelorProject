@@ -1,163 +1,142 @@
 /* Styles for the dropdown container */
 .dropdown-container {
     display: flex;
-    flex-direction: column; /* Keeps the dropdown groups side by side */
-    padding: 0.2vw; /* Adds padding around the container */
-    margin: 0.1vw; /* Space from container to other elements */
-    /* background-color: #f8f9fa;  Light grey background */
-    border-radius: 8px; /* Rounded corners */
-    /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); Subtle shadow */
-    justify-content: space-around; /* Distributes space between dropdown groups */
+    flex-direction: column;
+    padding: 0.2vw;
+    margin: 0.1vw;
+    border-radius: 8px;
+    justify-content: space-around;
 }
 
 /* Styles for each dropdown group */
 .dropdown-group {
-    padding-left:0.4vw;
-    padding-right:0.4vw;
+    padding-left: 0.4vw;
+    padding-right: 0.4vw;
     display: flex;
     width: 100%;
-    margin: auto; /* Centers the container within its parent */
-    flex-direction: column; /* Stacks label and dropdown vertically */
-    align-items: left; /* Centers items in the group */
+    margin: auto;
+    flex-direction: column;
+    align-items: left;
 }
-
 
 /* Custom styles for autocomplete list */
 .autocomplete-list {
-    max-height: 15vh; /* Adjust this value as needed */
-    overflow-y: auto; /* Adds vertical scrollbar if needed */
+    max-height: 15vh;
+    overflow-y: auto;
     background-color: white;
     border: 1px solid #7e24c7;
     scrollbar-color: #7e24c7 white;
-   
-  scrollbar-width: thin;
+    scrollbar-width: thin;
     border-radius: 8px;
     box-shadow: 0 0 0 0.2rem rgba(66, 9, 133, 0.25);
-    
     list-style-type: none;
     padding: 0;
     margin: 0;
     position: relative;
     z-index: 1000;
-    
 }
 
 .autocomplete-list li {
-    
     cursor: pointer;
 }
 
 .autocomplete-list li:hover {
     background-color: #e5e5e5;
 }
+
 /* Styles for labels */
 .dropdown-label {
-    font-weight:700;
-    margin-bottom: 0.02vw; /* Space between label and dropdown */
-
+    font-weight: 700;
+    margin-bottom: 0.02vw;
 }
-.info-text{
-    color:red;
-    font-weight:700;
+
+.info-text {
+    color: red;
+    font-weight: 700;
     font-size: 0.5vw;
 }
-/* Styles for dropdowns */
-.dropdown {
-    padding: 0.2vw 0.5vw; /* Padding inside the dropdown */
-    border-radius: 4px; /* Rounded borders for the dropdowns */
-    border: 1px solid #ccc; /* Light grey border */
-    background-color: #fff; /* White background color */
-    margin-bottom: 1vh; /* Space between each dropdown */
-    cursor: pointer; /* Cursor indicates it's clickable */
-    
-    outline: none; /* Removes the default focus outline */
-    width: 100%; /* Ensures dropdowns use the full width of their group container */
-}
-#artistSearch{
-   
-        padding: 0.2vw 0.5vw; /* Padding inside the dropdown */
-        border-radius: 4px; /* Rounded borders for the dropdowns */
-        border: 1px solid #ccc; /* Light grey border */
-        background-color: #fff; /* White background color */
-        margin-bottom: 1vh; /* Space between each dropdown */
-        cursor: pointer; /* Cursor indicates it's clickable */
-        
-        outline: none; /* Removes the default focus outline */
-        width: 100%; /* Ensures dropdowns use the full width of their group container */
-    
+
+/* Styles for dropdowns and search input */
+.dropdown,
+#artistSearch {
+    padding: 0.2vw 0.5vw;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    margin-bottom: 1vh;
+    cursor: pointer;
+    outline: none;
+    width: 100%;
 }
 
-.dropdown:hover {
-    border-color: #888; /* Darker border on hover */
+.dropdown:hover,
+#artistSearch:hover {
+    border-color: #888;
 }
 
-.dropdown:focus {
-    border-color: #7e24c7; /* Blue border for focus */
+.dropdown:focus,
+#artistSearch:focus {
+    border-color: #7e24c7;
     border-width: 2px;
-    box-shadow: 0 0 0 0.2rem rgba(66, 9, 133, 0.25); /* Glowing effect for focus */
+    box-shadow: 0 0 0 0.2rem rgba(66, 9, 133, 0.25);
 }
-
-/* Example of styling option elements (optional, not all browsers allow this) */
-
-/* decisions.component.css */
 
 /* Customizing ngx-slider */
 .custom-slider {
-    flex-grow: 1; /* Allows the slider to fill the available space but not all of it */
-    max-width: 90%; /* Limits slider's width to 90% of its container */
+    flex-grow: 1;
+    max-width: 90%;
 }
 
 .confirmed {
-    color: green; /* Change text color to green when confirmed */
-  }
-  
-  .unconfirmed {
-    color: grey; /* Revert text color to grey when not confirmed */
-  }
-  .dropdown-group2 {
-    margin-top:0.2vh;
-    display: flex;
-    flex-direction: row; /* Aligns items horizontally */
-    align-items: center; /* Centers items vertically */
-    justify-content: start; /* Aligns items to the start of the row */
-    gap: 0.5vw; /* Adds space between the slider and the checkbox */
-   /* Adds vertical padding for better spacing */
+    color: green;
 }
-/* Custom checkbox styles */
+
+.unconfirmed {
+    color: grey;
+}
+
+.dropdown-group2 {
+    margin-top: 0.2vh;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: start;
+    gap: 0.5vw;
+}
+
 .checkbox-group {
-    flex-grow: 0; /* Prevents the checkbox group from expanding */
+    flex-grow: 0;
     display: flex;
     margin-left: auto;
-    align-items: center; /* Ensures the checkbox is centered with the slider */
+    align-items: center;
 }
 
 .custom-checkbox {
     cursor: pointer;
-    width: 1vw; /* Width of the checkbox */
-    height: 1vw; /* Height of the checkbox */
-    border: 2px solid #ccc; /* Border for the checkbox */
-    border-radius: 50%; /* Makes the checkbox circular */
+    width: 1vw;
+    height: 1vw;
+    border: 2px solid #ccc;
+    border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #fff; /* White background for checkbox */
+    background-color: #fff;
 }
 
 .custom-checkbox i {
-    color: green; /* Icon color when active */
-    font-size: 1vw; /* Size of the icon */
+    color: green;
+    font-size: 1vw;
 }
 
 .custom-checkbox:hover {
-    border-color: #888; /* Darker border on hover */
+    border-color: #888;
 }
 
 .custom-checkbox:focus-within {
-    border-color: #7e24c7; /* Focus color */
-    box-shadow: 0 0 0 0.2rem rgba(66, 9, 133, 0.25); /* Glowing effect for focus */
+    border-color: #7e24c7;
+    box-shadow: 0 0 0 0.2rem rgba(66, 9, 133, 0.25);
 }
 
-/* Styles for the green label */
 .green-label {
     color: green;
     font-weight: 700;
@@ -165,26 +144,19 @@
     font-size: 0.5vw;
 }
 
-/*slider*/
-
-
-
-      
-
-
 ::ng-deep .custom-slider .ngx-slider .ngx-slider-bar {
     background: #e5aeff;
     height: 2px;
 }
 
 ::ng-deep .custom-slider .ngx-slider .ngx-slider-selection {
-    background:#a23fff;
+    background: #a23fff;
 }
 
 ::ng-deep .custom-slider .ngx-slider .ngx-slider-pointer {
     width: 0.5vw;
     height: 1vw;
-    top: auto; /* to remove the default positioning */
+    top: auto;
     bottom: 0;
     background-color: #a23fff;
     border-top-left-radius: 3px;
@@ -222,7 +194,7 @@
 .custom-slider .ngx-slider .ngx-slider-high-value,
 .custom-slider .ngx-slider .ngx-slider-tick-value,
 .custom-slider .ngx-slider .ngx-slider-tick-legend {
-   color: #2a0052;
-font-weight:600!important;
-  font-size: 0.5vw !important; /* Adjust font size as needed */
+    color: #2a0052;
+    font-weight: 600 !important;
+    font-size: 0.5vw !important;
 }

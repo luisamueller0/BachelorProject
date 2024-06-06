@@ -18,7 +18,6 @@
       Artist you are searching for is currently not displayed in the cluster. Change the range to {{ searchedArtist.artworks }}.
     </div>
   </div>
-</div>
   <div class="dropdown-group">
     <label for="dropdown" class="dropdown-label">Select sunburst categories:</label>
     <select class="dropdown" (change)="onSunburstChange($event)">
@@ -33,12 +32,12 @@
     </select>
   </div>
 
-  <div class="dropdown-group">
+<!--   <div class="dropdown-group">
     <label for="dropdown" class="dropdown-label">Select inner order:</label>
     <select class="dropdown" (change)="onOrderChange($event)">
       <option *ngFor="let option of OrderOptions" [value]="option">{{ option }}</option>
     </select>
-  </div>
+  </div> -->
 
   <!-- 
   <div class="dropdown-group">

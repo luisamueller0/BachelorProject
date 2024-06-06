@@ -33,6 +33,26 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
     left: 3
   };
 
+  private techniquesHierarchy = [
+    { parent: "Drawing", sub: "drawing" },
+    { parent: "Drawing", sub: "drawing: chalk" },
+    { parent: "Drawing", sub: "drawing: charcoal" },
+    { parent: "Drawing", sub: "drawing: pen and ink" },
+    { parent: "Painting", sub: "painting" },
+    { parent: "Painting", sub: "painting: aquarelle" },
+    { parent: "Painting", sub: "painting: gouache" },
+    { parent: "Painting", sub: "painting: oil" },
+    { parent: "Painting", sub: "painting: tempera" },
+    { parent: "Mural Painting", sub: "mural painting" },
+    { parent: "Mural Painting", sub: "mural painting: fresco" },
+    { parent: "Other", sub: "pastel" },
+    { parent: "Other", sub: "mixed media" },
+    { parent: "Other", sub: "monotype" },
+    { parent: "Other", sub: "other medium" }
+  ];
+  
+  
+
   // Define the order of techniques
   private techniquesOrder: string[] = [
     "drawing",
@@ -52,15 +72,22 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
     "other medium"
   ];
 
-  // Define the color scale using d3.interpolatePlasma
-  private techniqueColorScale = d3.scaleOrdinal<string, string>()
-    .domain(this.techniquesOrder)
-    .range(this.techniquesOrder.map((d, i) => d3.interpolatePlasma(i / this.techniquesOrder.length)));
+ // Define color scales for parent categories
+private categoryColorScale = d3.scaleOrdinal<string, string>()
+.domain(["Drawing", "Painting", "Mural Painting", "Other"])
+.range(d3.schemeCategory10);
 
-  // Define the color scale for selected artists with adjusted opacity
-  private unselectedTechniqueColorScale = d3.scaleOrdinal<string, string>()
-    .domain(this.techniquesOrder)
-    .range(this.techniquesOrder.map((d, i) => d3.color(d3.interpolatePlasma(i / this.techniquesOrder.length))?.copy({ opacity: 0.7 })!.toString() || ''));
+private techniqueColorScale = (technique: string) => {
+const parentCategory = this.techniquesHierarchy.find(d => d.sub === technique)?.parent || "Other";
+const baseColor = this.categoryColorScale(parentCategory);
+return d3.color(baseColor)?.brighter(1)!.toString() || '';
+};
+
+private unselectedTechniqueColorScale = (technique: string) => {
+const parentCategory = this.techniquesHierarchy.find(d => d.sub === technique)?.parent || "Other";
+const baseColor = this.categoryColorScale(parentCategory);
+return d3.color(baseColor)?.brighter(1)!.copy({ opacity: 0.7 })!.toString() || '';
+};
 
   constructor(private selectionService: SelectionService,
     private decisionService: DecisionService,
@@ -150,25 +177,36 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
 
   private drawBars(): void {
     if (!this.allArtists.length) return;
-  
-    // Ensure selectedArtists is treated as an empty array if null
+    
     const selectedArtists = this.selectedArtists || [];
-  
+    
     if (selectedArtists.length === 0) {
       this.nonselectedArtists = this.allArtists;
     } else {
       this.nonselectedArtists = this.allArtists.filter(artist => !selectedArtists.find(a => a.id === artist.id));
     }
-  
+    
     const nonselectedTechniqueDistribution = this.calculateTechniqueDistribution(this.nonselectedArtists);
     const selectedTechniqueDistribution = this.calculateTechniqueDistribution(selectedArtists);
-  
+    
     const combinedData = this.prepareStackedData(nonselectedTechniqueDistribution, selectedTechniqueDistribution);
-  
+    
+    // Adjust padding manually based on parent category
+    const groupedTechniques = d3.group(this.techniquesOrder, technique => this.techniquesHierarchy.find(d => d.sub === technique)?.parent);
+    
     const x = d3.scaleBand()
       .domain(this.techniquesOrder)
       .range([0, this.contentWidth])
-      .padding(0.2);
+      .padding(0.1);
+  
+    const techniquePositions = new Map<string, number>();
+    let currentPosition = 0;
+    groupedTechniques.forEach((techniques, parent) => {
+      techniques.forEach((technique: string, index: number) => {
+        techniquePositions.set(technique, currentPosition);
+        currentPosition += x.bandwidth() * (index === techniques.length - 1 ? 1.2 : 1); // Increase padding between different parents
+      });
+    });
   
     const xAxis = this.svg.append("g")
       .attr("transform", `translate(0,${this.contentHeight})`)
@@ -179,9 +217,7 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
       .style("font-weight", '700')
       .style("color", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? 'black' : 'lightgray') : 'black')
       .style("font-weight", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? 'bold' : '700') : '700');
-
   
-    
     xAxis.style("opacity", (d: string) => this.hasTechniqueValue(d, combinedData) ? 1 : 0.3);
   
     const maxTechniqueValue: number = d3.max(combinedData, d => d.nonselectedArtists + d.selectedArtists) || 0;
@@ -201,11 +237,10 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
       .selectAll("g")
       .data(stackedData)
       .enter().append("g")
-      .attr("fill", (d:any, i:number) => i === 0 && selectedArtists.length > 0 ?  this.unselectedTechniqueColorScale : this.techniqueColorScale)
       .selectAll("rect")
       .data((d:any) => d)
       .enter().append("rect")
-      .attr("x", (d:any) => x(d.data.technique) || 0)
+      .attr("x", (d:any) => techniquePositions.get(d.data.technique) || 0)
       .attr("y", (d:any) => y(d[1]))
       .attr("height", (d:any) => y(d[0]) - y(d[1]))
       .attr("width", x.bandwidth())
@@ -216,7 +251,28 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
           : this.techniqueColorScale(d.data.technique);
       });
   
+    // Add legend
+    const legend = this.svg.append("g")
+      .attr("transform", `translate(${this.contentWidth + 20}, 0)`);
+  
+    const categories = Array.from(new Set(this.techniquesHierarchy.map(d => d.parent)));
+    categories.forEach((category, index) => {
+      legend.append("rect")
+        .attr("x", 0)
+        .attr("y", index * 20)
+        .attr("width", 18)
+        .attr("height", 18)
+        .style("fill", this.categoryColorScale(category));
+      
+      legend.append("text")
+        .attr("x", 24)
+        .attr("y", index * 20 + 9)
+        .attr("dy", ".35em")
+        .text(category);
+    });
   }
+  
+  
   
   private isTechniqueSelected(technique: string, selectedArtists: Artist[]): boolean {
     return selectedArtists.some(artist => artist.techniques.includes(technique));
