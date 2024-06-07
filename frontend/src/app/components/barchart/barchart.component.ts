@@ -203,14 +203,19 @@ return d3.color(baseColor)?.brighter(1)!.copy({ opacity: 0.7 })!.toString() || '
     let currentPosition = 0;
     groupedTechniques.forEach((techniques, parent) => {
       techniques.forEach((technique: string, index: number) => {
-        techniquePositions.set(technique, currentPosition);
+        techniquePositions.set(technique, currentPosition + x.bandwidth() / 2); // Set midpoint for labels
         currentPosition += x.bandwidth() * (index === techniques.length - 1 ? 1.2 : 1); // Increase padding between different parents
       });
     });
   
+    const customXScale = d3.scaleBand()
+      .domain(Array.from(techniquePositions.keys()))
+      .range([0, this.contentWidth])
+      .padding(0.1);
+  
     const xAxis = this.svg.append("g")
       .attr("transform", `translate(0,${this.contentHeight})`)
-      .call(d3.axisBottom(x))
+      .call(d3.axisBottom(customXScale))
       .selectAll("text")
       .attr("transform", "translate(-10,0)rotate(-45)")
       .style("text-anchor", "end")
@@ -238,13 +243,13 @@ return d3.color(baseColor)?.brighter(1)!.copy({ opacity: 0.7 })!.toString() || '
       .data(stackedData)
       .enter().append("g")
       .selectAll("rect")
-      .data((d:any) => d)
+      .data((d: any) => d)
       .enter().append("rect")
-      .attr("x", (d:any) => techniquePositions.get(d.data.technique) || 0)
-      .attr("y", (d:any) => y(d[1]))
-      .attr("height", (d:any) => y(d[0]) - y(d[1]))
-      .attr("width", x.bandwidth())
-      .attr("fill", (d:any, i:number, nodes:any) => {
+      .attr("x", (d: any) => customXScale(d.data.technique) || 0)
+      .attr("y", (d: any) => y(d[1]))
+      .attr("height", (d: any) => y(d[0]) - y(d[1]))
+      .attr("width", customXScale.bandwidth())
+      .attr("fill", (d: any, i: number, nodes: any) => {
         const seriesIndex = nodes[i].parentNode.__data__.key;
         return seriesIndex === 'nonselectedArtists' && selectedArtists.length > 0
           ? this.unselectedTechniqueColorScale(d.data.technique)
@@ -271,6 +276,7 @@ return d3.color(baseColor)?.brighter(1)!.copy({ opacity: 0.7 })!.toString() || '
         .text(category);
     });
   }
+  
   
   
   
