@@ -112,7 +112,7 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
         .append('path')
         .attr('d', path)
         .attr('fill', (d: any) => this.artistService.getCountryColor(this.artistService.getCountrycode(d.properties.name),1))
-        .attr('stroke', '#fff')
+        .attr('stroke', 'black')
         .on('click', (event: MouseEvent, d: any) => this.handleCountryClick(d.properties.name, event))
         .on('mouseover', (event: MouseEvent, d: any) => {
           const element = d3.select(event.currentTarget as SVGPathElement);

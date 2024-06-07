@@ -804,7 +804,7 @@ this.visualizeData();
       .append("path")
       .attr("d", arcGenerator)
       .attr("fill", (d: any) => d.color)
-      .style('stroke', 'none');
+      .style('stroke', 'black');
 
     clusterGroup.selectAll("text")
       .data(data)
@@ -814,7 +814,8 @@ this.visualizeData();
       .attr("text-anchor", "middle")
       .text((d: any) => d.country)
       .style("font-weight", "bold")
-      .style("fill", "white");
+      .style("fill", "white")
+     
 
     let countryCentroids: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } = {};
     data.forEach(d => {
@@ -974,7 +975,7 @@ this.visualizeData();
   }
 
   private createSunburstProperties(clusterSize: number, maxSize: number, cellSize: number): [number, number] {
-    const minRadius = this.minClusterRadius;
+    const minRadius = cellSize / 2
     const maxRadius = cellSize / 2; // Adjust max radius to fit within cells
   
     const outerRadius = minRadius + ((maxRadius - minRadius) * (clusterSize / maxSize));
