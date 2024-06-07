@@ -27,10 +27,10 @@ export class SmallMultiplesComponent implements OnInit, OnChanges, OnDestroy {
   private contentWidth: number = 0;
   private contentHeight: number = 0;
   private margin = {
-    top: 2,
+    top: 5,
     right: 2,
     bottom: 5,
-    left: 6
+    left: 2
   };
 
 
@@ -638,26 +638,27 @@ this.visualizeData();
   
 
   private drawMatrix(): void {
-    const xData = d3.range(1, 8); // Numbers 1 to 7
-    const yData = ['nationality', 'birthcountry', 'deathcountry', 'mostexhibited']; // The desired categories
+    const k = this.decisionService.getK();
+    const yData = d3.range(1, k+1); // Numbers 1 to 7
+    const xData = ['nationality', 'birthcountry', 'deathcountry', 'mostexhibited']; // The desired categories
   
     const cellWidth = this.contentWidth / xData.length;
     const cellHeight = this.contentHeight / yData.length;
   
     const xScale = d3.scaleBand()
-      .domain(xData.map(String))
+      .domain(xData)
       .range([0, this.contentWidth])
       .padding(0.1);
   
     const yScale = d3.scaleBand()
-      .domain(yData)
+      .domain(yData.map(String))
       .range([0, this.contentHeight])
       .padding(0.1);
   
     // Draw x-axis
     this.g.append("g")
-      .attr("transform", `translate(0,${this.contentHeight})`)
-      .call(d3.axisBottom(xScale));
+      .attr("transform", `translate(0,0)`)
+      .call(d3.axisTop(xScale));
   
     // Draw y-axis
     this.g.append("g")
@@ -669,24 +670,25 @@ this.visualizeData();
       .enter()
       .append("g")
       .attr("class", "cell")
-      .attr("transform", (d: any) => `translate(${xScale(String(d.x))},${yScale(d.y)})`);
+      .attr("transform", (d: any) => `translate(${xScale(d.x)},${yScale(String(d.y))})`);
   
     cells.each((d: any, i: number, nodes: any) => {
-      console.log(`Drawing cell for cluster ${d.x} and category ${d.y}`);
+      console.log(`Drawing cell for category ${d.x} and cluster ${d.y}`);
       this.drawClusterInCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight);
     });
   }
   
   
-  private drawClusterInCell(cell: any, x: number, y: string, cellWidth: number, cellHeight: number): void {
-    const clusterIndex = x - 1; // Adjust cluster index to match your data structure
+  
+  private drawClusterInCell(cell: any, x: string, y: number, cellWidth: number, cellHeight: number): void {
+    const clusterIndex = y; // Adjust cluster index to match your data structure
     const cluster = this.clusters[clusterIndex];
     if (!cluster) {
       console.log(`No cluster data for index ${clusterIndex}`);
       return;
     }
   
-    console.log(`Drawing cluster ${clusterIndex} in cell for category ${y}`);
+    console.log(`Drawing cluster ${clusterIndex} in cell for category ${x}`);
   
     const cellSize = Math.min(cellWidth, cellHeight);
     const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, this.clusters[0].length, cellSize);
@@ -702,10 +704,11 @@ this.visualizeData();
       totalExhibitedArtworks: 0
     };
   
-    const clusterGroup = this.createClusterGroup(clusterNode, y);
+    const clusterGroup = this.createClusterGroup(clusterNode, x);
     console.log('Cluster group created:', clusterGroup);
     cell.node().appendChild(clusterGroup);
   }
+  
   
 
 
