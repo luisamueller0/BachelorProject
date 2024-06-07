@@ -1,3 +1,10 @@
+/* Universal box-sizing for consistency */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 .container {
   display: flex;
   justify-content: center;
@@ -11,9 +18,6 @@
 .separate-container {
   margin-top: 20px;
   width: 100%;
-}
-app-decisions{
-   overflow:hidden;
 }
 
 .wrapper {
@@ -32,7 +36,8 @@ app-decisions{
   justify-content: space-between;
 }
 
-.sidebar-left, .sidebar-right {
+.sidebar-left,
+.sidebar-right {
   width: 20%;
   display: flex;
   flex-direction: column;
@@ -41,7 +46,8 @@ app-decisions{
   overflow: hidden;
 }
 
-.sidebar-left app-decisions, .sidebar-left app-map {
+.sidebar-left app-decisions,
+.sidebar-left app-map {
   height: 50%;
   width: 100%;
   border: 1px solid #e5aeff;
@@ -64,7 +70,7 @@ app-decisions{
   width: 100%;
   text-align: center;
   margin-bottom: 0.1vh;
-  margin-top:10%;
+  margin-top: 10%;
 }
 
 .network-section app-focusOnCluster {
@@ -103,7 +109,13 @@ app-decisions{
   justify-content: center;
 }
 
-app-clusterVisualization, app-exhibitionVisualization, app-decisions, app-barchart, app-map, app-focusOnCluster {
+app-clusterVisualization,
+app-exhibitionVisualization,
+app-decisions,
+app-barchart,
+app-map,
+app-focusOnCluster,
+app-smallMultiples {
   width: 100%;
   height: 100%;
 }
@@ -120,4 +132,3 @@ app-clusterVisualization, app-exhibitionVisualization, app-decisions, app-barcha
   border-radius: 1vw;
   pointer-events: none;
 }
-
