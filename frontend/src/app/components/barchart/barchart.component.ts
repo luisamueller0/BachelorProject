@@ -177,106 +177,110 @@ return d3.color(baseColor)?.brighter(1)!.copy({ opacity: 0.7 })!.toString() || '
 
   private drawBars(): void {
     if (!this.allArtists.length) return;
-    
+
     const selectedArtists = this.selectedArtists || [];
-    
+
     if (selectedArtists.length === 0) {
-      this.nonselectedArtists = this.allArtists;
+        this.nonselectedArtists = this.allArtists;
     } else {
-      this.nonselectedArtists = this.allArtists.filter(artist => !selectedArtists.find(a => a.id === artist.id));
+        this.nonselectedArtists = this.allArtists.filter(artist => !selectedArtists.find(a => a.id === artist.id));
     }
-    
+
     const nonselectedTechniqueDistribution = this.calculateTechniqueDistribution(this.nonselectedArtists);
     const selectedTechniqueDistribution = this.calculateTechniqueDistribution(selectedArtists);
-    
+
     const combinedData = this.prepareStackedData(nonselectedTechniqueDistribution, selectedTechniqueDistribution);
-    
-    // Adjust padding manually based on parent category
-    const groupedTechniques = d3.group(this.techniquesOrder, technique => this.techniquesHierarchy.find(d => d.sub === technique)?.parent);
-    
+
+    // Filter techniques order to include only those present in the data
+    const presentTechniques = this.techniquesOrder.filter(technique => 
+        combinedData.some(data => data.technique === technique && (data.nonselectedArtists > 0 || data.selectedArtists > 0))
+    );
+
+    const groupedTechniques = d3.group(presentTechniques, technique => this.techniquesHierarchy.find(d => d.sub === technique)?.parent);
+
     const x = d3.scaleBand()
-      .domain(this.techniquesOrder)
-      .range([0, this.contentWidth])
-      .padding(0.1);
-  
+        .domain(presentTechniques)
+        .range([0, this.contentWidth])
+        .padding(0.1);
+
     const techniquePositions = new Map<string, number>();
     let currentPosition = 0;
     groupedTechniques.forEach((techniques, parent) => {
-      techniques.forEach((technique: string, index: number) => {
-        techniquePositions.set(technique, currentPosition + x.bandwidth() / 2); // Set midpoint for labels
-        currentPosition += x.bandwidth() * (index === techniques.length - 1 ? 1.2 : 1); // Increase padding between different parents
-      });
+        techniques.forEach((technique: string, index: number) => {
+            techniquePositions.set(technique, currentPosition + x.bandwidth() / 2); // Set midpoint for labels
+            currentPosition += x.bandwidth() * (index === techniques.length - 1 ? 1.2 : 1); // Increase padding between different parents
+        });
     });
-  
+
     const customXScale = d3.scaleBand()
-      .domain(Array.from(techniquePositions.keys()))
-      .range([0, this.contentWidth])
-      .padding(0.1);
-  
+        .domain(Array.from(techniquePositions.keys()))
+        .range([0, this.contentWidth])
+        .padding(0.1);
+
     const xAxis = this.svg.append("g")
-      .attr("transform", `translate(0,${this.contentHeight})`)
-      .call(d3.axisBottom(customXScale))
-      .selectAll("text")
-      .attr("transform", "translate(-10,0)rotate(-45)")
-      .style("text-anchor", "end")
-      .style("font-weight", '700')
-      .style("color", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? 'black' : 'lightgray') : 'black')
-      .style("font-weight", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? 'bold' : '700') : '700');
-  
+        .attr("transform", `translate(0,${this.contentHeight})`)
+        .call(d3.axisBottom(customXScale))
+        .selectAll("text")
+        .attr("transform", "translate(-10,0)rotate(-45)")
+        .style("text-anchor", "end")
+        .style("font-weight", '700')
+        .style("color", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? 'black' : 'lightgray') : 'black')
+        .style("font-weight", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? 'bold' : '700') : '700');
+
     xAxis.style("opacity", (d: string) => this.hasTechniqueValue(d, combinedData) ? 1 : 0.3);
-  
+
     const maxTechniqueValue: number = d3.max(combinedData, d => d.nonselectedArtists + d.selectedArtists) || 0;
     const y = d3.scaleLinear()
-      .domain([0, maxTechniqueValue])
-      .range([this.contentHeight, 0]);
-  
+        .domain([0, maxTechniqueValue])
+        .range([this.contentHeight, 0]);
+
     this.svg.append("g")
-      .call(d3.axisLeft(y));
-  
+        .call(d3.axisLeft(y));
+
     const stack = d3.stack()
-      .keys(['nonselectedArtists', 'selectedArtists']);
-  
+        .keys(['nonselectedArtists', 'selectedArtists']);
+
     const stackedData = stack(combinedData);
-  
+
     const bars = this.svg.append("g")
-      .selectAll("g")
-      .data(stackedData)
-      .enter().append("g")
-      .selectAll("rect")
-      .data((d: any) => d)
-      .enter().append("rect")
-      .attr("x", (d: any) => customXScale(d.data.technique) || 0)
-      .attr("y", (d: any) => y(d[1]))
-      .attr("height", (d: any) => y(d[0]) - y(d[1]))
-      .attr("width", customXScale.bandwidth())
-      .attr("fill", (d: any, i: number, nodes: any) => {
-        const seriesIndex = nodes[i].parentNode.__data__.key;
-        return seriesIndex === 'nonselectedArtists' && selectedArtists.length > 0
-          ? this.unselectedTechniqueColorScale(d.data.technique)
-          : this.techniqueColorScale(d.data.technique);
-      });
-  
+        .selectAll("g")
+        .data(stackedData)
+        .enter().append("g")
+        .selectAll("rect")
+        .data((d: any) => d)
+        .enter().append("rect")
+        .attr("x", (d: any) => customXScale(d.data.technique) || 0)
+        .attr("y", (d: any) => y(d[1]))
+        .attr("height", (d: any) => y(d[0]) - y(d[1]))
+        .attr("width", customXScale.bandwidth())
+        .attr("fill", (d: any, i: number, nodes: any) => {
+            const seriesIndex = nodes[i].parentNode.__data__.key;
+            return seriesIndex === 'nonselectedArtists' && selectedArtists.length > 0
+                ? this.unselectedTechniqueColorScale(d.data.technique)
+                : this.techniqueColorScale(d.data.technique);
+        });
+
     // Add legend
     const legend = this.svg.append("g")
-      .attr("transform", `translate(${this.contentWidth + 20}, 0)`);
-  
+        .attr("transform", `translate(${this.contentWidth + 20}, 0)`);
+
     const categories = Array.from(new Set(this.techniquesHierarchy.map(d => d.parent)));
     categories.forEach((category, index) => {
-      legend.append("rect")
-        .attr("x", 0)
-        .attr("y", index * 20)
-        .attr("width", 18)
-        .attr("height", 18)
-        .style("fill", this.categoryColorScale(category));
-      
-      legend.append("text")
-        .attr("x", 24)
-        .attr("y", index * 20 + 9)
-        .attr("dy", ".35em")
-        .text(category);
+        legend.append("rect")
+            .attr("x", 0)
+            .attr("y", index * 20)
+            .attr("width", 18)
+            .attr("height", 18)
+            .style("fill", this.categoryColorScale(category));
+        
+        legend.append("text")
+            .attr("x", 24)
+            .attr("y", index * 20 + 9)
+            .attr("dy", ".35em")
+            .text(category);
     });
-  }
-  
+}
+
   
   
   
