@@ -168,7 +168,8 @@ public europeanRegions = {
       "BR", "ZA", "NZ", "VE", "GT", "UY", "SV", "PY", "IN", "PF", "KZ", "UZ", "VN", 
       "NA", "JO", "IR", "KH", "JM", "SA", "DZ", "CN", "EG", "VI", "ID", "CU", "TN", 
       "MQ", "MU", "LK", "EC", "SG", "BL", "TH", "BO"
-  ]
+  ],
+  "\\N" :["\\N"]
 };
 
 
@@ -184,8 +185,10 @@ public getRegionColorScale(region: string): (t: number) => string {
       return this.getColorScale(this.pinkColorPalette);
     case "Others":
       return this.getYellowOrangeColor;
+    case "\\N":
+      return this.getColorScale(this.greyColorPalette); 
     default:
-      return d3.interpolateGreys; // Default color scale if region is not found
+      return this.getColorScale(this.greyColorPalette); // Default color scale if region is not found
   }
 }
 
@@ -197,6 +200,9 @@ private getColorScale(palette: string[]): (t: number) => string {
   };
 }
 
+private greyColorPalette: string[] = [
+  "black"
+];
 //10
 private cyanColorPalette: string[] = [
   "#1D5F55",
@@ -234,21 +240,21 @@ private blueColorPalette: string[] = [
 
 //15
 private purpleColorPalette: string[] = [
-  "#EFE3FA",
-  "E7D5F8",
-  "#DFC7F6",
-  "#D7B9F4",
-  "#CFABF1",
-  "#C79DEF",
-  "#BF8FED",
-  "#B781EA",
-  "#AF73E8",
-  "#9E55E3",
-  "#8E37DE",
-  "#7C22D1",
-  "#6B1DB3",
+  "#471377",
   "#591895",
-  "#471377"
+  "#6B1DB3",
+  "#7C22D1",
+  "#8E37DE",
+  "#9E55E3",
+  "#AF73E8",
+  "#B781EA",
+  "#BF8FED",
+  "#C79DEF",
+  "#CFABF1",
+  "#D7B9F4",
+  "#DFC7F6",
+  "#E7D5F8",
+  "#EFE3FA"
 ];
 
 
@@ -292,7 +298,7 @@ public getCountryColor(countryName: string | undefined, opacity: number = 1): st
     }
   }
 
-  let defaultColor = d3.color(d3.interpolateGreys(0.5));
+  let defaultColor = d3.color("#C3C3C3");
   if (defaultColor) {
     defaultColor.opacity = opacity;
     return defaultColor.toString();
