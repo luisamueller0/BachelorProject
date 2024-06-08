@@ -183,17 +183,11 @@ public getRegionColorScale(region: string): (t: number) => string {
     case "Western Europe":
       return this.getColorScale(this.pinkColorPalette);
     case "Others":
-      return this.interpolateCustomGreens;
+      return this.getYellowOrangeColor;
     default:
       return d3.interpolateGreys; // Default color scale if region is not found
   }
 }
-
-private interpolateCustomGreens(t: number): string {
-  return d3.interpolateRgb("#95ED87", "#00261c")(t); // Light blue to dark blue
-}
-
-
 
 // Function to create a color scale from a given color palette
 private getColorScale(palette: string[]): (t: number) => string {
@@ -271,6 +265,11 @@ private pinkColorPalette: string[] = [
   "#F8B5E6",
   "#F9C4EB"
 ];
+
+ // Divergent color scale from yellow to orange
+ public getYellowOrangeColor(t: number): string {
+  return d3.interpolateLab("#FFDA75", "#FF9751")(t);
+}
 
 
 
