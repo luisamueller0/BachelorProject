@@ -16,7 +16,7 @@ def get_all_exhibitions(driver):
         result = session.run(
             """
             MATCH (e:Exhibition)
-            RETURN e.id AS exhibition_id, e.tookPlaceInCountry AS country
+            RETURN e.id AS exhibition_id, e.country AS country
             """
         )
         return [{"exhibition_id": record["exhibition_id"], "country": record["country"]} for record in result]

@@ -1,9 +1,11 @@
 <div class="exhibition-container" #exhibition>
+  
   <p>Overview of all exhibitions</p>
-      <figure class="exhibition-svg-container"></figure>
-
-  <!-- Display loading indicator if data is still loading -->
   <div *ngIf="isLoading" class="loading-container">
     <div class="loading-spinner"></div>
   </div>
+      <figure class="exhibition-svg-container"></figure>
+    
+  <!-- Display loading indicator if data is still loading -->
+
 </div>
