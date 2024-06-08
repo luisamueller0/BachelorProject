@@ -205,69 +205,71 @@ private getColorScale(palette: string[]): (t: number) => string {
 
 //10
 private cyanColorPalette: string[] = [
-  "#0c2a21",
-  "#004736",
-  "#145946",
-  "#266c57",
-  "#367f69",
-  "#47937b",
-  "#57a78d",
-  "#68bba0",
-  "#79d1b3",
-  "#8ae6c7"
+  "#1D5F55",
+  "#25776B",
+  "#2C8F80",
+  "#33A795",
+  "#3ABEAB",
+  "#4FC9B7",
+  "#67D0C0",
+  "#76D5C7",
+  "#85DACD",
+  "#94DED3",
+  "#A4E3D9"
 ];
 
 
 //13
 private blueColorPalette: string[] = [
-  "#090f13",
-  "#10191f",
-  "#162a38",
-  "#1a3d52",
-  "#1c516e",
-  "#1c5c7e",
-  "#306d8f",
-  "#427ea1",
-  "#538fb3",
-  "#64a1c6",
-  "#75b3d9",
-  "#87c6ec",
-  "#98d9ff"
+  "#1362B1",
+  "#1672CF",
+  "#1E83E7",
+  "#3B93EA",
+  "#59A3EE",
+  "#69ACEF",
+  "#7AB6F1",
+  "#8BBFF3",
+  "#9BC8F5",
+  "#ACD1F6",
+  "#BDDAF8",
+  "#CDE3FA",
+  "#DEEDFC"
 ];
 
 
 
 //15
 private purpleColorPalette: string[] = [
-  "#250c31",
-  "#3d0054",
-  "#49006a",
-  "#550080",
-  "#610096",
-  "#6d00ac",
-  "#7900c2",
-  "#8500d8",
-  "#9100ee",
-  "#9c33ff",
-  "#a666ff",
-  "#b099ff",
-  "#baadff",
-  "#c4c1ff",
-  "#cec5ff"
+  "#EFE3FA",
+  "E7D5F8",
+  "#DFC7F6",
+  "#D7B9F4",
+  "#CFABF1",
+  "#C79DEF",
+  "#BF8FED",
+  "#B781EA",
+  "#AF73E8",
+  "#9E55E3",
+  "#8E37DE",
+  "#7C22D1",
+  "#6B1DB3",
+  "#591895",
+  "#471377"
 ];
 
 
 //9
 private pinkColorPalette: string[] = [
-  "#e7298a",
-  "#eb4594",
-  "#ef5a9d",
-  "#f36da7",
-  "#f67eb1",
-  "#f98eba",
-  "#fb9ec4",
-  "#fdaecd",
-  "#ffbdd7"
+  
+  "#EA2BB7",
+  "#ED4BC2",
+  "#F06ACD",
+  "#F279D2",
+  "#F388D7",
+  "#F597DC",
+  "#F6A6E1",
+  "#F8B5E6",
+  "#F9C4EB"
 ];
 
 

@@ -935,7 +935,7 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
       .attr("fill", (d: any) => d.color)
       .style('stroke', 'none');
   
-    const textsize =  clusterNode.innerRadius / 100;
+    const textsize =  1.5 *clusterNode.innerRadius / 100;
     clusterGroup.selectAll("text")
       .data(data)
       .enter()
