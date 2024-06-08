@@ -575,22 +575,14 @@ private selectNode(artistNode: ArtistNode, circle: SVGCircleElement) {
   this.selectionService.selectArtists([artistNode.artist]);
 
   const artist = artistNode.artist;
-  const type = this.decisionService.getDecisionSunburst();
+  const countries = [];
+  countries.push(artist.nationality);
+  countries.push(artist.birthcountry);
+  countries.push(artist.deathcountry);
+  countries.push(artist.most_exhibited_in)
+  this.selectionService.selectCountries(countries);
 
-  switch (type) {
-      case 'nationality':
-          this.selectionService.selectCountries([artist.nationality]);
-          break;
-      case 'birthcountry':
-          this.selectionService.selectCountries([artist.birthcountry]);
-          break;
-      case 'deathcountry':
-          this.selectionService.selectCountries([artist.deathcountry]);
-          break;
-      case 'mostexhibited':
-          this.selectionService.selectCountries([artist.most_exhibited_in]);
-          break;
-  };
+  
 
   const clusterNode2 = this.artistClusterMap.get(artistNode.id);
   if (clusterNode2) {
@@ -943,7 +935,7 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
       .attr("fill", (d: any) => d.color)
       .style('stroke', 'none');
   
-    const textsize = clusterNode.innerRadius / 100;
+    const textsize =  clusterNode.innerRadius / 100;
     clusterGroup.selectAll("text")
       .data(data)
       .enter()
@@ -1120,7 +1112,7 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
     const maxRadius = cellSize / 2; // Adjust max radius to fit within cells
   
     const outerRadius = minRadius + ((maxRadius - minRadius) * (clusterSize / maxSize)) - 1;
-    const innerRadius = outerRadius - 5; // Reduced thickness for small cells
+    const innerRadius = outerRadius - cellSize/10; // Reduced thickness for small cells
   
     return [outerRadius, innerRadius];
   }

@@ -20,6 +20,7 @@
 }
 
 /* Custom styles for autocomplete list */
+/* Custom styles for autocomplete list */
 .autocomplete-list {
     max-height: 15vh;
     overflow-y: auto;
@@ -30,7 +31,7 @@
     border-radius: 8px;
     box-shadow: 0 0 0 0.2rem rgba(66, 9, 133, 0.25);
     list-style-type: none;
-    padding: 0;
+    padding: 0.2vw;
     margin: 0;
     position: relative;
     z-index: 1000;
@@ -38,10 +39,14 @@
 
 .autocomplete-list li {
     cursor: pointer;
+    padding: 0.2vh 0.5vw; /* Add padding to each item */
+    margin-bottom: 0.2vh; /* Add margin to create space between items */
 }
 
+
 .autocomplete-list li:hover {
-    background-color: #e5e5e5;
+    background-color: rgba(217, 134, 255, 0.334);
+    padding:0.3vh;
 }
 
 /* Styles for labels */
@@ -71,7 +76,7 @@
 
 .dropdown:hover,
 #artistSearch:hover {
-    border-color: #888;
+    border-color: #e5aeff;
 }
 
 .dropdown:focus,
