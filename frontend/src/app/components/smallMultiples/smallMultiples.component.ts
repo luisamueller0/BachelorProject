@@ -413,21 +413,21 @@ this.visualizeData();
 
   private handleNodeClick(artistNode: ArtistNode, event: MouseEvent): void {
     let defs = this.svg.append('defs');
-    const size = 150 * artistNode.radius;
-
+  
     let filter = defs.append('filter')
         .attr('id', 'shadow')
         .attr('x', '-50%')
         .attr('y', '-50%')
-        .attr('width', size)
-        .attr('height', size);
+        .attr('width', '200%')
+        .attr('height', '200%');
 
-    filter.append('feDropShadow')
+        filter.append('feDropShadow')
         .attr('dx', 0)
         .attr('dy', 0)
-        .attr('stdDeviation', 4)
+        .attr('stdDeviation', 2)  // Keep stdDeviation low to maintain the circular shape
         .attr('flood-color', 'black')
-        .attr('flood-opacity', 0.7);
+        .attr('flood-opacity', 1);  // Increase opacity for a darker shadow
+
 
     let feMerge = filter.append('feMerge');
     feMerge.append('feMergeNode');
@@ -491,7 +491,7 @@ private resetNodeSelection() {
 
   // Reset styles for all artist nodes and edges across categories
   this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
-  this.g.selectAll(".artist-node").style('opacity', '1');
+  this.g.selectAll(".artist-node").style('opacity', '1').style('filter', 'none');
 
   this.selectedNode = null;
   this.selectionService.selectCluster(this.allArtists);
@@ -499,6 +499,7 @@ private resetNodeSelection() {
   this.selectionService.selectFocusArtist(null);
   this.selectionService.selectCountries(this.allCountries);
 }
+
 
 
   
@@ -603,14 +604,15 @@ private selectNode(artistNode: ArtistNode, circle: SVGCircleElement) {
   this.highlightSameNodeInOtherClusters(artistNode.id);
 }
 
+private highlightSameNodeInOtherClusters(artistId: number): void {
+  this.g.selectAll(".artist-node").filter((d: any) => d.artist.id === artistId)
+    .each((d: any, i: number, nodes: any) => {
+      const circle = nodes[i] as SVGCircleElement;
+      circle.style.filter = 'url(#shadow)';
+    });
+}
 
-  private highlightSameNodeInOtherClusters(artistId: number): void {
-    this.g.selectAll(".artist-node").filter((d: any) => d.artist.id === artistId)
-      .each((d: any, i: number, nodes: any) => {
-        const circle = nodes[i] as SVGCircleElement;
-        circle.style.filter = 'url(#shadow)';
-      });
-  }
+
 
 
   private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks: number): d3.ScaleLinear<string, number> {
@@ -1005,7 +1007,7 @@ private selectNode(artistNode: ArtistNode, circle: SVGCircleElement) {
       .data(formattedRelationships)
       .enter()
       .append("line")
-      .attr("class", `artist-edge artist-edge-${value}`)
+      .attr("class", `artist-edge artist-edge-${cluster.clusterId}-${value}`)
       .style('stroke', (d: any) => {
         const clusterId = cluster.clusterId;
         return this.intraCommunityEdges[clusterId].length === 2 ? 'black' : this.edgeColorScale(d.sharedExhibitionMinArtworks);
@@ -1020,7 +1022,7 @@ private selectNode(artistNode: ArtistNode, circle: SVGCircleElement) {
       .data(artistNodes)
       .enter()
       .append("circle")
-      .attr("class", `artist-node artist-node-${value}`)
+      .attr("class", `artist-node artist-node-${cluster.clusterId}-${value}`)
       .attr('r', (d: any) => d.radius)
       .attr('cx', (d: any) => d.x)
       .attr('cy', (d: any) => d.y)
