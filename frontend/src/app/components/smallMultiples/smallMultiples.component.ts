@@ -827,7 +827,7 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
       totalExhibitedArtworks: 0
     };
   
-    const clusterGroup = this.createClusterGroup(clusterNode, x);
+    const clusterGroup = this.createClusterGroup(clusterNode, x, cellWidth, cellHeight);
     console.log('Cluster group created:', clusterGroup);
     cell.node().appendChild(clusterGroup);
   }
@@ -835,7 +835,7 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
   
 
 
-  private createClusterGroup(clusterNode: ClusterNode, value: string): SVGGElement {
+  private createClusterGroup(clusterNode: ClusterNode, value: string, cellWidth:number, cellHeight:number): SVGGElement {
     const arcGenerator = d3.arc<any>()
       .innerRadius(clusterNode.innerRadius)
       .outerRadius(clusterNode.outerRadius);
@@ -935,7 +935,9 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
       .attr("fill", (d: any) => d.color)
       .style('stroke', 'none');
   
-    const textsize =  1.5 *clusterNode.innerRadius / 100;
+    const textsize =  0.5*Math.min(cellHeight,cellWidth)/10;
+
+    
     clusterGroup.selectAll("text")
       .data(data)
       .enter()
@@ -943,7 +945,7 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
       .attr("transform", (d: any) => `translate(${arcGenerator.centroid(d)})`)
       .attr("text-anchor", "middle")
       .text((d: any) => d.country)
-      .style("font-size", `${textsize}vw`)
+      .style("font-size", `${textsize}px`)
       .style("font-weight", "bold")
       .style("fill", "white");
   
