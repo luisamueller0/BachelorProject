@@ -10,20 +10,14 @@ interface YearData {
   year: number;
   totalExhibitions: number;
   regions: {
-    [key: string]: number;
+    [key: string]: {
+      selected: number;
+      unselected: number;
+    };
   };
 }
 
-interface TransformedData {
-  year: number;
-  "North Europe": number;
-  "Eastern Europe": number;
-  "Southern Europe": number;
-  "Western Europe": number;
-  "Others": number;
-  "\\N": number;
-  [key: string]: number; // This index signature allows TypeScript to understand dynamic keys
-}
+
 
 @Component({
   selector: 'app-exhibitionBarchart',
@@ -37,9 +31,9 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
 
   allExhibitions: Exhibition[] = [];
   exhibitions: Exhibition[] = [];
+  nonSelectedExhibitions: Exhibition[] = [];
   allArtists: Artist[] = [];
   selectedArtists: Artist[] | null = [];
-  nonselectedArtists: Artist[] = [];
   isLoading: boolean = true;
   private svg: any;
   private contentWidth: number = 0;
@@ -109,9 +103,30 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   }
 
   private retrieveWantedExhibitions(): void {
-    const wantedExhibitionIds = this.allArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()));
-    this.exhibitions = this.allExhibitions.filter(exhibition => wantedExhibitionIds.includes(exhibition.id.toString()));
+    if (this.selectedArtists !== null && this.selectedArtists.length > 0) {
+      const wantedExhibitionIds = new Set(
+        this.selectedArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()))
+      );
+  
+      const exhibitionMap = new Map<string, Exhibition>();
+      this.allExhibitions.forEach(exhibition => exhibitionMap.set(exhibition.id.toString(), exhibition));
+  
+      this.exhibitions = [];
+      this.nonSelectedExhibitions = [];
+  
+      exhibitionMap.forEach((exhibition, id) => {
+        if (wantedExhibitionIds.has(id)) {
+          this.exhibitions.push(exhibition);
+        } else {
+          this.nonSelectedExhibitions.push(exhibition);
+        }
+      });
+    } else {
+      this.exhibitions = [...this.allExhibitions];
+      this.nonSelectedExhibitions = [];
+    }
   }
+  
 
   private createChart(): void {
     this.createSvg();
@@ -142,118 +157,132 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     this.contentHeight = height;
   }
 
-  private drawBinnedChart(): void {
-    const yearData = this.getYearlyExhibitionData();
+ private drawBinnedChart(): void {
+  const yearData = this.getYearlyExhibitionData(this.exhibitions, this.nonSelectedExhibitions);
 
-    const xScale = d3.scaleBand()
-      .domain(yearData.map(d => d.year.toString()))
-      .range([0, this.contentWidth])
-      .padding(0.1);
+  const xScale = d3.scaleBand()
+    .domain(yearData.map(d => d.year.toString()))
+    .range([0, this.contentWidth])
+    .padding(0.1);
 
-    const yScale = d3.scaleLinear()
-      .domain([0, d3.max(yearData, d => d.totalExhibitions)!])
-      .nice()
-      .range([this.contentHeight, 0]);
+  const yScale = d3.scaleLinear()
+    .domain([0, d3.max(yearData, d => d.totalExhibitions)!])
+    .nice()
+    .range([this.contentHeight, 0]);
 
-    const colorMap: { [key: string]: string } = {
-      "North Europe": "#67D0C0",
-      "Eastern Europe": "#59A3EE",
-      "Southern Europe": "#AF73E8",
-      "Western Europe": "#F06ACD",
-      "Others": "#FFDA75",
-      "\\N": "#C3C3C3"
-    };
+  const colorMap: { [key: string]: string } = {
+    "North Europe": "#67D0C0",
+    "Eastern Europe": "#59A3EE",
+    "Southern Europe": "#AF73E8",
+    "Western Europe": "#F06ACD",
+    "Others": "#FFDA75",
+    "\\N": "#C3C3C3"
+  };
 
-    // Transform yearData to an array of objects suitable for stacking
-    const transformedData: TransformedData[] = yearData.map(d => ({
-      year: d.year,
-      "North Europe": d.regions["North Europe"] || 0,
-      "Eastern Europe": d.regions["Eastern Europe"] || 0,
-      "Southern Europe": d.regions["Southern Europe"] || 0,
-      "Western Europe": d.regions["Western Europe"] || 0,
-      "Others": d.regions["Others"] || 0,
-      "\\N": d.regions["\\N"] || 0,
-    }));
+  const selectedColorMap: { [key: string]: string } = {
+    "North Europe": "#A9E5DC",
+    "Eastern Europe": "#A1C9F6",
+    "Southern Europe": "#D1B3F1",
+    "Western Europe": "#F4A5E1",
+    "Others": "#FFEBA6",
+    "\\N": "#E1E1E1"
+  };
 
-    // Calculate total exhibitions per region across all years
-    const regionTotals: { [key: string]: number } = this.regionKeys.reduce((acc, key) => {
-      acc[key] = d3.sum(transformedData, d => d[key]);
-      return acc;
-    }, {} as { [key: string]: number });
+  // Transform yearData to an array of objects suitable for stacking
+  const transformedData: any[] = yearData.map(d => {
+    const data: any = { year: d.year };
+    this.regionKeys.forEach(region => {
+      data[`${region}-selected`] = d.regions[region].selected;
+      data[`${region}-unselected`] = d.regions[region].unselected;
+    });
+    return data;
+  });
 
-    // Sort region keys by total exhibitions in descending order
-    const sortedRegionKeys = this.regionKeys.sort((a, b) => regionTotals[b] - regionTotals[a]);
+  // Stack the data
+  const stack = d3.stack()
+    .keys(this.regionKeys.flatMap(region => [`${region}-selected`, `${region}-unselected`]));
 
-    const stack = d3.stack()
-      .keys(sortedRegionKeys);
+  const stackedData = stack(transformedData);
 
-    const stackedData = stack(transformedData);
+  // Draw the stacks
+  this.svg.append('g')
+    .selectAll('g')
+    .data(stackedData)
+    .enter().append('g')
+    .attr('fill', (d: any) => {
+      const region = d.key.split('-')[0];
+      return d.key.endsWith('selected') ? selectedColorMap[region] : colorMap[region];
+    })
+    .attr('opacity', (d: any) => d.key.endsWith('selected') ? 1 : 0.7)
+    .selectAll('rect')
+    .data((d: any) => d)
+    .enter().append('rect')
+    .attr('x', (d: any) => xScale(d.data.year.toString())!)
+    .attr('y', (d: any) => yScale(d[1]))
+    .attr('height', (d: any) => yScale(d[0]) - yScale(d[1]))
+    .attr('width', xScale.bandwidth());
 
-    this.svg.append('g')
-      .selectAll('g')
-      .data(stackedData)
-      .enter().append('g')
-      .attr('fill', (d: any) => colorMap[d.key as keyof typeof colorMap] || '#C3C3C3')
-      .selectAll('rect')
-      .data((d: any) => d)
-      .enter().append('rect')
-      .attr('x', (d: any) => xScale(d.data.year.toString())!)
-      .attr('y', (d: any) => yScale(d[1]))
-      .attr('height', (d: any) => yScale(d[0]) - yScale(d[1]))
-      .attr('width', xScale.bandwidth());
+  this.svg.append('g')
+    .attr('class', 'x-axis')
+    .attr('transform', `translate(0,${this.contentHeight})`)
+    .call(d3.axisBottom(xScale));
 
-    this.svg.append('g')
-      .attr('class', 'x-axis')
-      .attr('transform', `translate(0,${this.contentHeight})`)
-      .call(d3.axisBottom(xScale));
+  this.svg.append('g')
+    .attr('class', 'y-axis')
+    .call(d3.axisLeft(yScale).ticks(10));
 
-    this.svg.append('g')
-      .attr('class', 'y-axis')
-      .call(d3.axisLeft(yScale).ticks(10));
+  const legend = this.svg.append('g')
+    .attr('class', 'legend')
+    .attr('transform', `translate(${this.contentWidth + 20}, 20)`);
 
-    const legend = this.svg.append('g')
-      .attr('class', 'legend')
-      .attr('transform', `translate(${this.contentWidth + 20}, 20)`);
+  legend.selectAll('rect')
+    .data(this.legendOrder)
+    .enter().append('rect')
+    .attr('x', 0)
+    .attr('y', (d: any, i: number) => i * 20)
+    .attr('width', 18)
+    .attr('height', 18)
+    .attr('fill', (d: any) => selectedColorMap[d as keyof typeof selectedColorMap] || colorMap[d as keyof typeof colorMap]);
 
-    legend.selectAll('rect')
-      .data(this.legendOrder)
-      .enter().append('rect')
-      .attr('x', 0)
-      .attr('y', (d: any, i: number) => i * 20)
-      .attr('width', 18)
-      .attr('height', 18)
-      .attr('fill', (d: any) => colorMap[d as keyof typeof colorMap] || '#C3C3C3');
-
-    legend.selectAll('text')
-      .data(this.legendOrder)
-      .enter().append('text')
-      .attr('x', 24)
-      .attr('y', (d: any, i: number) => i * 20 + 9)
-      .attr('dy', '.35em')
-      .text((d: any) => d);
+  legend.selectAll('text')
+    .data(this.legendOrder)
+    .enter().append('text')
+    .attr('x', 24)
+    .attr('y', (d: any, i: number) => i * 20 + 9)
+    .attr('dy', '.35em')
+    .text((d: any) => d);
 }
 
-  private getYearlyExhibitionData(): YearData[] {
-    const yearData: { [year: number]: { [region: string]: number } } = {};
+  private getYearlyExhibitionData(selectedExhibitions: Exhibition[], unselectedExhibitions: Exhibition[]): YearData[] {
+    const yearData: { [year: number]: { [region: string]: { selected: number; unselected: number } } } = {};
 
-    this.exhibitions.forEach(exhibition => {
-      const startYear = new Date(exhibition.start_date).getFullYear();
-      const endYear = new Date(exhibition.end_date).getFullYear();
-      const region = exhibition.europeanRegion || "Others"; // Default to "Others" if undefined
+    const processExhibitions = (exhibitions: Exhibition[], isSelected: boolean) => {
+      exhibitions.forEach(exhibition => {
+        const startYear = new Date(exhibition.start_date).getFullYear();
+        const endYear = new Date(exhibition.end_date).getFullYear();
+        const region = exhibition.europeanRegion || "Others"; // Default to "Others" if undefined
 
-      for (let year = startYear; year <= endYear; year++) {
-        if (!yearData[year]) {
-          yearData[year] = { "North Europe": 0, "Eastern Europe": 0, "Southern Europe": 0, "Western Europe": 0, "Others": 0, "\\N": 0 };
+        for (let year = startYear; year <= endYear; year++) {
+          if (!yearData[year]) {
+            yearData[year] = { "North Europe": { selected: 0, unselected: 0 }, "Eastern Europe": { selected: 0, unselected: 0 }, "Southern Europe": { selected: 0, unselected: 0 }, "Western Europe": { selected: 0, unselected: 0 }, "Others": { selected: 0, unselected: 0 }, "\\N": { selected: 0, unselected: 0 } };
+          }
+          if (isSelected) {
+            yearData[year][region].selected++;
+          } else {
+            yearData[year][region].unselected++;
+          }
         }
-        yearData[year][region]++;
-      }
-    });
+      });
+    };
+
+    processExhibitions(selectedExhibitions, true);
+    processExhibitions(unselectedExhibitions, false);
 
     return Object.keys(yearData).map(year => {
       const regions = yearData[parseInt(year)];
       return {
         year: parseInt(year),
-        totalExhibitions: Object.values(regions).reduce((sum, value) => sum + value, 0),
+        totalExhibitions: Object.values(regions).reduce((sum, value) => sum + value.selected + value.unselected, 0),
         regions
       };
     }).sort((a, b) => a.year - b.year);
