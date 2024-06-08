@@ -12,6 +12,7 @@ class Exhibition {
         this.type = data.type;
         this.duration = data.duration;
         this.exhibited_artists = data.exhibited_artists;
+        this.europeanRegion = data.europeanRegion;
     }
 }
 
