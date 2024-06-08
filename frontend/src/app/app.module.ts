@@ -15,6 +15,7 @@ import { MapComponent } from './components/map/map.component';
 import { FocusOnClusterComponent } from './components/focusOnCluster/focusOnCluster.component';
 import { ExhibitionVisualizationComponent } from './components/exhibitionVisualization/exhibitionVisualization.component';
 import { SmallMultiplesComponent } from './components/smallMultiples/smallMultiples.component';
+import { ExhibitionBarchartComponent } from './components/exhibitionBarchart/exhibitionBarchart.component';
 @NgModule({
   declarations: [
     AppComponent,
@@ -25,7 +26,8 @@ import { SmallMultiplesComponent } from './components/smallMultiples/smallMultip
     MapComponent,
     FocusOnClusterComponent,
     ExhibitionVisualizationComponent,
-    SmallMultiplesComponent
+    SmallMultiplesComponent,
+    ExhibitionBarchartComponent
   ],
   imports: [
     BrowserModule,

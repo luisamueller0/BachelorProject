@@ -193,18 +193,18 @@ public getRegionColorScale(region: string): (t: number) => string {
 }
 
 // Function to create a color scale from a given color palette
-private getColorScale(palette: string[]): (t: number) => string {
+public getColorScale(palette: string[]): (t: number) => string {
   return (t: number) => {
     const index = Math.round(t * (palette.length - 1));
     return palette[index];
   };
 }
 
-private greyColorPalette: string[] = [
+public greyColorPalette: string[] = [
   "black"
 ];
 //10
-private cyanColorPalette: string[] = [
+public cyanColorPalette: string[] = [
   "#1D5F55",
   "#25776B",
   "#2C8F80",
@@ -220,7 +220,7 @@ private cyanColorPalette: string[] = [
 
 
 //13
-private blueColorPalette: string[] = [
+public blueColorPalette: string[] = [
   "#1362B1",
   "#1672CF",
   "#1E83E7",
@@ -239,7 +239,7 @@ private blueColorPalette: string[] = [
 
 
 //15
-private purpleColorPalette: string[] = [
+public purpleColorPalette: string[] = [
   "#471377",
   "#591895",
   "#6B1DB3",
@@ -259,7 +259,7 @@ private purpleColorPalette: string[] = [
 
 
 //9
-private pinkColorPalette: string[] = [
+public pinkColorPalette: string[] = [
   
   "#EA2BB7",
   "#ED4BC2",
