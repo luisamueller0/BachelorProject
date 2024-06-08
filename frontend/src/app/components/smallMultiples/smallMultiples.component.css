@@ -15,4 +15,10 @@
     margin: 0;
     box-sizing: border-box;
   }
+
+  .y-axis-label.highlighted {
+    font-weight: bold;
+     /* You can change this to any color you prefer */
+}
+
   

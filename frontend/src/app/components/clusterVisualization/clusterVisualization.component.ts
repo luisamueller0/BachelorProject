@@ -1061,7 +1061,16 @@ private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][
     // Create a new group for this cluster
     const clusterGroup = d3.create("svg:g")
       .attr("class", `cluster cluster-${clusterNode.clusterId}`)
-      .on('click', () => this.onClusterClick(clusterNode))
+     
+      const textsize= clusterNode.innerRadius/100;
+      clusterGroup.selectAll("text")
+        .data(data)
+        .enter()
+        .append("text")
+        .attr("transform", (d: any) => `translate(${arcGenerator.centroid(d)})`)
+        .attr("text-anchor", "middle")
+        .text((d: any) => d.country)
+        .style("font-size", `${textsize}vw`)
       .attr("transform", `translate(${clusterNode.x}, ${clusterNode.y})`);
   
     // Append paths for the sunburst
