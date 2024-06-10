@@ -17,8 +17,6 @@ interface YearData {
   };
 }
 
-
-
 @Component({
   selector: 'app-exhibitionBarchart',
   templateUrl: './exhibitionBarchart.component.html',
@@ -26,6 +24,7 @@ interface YearData {
 })
 export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy {
   @ViewChild('exhibition', { static: true }) private exhibitionContainer!: ElementRef;
+  @ViewChild('tooltip', { static: true }) private tooltip!: ElementRef;
   private subscriptions: Subscription = new Subscription();
   private legendOrder: string[] = ["North Europe", "Eastern Europe", "Southern Europe", "Western Europe", "Others", "\\N"];
 
@@ -127,7 +126,6 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     }
   }
   
-
   private createChart(): void {
     this.createSvg();
     this.drawBinnedChart();
@@ -157,101 +155,127 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     this.contentHeight = height;
   }
 
- private drawBinnedChart(): void {
-  const yearData = this.getYearlyExhibitionData(this.exhibitions, this.nonSelectedExhibitions);
-
-  const xScale = d3.scaleBand()
-    .domain(yearData.map(d => d.year.toString()))
-    .range([0, this.contentWidth])
-    .padding(0.1);
-
-  const yScale = d3.scaleLinear()
-    .domain([0, d3.max(yearData, d => d.totalExhibitions)!])
-    .nice()
-    .range([this.contentHeight, 0]);
-
-  const colorMap: { [key: string]: string } = {
-    "North Europe": "#67D0C0",
-    "Eastern Europe": "#59A3EE",
-    "Southern Europe": "#AF73E8",
-    "Western Europe": "#F06ACD",
-    "Others": "#FFDA75",
-    "\\N": "#C3C3C3"
-  };
-
-  const selectedColorMap: { [key: string]: string } = {
-    "North Europe": "#A9E5DC",
-    "Eastern Europe": "#A1C9F6",
-    "Southern Europe": "#D1B3F1",
-    "Western Europe": "#F4A5E1",
-    "Others": "#FFEBA6",
-    "\\N": "#E1E1E1"
-  };
-
-  // Transform yearData to an array of objects suitable for stacking
-  const transformedData: any[] = yearData.map(d => {
-    const data: any = { year: d.year };
-    this.regionKeys.forEach(region => {
-      data[`${region}-selected`] = d.regions[region].selected;
-      data[`${region}-unselected`] = d.regions[region].unselected;
+  private drawBinnedChart(): void {
+    const yearData = this.getYearlyExhibitionData(this.exhibitions, this.nonSelectedExhibitions);
+  
+    const xScale = d3.scaleBand()
+      .domain(yearData.map(d => d.year.toString()))
+      .range([0, this.contentWidth])
+      .padding(0.1);
+  
+    const yScale = d3.scaleLinear()
+      .domain([0, d3.max(yearData, d => d.totalExhibitions)!])
+      .nice()
+      .range([this.contentHeight, 0]);
+  
+    const colorMap: { [key: string]: string } = {
+      "North Europe": "#67D0C0",
+      "Eastern Europe": "#59A3EE",
+      "Southern Europe": "#AF73E8",
+      "Western Europe": "#F06ACD",
+      "Others": "#FFDA75",
+      "\\N": "#C3C3C3"
+    };
+  
+    const selectedColorMap: { [key: string]: string } = {
+      "North Europe": "#A9E5DC",
+      "Eastern Europe": "#A1C9F6",
+      "Southern Europe": "#D1B3F1",
+      "Western Europe": "#F4A5E1",
+      "Others": "#FFEBA6",
+      "\\N": "#E1E1E1"
+    };
+  
+    // Transform yearData to an array of objects suitable for stacking
+    const transformedData: any[] = yearData.map(d => {
+      const data: any = { year: d.year };
+      this.regionKeys.forEach(region => {
+        data[`${region}-selected`] = d.regions[region].selected;
+        data[`${region}-unselected`] = d.regions[region].unselected;
+      });
+      return data;
     });
-    return data;
-  });
-
-  // Stack the data
-  const stack = d3.stack()
-    .keys(this.regionKeys.flatMap(region => [`${region}-selected`, `${region}-unselected`]));
-
-  const stackedData = stack(transformedData);
-
-  // Draw the stacks
-  this.svg.append('g')
-    .selectAll('g')
-    .data(stackedData)
-    .enter().append('g')
-    .attr('fill', (d: any) => {
-      const region = d.key.split('-')[0];
-      return d.key.endsWith('selected') ? selectedColorMap[region] : colorMap[region];
-    })
-    .attr('opacity', (d: any) => d.key.endsWith('selected') ? 1 : 0.7)
-    .selectAll('rect')
-    .data((d: any) => d)
-    .enter().append('rect')
-    .attr('x', (d: any) => xScale(d.data.year.toString())!)
-    .attr('y', (d: any) => yScale(d[1]))
-    .attr('height', (d: any) => yScale(d[0]) - yScale(d[1]))
-    .attr('width', xScale.bandwidth());
-
-  this.svg.append('g')
-    .attr('class', 'x-axis')
-    .attr('transform', `translate(0,${this.contentHeight})`)
-    .call(d3.axisBottom(xScale));
-
-  this.svg.append('g')
-    .attr('class', 'y-axis')
-    .call(d3.axisLeft(yScale).ticks(10));
-
-  const legend = this.svg.append('g')
-    .attr('class', 'legend')
-    .attr('transform', `translate(${this.contentWidth + 20}, 20)`);
-
-  legend.selectAll('rect')
-    .data(this.legendOrder)
-    .enter().append('rect')
-    .attr('x', 0)
-    .attr('y', (d: any, i: number) => i * 20)
-    .attr('width', 18)
-    .attr('height', 18)
-    .attr('fill', (d: any) => selectedColorMap[d as keyof typeof selectedColorMap] || colorMap[d as keyof typeof colorMap]);
-
-  legend.selectAll('text')
-    .data(this.legendOrder)
-    .enter().append('text')
-    .attr('x', 24)
-    .attr('y', (d: any, i: number) => i * 20 + 9)
-    .attr('dy', '.35em')
-    .text((d: any) => d);
-}
+  
+    // Calculate total values for each region
+    const regionTotals: { [key: string]: number } = {};
+    this.regionKeys.forEach(region => {
+      regionTotals[region] = d3.sum(transformedData, d => d[`${region}-selected`] + d[`${region}-unselected`]);
+    });
+  
+    // Sort the regions based on the total values in descending order
+    const sortedRegions = this.regionKeys.sort((a, b) => regionTotals[b] - regionTotals[a]);
+  
+    // Create a sorted list of keys for stacking
+    const sortedKeys = sortedRegions.flatMap(region => [`${region}-selected`, `${region}-unselected`]);
+  
+    // Stack the data using the sorted keys
+    const stack = d3.stack()
+      .keys(sortedKeys);
+  
+    const stackedData = stack(transformedData);
+  
+    // Draw the stacks
+    this.svg.append('g')
+      .selectAll('g')
+      .data(stackedData)
+      .enter().append('g')
+      .attr('fill', (d: any) => {
+      
+        const region = d.key.split('-')[0];
+       
+        
+        return colorMap[region];
+      }) 
+      .attr('opacity', (d: any) => {
+      
+        const region = d.key.split('-')[0];
+        const bool = d.key.split('-')[1];
+        
+        return (bool === 'unselected') ?0.3: 1;
+      }) 
+     
+      .selectAll('rect')
+      .data((d: any) => d)
+      .enter().append('rect')
+      .attr('x', (d: any) => xScale(d.data.year.toString())!)
+      .attr('y', (d: any) => yScale(d[1]))
+      .attr('height', (d: any) => yScale(d[0]) - yScale(d[1]))
+      .attr('width', xScale.bandwidth())
+      .on('mouseover', this.handleMouseOver.bind(this))
+      .on('mousemove', this.handleMouseMove.bind(this))
+      .on('mouseout', this.handleMouseOut.bind(this));
+  
+    this.svg.append('g')
+      .attr('class', 'x-axis')
+      .attr('transform', `translate(0,${this.contentHeight})`)
+      .call(d3.axisBottom(xScale));
+  
+    this.svg.append('g')
+      .attr('class', 'y-axis')
+      .call(d3.axisLeft(yScale).ticks(10));
+  
+    const legend = this.svg.append('g')
+      .attr('class', 'legend')
+      .attr('transform', `translate(${this.contentWidth + 20}, 20)`);
+  
+    legend.selectAll('rect')
+      .data(this.legendOrder)
+      .enter().append('rect')
+      .attr('x', 0)
+      .attr('y', (d: any, i: number) => i * 20)
+      .attr('width', 18)
+      .attr('height', 18)
+      .attr('fill', (d: any) => selectedColorMap[d as keyof typeof selectedColorMap] || colorMap[d as keyof typeof colorMap]);
+  
+    legend.selectAll('text')
+      .data(this.legendOrder)
+      .enter().append('text')
+      .attr('x', 24)
+      .attr('y', (d: any, i: number) => i * 20 + 9)
+      .attr('dy', '.35em')
+      .text((d: any) => d);
+  }
+  
 
   private getYearlyExhibitionData(selectedExhibitions: Exhibition[], unselectedExhibitions: Exhibition[]): YearData[] {
     const yearData: { [year: number]: { [region: string]: { selected: number; unselected: number } } } = {};
@@ -286,5 +310,31 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
         regions
       };
     }).sort((a, b) => a.year - b.year);
+  }
+
+  private handleMouseOver(event: any, d: any): void {
+    const tooltip = d3.select(this.tooltip.nativeElement);
+    tooltip.style('display', 'block');
+  }
+
+  private handleMouseMove(event: any, d: any): void {
+    const tooltip = d3.select(this.tooltip.nativeElement);
+    const year = d.data.year;
+    const regions = d.data.regions;
+    const content = `
+      <strong>Year: ${year}</strong><br>
+      ${this.regionKeys.map(region => `
+        ${region}: ${regions[region].selected + regions[region].unselected} (Selected: ${regions[region].selected})
+      `).join('<br>')}
+    `;
+    tooltip.html(content)
+      .style('left', (event.pageX + 10) + 'px')
+      .style('top', (event.pageY - 28) + 'px');
+  }
+
+  private handleMouseOut(event: any, d: any): void {
+    
+    const tooltip = d3.select(this.tooltip.nativeElement);
+    tooltip.style('display', 'none');
   }
 }
