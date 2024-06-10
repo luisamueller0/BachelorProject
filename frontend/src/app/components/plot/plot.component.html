@@ -1,0 +1,16 @@
+<div class="plot-container" #plot>
+  <ng-container *ngIf="!isLoading">
+    <p *ngIf="!selectedArtists">Overview of Birth and Death years of all {{ allArtists.length }} artists</p>
+    <p *ngIf="selectedArtists && selectedArtists.length > 1">Overview of Techniques of Cluster artists</p>
+    <p *ngIf="selectedArtists && selectedArtists.length === 1">
+      Technique distribution of Artist:
+    </p>
+
+  </ng-container>
+      <figure class="plot-svg-container"></figure>
+
+  <!-- Display loading indicator if data is still loading -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="loading-spinner"></div>
+  </div>
+</div>

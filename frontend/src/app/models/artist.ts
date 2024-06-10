@@ -65,7 +65,7 @@ interface ArtistData {
     id: number;
     firstname: string;
     lastname: string;
-    birthyear:Date;
+    birthyear:string;
     birthplace: string;
     deathyear: string;
     deathplace: string;
@@ -97,7 +97,7 @@ interface ArtistData {
       this.id = Number(data.id);
       this.firstname = data.firstname;
       this.lastname = data.lastname;
-      this.birthyear = new Date(data.birthyear);
+      this.birthyear = data.birthyear;
       this.birthplace = data.birthplace;
       this.deathyear = data.deathyear;
       this.deathplace = data.deathplace;

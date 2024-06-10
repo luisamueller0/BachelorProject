@@ -16,6 +16,7 @@ import { FocusOnClusterComponent } from './components/focusOnCluster/focusOnClus
 import { ExhibitionVisualizationComponent } from './components/exhibitionVisualization/exhibitionVisualization.component';
 import { SmallMultiplesComponent } from './components/smallMultiples/smallMultiples.component';
 import { ExhibitionBarchartComponent } from './components/exhibitionBarchart/exhibitionBarchart.component';
+import { PlotComponent } from './components/plot/plot.component';
 @NgModule({
   declarations: [
     AppComponent,
@@ -27,7 +28,8 @@ import { ExhibitionBarchartComponent } from './components/exhibitionBarchart/exh
     FocusOnClusterComponent,
     ExhibitionVisualizationComponent,
     SmallMultiplesComponent,
-    ExhibitionBarchartComponent
+    ExhibitionBarchartComponent,
+    PlotComponent
   ],
   imports: [
     BrowserModule,
