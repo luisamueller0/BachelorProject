@@ -27,7 +27,7 @@ export class PlotComponent implements OnInit, OnChanges, OnDestroy {
   private margin = {
     top: 2,
     right: 1,
-    bottom: 6,
+    bottom: 5,
     left: 4
   };
 
@@ -113,96 +113,96 @@ export class PlotComponent implements OnInit, OnChanges, OnDestroy {
     this.contentHeight = height;
   }
 
-  private drawScatterPlot(): void {
-    if (!this.allArtists.length) return;
-  
-    const selectedArtists = this.selectedArtists || [];
-    console.log('artists', this.allArtists, selectedArtists);
-  
-    if (selectedArtists.length === 0) {
-      this.nonselectedArtists = this.allArtists;
-    } else {
-      this.nonselectedArtists = this.allArtists.filter(artist => !selectedArtists.find(a => a.id === artist.id));
-    }
-  
-    // Define scales
-    const birthExtent = d3.extent(this.allArtists, d => d.birthyear);
-    const deathExtent = d3.extent(this.allArtists, d => d.deathyear);
-  
-    const x = d3.scaleLinear()
-      .domain(birthExtent[0] !== undefined && birthExtent[1] !== undefined ? [birthExtent[0], birthExtent[1]] : [0, 0])
-      .range([0, this.contentWidth]);
-  
-    const y = d3.scaleLinear()
-      .domain(deathExtent[0] !== undefined && deathExtent[1] !== undefined ? [deathExtent[0], deathExtent[1]] : [0, 0])
-      .range([this.contentHeight, 0]);
-  
-    // Define axes
-    const xAxis = d3.axisBottom(x)
-      .ticks(10)
-      .tickFormat(format('d'));  // Format ticks as plain integers
-  
-    const yAxis = d3.axisLeft(y)
-      .ticks(10)
-      .tickFormat(format('d'));  // Format ticks as plain integers
-  
-    // Append axes
-    this.svg.append("g")
-      .attr("transform", `translate(0,${this.contentHeight})`)
-      .call(xAxis);
-  
-    this.svg.append("g")
-      .call(yAxis);
-  
-    // Append axis labels
-    this.svg.append("text")
-      .attr("class", "x axis-label")
-      .attr("text-anchor", "middle")
-      .attr("x", this.contentWidth / 2)
-      .attr("y", this.contentHeight + 25)  // Adjust this value to position the label correctly
-      .text("Birth Year");
-  
-      this.svg.append("text")
-  .attr("class", "axis-label")
-  .attr("transform", "rotate(-90)")
-  .attr("x", -this.contentHeight / 2)  // Adjust the x position after rotation
-  .attr("y", -30)  // Adjust the y position as needed, negative value to move left
-  .style("text-anchor", "middle")
-  .text("Death Year");
+ private drawScatterPlot(): void {
+  if (!this.allArtists.length) return;
 
-    // Plot non-selected artists with lower opacity
-    if (this.selectedArtists) {
-      this.svg.append("g")
-        .selectAll("circle")
-        .data(this.nonselectedArtists)
-        .enter().append("circle")
-        .attr("cx", (d: any) => x(d.birthyear))
-        .attr("cy", (d: any) => y(d.deathyear))
-        .attr("r", 2)
-        .attr("fill", "gray")
-        .attr("opacity", 0.2);
-  
-      // Plot selected artists with full opacity
-      this.svg.append("g")
-        .selectAll("circle")
-        .data(selectedArtists)
-        .enter().append("circle")
-        .attr("cx", (d: any) => x(d.birthyear))
-        .attr("cy", (d: any) => y(d.deathyear))
-        .attr("r", 2)
-        .attr("fill", "steelblue")
-        .attr("opacity", 1);
-    } else {
-      this.svg.append("g")
-        .selectAll("circle")
-        .data(this.nonselectedArtists)
-        .enter().append("circle")
-        .attr("cx", (d: any) => x(d.birthyear))
-        .attr("cy", (d: any) => y(d.deathyear))
-        .attr("r", 2)
-        .attr("fill", "gray")
-        .attr("opacity", 1);
-    }
+  const selectedArtists = this.selectedArtists || [];
+  console.log('artists', this.allArtists, selectedArtists);
+
+  if (selectedArtists.length === 0) {
+    this.nonselectedArtists = this.allArtists;
+  } else {
+    this.nonselectedArtists = this.allArtists.filter(artist => !selectedArtists.find(a => a.id === artist.id));
   }
-  
+
+  // Define scales
+  const birthExtent = d3.extent(this.allArtists, d => d.birthyear);
+  const deathExtent = d3.extent(this.allArtists, d => d.deathyear);
+
+  const x = d3.scaleLinear()
+    .domain(birthExtent[0] !== undefined && birthExtent[1] !== undefined ? [birthExtent[0], birthExtent[1]] : [0, 0])
+    .range([0, this.contentWidth]);
+
+  const y = d3.scaleLinear()
+    .domain(deathExtent[0] !== undefined && deathExtent[1] !== undefined ? [deathExtent[0], deathExtent[1]] : [0, 0])
+    .range([this.contentHeight, 0]);
+
+  // Define axes
+  const xAxis = d3.axisBottom(x)
+    .ticks(10)
+    .tickFormat(format('d'));  // Format ticks as plain integers
+
+  const yAxis = d3.axisLeft(y)
+    .ticks(10)
+    .tickFormat(format('d'));  // Format ticks as plain integers
+
+  // Append axes
+  this.svg.append("g")
+    .attr("transform", `translate(0,${this.contentHeight})`)
+    .call(xAxis);
+
+  this.svg.append("g")
+    .call(yAxis);
+
+  // Append axis labels
+  this.svg.append("text")
+    .attr("class", "x axis-label")
+    .attr("text-anchor", "middle")
+    .attr("x", this.contentWidth / 2)
+    .attr("y", this.contentHeight + (4 * window.innerHeight / 100))  // Adjust based on viewport height
+    .text("Birth Year");
+
+  this.svg.append("text")
+    .attr("class", "axis-label")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -this.contentHeight / 2)
+    .attr("y", - (2.5 * window.innerWidth / 100))  // Adjust based on viewport width
+    .style("text-anchor", "middle")
+    .text("Death Year");
+
+  // Plot non-selected artists with lower opacity
+  if (this.selectedArtists) {
+    this.svg.append("g")
+      .selectAll("circle")
+      .data(this.nonselectedArtists)
+      .enter().append("circle")
+      .attr("cx", (d: any) => x(d.birthyear))
+      .attr("cy", (d: any) => y(d.deathyear))
+      .attr("r", 2)
+      .attr("fill", "gray")
+      .attr("opacity", 0.2);
+
+    // Plot selected artists with full opacity
+    this.svg.append("g")
+      .selectAll("circle")
+      .data(selectedArtists)
+      .enter().append("circle")
+      .attr("cx", (d: any) => x(d.birthyear))
+      .attr("cy", (d: any) => y(d.deathyear))
+      .attr("r", 2)
+      .attr("fill", "steelblue")
+      .attr("opacity", 1);
+  } else {
+    this.svg.append("g")
+      .selectAll("circle")
+      .data(this.nonselectedArtists)
+      .enter().append("circle")
+      .attr("cx", (d: any) => x(d.birthyear))
+      .attr("cy", (d: any) => y(d.deathyear))
+      .attr("r", 2)
+      .attr("fill", "gray")
+      .attr("opacity", 1);
+  }
+}
+
   }
