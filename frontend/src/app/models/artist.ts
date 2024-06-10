@@ -4,9 +4,9 @@ interface ArtistData {
   id: number;
   firstname: string;
   lastname: string;
-  birthyear:string;
+  birthyear:number;
   birthplace: string;
-  deathyear: string;
+  deathyear: number;
   deathplace: string;
   nationality: string;
   sex: string;
@@ -65,9 +65,9 @@ interface ArtistData {
     id: number;
     firstname: string;
     lastname: string;
-    birthyear:string;
+    birthyear:number;
     birthplace: string;
-    deathyear: string;
+    deathyear: number;
     deathplace: string;
     nationality: string;
     sex: string;
