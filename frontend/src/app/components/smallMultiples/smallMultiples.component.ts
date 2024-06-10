@@ -1060,7 +1060,8 @@ private drawClusterInCell(cell: any, x: string, y: number, cellWidth: number, ce
     const getNodeIndexById = (id: number) => artistNodes.findIndex((node: any) => node.id === id);
 
     const sharedExhibitionMinArtworksValues = relationships.map((relationship: any) => relationship.sharedExhibitionMinArtworks);
-    const normalizedSharedExhibitionMinArtworks = this.normalizeLogarithmically(new Map(sharedExhibitionMinArtworksValues.map((value, index) => [index, value])));
+    const normalizedSharedExhibitionMinArtworks = this.normalizeSqrt(new Map(sharedExhibitionMinArtworksValues.map((value, index) => [index, value])));
+    const threshold = 0.2;  // Threshold for visibility
     const formattedRelationships = relationships.map((relationship: any, index: number) => {
         const sourceIndex = getNodeIndexById(relationship.startId);
         const targetIndex = getNodeIndexById(relationship.endId);
@@ -1081,6 +1082,9 @@ private drawClusterInCell(cell: any, x: string, y: number, cellWidth: number, ce
         .append("line")
         .attr("class", `artist-edge artist-edge-${cluster.clusterId}-${value}`)
         .style('stroke', (d: any) => {
+            if (d.sharedExhibitionMinArtworks < threshold) {
+                return 'white';
+            }
             const clusterId = cluster.clusterId;
             return this.intraCommunityEdges[clusterId].length === 2 ? 'black' : this.edgeColorScale(d.sharedExhibitionMinArtworks);
         })
@@ -1146,6 +1150,7 @@ private drawClusterInCell(cell: any, x: string, y: number, cellWidth: number, ce
     this.simulations[cluster.clusterId] = this.simulations[cluster.clusterId] || {};
     this.simulations[cluster.clusterId][value] = simulation;
 }
+
 
 
   
@@ -1261,6 +1266,18 @@ private drawClusterInCell(cell: any, x: string, y: number, cellWidth: number, ce
     });
     return normalized;
   }
+
+  private normalizeSqrt(values: Map<number, number>): Map<number, number> {
+    const sqrtMaxValue = Math.sqrt(Math.max(...values.values()));
+    const sqrtMinValue = Math.sqrt(Math.min(...values.values()));
+    const range = sqrtMaxValue - sqrtMinValue;
+    const normalized = new Map<number, number>();
+    values.forEach((value, id) => {
+      normalized.set(id, (Math.sqrt(value) - sqrtMinValue) / range); // Normalize by dividing by the max degree
+    });
+    return normalized;
+  }
+
 
   private calculateNodeDegreesForClusters(): void {
     this.intraCommunityEdges.forEach((relationships, clusterId) => {
