@@ -739,16 +739,22 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
       .subscribe(data => {
     
         this.clusters = data[0];
-        this.clusters.forEach((cluster, clusterIndex) => {
+       /*  this.clusters.forEach((cluster, clusterIndex) => {
           console.log('Cluster ', clusterIndex, ':')
           cluster.forEach(artist => {
             console.log(artist.firstname, artist.lastname, clusterIndex)
           });
-        });
+        }); */
         console.log('clusters:',this.clusters )
+        this.clusters.forEach((cluster, clusterIndex) => {
+          cluster.forEach(artist => {
+            console.log('exhibited:' ,artist.total_exhibitions, 'artworks:', artist.total_exhibited_artworks, 'techniques:')
+          });
+        })
 
         this.intraCommunityEdges = data[1] as exhibited_with[][];
         const interCommunityEdgesRaw = data[2] as exhibited_with[];
+        console.log('edges',data[3])
     
         this.interCommunityEdges = interCommunityEdgesRaw.map(edge => ({
           source: edge.startId,
@@ -1223,7 +1229,7 @@ private drawClusterInCell(cell: any, x: string, y: number, cellWidth: number, ce
       let metricMap = new Map<number, number>();
       if (metric === 'Amount of Exhibitions') {
         cluster.forEach((artist: Artist) => {
-          metricMap.set(artist.id, artist.total_exhibited_artworks);
+          metricMap.set(artist.id, artist.total_exhibitions);
         });
         this.totalExhibitionsMap[clusterId] = this.normalizeLinear(metricMap);
       } else if (metric === 'Amount of different techniques') {
