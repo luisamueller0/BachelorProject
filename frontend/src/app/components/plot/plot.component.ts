@@ -206,6 +206,11 @@ const tooltip = d3.select("div#tooltip")
     const hideTooltip = () => {
       tooltip.style("display", "none");
     };
+
+    const click = (event: any, d: any) => {
+      this.decisionService.changeSearchedArtistId(d.id as number);
+      console.log('hallo', typeof d.id)
+    };
   
     // Plot non-selected artists with lower opacity
     if (this.selectedArtists) {
@@ -231,7 +236,8 @@ const tooltip = d3.select("div#tooltip")
         .attr("opacity", 1)
         .on("mouseover", showTooltip)
         .on("mousemove", showTooltip)
-        .on("mouseout", hideTooltip);
+        .on("mouseout", hideTooltip)
+        .on("click", click)
     } else {
       this.svg.append("g")
         .selectAll("circle")
@@ -244,7 +250,8 @@ const tooltip = d3.select("div#tooltip")
         .attr("opacity", 1)
         .on("mouseover", showTooltip)
         .on("mousemove", showTooltip)
-        .on("mouseout", hideTooltip);
+        .on("mouseout", hideTooltip)
+        .on("click", click)
     }
   }
   

@@ -470,6 +470,7 @@ this.visualizeData();
   
     const selectedCircle = this.g.selectAll(".artist-node").filter((d: any) => d.artist.id.toString() === id).node() as SVGCircleElement;
     if (!selectedCircle) {
+      console.log('No circle found for artist id:', id);
       return; // If no node is found, exit the function
     }
   
