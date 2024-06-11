@@ -96,7 +96,7 @@ export class SmallMultiplesComponent implements OnInit, OnChanges, OnDestroy {
     this.subscriptions.add(this.decisionService.currentK.subscribe(k => {
       this.updateCluster(k);
     }));
-    this.subscriptions.add(this.decisionService.currentSearchedArtistId.subscribe((id:number|null) => this.highlightArtistNode(id)));
+    this.subscriptions.add(this.decisionService.currentSearchedArtistId.subscribe((id:string|null) => this.highlightArtistNode(id)));
 
 
 
@@ -462,7 +462,7 @@ this.visualizeData();
     this.loadNewData(this.clusters,this.intraCommunityEdges,this.interCommunityEdges,value)
   }
   
-  private highlightArtistNode(id: number | null) {
+  private highlightArtistNode(id: string | null) {
     if (id === null) {
       this.g.selectAll(".artist-node").style('filter', '');
       return;

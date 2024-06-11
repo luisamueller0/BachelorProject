@@ -201,7 +201,7 @@ export class DecisionsComponent implements OnInit {
 
   if (artistInRange) {
     this.notInCurrentRange = false;
-    this.decisionService.changeSearchedArtistId(artist.id as number);
+    this.decisionService.changeSearchedArtistId(artist.id.toString());
   } else {
     this.decisionService.changeSearchedArtistId(null);
     this.notInCurrentRange = true;
