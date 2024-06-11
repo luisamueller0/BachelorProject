@@ -559,6 +559,14 @@ private resetNodeSelection() {
       const clusterNode = this.artistClusterMap.get(previousArtistNodeId);
       if (clusterNode) {
           this.selectionService.selectArtists(clusterNode.artists);
+          const countries:string[] =[];
+          clusterNode.artists.map(artist => {
+            countries.push(artist.nationality)
+            countries.push(artist.birthcountry)
+            countries.push(artist.deathcountry)
+            countries.push(artist.most_exhibited_in)
+      });
+      this.selectionService.selectCountries(countries);
       } else {
           this.selectionService.selectArtists(null);
       }
@@ -574,7 +582,7 @@ private resetNodeSelection() {
   this.selectionService.selectCluster(this.allArtists);
   this.selectionService.selectClusterEdges([]);
   this.selectionService.selectFocusArtist(null);
-  this.selectionService.selectCountries(this.allCountries);
+  //this.selectionService.selectCountries(this.allCountries);
 }
 
 
@@ -596,6 +604,7 @@ private selectNode(artistNode: ArtistNode, circle: SVGCircleElement) {
       this.g.selectAll(".artist-node").style('opacity', '1');
   }
 
+ 
   this.selectedNode = [circle, circle.style.fill];
   d3.select(circle).style("filter", "url(#shadow)");
 
@@ -658,6 +667,8 @@ private selectNode(artistNode: ArtistNode, circle: SVGCircleElement) {
   countries.push(artist.deathcountry);
   countries.push(artist.most_exhibited_in)
   this.selectionService.selectCountries(countries);
+    // Copy artist's name to clipboard
+    navigator.clipboard.writeText(`${artist.firstname} ${artist.lastname}`);
 
   
 
@@ -1116,7 +1127,7 @@ private drawClusterInCell(cell: any, x: string, y: number, cellWidth: number, ce
                 .style('display', 'block')
                 .style('left', `${x + 10}px`)
                 .style('top', `${y + 10}px`)
-                .html(`Name: ${d.artist.firstname} ${d.artist.lastname}<br/>Technique: ${d.artist.distinct_techniques}<br/>Nationality: ${d.artist.nationality}`);
+                .html(`${d.artist.firstname} ${d.artist.lastname}<br/>`);
         })
         .on('mouseout', function () {
             d3.select('#tooltip').style('display', 'none');
