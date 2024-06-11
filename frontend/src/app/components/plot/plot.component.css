@@ -13,3 +13,12 @@
     margin: 0;
     box-sizing: border-box;
   }
+
+  .xaxis{
+    font-size: 12px;
+  }
+  .noMargin{
+    margin-bottom:0px;
+  }
+
+  

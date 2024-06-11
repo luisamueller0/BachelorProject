@@ -42,21 +42,25 @@
     font-weight:600;
   }
 
+
 .tooltip {
   position: absolute;
   text-align: center;
   width: auto;
   height: auto;
-  padding: 0.02vw;
+  padding: 0.5vw;
   background: rgb(204, 204, 204);
   font-weight: 600;
   border: 0px;
   border-radius: 8px;
-  pointer-events: none; /* Prevents the tooltip from interfering with mouse events */
+  pointer-events: none;
   opacity: 0.9;
   color: rgb(0, 0, 0);
-  z-index: 10000; /* Ensure the tooltip is in front */
+  z-index: 10000;
+  white-space: nowrap; /* Prevents the text from breaking into multiple lines */
 }
+
+
 
   .svg-container {
     display: inline-block;

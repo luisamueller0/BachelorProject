@@ -29,8 +29,8 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
   private margin = {
     top: 2,
     right: 1,
-    bottom: 8,
-    left: 3
+    bottom: 7,
+    left: 2.5
   };
 
   private techniquesHierarchy = [
@@ -224,19 +224,25 @@ return d3.color(baseColor)?.brighter(1)!.copy({ opacity: 0.7 })!.toString() || '
         .attr("transform", "translate(-10,0)rotate(-45)")
         .style("text-anchor", "end")
         .style("font-weight", '700')
+        .style("font-size", "0.6vw")
         .style("color", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? 'black' : 'lightgray') : 'black')
         .style("font-weight", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? 'bold' : '700') : '700');
 
     xAxis.style("opacity", (d: string) => this.hasTechniqueValue(d, combinedData) ? 1 : 0.3);
 
+
+
     const maxTechniqueValue: number = d3.max(combinedData, d => d.nonselectedArtists + d.selectedArtists) || 0;
     const y = d3.scaleLinear()
         .domain([0, maxTechniqueValue])
-        .range([this.contentHeight, 0]);
+        .range([this.contentHeight, 0]).nice()
 
-    this.svg.append("g")
+    const yAxis=this.svg.append("g")
         .call(d3.axisLeft(y));
 
+
+        yAxis.selectAll("text")
+        .style("font-size", "0.6vw"); // Adjust the size as needed
     const stack = d3.stack()
         .keys(['nonselectedArtists', 'selectedArtists']);
 
