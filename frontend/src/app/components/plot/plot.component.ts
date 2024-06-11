@@ -30,7 +30,7 @@ export class PlotComponent implements OnInit, OnChanges, OnDestroy {
   private margin = {
     top: 1.5,
     right: 1,
-    bottom: 4,
+    bottom: 4.2,
     left: 3.5
   };
 
@@ -218,9 +218,6 @@ const tooltip = d3.select("div#tooltip")
         .attr("r", 2)
         .attr("fill", "gray")
         .attr("opacity", 0.2)
-        .on("mouseover", showTooltip)
-        .on("mousemove", showTooltip)
-        .on("mouseout", hideTooltip);
   
       // Plot selected artists with full opacity
       this.svg.append("g")
