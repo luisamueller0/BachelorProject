@@ -186,7 +186,6 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
       "\\N": "#E1E1E1"
     };
   
-    // Transform yearData to an array of objects suitable for stacking
     const transformedData: any[] = yearData.map(d => {
       const data: any = { year: d.year };
       this.regionKeys.forEach(region => {
@@ -196,44 +195,66 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
       return data;
     });
   
-    // Calculate total values for each region
     const regionTotals: { [key: string]: number } = {};
     this.regionKeys.forEach(region => {
       regionTotals[region] = d3.sum(transformedData, d => d[`${region}-selected`] + d[`${region}-unselected`]);
     });
   
-    // Sort the regions based on the total values in descending order
     const sortedRegions = this.regionKeys.sort((a, b) => regionTotals[b] - regionTotals[a]);
-  
-    // Create a sorted list of keys for stacking
     const sortedKeys = sortedRegions.flatMap(region => [`${region}-selected`, `${region}-unselected`]);
   
-    // Stack the data using the sorted keys
     const stack = d3.stack()
       .keys(sortedKeys);
   
     const stackedData = stack(transformedData);
+
+    const tooltip = d3.select("div#tooltip")
   
-    // Draw the stacks
+    const handleMouseOver = (event: any, d: any) =>{
+    tooltip.style('display', 'block');
+  }
+
+  const handleMouseMove =(event: any, d: any) =>{
+    const year = d.data.year;
+    const regions = this.regionKeys.map(region => {
+      console.log(region)
+      return {
+        region,
+        selected: d.data[`${region}-selected`],
+        unselected: d.data[`${region}-unselected`]
+      };
+    });
+    if(this.selectedArtists === null || this.selectedArtists.length === 0){
+    tooltip.style("display", "block")
+        .style("left", `${event.pageX -5}px`)
+        .style("top", `${event.pageY + 5}px`)
+        .style("font-color", "black")
+        .html(`${regions.map(region => `${region.region}: ${region.selected}`).join('<br/>')} `);
+  }else{
+    tooltip.style("display", "block")
+    .style("left", `${event.pageX + 5}px`)
+    .style("top", `${event.pageY + 5}px`)
+    .style("font-color", "black")
+    .html(`Year: ${year}<br/>${regions.map(region => `${region.region}: ${region.selected} out of ${region.unselected}`).join('<br/>')} `);
+
+  }
+  }
+  const handleMouseOut =(event: any, d: any) =>{
+    tooltip.style('display', 'none');
+  }
     this.svg.append('g')
       .selectAll('g')
       .data(stackedData)
       .enter().append('g')
       .attr('fill', (d: any) => {
-      
         const region = d.key.split('-')[0];
-       
-        
         return colorMap[region];
-      }) 
+      })
       .attr('opacity', (d: any) => {
-      
         const region = d.key.split('-')[0];
         const bool = d.key.split('-')[1];
-        
-        return (bool === 'unselected') ?0.3: 1;
-      }) 
-     
+        return (bool === 'unselected') ? 0.3 : 1;
+      })
       .selectAll('rect')
       .data((d: any) => d)
       .enter().append('rect')
@@ -241,14 +262,19 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
       .attr('y', (d: any) => yScale(d[1]))
       .attr('height', (d: any) => yScale(d[0]) - yScale(d[1]))
       .attr('width', xScale.bandwidth())
-      .on('mouseover', this.handleMouseOver.bind(this))
-      .on('mousemove', this.handleMouseMove.bind(this))
-      .on('mouseout', this.handleMouseOut.bind(this));
+      .on('mouseover', handleMouseOver)
+      .on('mousemove', handleMouseMove)
+      .on('mouseout',handleMouseOut);
+
   
+    // Append x-axis with custom label colors
     this.svg.append('g')
       .attr('class', 'x-axis')
       .attr('transform', `translate(0,${this.contentHeight})`)
-      .call(d3.axisBottom(xScale));
+      .call(d3.axisBottom(xScale))
+      .selectAll('text')
+      .style('fill', (d: string) => this.hasExhibitionValue(+d) ? 'black' : 'gray')
+      .style('font-weight', (d: string) => this.hasExhibitionValue(+d) ? 'bold' : 'normal');
   
     this.svg.append('g')
       .attr('class', 'y-axis')
@@ -276,12 +302,22 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
       .text((d: any) => d);
   }
   
+  private hasExhibitionValue(year: number): boolean {
+    return this.exhibitions.some(exhibition => {
+      const startYear = new Date(exhibition.start_date).getFullYear();
+      const endYear = new Date(exhibition.end_date).getFullYear();
+      return year >= startYear && year <= endYear;
+    });
+  }
+  
+  
 
   private getYearlyExhibitionData(selectedExhibitions: Exhibition[], unselectedExhibitions: Exhibition[]): YearData[] {
     const yearData: { [year: number]: { [region: string]: { selected: number; unselected: number } } } = {};
 
     const processExhibitions = (exhibitions: Exhibition[], isSelected: boolean) => {
       exhibitions.forEach(exhibition => {
+        
         const startYear = new Date(exhibition.start_date).getFullYear();
         const endYear = new Date(exhibition.end_date).getFullYear();
         const region = exhibition.europeanRegion || "Others"; // Default to "Others" if undefined
@@ -312,29 +348,5 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     }).sort((a, b) => a.year - b.year);
   }
 
-  private handleMouseOver(event: any, d: any): void {
-    const tooltip = d3.select(this.tooltip.nativeElement);
-    tooltip.style('display', 'block');
-  }
 
-  private handleMouseMove(event: any, d: any): void {
-    const tooltip = d3.select(this.tooltip.nativeElement);
-    const year = d.data.year;
-    const regions = d.data.regions;
-    const content = `
-      <strong>Year: ${year}</strong><br>
-      ${this.regionKeys.map(region => `
-        ${region}: ${regions[region].selected + regions[region].unselected} (Selected: ${regions[region].selected})
-      `).join('<br>')}
-    `;
-    tooltip.html(content)
-      .style('left', (event.pageX + 10) + 'px')
-      .style('top', (event.pageY - 28) + 'px');
-  }
-
-  private handleMouseOut(event: any, d: any): void {
-    
-    const tooltip = d3.select(this.tooltip.nativeElement);
-    tooltip.style('display', 'none');
-  }
 }

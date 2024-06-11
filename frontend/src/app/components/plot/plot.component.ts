@@ -187,9 +187,6 @@ const tooltip = d3.select("div#tooltip")
 
 
     const showTooltip = (event: any, d: any) => {
-      if(selectedArtists){
-
-      }
       const age = d.deathyear - d.birthyear;
 
       const tooltipNode = tooltip.node() as HTMLElement;
