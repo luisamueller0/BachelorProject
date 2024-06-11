@@ -4,6 +4,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { Artist } from '../models/artist'; // Import the appropriate model
 import exhibited_with from '../models/exhibited_with';
+import { Exhibition } from '../models/exhibition';
 
 @Injectable({
   providedIn: 'root'
@@ -19,6 +20,7 @@ export class SelectionService {
   private selectedNode = new BehaviorSubject<Artist|null>(null);
   private selectedClusterEdges = new BehaviorSubject<exhibited_with[]>([]);
   private selectedFocusArtist = new BehaviorSubject<Artist|null>(null);
+  private selectedExhibitions = new BehaviorSubject<Exhibition[]|null>(null);
 
   currentArtists = this.selectedArtists.asObservable();
   currentCluster = this.selectedCluster.asObservable();
@@ -28,8 +30,13 @@ export class SelectionService {
   currentNode = this.selectedNode.asObservable();
   currentFocusCluster = this.selectedFocusCluster.asObservable();
   currentClusterEdges= this.selectedClusterEdges.asObservable();
+  currentExhibitions = this.selectedExhibitions.asObservable();
 
 
+  selectExhibitions(exhibitions:Exhibition[]|null){
+    console.log(exhibitions)
+    this.selectedExhibitions.next(exhibitions);
+  }
   selectArtists(artists:Artist[]|null) {
     this.selectedArtists.next(artists);
   }

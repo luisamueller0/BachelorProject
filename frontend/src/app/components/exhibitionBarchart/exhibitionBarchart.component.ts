@@ -217,7 +217,6 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   const handleMouseMove =(event: any, d: any) =>{
     const year = d.data.year;
     const regions = this.regionKeys.map(region => {
-      console.log(region)
       return {
         region,
         selected: d.data[`${region}-selected`],
@@ -242,6 +241,13 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   const handleMouseOut =(event: any, d: any) =>{
     tooltip.style('display', 'none');
   }
+
+  const handleClick = (event: any, d: any) => {
+    const year = d.data.year;
+    const selectedExhibitions = this.filterExhibitionsByYear(year);
+    this.selectionService.selectExhibitions(selectedExhibitions);
+  };
+  
     this.svg.append('g')
       .selectAll('g')
       .data(stackedData)
@@ -264,7 +270,8 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
       .attr('width', xScale.bandwidth())
       .on('mouseover', handleMouseOver)
       .on('mousemove', handleMouseMove)
-      .on('mouseout',handleMouseOut);
+      .on('mouseout',handleMouseOut)
+      .on('click', handleClick);
 
   
     // Append x-axis with custom label colors
@@ -310,6 +317,13 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     });
   }
   
+  private filterExhibitionsByYear(year: number): Exhibition[] {
+    return this.exhibitions.filter(exhibition => {
+      const startYear = new Date(exhibition.start_date).getFullYear();
+      const endYear = new Date(exhibition.end_date).getFullYear();
+      return year >= startYear && year <= endYear;
+    });
+  }
   
 
   private getYearlyExhibitionData(selectedExhibitions: Exhibition[], unselectedExhibitions: Exhibition[]): YearData[] {
