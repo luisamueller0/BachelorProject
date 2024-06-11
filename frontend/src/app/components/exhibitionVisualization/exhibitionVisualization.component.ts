@@ -111,25 +111,19 @@ export class ExhibitionVisualizationComponent implements OnInit, OnChanges, OnDe
       bottom: this.margin.bottom * window.innerWidth / 100,
       left: this.margin.left * window.innerWidth / 100
     };
+   
     const width = element.offsetWidth - margin.left - margin.right;
-  
-    // Calculate the height based on the number of countries and exhibitions
-    const numExhibitions = this.exhibitions.length;
-    const numCountries = new Set(this.exhibitions.map(exhibition => exhibition.took_place_in_country)).size;
-    const barHeight = 2; // Height of each bar
-    const extraSpace = 2 * window.innerWidth / 100; // Space between countries
-    const calculatedHeight = (numExhibitions * barHeight) + (numCountries * extraSpace) + margin.top + margin.bottom;
-  
-    const height = Math.max(element.offsetHeight, calculatedHeight);
-  
+    const height = element.offsetHeight - margin.top - margin.bottom;
+
     this.svg = d3.select(element).append('svg')
-      .attr('width', element.offsetWidth)
-      .attr('height', height)
+      .attr('width', '100%')
+      .attr('height', '100%')
+      .attr('viewBox', `0 0 ${element.offsetWidth} ${element.offsetHeight}`)
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
-  
+
     this.contentWidth = width;
-    this.contentHeight = height - margin.top - margin.bottom;
+    this.contentHeight = height;
   }
   
   private drawTimeline(): void {

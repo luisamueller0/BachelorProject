@@ -4,6 +4,7 @@
       <div class="sidebar-left">
         <app-decisions></app-decisions>
         <app-map></app-map>
+        <app-barchart></app-barchart>
        
       </div>
       <div class="center-section">
@@ -19,19 +20,13 @@
         </div>
       </div>
       <div class="sidebar-right">
-        <div class="network-section">
-           <app-barchart></app-barchart>
-          
-     <!--      <h1>Network with {{value1}}</h1>
-          <app-focusOnCluster [displayValue]="value1"></app-focusOnCluster> -->
-        </div>
-        <div class="network-section">
         <app-plot> </app-plot>
-        </div>
-        <div class="network-section">
+        <app-ganttChart></app-ganttChart>
+      
+       <!--  <div class="network-section">
           <h1>Network with {{value3}}</h1>
           <app-focusOnCluster [displayValue]="value3"></app-focusOnCluster>
-        </div>
+        </div> -->
       </div>
     </div>
   </div>

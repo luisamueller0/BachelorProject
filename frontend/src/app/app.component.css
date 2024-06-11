@@ -47,16 +47,28 @@
 }
 
 .sidebar-left app-decisions,
-.sidebar-left app-map {
-  height: 50%;
+.sidebar-left app-map,
+.sidebar-left app-barchart {
+  height: 33.33%;
   width: 100%;
   border: 1px solid #e5aeff;
   box-sizing: border-box;
 }
 
-.sidebar-right .network-section {
+.sidebar-right app-plot {
   width: 100%;
   height: 33.33%;
+  border: 1px solid #e5aeff;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+.sidebar-right app-ganttChart {
+  width: 100%;
+  height: 66.67%;
   border: 1px solid #e5aeff;
   box-sizing: border-box;
   display: flex;

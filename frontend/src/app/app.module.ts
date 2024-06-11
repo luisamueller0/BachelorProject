@@ -17,6 +17,7 @@ import { ExhibitionVisualizationComponent } from './components/exhibitionVisuali
 import { SmallMultiplesComponent } from './components/smallMultiples/smallMultiples.component';
 import { ExhibitionBarchartComponent } from './components/exhibitionBarchart/exhibitionBarchart.component';
 import { PlotComponent } from './components/plot/plot.component';
+import { GanttChartComponent } from './components/ganttChart/ganttChart.component';
 @NgModule({
   declarations: [
     AppComponent,
@@ -29,7 +30,8 @@ import { PlotComponent } from './components/plot/plot.component';
     ExhibitionVisualizationComponent,
     SmallMultiplesComponent,
     ExhibitionBarchartComponent,
-    PlotComponent
+    PlotComponent,
+    GanttChartComponent
   ],
   imports: [
     BrowserModule,
