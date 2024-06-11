@@ -291,7 +291,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
       .attr('y', (d: any, i: number) => i * 20)
       .attr('width', 18)
       .attr('height', 18)
-      .attr('fill', (d: any) => selectedColorMap[d as keyof typeof selectedColorMap] || colorMap[d as keyof typeof colorMap]);
+      .attr('fill', (d: any) => colorMap[d as keyof typeof colorMap]);
   
     legend.selectAll('text')
       .data(this.legendOrder)

@@ -57,6 +57,7 @@ export class SelectionService {
   selectCountries(countries:string[]){
     this.selectedCountries.next(countries);
   }
+  
 
   selectNode(node:Artist|null){
     this.selectedNode.next(node);
