@@ -25,7 +25,7 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
 
     // Margins in vw and vh
     private margin = {
-      top: 10,
+      top: 11,
       right: 0.5,
       bottom: 1,
       left: 2
@@ -86,47 +86,47 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     private createSvg(): void {
-      const exhibitions :Exhibition[]|null= this.exhibitions;
-      if(exhibitions ===null){
-        return;
+      const exhibitions: Exhibition[] | null = this.exhibitions;
+      if (exhibitions === null) {
+          return;
       }
+  
       d3.select(this.ganttContainer.nativeElement).select("figure.gantt-svg-container").select("svg").remove();
-
+  
       const element = this.ganttContainer.nativeElement.querySelector('figure.gantt-svg-container');
       const margin = {
-        top: this.margin.top * window.innerHeight / 100,
-        right: this.margin.right * window.innerWidth / 100,
-        bottom: this.margin.bottom * window.innerWidth / 100,
-        left: this.margin.left * window.innerWidth / 100
+          top: this.margin.top * window.innerHeight / 100,
+          right: this.margin.right * window.innerWidth / 100,
+          bottom: this.margin.bottom * window.innerWidth / 100,
+          left: this.margin.left * window.innerWidth / 100
       };
       const width = element.offsetWidth - margin.left - margin.right;
-
-      // Calculate the height based on the number of countries and exhibitions
+  
       const numExhibitions = exhibitions.length;
       const numCountries = new Set(exhibitions.map(exhibition => exhibition.took_place_in_country)).size;
-      const barHeight = 2; // Height of each bar
-      const extraSpace = 2 * window.innerWidth / 100; // Space between countries
+      const barHeight = 5;
+      const extraSpace = 0.5 * window.innerWidth / 100;
       const calculatedHeight = (numExhibitions * barHeight) + (numCountries * extraSpace) + margin.top + margin.bottom;
-
+  
       const height = Math.max(element.offsetHeight, calculatedHeight);
-
+  
       this.svg = d3.select(element).append('svg')
-        .attr('width', element.offsetWidth)
-        .attr('height', height)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
-
+          .attr('width', element.offsetWidth)
+          .attr('height', height)
+          .append("g")
+          .attr("transform", `translate(${margin.left},${margin.top})`);
+  
       this.contentWidth = width;
       this.contentHeight = height - margin.top - margin.bottom;
-    }
-
-private drawTimeline(): void {
+  }
+  
+  private drawTimeline(): void {
     const exhibitions: Exhibition[] | null = this.exhibitions;
     if (exhibitions === null) {
         return;
     }
 
-    const maxBarHeight = 8; // Maximum height for each bar
+    const maxBarHeight = 5;
 
     const timelineData = exhibitions.map(exhibition => ({
         name: exhibition.name,
@@ -135,7 +135,7 @@ private drawTimeline(): void {
         duration: new Date(exhibition.end_date).getTime() - new Date(exhibition.start_date).getTime(),
         amountParticipants: exhibition.exhibited_artists,
         country: exhibition.took_place_in_country,
-        normalizedParticipants: 0 // Add this property for initialization
+        normalizedParticipants: 0
     }));
 
     const normalizedParticipants = this.normalizeLogarithmically(timelineData.map(d => d.amountParticipants));
@@ -146,21 +146,11 @@ private drawTimeline(): void {
 
     const groupedByCountry = d3.group(timelineData, d => d.country);
     const sortedCountries = Array.from(groupedByCountry.entries())
-        .sort(([, a], [, b]) => d3.descending(a.length, b.length)) // Sort by number of exhibitions
+        .sort(([, a], [, b]) => d3.descending(a.length, b.length))
         .map(([country]) => country);
 
-    // Calculate the extent of the timeline data
-    const minDate = d3.min(timelineData, d => d.start)!;
-    const maxDate = d3.max(timelineData, d => d.end)!;
-
-    // Extend the extent by 5% on both sides
-    const paddingFactor = 0.05;
-    const dateRange = maxDate - minDate;
-    const paddedMinDate = minDate - dateRange * paddingFactor;
-    const paddedMaxDate = maxDate + dateRange * paddingFactor;
-
     const xScale = d3.scaleTime()
-        .domain([paddedMinDate, paddedMaxDate])
+        .domain([d3.min(timelineData, d => d.start)!, d3.max(timelineData, d => d.end)!])
         .range([0, this.contentWidth])
         .nice();
 
@@ -168,22 +158,22 @@ private drawTimeline(): void {
         .domain(timelineData.map((d, i) => i.toString()))
         .range([0, this.contentHeight])
         .padding(0.1)
-        .round(true); // Make sure the scale rounds values to integer pixel sizes
+        .round(true);
 
-    // Calculate bar height with a maximum limit
     const barHeight = Math.min(yScale.bandwidth(), maxBarHeight);
 
     const colorScale = d3.scaleSequential(d3.interpolatePlasma)
-        .domain([0, 1]); // Normalized participants are between 0 and 1
+        .domain([0, 1]);
 
-    // Calculate the total height used by the bars and extra space
-    const totalHeight = sortedCountries.reduce((acc, country) => {
-        const countryExhibitions = groupedByCountry.get(country)!;
-        return acc + (countryExhibitions.length * barHeight) + (0.2 * window.innerWidth / 100);
-    }, 0);
+    // Calculate the total height needed for the bars and extra space
+    let yOffset = 0;
+    const extraSpace = 0.5 * window.innerWidth / 100;
+    sortedCountries.forEach((country) => {
+        const exhibitions = groupedByCountry.get(country)!;
+        yOffset += (exhibitions.length * barHeight) + extraSpace;
+    });
 
-    // Create x-axis with grid lines at the top
-    const xAxis = d3.axisTop(xScale).tickSize(-totalHeight);
+    const xAxis = d3.axisTop(xScale).tickSize(-yOffset);
 
     const xAxisGroup = this.svg.append('g')
         .call(xAxis)
@@ -193,22 +183,18 @@ private drawTimeline(): void {
         .attr("dx", "-.8em")
         .attr("dy", ".15em")
         .attr("transform", "rotate(65)")
-        .style("font-size", "0.5vw");  // Change font size of x-axis labels
+        .style("font-size", "0.5vw");
 
-    // Change the color of the grid lines on the x-axis
     this.svg.selectAll('.tick line')
-        .attr('stroke', 'gray');  // Change this to the desired color
+        .attr('stroke', 'gray');
 
-    const extraSpace = 1 * this.contentWidth/ 100; // 2vw space between countries
-
-    let yOffset = 0;
+    yOffset = 0;
     sortedCountries.forEach((country, index) => {
         const exhibitions = groupedByCountry.get(country)!;
         exhibitions.sort((a, b) => d3.ascending(a.start, b.start));
 
-        const countryColor = this.artistService.getCountryColor(country, 0.1); // Lighter background color
+        const countryColor = this.artistService.getCountryColor(country, 0.1);
 
-        // Draw background for the country section
         this.svg.append('rect')
             .attr('x', 0)
             .attr('y', yOffset)
@@ -216,7 +202,6 @@ private drawTimeline(): void {
             .attr('height', exhibitions.length * barHeight)
             .attr('fill', countryColor);
 
-        // Add country label
         this.svg.append('text')
             .attr('class', 'label')
             .attr('x', -10)
@@ -224,23 +209,20 @@ private drawTimeline(): void {
             .attr('dy', '.35em')
             .attr('text-anchor', 'end')
             .attr('fill', this.artistService.getCountryColor(country))
-            .style('font-size', '0.5vw')  // Change font size for country labels
+            .style('font-size', '0.5vw')
             .text(country);
 
-        // Draw bars or circles for each exhibition
         exhibitions.forEach(exhibition => {
             const isSingleDay = exhibition.start === exhibition.end;
 
             if (isSingleDay) {
-                // Draw a circle
                 this.svg.append('circle')
                     .attr('class', 'circle')
                     .attr('cx', xScale(exhibition.start))
                     .attr('cy', yOffset + barHeight / 2)
-                    .attr('r', barHeight / 2) 
+                    .attr('r', barHeight / 2)
                     .attr('fill', timelineData.length !== 1 ? colorScale(exhibition.normalizedParticipants) : colorScale(1));
             } else {
-                // Draw a bar
                 this.svg.append('rect')
                     .attr('class', 'bar')
                     .attr('x', xScale(exhibition.start))
@@ -252,15 +234,14 @@ private drawTimeline(): void {
             yOffset += barHeight;
         });
 
-        yOffset += extraSpace; // Extra space between different country groups
+        yOffset += extraSpace;
     });
 
-    // Add horizontal line at the end of plotted bars
     this.svg.append('line')
         .attr('x1', 0)
         .attr('x2', this.contentWidth)
-        .attr('y1', totalHeight)
-        .attr('y2', totalHeight)
+        .attr('y1', yOffset)
+        .attr('y2', yOffset)
         .attr('stroke', 'gray')
         .attr('stroke-width', 1);
 
@@ -268,7 +249,7 @@ private drawTimeline(): void {
     const legendHeight = 10;
     const legendWidth = 100;
     const legendX = 80; // Position legend on the top
-    const legendY = -80; // Adjust legend position
+    const legendY = -60; // Adjust legend position
 
     const legend = this.svg.append('g')
         .attr('transform', `translate(${legendX}, ${legendY})`);
@@ -299,6 +280,14 @@ private drawTimeline(): void {
         .attr('height', legendHeight)
         .style('fill', 'url(#linear-gradient)');
 
+    // Add participants label above the legend
+    legend.append('text')
+        .attr('x', legendWidth / 2)
+        .attr('y', -10) // Position above the legend rectangle
+        .attr('text-anchor', 'middle')
+        .style('font-size', '0.5vw')
+        .text('Normalized Number of Participants');
+
     // Legend axis with normalized values from 0 to 1
     const legendScale = d3.scaleLinear()
         .domain([0, 1])
@@ -310,19 +299,13 @@ private drawTimeline(): void {
 
     const legendGroup = legend.append('g')
         .attr('transform', `translate(0, ${legendHeight})`)
-        .call(legendAxis)
+        .call(legendAxis);
     legendGroup.selectAll('text')
         .style('font-size', '0.5vw'); // Smaller font size for legend axis
-
-    // Add participants label
-    legend.append('text')
-        .attr('x', -10)
-        .attr('y', legendHeight + 25) // Adjust this to position the label correctly
-        .attr('text-anchor', 'start')
-        .style('font-size', '0.5vw')
-        .text('Normalized Number of Participants');
 }
 
+
+  
   
   
     
