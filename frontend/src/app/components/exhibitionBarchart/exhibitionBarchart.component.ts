@@ -103,40 +103,46 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     } else {
       this.retrieveWantedExhibitions();
       this.createChart();
+      this.isLoading = false;
     }
   }
 
   private retrieveWantedExhibitions(): void {
+    this.exhibitions = [];
     this.selectedExhibitions = [];
     this.nonSelectedExhibitions = [];
+
+    const allExhibitionIds = new Set(
+      this.allArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()))
+    );
+
+    this.exhibitionMap.forEach((exhibition, id) => {
+      if (allExhibitionIds.has(id)) {
+        this.exhibitions.push(exhibition);
+      }
+    });
+
     if (this.selectedArtists !== null && this.selectedArtists.length > 0) {
-      const wantedExhibitionIds = new Set(
+      const selectedExhibitionIds = new Set(
         this.selectedArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()))
       );
 
-      this.exhibitionMap.forEach((exhibition, id) => {
-        if (wantedExhibitionIds.has(id)) {
-          this.exhibitions.push(exhibition);
+      this.exhibitions.forEach(exhibition => {
+        if (selectedExhibitionIds.has(exhibition.id.toString())) {
+          this.selectedExhibitions.push(exhibition);
         } else {
           this.nonSelectedExhibitions.push(exhibition);
         }
       });
     } else {
-      const wantedExhibitionIds = new Set(
-        this.allArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()))
-      );
-      this.exhibitionMap.forEach((exhibition, id) => {
-        if (wantedExhibitionIds.has(id)) {
-          this.exhibitions.push(exhibition);
-        } 
-      });
+      this.selectedExhibitions = this.exhibitions;
+      this.nonSelectedExhibitions = [];
     }
   }
-  
+
   private createChart(): void {
     this.createSvg();
     this.drawBinnedChart();
-    this.isLoading = false;
   }
 
   private createSvg(): void {
@@ -163,7 +169,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   }
 
   private drawBinnedChart(): void {
-    const yearData = this.getYearlyExhibitionData(this.exhibitions, this.nonSelectedExhibitions);
+    const yearData = this.getYearlyExhibitionData(this.selectedExhibitions, this.nonSelectedExhibitions);
   
     const xScale = d3.scaleBand()
       .domain(yearData.map(d => d.year.toString()))
@@ -232,7 +238,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     });
     if(this.selectedArtists === null || this.selectedArtists.length === 0){
     tooltip.style("display", "block")
-        .style("left", `${event.pageX -5}px`)
+        .style("left", `${event.pageX +5}px`)
         .style("top", `${event.pageY + 5}px`)
         .style("font-color", "black")
         .html(`${regions.map(region => `${region.region}: ${region.selected}`).join('<br/>')} `);
@@ -368,6 +374,4 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
       };
     }).sort((a, b) => a.year - b.year);
   }
-
-
 }
