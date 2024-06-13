@@ -22,10 +22,11 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
     private svg: any;
     private contentWidth: number = 0;
     private contentHeight: number = 0;
+    private legendGroup: any;
 
     // Margins in vw and vh
     private margin = {
-      top: 11,
+      top: 11.5,
       right: 0.5,
       bottom: 1,
       left: 2
@@ -118,6 +119,10 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
   
       this.contentWidth = width;
       this.contentHeight = height - margin.top - margin.bottom;
+
+        // Create a group element for the legend
+  this.legendGroup = this.svg.append('g')
+  .attr('class', 'legend-group');
   }
   
   private drawTimeline(): void {
@@ -245,66 +250,66 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
         .attr('stroke', 'gray')
         .attr('stroke-width', 1);
 
-    // Add legend
-    const legendHeight = 10;
-    const legendWidth = 100;
-    const legendX = 80; // Position legend on the top
-    const legendY = -60; // Adjust legend position
+    // Calculate the position of the legend
+  const legendHeight = 0.5 * window.innerWidth / 100;
+  const legendWidth = this.contentWidth/4 * 3;
+  const legendX = (this.contentWidth - legendWidth) / 2; // Center the legend horizontally
+  const legendY = -4.5 * window.innerWidth / 100; // Position the legend based on top margin
 
-    const legend = this.svg.append('g')
-        .attr('transform', `translate(${legendX}, ${legendY})`);
+  const legend = this.legendGroup
+      .attr('transform', `translate(${legendX}, ${legendY})`);
 
-    // Create gradient for legend
-    const defs = this.svg.append('defs');
-    const linearGradient = defs.append('linearGradient')
-        .attr('id', 'linear-gradient')
-        .attr('x1', '0%')
-        .attr('y1', '0%')
-        .attr('x2', '100%')
-        .attr('y2', '0%');
+  // Create gradient for legend
+  const defs = this.svg.append('defs');
+  const linearGradient = defs.append('linearGradient')
+      .attr('id', 'linear-gradient')
+      .attr('x1', '0%')
+      .attr('y1', '0%')
+      .attr('x2', '100%')
+      .attr('y2', '0%');
 
-    const stops = d3.range(0, 1.01, 0.01).map((t: number) => ({
-        offset: `${t * 100}%`,
-        color: colorScale(t)
-    }));
+  const stops = d3.range(0, 1.01, 0.01).map((t: number) => ({
+      offset: `${t * 100}%`,
+      color: colorScale(t)
+  }));
 
-    linearGradient.selectAll('stop')
-        .data(stops)
-        .enter().append('stop')
-        .attr('offset', (d: { offset: string; color: string }) => d.offset)
-        .attr('stop-color', (d: { offset: string; color: string }) => d.color);
+  linearGradient.selectAll('stop')
+      .data(stops)
+      .enter().append('stop')
+      .attr('offset', (d: { offset: string; color: string }) => d.offset)
+      .attr('stop-color', (d: { offset: string; color: string }) => d.color);
 
-    // Draw legend
-    legend.append('rect')
-        .attr('width', legendWidth)
-        .attr('height', legendHeight)
-        .style('fill', 'url(#linear-gradient)');
+  // Draw legend
+  legend.append('rect')
+      .attr('width', legendWidth)
+      .attr('height', legendHeight)
+      .style('fill', 'url(#linear-gradient)');
 
-    // Add participants label above the legend
-    legend.append('text')
-        .attr('x', legendWidth / 2)
-        .attr('y', -10) // Position above the legend rectangle
-        .attr('text-anchor', 'middle')
-        .style('font-size', '0.5vw')
-        .text('Normalized Number of Participants');
+  // Add participants label above the legend
+  legend.append('text')
+      .attr('x', legendWidth / 2)
+      .attr('y', -0.5 * window.innerWidth / 100) // Adjusted position above the legend rectangle
+      .attr('text-anchor', 'middle')
+      .style('font-size', '0.5vw')
+      .attr('fill', '#2a0052')
+      .text('Normalized Number of Participants')
+     
 
-    // Legend axis with normalized values from 0 to 1
-    const legendScale = d3.scaleLinear()
-        .domain([0, 1])
-        .range([0, legendWidth]);
+  // Legend axis with normalized values from 0 to 1
+  const legendScale = d3.scaleLinear()
+      .domain([0, 1])
+      .range([0, legendWidth]);
 
-    const legendAxis = d3.axisBottom(legendScale)
-        .ticks(6)
-        .tickFormat(d3.format(".1f")); // Format ticks to show one decimal place
+  const legendAxis = d3.axisBottom(legendScale)
+      .ticks(6)
+      .tickFormat(d3.format(".1f")); // Format ticks to show one decimal place
 
-    const legendGroup = legend.append('g')
-        .attr('transform', `translate(0, ${legendHeight})`)
-        .call(legendAxis);
-    legendGroup.selectAll('text')
-        .style('font-size', '0.5vw'); // Smaller font size for legend axis
+  const legendAxisGroup = legend.append('g')
+      .attr('transform', `translate(0, ${legendHeight})`)
+      .call(legendAxis);
+  legendAxisGroup.selectAll('text')
+      .style('font-size', '0.5vw'); // Smaller font size for legend axis
 }
-
-
   
   
   
