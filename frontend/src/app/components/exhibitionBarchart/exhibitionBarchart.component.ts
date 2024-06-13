@@ -31,6 +31,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   allExhibitions: Exhibition[] = [];
   exhibitions: Exhibition[] = [];
   nonSelectedExhibitions: Exhibition[] = [];
+  selectedExhibitions: Exhibition[] = [];
   allArtists: Artist[] = [];
   selectedArtists: Artist[] | null = [];
   isLoading: boolean = true;
@@ -38,6 +39,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   private contentWidth: number = 0;
   private contentHeight: number = 0;
   private regionKeys: string[] = ["North Europe", "Eastern Europe", "Southern Europe", "Western Europe", "Others", "\\N"];
+  private exhibitionMap: Map<string, Exhibition> = new Map();
 
   private margin = {
     top: 2,
@@ -52,6 +54,9 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   ngOnInit(): void {
     this.exhibitionService.getAllExhibitions().subscribe((exhibitions) => {
       this.allExhibitions = exhibitions;
+      const exhibitionMap = new Map<string, Exhibition>();
+      this.allExhibitions.forEach(exhibition => exhibitionMap.set(exhibition.id.toString(), exhibition));
+      this.exhibitionMap = exhibitionMap;
       this.tryInitialize();
     });
 
@@ -102,18 +107,14 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   }
 
   private retrieveWantedExhibitions(): void {
+    this.selectedExhibitions = [];
+    this.nonSelectedExhibitions = [];
     if (this.selectedArtists !== null && this.selectedArtists.length > 0) {
       const wantedExhibitionIds = new Set(
         this.selectedArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()))
       );
-  
-      const exhibitionMap = new Map<string, Exhibition>();
-      this.allExhibitions.forEach(exhibition => exhibitionMap.set(exhibition.id.toString(), exhibition));
-  
-      this.exhibitions = [];
-      this.nonSelectedExhibitions = [];
-  
-      exhibitionMap.forEach((exhibition, id) => {
+
+      this.exhibitionMap.forEach((exhibition, id) => {
         if (wantedExhibitionIds.has(id)) {
           this.exhibitions.push(exhibition);
         } else {
@@ -121,8 +122,14 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
         }
       });
     } else {
-      this.exhibitions = [...this.allExhibitions];
-      this.nonSelectedExhibitions = [];
+      const wantedExhibitionIds = new Set(
+        this.allArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()))
+      );
+      this.exhibitionMap.forEach((exhibition, id) => {
+        if (wantedExhibitionIds.has(id)) {
+          this.exhibitions.push(exhibition);
+        } 
+      });
     }
   }
   
