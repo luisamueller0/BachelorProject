@@ -28,7 +28,7 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
       top: 10,
       right: 2,
       bottom: 2,
-      left: 6
+      left: 2
     };
 
     constructor(private selectionService: SelectionService,
@@ -148,7 +148,8 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
 
       const xScale = d3.scaleTime()
         .domain([d3.min(timelineData, d => d.start)!, d3.max(timelineData, d => d.end)!])
-        .range([0, this.contentWidth]);
+        .range([0, this.contentWidth])
+        .nice();
 
       const yScale = d3.scaleBand()
         .domain(timelineData.map((d, i) => i.toString()))
@@ -162,19 +163,23 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
       const xAxis = d3.axisTop(xScale).tickSize(-this.contentHeight);
 
       const xAxisGroup = this.svg.append('g')
-        .call(xAxis)
-        .attr('transform', `translate(0,0)`)
-        .selectAll("text")
-        .style("text-anchor", "end")
-        .attr("dx", "-.8em")
-        .attr("dy", ".15em")
-        .attr("transform", "rotate(65)");
+      .call(xAxis)
+      .attr('transform', `translate(0,0)`)
+      .selectAll("text")
+      .style("text-anchor", "end")
+      .attr("dx", "-.8em")
+      .attr("dy", ".15em")
+      .attr("transform", "rotate(65)")
+      .style("font-size", "0.5vw");  // Change font size of x-axis labels
+    
+    
+  
 
       // Change the color of the grid lines on the x-axis
       this.svg.selectAll('.tick line')
         .attr('stroke', 'gray');  // Change this to the desired color
 
-      const extraSpace = 0.5 * window.innerWidth / 100; // 2vw space between countries
+      const extraSpace = 0.2* window.innerWidth / 100; // 2vw space between countries
 
       let yOffset = 0;
       sortedCountries.forEach((country, index) => {
@@ -182,6 +187,7 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
         exhibitions.sort((a, b) => d3.ascending(a.start, b.start));
 
         const countryColor = this.artistService.getCountryColor(country, 0.1); // Lighter background color
+       
 
         // Draw background for the country section
         this.svg.append('rect')
@@ -199,8 +205,8 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
           .attr('dy', '.35em')
           .attr('text-anchor', 'end')
           .attr('fill', this.artistService.getCountryColor(country))
-          .style('font-size', '10px')  // Smaller font size for country labels
-          .text(this.artistService.countryMap[country] || country);
+          .style('font-size', '0.5vw')  // Change font size for country labels
+          .text(country);
 
         // Draw bars for each exhibition
         exhibitions.forEach(exhibition => {
@@ -221,20 +227,14 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
   // Add legend
   const legendHeight = 10;
   const legendWidth = 100;
-  const legendX = 0; // Position legend on the top
+  const legendX = 80; // Position legend on the top
   const legendY = -80; // Adjust legend position
 
   const legend = this.svg.append('g')
     .attr('transform', `translate(${legendX}, ${legendY})`);
 
   // Legend title
-  legend.append('text')
-    .attr('x', 0)
-    .attr('y', -10)
-    .attr('text-anchor', 'start')
-    .attr('font-weight', 'bold')
-    .style('font-size', '0.6vw')
-    .text('Participants');
+
 
   // Create gradient for legend
   const defs = this.svg.append('defs');
@@ -271,11 +271,22 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
     .ticks(6)
     .tickFormat(d3.format(".1f")); // Format ticks to show one decimal place
 
-  legend.append('g')
+  
+  const legendGroup=legend.append('g')
     .attr('transform', `translate(0, ${legendHeight})`)
     .call(legendAxis)
-    .style('font-size', '0.4vw'); // Smaller font size for legend axi
+    legendGroup.selectAll('text')
+    .style('font-size', '0.5vw'); // Smaller font size for legend axi
+// Add participants label
+legend.append('text')
+.attr('x', -10)
+.attr('y', legendHeight + 25) // Adjust this to position the label correctly
+.attr('text-anchor', 'start')
+.style('font-size', '0.5vw')
+.text('Normalized Number of Participants');
+    
     }
+    
 
     private normalizeLogarithmically(values: number[]): number[] {
       const logMaxValue = Math.log1p(Math.max(...values));
