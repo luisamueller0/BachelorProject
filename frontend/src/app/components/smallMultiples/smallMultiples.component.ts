@@ -122,6 +122,10 @@ export class SmallMultiplesComponent implements OnInit, OnChanges, OnDestroy {
     this.visualizeData();
   }
 
+  public getTitle(): string {
+    return `Displaying ${this.allArtists.length} artists and ${this.clusters.length} clusters`;
+  }
+
   private updateNodeSize(metric: string) {
     console.log(`updateNodeSize called with metric: ${metric}`);
     const normalizedMaps = this.calculateNormalizedMaps(metric);
