@@ -231,83 +231,107 @@ export class SmallMultiplesComponent implements OnInit, OnChanges, OnDestroy {
 
 
 
+private resetNode() {
+  if (this.selectedNode) {
+    const previousNode = this.selectedNode[0];
+    const previousColor = this.selectedNode[1];
+
+    console.log("Resetting node:", previousNode, "to color:", previousColor);
+
+    // Use d3 to select the previous node and remove the filter
+    d3.select(previousNode)
+      .style("fill", previousColor)
+      .style("filter", "none"); // Explicitly set filter to "none"
+
+    // Retrieve the bound data using D3's datum function
+    const previousArtistNodeData = d3.select(previousNode).datum() as ArtistNode;
+    const previousArtistNodeId = previousArtistNodeData.id;
+
+
+      this.selectionService.selectArtists(null);
+
+  }
+
+  // Reset styles for all artist nodes and edges across categories
+  this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
+  this.g.selectAll(".artist-node").style('opacity', '1').style('filter', 'none');
+
+  this.selectedNode = null;
+  this.selectionService.selectCluster(this.allArtists);
+  this.selectionService.selectClusterEdges([]);
+  this.selectionService.selectFocusArtist(null);
+  // Ensure no countries are selected when resetting node selection
+  this.selectionService.selectCountries(this.allCountries);
+}
 
   
   
-  private onClusterClick(clusterNode: ClusterNode): void {
-    // If an artist node was clicked, do nothing
-    if (this.isNodeClick) {
-      this.isNodeClick = false;
-      return;
-    }
-    const type = this.decisionService.getDecisionSunburst();
-  
-    const selectedArtists = clusterNode.artists;
-    const selectedEdges = this.intraCommunityEdges[clusterNode.clusterId];
-  
-    // If the same cluster is clicked again, deselect it
-    if (this.selectedClusterNode && this.selectedClusterNode.clusterId === clusterNode.clusterId) {
-      // Reset the selected cluster node's border
-      this.g.selectAll(`.cluster-${this.selectedClusterNode.clusterId} path`)
-        .style('stroke', 'none');
-  
-      // Clear the selection
-      this.selectedClusterNode = null;
-      this.selectionService.selectArtists(null);
-      this.selectionService.selectCluster(this.allArtists);
-      this.selectionService.selectClusterEdges([]);
-      this.selectionService.selectCountries(this.allCountries);
-      this.selectionService.selectFocusCluster(null);
-    
-     
-  
-    } else {
-      // Reset the previous cluster node's border if there is one
-      if (this.selectedClusterNode) {
-        this.g.selectAll(`.cluster-${this.selectedClusterNode.clusterId} path`)
-          .style('stroke', 'none');
-      }
-  
-      
-     const size= 0.5* clusterNode.innerRadius/100;
-  
-      // Set the new cluster node as selected and change its border
-      this.selectedClusterNode = clusterNode;
-      this.g.selectAll(`.cluster-${clusterNode.clusterId} path`)
-        .style('stroke', 'black')
-        .style('stroke-width', `${size}vw`); // Adjust the border width as needed
-  
-      // Select the new cluster node
-      this.selectionService.selectArtists(selectedArtists);
-      this.selectionService.selectCluster(selectedArtists);
-      this.selectionService.selectClusterEdges(selectedEdges);
-      this.selectionService.selectFocusCluster([[selectedArtists], [selectedEdges]]);
-      const countries:string[]= [];
-      selectedArtists.forEach(artist => {
-        switch(type){
-          case 'nationality':
-            if(!countries.includes(artist.nationality))
-            countries.push(artist.nationality);
-            break;
-          case 'birthcountry':
-            if(!countries.includes(artist.birthcountry))
-            countries.push(artist.birthcountry);
-            break;
-          case 'deathcountry':
-            if(!countries.includes(artist.deathcountry))
-            countries.push(artist.deathcountry);
-            break;
-          case 'mostexhibited':
-            if(!countries.includes(artist.most_exhibited_in))
-            countries.push(artist.most_exhibited_in);
-            break;
-        };
-            
-      });
-      this.selectionService.selectCountries(countries);
-      
-    }
+private onClusterClick(clusterNode: ClusterNode): void {
+  // If an artist node was clicked, do nothing
+  if (this.isNodeClick) {
+    this.isNodeClick = false;
+    return;
   }
+
+  const type = this.decisionService.getDecisionSunburst();
+  const selectedArtists = clusterNode.artists;
+  const selectedEdges = this.intraCommunityEdges[clusterNode.clusterId];
+
+  // If the same cluster is clicked again, deselect it
+  if (this.selectedClusterNode && this.selectedClusterNode.clusterId === clusterNode.clusterId) {
+    // Reset the selected cluster node's border
+    this.g.selectAll(`.cluster-${this.selectedClusterNode.clusterId} path`).style('stroke', 'none');
+
+    // Clear the selection
+    this.selectedClusterNode = null;
+    this.selectionService.selectArtists(null);
+    this.selectionService.selectCluster(this.allArtists);
+    this.selectionService.selectClusterEdges([]);
+    this.selectionService.selectCountries(this.allCountries);
+    this.selectionService.selectFocusCluster(null);
+    this.selectionService.selectExhibitions(null);
+
+    // Reset node selection as well
+    this.resetNode();
+  } else {
+    // Reset the previous cluster node's border if there is one
+    if (this.selectedClusterNode) {
+      this.g.selectAll(`.cluster-${this.selectedClusterNode.clusterId} path`).style('stroke', 'none');
+    }
+
+    const size = 0.5 * clusterNode.innerRadius / 100;
+
+    // Set the new cluster node as selected and change its border
+    this.selectedClusterNode = clusterNode;
+    this.g.selectAll(`.cluster-${clusterNode.clusterId} path`)
+      .style('stroke', 'black')
+      .style('stroke-width', `${size}vw`); // Adjust the border width as needed
+
+    // Select the new cluster node
+    this.selectionService.selectArtists(selectedArtists);
+    this.selectionService.selectCluster(selectedArtists);
+    this.selectionService.selectClusterEdges(selectedEdges);
+    this.selectionService.selectFocusCluster([[selectedArtists], [selectedEdges]]);
+    const countries: string[] = [];
+    selectedArtists.forEach(artist => {
+      switch (type) {
+        case 'nationality':
+          if (!countries.includes(artist.nationality)) countries.push(artist.nationality);
+          break;
+        case 'birthcountry':
+          if (!countries.includes(artist.birthcountry)) countries.push(artist.birthcountry);
+          break;
+        case 'deathcountry':
+          if (!countries.includes(artist.deathcountry)) countries.push(artist.deathcountry);
+          break;
+        case 'mostexhibited':
+          if (!countries.includes(artist.most_exhibited_in)) countries.push(artist.most_exhibited_in);
+          break;
+      }
+    });
+    this.selectionService.selectCountries(countries);
+  }
+}
 
   private updateSimulation(updatedSizes: number[], clusterGroup: any, cluster: ClusterNode) {
     if (this.simulation[cluster.clusterId]) {
@@ -548,36 +572,36 @@ private highlightYAxisLabel(artistNode: ArtistNode): void {
 
 private resetNodeSelection() {
   if (this.selectedNode) {
-      const previousNode = this.selectedNode[0];
-      const previousColor = this.selectedNode[1];
+    const previousNode = this.selectedNode[0];
+    const previousColor = this.selectedNode[1];
 
-      console.log("Resetting node:", previousNode, "to color:", previousColor);
-      
-      // Use d3 to select the previous node and remove the filter
-      d3.select(previousNode)
-          .style("fill", previousColor)
-          .style("filter", "none"); // Explicitly set filter to "none"
+    console.log("Resetting node:", previousNode, "to color:", previousColor);
 
-      // Retrieve the bound data using D3's datum function
-      const previousArtistNodeData = d3.select(previousNode).datum() as ArtistNode;
-      const previousArtistNodeId = previousArtistNodeData.id;
-      
-      const clusterNode = this.artistClusterMap.get(previousArtistNodeId);
-      if (clusterNode) {
-          this.selectionService.selectArtists(clusterNode.artists);
-          const countries:string[] =[];
-          clusterNode.artists.map(artist => {
-            countries.push(artist.nationality)
-            countries.push(artist.birthcountry)
-            countries.push(artist.deathcountry)
-            countries.push(artist.most_exhibited_in)
+    // Use d3 to select the previous node and remove the filter
+    d3.select(previousNode)
+      .style("fill", previousColor)
+      .style("filter", "none"); // Explicitly set filter to "none"
+
+    // Retrieve the bound data using D3's datum function
+    const previousArtistNodeData = d3.select(previousNode).datum() as ArtistNode;
+    const previousArtistNodeId = previousArtistNodeData.id;
+
+    const clusterNode = this.artistClusterMap.get(previousArtistNodeId);
+    if (clusterNode) {
+      this.selectionService.selectArtists(clusterNode.artists);
+      const countries: string[] = [];
+      clusterNode.artists.map(artist => {
+        countries.push(artist.nationality);
+        countries.push(artist.birthcountry);
+        countries.push(artist.deathcountry);
+        countries.push(artist.most_exhibited_in);
       });
       this.selectionService.selectCountries(countries);
-      } else {
-          this.selectionService.selectArtists(null);
-      }
-  } else {
+    } else {
       this.selectionService.selectArtists(null);
+    }
+  } else {
+    this.selectionService.selectArtists(null);
   }
 
   // Reset styles for all artist nodes and edges across categories
@@ -588,7 +612,8 @@ private resetNodeSelection() {
   this.selectionService.selectCluster(this.allArtists);
   this.selectionService.selectClusterEdges([]);
   this.selectionService.selectFocusArtist(null);
-  //this.selectionService.selectCountries(this.allCountries);
+  // Ensure no countries are selected when resetting node selection
+  this.selectionService.selectCountries(this.allCountries);
 }
 
 
