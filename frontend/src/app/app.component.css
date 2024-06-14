@@ -68,14 +68,15 @@
 }
 .sidebar-right app-artistGanttChart {
   width: 100%;
-  height: 33.33%;
+  height: 50%;
   border: 1px solid #e5aeff;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  overflow: scroll;
+  overflow-y: scroll;
+  overflow-x:hidden;
  
   scrollbar-color: #7e24c7 white;
   scrollbar-width: thin;
@@ -83,14 +84,15 @@
 }
 .sidebar-right app-ganttChart {
   width: 100%;
-  height: 66.67%;
+  height: 50%;
   border: 1px solid #e5aeff;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  overflow: scroll;
+  overflow-y: scroll;
+  overflow-x:hidden;
   scrollbar-color: #7e24c7 white;
   scrollbar-width: thin;
 }
