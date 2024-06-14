@@ -205,72 +205,75 @@ public greyColorPalette: string[] = [
 ];
 //10
 public cyanColorPalette: string[] = [
-  "#1D5F55",
-  "#25776B",
-  "#2C8F80",
-  "#33A795",
-  "#3ABEAB",
-  "#4FC9B7",
-  "#67D0C0",
-  "#76D5C7",
-  "#85DACD",
-  "#94DED3",
-  "#A4E3D9"
+  "#144E49", // Darker turquoise
+  "#1C6B5D",
+  "#257775",
+  "#2E938D",
+  "#38AFA5",
+  "#42CABC",
+  "#57D2C4",
+  "#6BD9CB",
+  "#7EDFD3",
+  "#91E5DA",
+  "#A4EBD1"  // Light turquoise, but not too light
 ];
 
 
 //13
 public blueColorPalette: string[] = [
-  "#1362B1",
-  "#1672CF",
-  "#1E83E7",
-  "#3B93EA",
-  "#59A3EE",
-  "#69ACEF",
-  "#7AB6F1",
-  "#8BBFF3",
-  "#9BC8F5",
-  "#ACD1F6",
-  "#BDDAF8",
-  "#CDE3FA",
-  "#DEEDFC"
+  "#0F5491", // Darker blue
+  "#1266A9",
+  "#1578C1",
+  "#188ADB",
+  "#3A9DEA",
+  "#4DACF1",
+  "#5FBDF8",
+  "#72CEFF",
+  "#85D8FF",
+  "#98E2FF",
+  "#ABE8FF",
+  "#BDEFFF",
+  "#D0F5FF"  // Light blue, but not too light
 ];
 
 
 
 //15
 public purpleColorPalette: string[] = [
-  "#471377",
-  "#591895",
-  "#6B1DB3",
-  "#7C22D1",
-  "#8E37DE",
-  "#9E55E3",
-  "#AF73E8",
-  "#B781EA",
-  "#BF8FED",
-  "#C79DEF",
-  "#CFABF1",
-  "#D7B9F4",
-  "#DFC7F6",
-  "#E7D5F8",
-  "#EFE3FA"
+  "#471377", // Dark purple
+  "#54168F",
+  "#6019A6",
+  "#6D1DBD",
+  "#7A21D4",
+  "#8725EB",
+  "#9338F1",
+  "#9D4EF3",
+  "#A764F6",
+  "#B27AF8",
+  "#BD90FA",
+  "#C7A6FC",
+  "#D2BCFE",
+  "#DDCFFE",
+  "#E7E3FF"  // Light purple
 ];
+
 
 
 //9
 public pinkColorPalette: string[] = [
-  
-  "#EA2BB7",
-  "#ED4BC2",
-  "#F06ACD",
-  "#F279D2",
-  "#F388D7",
-  "#F597DC",
-  "#F6A6E1",
-  "#F8B5E6",
-  "#F9C4EB"
+  "#EA2BB7", // Dark pink
+  "#ED3EBE",
+  "#F050C5",
+  "#F262CC",
+  "#F474D3",
+  "#F686DA",
+  "#F898E1",
+  "#FAAAE8",
+  "#FCBCEE",  // Light pink
+  "#FECDF4",
+  "#FFE0FA"   // Very light pink
 ];
+
 
  // Divergent color scale from yellow to orange
  public getYellowOrangeColor(t: number): string {
