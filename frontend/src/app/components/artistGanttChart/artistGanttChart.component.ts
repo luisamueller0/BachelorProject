@@ -129,39 +129,54 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private drawTimeline(artists: Artist[]): void {
-    if (artists === null) {
+    if (!artists) {
       return;
     }
-
+  
     const maxBarHeight = 5;
-
+  
     const timelineData = artists.map(artist => ({
       name: artist.firstname + ' ' + artist.lastname,
       start: new Date(artist.birthyear, 0).getTime(),
       end: new Date(artist.deathyear, 0).getTime(),
       duration: new Date(artist.deathyear, 0).getTime() - new Date(artist.birthyear, 0).getTime(),
       birthCountry: artist.birthcountry,
-      deathCountry: artist.deathcountry
+      deathCountry: artist.deathcountry,
+      clusterIndex: artist.cluster,
+      id: artist.id
     }));
-
+  
+    const groupedByCluster = d3.group(timelineData, d => d.clusterIndex);
+    const sortedClusters = Array.from(groupedByCluster.entries())
+      .sort(([, a], [, b]) => d3.descending(a.length, b.length))
+      .map(([clusterIndex]) => clusterIndex);
+  
     const xScale = d3.scaleTime()
       .domain([d3.min(timelineData, d => d.start)!, d3.max(timelineData, d => d.end)!])
       .range([0, this.contentWidth])
       .nice();
-
+  
     const yScale = d3.scaleBand()
       .domain(timelineData.map((d, i) => i.toString()))
       .range([0, this.contentHeight])
       .padding(0.1)
       .round(true);
-
+  
     const barHeight = Math.min(yScale.bandwidth(), maxBarHeight);
-
+  
+    const colorScale = d3.scaleSequential(d3.interpolatePlasma)
+      .domain([0, 1]);
+  
     let yOffset = 0;
     const extraSpace = 0.5 * window.innerWidth / 100;
-
-    const xAxis = d3.axisTop(xScale).tickSize(-this.contentHeight);
-
+  
+    sortedClusters.forEach(cluster => {
+      const clusterArtists = groupedByCluster.get(cluster)!;
+      yOffset += (clusterArtists.length * barHeight) + extraSpace;
+    });
+  
+    const xAxis = d3.axisTop(xScale).tickSize(-yOffset);
+  
     this.svg.append('g')
       .call(xAxis)
       .attr('transform', `translate(0,0)`)
@@ -171,48 +186,63 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       .attr("dy", ".15em")
       .attr("transform", "rotate(65)")
       .style("font-size", "0.5vw");
-
+  
     this.svg.selectAll('.tick line')
       .attr('stroke', 'gray');
-
-    // Create gradients for each artist
+  
+    yOffset = 0;
     const defs = this.svg.append('defs');
-    timelineData.forEach((artist, index) => {
-      const gradientId = `gradient-${index}`;
-      const birthColor = this.artistService.getCountryColor(artist.birthCountry);
-      const deathColor = this.artistService.getCountryColor(artist.deathCountry);
-
-      const gradient = defs.append('linearGradient')
-        .attr('id', gradientId)
-        .attr('x1', '0%')
-        .attr('y1', '0%')
-        .attr('x2', '100%')
-        .attr('y2', '0%');
-
-      gradient.append('stop')
-        .attr('offset', '0%')
-        .attr('stop-color', birthColor);
-
-      gradient.append('stop')
-        .attr('offset', '100%')
-        .attr('stop-color', deathColor);
-    });
-
-    // Draw the timeline with gradient colors
-    timelineData.forEach((artist, index) => {
+    
+    sortedClusters.forEach((cluster, index) => {
+      const clusterArtists = groupedByCluster.get(cluster)!;
+      clusterArtists.sort((a, b) => d3.ascending(a.start, b.start));
+  
      
-     
+  
+      this.svg.append('text')
+        .attr('class', 'label')
+        .attr('x', -10)
+        .attr('y', yOffset + (clusterArtists.length * barHeight / 2))
+        .attr('dy', '.35em')
+        .attr('text-anchor', 'end')
+        .attr('fill', '#2a0052')
+        .style('font-size', '0.5vw')
+        .text(cluster);
+  
+      clusterArtists.forEach((artist, index) => {
+        const gradientId = `gradient-${artist.id}`;
+        const birthColor = this.artistService.getCountryColor(artist.birthCountry);
+        const deathColor = this.artistService.getCountryColor(artist.deathCountry);
+  
+        const gradient = defs.append('linearGradient')
+          .attr('id', gradientId)
+          .attr('x1', '0%')
+          .attr('y1', '0%')
+          .attr('x2', '100%')
+          .attr('y2', '0%');
+  
+        gradient.append('stop')
+          .attr('offset', '0%')
+          .attr('stop-color', birthColor);
+  
+        gradient.append('stop')
+          .attr('offset', '100%')
+          .attr('stop-color', deathColor);
+  
         this.svg.append('rect')
           .attr('class', 'bar')
           .attr('x', xScale(artist.start))
           .attr('y', yOffset)
-          .attr('width', xScale(artist.end) - xScale(artist.start))
+          .attr('width', xScale(artist.end) - xScale(artist.start) === 0 ? 1 : xScale(artist.end) - xScale(artist.start))
           .attr('height', barHeight)
-          .attr('fill', `url(#gradient-${index})`);
-      
-      yOffset += barHeight + yScale.paddingInner() * yScale.bandwidth();
+          .attr('fill', `url(#${gradientId})`);
+  
+        yOffset += barHeight;
+      });
+  
+      yOffset += extraSpace;
     });
-
+  
     this.svg.append('line')
       .attr('x1', 0)
       .attr('x2', this.contentWidth)
@@ -220,5 +250,66 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       .attr('y2', yOffset)
       .attr('stroke', 'gray')
       .attr('stroke-width', 1);
+  
+    const legendHeight = 0.5 * window.innerWidth / 100;
+    const legendWidth = this.contentWidth / 4 * 3;
+    const legendX = (this.contentWidth - legendWidth) / 2;
+    const legendY = -4.5 * window.innerWidth / 100;
+  
+    const legend = this.legendGroup
+      .attr('transform', `translate(${legendX}, ${legendY})`);
+  
+    const linearGradient = defs.append('linearGradient')
+      .attr('id', 'linear-gradient')
+      .attr('x1', '0%')
+      .attr('y1', '0%')
+      .attr('x2', '100%')
+      .attr('y2', '0%');
+  
+    const stops = d3.range(0, 1.01, 0.01).map((t: number) => ({
+      offset: `${t * 100}%`,
+      color: colorScale(t)
+    }));
+  
+    linearGradient.selectAll('stop')
+      .data(stops)
+      .enter().append('stop')
+      .attr('offset', (d: { offset: string; color: string }) => d.offset)
+      .attr('stop-color', (d: { offset: string; color: string }) => d.color);
+  
+    legend.append('rect')
+      .attr('width', legendWidth)
+      .attr('height', legendHeight)
+      .style('fill', 'url(#linear-gradient)');
+  
+    legend.append('text')
+      .attr('x', legendWidth / 2)
+      .attr('y', -0.5 * window.innerWidth / 100)
+      .attr('text-anchor', 'middle')
+      .style('font-size', '0.5vw')
+      .attr('fill', '#2a0052')
+      .text('Normalized Number of Participants');
+  
+    const legendScale = d3.scaleLinear()
+      .domain([0, 1])
+      .range([0, legendWidth]);
+  
+    const legendAxis = d3.axisBottom(legendScale)
+      .ticks(6)
+      .tickFormat(d3.format(".1f"));
+  
+    const legendAxisGroup = legend.append('g')
+      .attr('transform', `translate(0, ${legendHeight})`)
+      .call(legendAxis);
+  
+    legendAxisGroup.selectAll('text')
+      .style('font-size', '0.5vw');
   }
+  
+  
+  
+  
+    
+    
+
 }
