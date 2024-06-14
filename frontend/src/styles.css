@@ -7,6 +7,8 @@
   font-size: 0.7vw; 
   color:#2a0052 ;
     box-sizing: border-box; /* Ensure padding and borders are included in the element's total width and height */
+    scrollbar-color: #7e24c7 white;
+  scrollbar-width: thin;
   }
   
   

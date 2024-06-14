@@ -148,6 +148,8 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       duration: new Date(artist.deathyear, 0).getTime() - new Date(artist.birthyear, 0).getTime(),
       birthCountry: artist.birthcountry,
       deathCountry: artist.deathcountry,
+      birthyear: artist.birthyear,
+      deathyear: artist.deathyear,
       clusterIndex: artist.cluster + 1,  // Add +1 to each cluster index
       id: artist.id
     }));
@@ -232,6 +234,31 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
         gradient.append('stop')
           .attr('offset', '100%')
           .attr('stop-color', deathColor);
+
+ // Create tooltip
+ const tooltip = d3.select("div#tooltip");
+
+          const showTooltip = (event: any, d: any) => {
+            const age = artist.deathyear - artist.birthyear;
+        
+            const tooltipNode = tooltip.node() as HTMLElement;
+            const tooltipWidth = tooltipNode.offsetWidth;
+        
+            tooltip.style("display", "block")
+              .style("left", `${event.pageX - tooltipWidth}px`)
+              .style("top", `${event.pageY + 5}px`)
+              .style("color", "black")
+              .html(`Name: ${artist.name}<br/>Birth: ${artist.birthyear}  in ${artist.birthCountry}<br/>Death: ${artist.deathyear} in ${artist.deathCountry}<br/>Age: ${age}`);
+          };
+        
+          const hideTooltip = () => {
+            tooltip.style("display", "none");
+          };
+        
+          const click = (event: any, d: any) => {
+            this.decisionService.changeSearchedArtistId(artist.id.toString());
+            console.log('hallo', typeof artist.id);
+          };
   
         this.svg.append('rect')
           .attr('class', 'bar')
@@ -239,7 +266,11 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
           .attr('y', yOffset)
           .attr('width', xScale(artist.end) - xScale(artist.start) === 0 ? 1 : xScale(artist.end) - xScale(artist.start))
           .attr('height', barHeight)
-          .attr('fill', `url(#${gradientId})`);
+          .attr('fill', `url(#${gradientId})`)
+          .on("mouseover", showTooltip)
+          .on("mousemove", showTooltip)
+          .on("mouseout", hideTooltip)
+          .on("click", click);
   
         yOffset += barHeight;
       });
