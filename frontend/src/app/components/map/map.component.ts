@@ -82,7 +82,7 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
     this.g = this.svg.append('g');
 
     this.svg.call(d3.zoom<SVGSVGElement, unknown>()
-      .scaleExtent([1, 8])
+      .scaleExtent([0, 10])
       .on('zoom', (event) => this.g.attr('transform', event.transform)));
   }
 
@@ -99,7 +99,7 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
 
         const projection = d3.geoMercator()
         
-          .center([20, 52])
+          .center([20, 36])
           .scale(900)
           .translate([this.width / 2 +400, this.height /2 +600]);
 
