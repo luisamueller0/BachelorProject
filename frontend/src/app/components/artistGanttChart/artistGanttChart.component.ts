@@ -27,7 +27,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
   // Margins in vw and vh
   private margin = {
     top: 4.5,
-    right: 0.5,
+    right: 1.5,
     bottom: 1,
     left: 1.5
   };

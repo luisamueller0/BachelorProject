@@ -64,6 +64,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     this.subscriptions.add(
       this.selectionService.currentAllArtists.subscribe((artists: Artist[] | null) => {
         this.allArtists = artists || [];
+        this.selectionService.selectExhibitions(null);
         this.tryInitialize();
       })
     );
@@ -71,6 +72,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     this.subscriptions.add(
       this.selectionService.currentArtists.subscribe((artists: Artist[] | null) => {
         this.selectedArtists = artists;
+        this.selectionService.selectExhibitions(null);
         this.tryInitialize();
       })
     );
@@ -292,8 +294,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
         const endYear = new Date(exhibition.end_date).getFullYear();
         return year >= startYear && year <= endYear;
       });
-      console.log('hallo', clusterExhibitionsByYear)
-  
+   
       exhibitionsByYear = [selectedExhibitionsByYear, clusterExhibitionsByYear];
     } else {
       // If multiple artists are selected, only include selected exhibitions

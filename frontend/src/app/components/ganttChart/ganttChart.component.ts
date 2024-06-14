@@ -28,9 +28,9 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
     // Margins in vw and vh
     private margin = {
       top: 11.5,
-      right: 0.5,
+      right: 1.5,
       bottom: 1,
-      left: 2
+      left: 1.5
     };
 
     constructor(private selectionService: SelectionService,
@@ -41,22 +41,22 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
       this.subscriptions.add(
         this.selectionService.currentExhibitions.subscribe((exhibitions) => {
           if (exhibitions) {
-           
             // Separate exhibitions into those that should be full opacity and those with less opacity
             const [fullOpacityExhibitions, lessOpacityExhibitions] = exhibitions;
-            console.log(fullOpacityExhibitions)
-            console.log(lessOpacityExhibitions)
             if (lessOpacityExhibitions.length === 0) {
-              console.log('hallo')
-           
               // If the second array is empty, draw all exhibitions with full opacity
               this.exhibitions = fullOpacityExhibitions;
+              this.fullOpacityExhibitions = new Set(fullOpacityExhibitions.map(e => e.id.toString()));
             } else {
               // Combine the two arrays and handle opacity in drawTimeline
               this.exhibitions = [...fullOpacityExhibitions, ...lessOpacityExhibitions];
               this.fullOpacityExhibitions = new Set(fullOpacityExhibitions.map(e => e.id.toString()));
             }
     
+            this.tryInitialize();
+          }
+          else{
+            this.exhibitions = null;
             this.tryInitialize();
           }
         })
@@ -241,8 +241,20 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
   
       exhibitions.forEach(exhibition => {
         const opacity = this.fullOpacityExhibitions.has(exhibition.id.toString()) ? 1 : 0.5; // Ensure ID is a string
-  
-     
+        const strokeWidth = this.fullOpacityExhibitions.has(exhibition.id.toString()) ? 0.2 : 0; // Ensure ID is a string
+        const singleDay = exhibition.start === exhibition.end;
+        if (singleDay) {
+          this.svg.append('circle')
+            .attr('class', 'bar')
+            .attr('cx', xScale(exhibition.start)) // Corrected 'x' to 'cx'
+            .attr('cy', yOffset + barHeight / 2) // Center the circle vertically
+            .attr('r', barHeight / 2) // Set the radius to half of barHeight
+            .attr('fill', timelineData.length !== 1 ? colorScale(exhibition.normalizedParticipants) : colorScale(1))
+            .attr('opacity', opacity)
+            .attr('stroke', 'black')
+            .attr('stroke-width', strokeWidth);
+        } else {
+
           this.svg.append('rect')
             .attr('class', 'bar')
             .attr('x', xScale(exhibition.start))
@@ -250,8 +262,10 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
             .attr('width', xScale(exhibition.end) - xScale(exhibition.start) === 0 ? 1 : xScale(exhibition.end) - xScale(exhibition.start))
             .attr('height', barHeight)
             .attr('fill', timelineData.length !== 1 ? colorScale(exhibition.normalizedParticipants) : colorScale(1))
-            .attr('opacity', opacity);
-        
+            .attr('opacity', opacity)
+            .attr('stroke', 'black')
+            .attr('stroke-width', strokeWidth);
+        }
         yOffset += barHeight;
       });
   
