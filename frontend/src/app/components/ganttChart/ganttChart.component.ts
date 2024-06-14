@@ -241,7 +241,7 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
   
       exhibitions.forEach(exhibition => {
         const opacity = this.fullOpacityExhibitions.has(exhibition.id.toString()) ? 1 : 0.5; // Ensure ID is a string
-        const strokeWidth = this.fullOpacityExhibitions.has(exhibition.id.toString()) ? 0.2 : 0; // Ensure ID is a string
+        const strokeWidth = this.fullOpacityExhibitions.has(exhibition.id.toString()) ? 0.15 : 0; // Ensure ID is a string
         const singleDay = exhibition.start === exhibition.end;
         if (singleDay) {
           this.svg.append('circle')

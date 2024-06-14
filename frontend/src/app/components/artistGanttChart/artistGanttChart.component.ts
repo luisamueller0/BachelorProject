@@ -139,20 +139,44 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       return;
     }
   
+    const allArtists = this.allArtists || [];
+  
     const maxBarHeight = 5;
   
-    const timelineData = artists.map(artist => ({
-      name: artist.firstname + ' ' + artist.lastname,
-      start: new Date(artist.birthyear, 0).getTime(),
-      end: new Date(artist.deathyear, 0).getTime(),
-      duration: new Date(artist.deathyear, 0).getTime() - new Date(artist.birthyear, 0).getTime(),
-      birthCountry: artist.birthcountry,
-      deathCountry: artist.deathcountry,
-      birthyear: artist.birthyear,
-      deathyear: artist.deathyear,
-      clusterIndex: artist.cluster + 1,  // Add +1 to each cluster index
-      id: artist.id
-    }));
+    // Map of all artists by ID for easy lookup
+    const allArtistsMap = new Map<number, Artist>();
+    allArtists.forEach(artist => allArtistsMap.set(artist.id, artist));
+  
+    // Determine if there is only one selected artist
+    const selectedArtist = this.selectedArtists && this.selectedArtists.length === 1 ? this.selectedArtists[0] : null;
+    const selectedCluster = selectedArtist ? selectedArtist.cluster + 1 : null;
+  
+    // Create timeline data based on selected artist and clusters
+    const timelineData = selectedCluster
+      ? allArtists.filter(artist => artist.cluster + 1 === selectedCluster).map(artist => ({
+          name: artist.firstname + ' ' + artist.lastname,
+          start: new Date(artist.birthyear, 0).getTime(),
+          end: new Date(artist.deathyear, 0).getTime(),
+          duration: new Date(artist.deathyear, 0).getTime() - new Date(artist.birthyear, 0).getTime(),
+          birthCountry: artist.birthcountry,
+          deathCountry: artist.deathcountry,
+          birthyear: artist.birthyear,
+          deathyear: artist.deathyear,
+          clusterIndex: artist.cluster + 1,
+          id: artist.id
+        }))
+      : artists.map(artist => ({
+          name: artist.firstname + ' ' + artist.lastname,
+          start: new Date(artist.birthyear, 0).getTime(),
+          end: new Date(artist.deathyear, 0).getTime(),
+          duration: new Date(artist.deathyear, 0).getTime() - new Date(artist.birthyear, 0).getTime(),
+          birthCountry: artist.birthcountry,
+          deathCountry: artist.deathcountry,
+          birthyear: artist.birthyear,
+          deathyear: artist.deathyear,
+          clusterIndex: artist.cluster + 1,
+          id: artist.id
+        }));
   
     const groupedByCluster = d3.group(timelineData, d => d.clusterIndex);
     const sortedClusters = Array.from(groupedByCluster.entries())
@@ -200,13 +224,11 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
   
     yOffset = 0;
     const defs = this.svg.append('defs');
-    
+  
     sortedClusters.forEach((cluster, index) => {
-      const clusterArtists = groupedByCluster.get(cluster)!;
-      clusterArtists.sort((a, b) => d3.ascending(a.start, b.start));  // Sort by start date (birth year)
-
+      let clusterArtists = groupedByCluster.get(cluster)!;
+  
       yOffset += halfExtraSpace; // Add half of the extra space on top
-
   
       this.svg.append('text')
         .attr('class', 'label')
@@ -237,31 +259,34 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
         gradient.append('stop')
           .attr('offset', '100%')
           .attr('stop-color', deathColor);
+  
+        const tooltip = d3.select("div#tooltip");
+  
+        const showTooltip = (event: any, d: any) => {
+          const age = artist.deathyear - artist.birthyear;
+  
+          const tooltipNode = tooltip.node() as HTMLElement;
+          const tooltipWidth = tooltipNode.offsetWidth;
+  
+          tooltip.style("display", "block")
+            .style("left", `${event.pageX - tooltipWidth}px`)
+            .style("top", `${event.pageY + 5}px`)
+            .style("color", "black")
+            .html(`Name: ${artist.name}<br/>Birth: ${artist.birthyear}  in ${artist.birthCountry}<br/>Death: ${artist.deathyear} in ${artist.deathCountry}<br/>Age: ${age}`);
+        };
+  
+        const hideTooltip = () => {
+          tooltip.style("display", "none");
+        };
+  
+        const click = (event: any, d: any) => {
+          this.decisionService.changeSearchedArtistId(artist.id.toString());
+          console.log('hallo', typeof artist.id);
+        };
+  
+        const opacity = selectedArtist && selectedCluster === artist.clusterIndex ? (selectedArtist.id === artist.id ? 1 : 0.3) : 1;
+        const strokeWidth = selectedArtist && selectedCluster === artist.clusterIndex ? (selectedArtist.id === artist.id ? 0.1 : 0) : 0.2;
 
- // Create tooltip
- const tooltip = d3.select("div#tooltip");
-
-          const showTooltip = (event: any, d: any) => {
-            const age = artist.deathyear - artist.birthyear;
-        
-            const tooltipNode = tooltip.node() as HTMLElement;
-            const tooltipWidth = tooltipNode.offsetWidth;
-        
-            tooltip.style("display", "block")
-              .style("left", `${event.pageX - tooltipWidth}px`)
-              .style("top", `${event.pageY + 5}px`)
-              .style("color", "black")
-              .html(`Name: ${artist.name}<br/>Birth: ${artist.birthyear}  in ${artist.birthCountry}<br/>Death: ${artist.deathyear} in ${artist.deathCountry}<br/>Age: ${age}`);
-          };
-        
-          const hideTooltip = () => {
-            tooltip.style("display", "none");
-          };
-        
-          const click = (event: any, d: any) => {
-            this.decisionService.changeSearchedArtistId(artist.id.toString());
-            console.log('hallo', typeof artist.id);
-          };
   
         this.svg.append('rect')
           .attr('class', 'bar')
@@ -270,6 +295,9 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
           .attr('width', xScale(artist.end) - xScale(artist.start) === 0 ? 1 : xScale(artist.end) - xScale(artist.start))
           .attr('height', barHeight)
           .attr('fill', `url(#${gradientId})`)
+          .attr('opacity', opacity)
+          .attr('stroke', 'black')
+          .attr('stroke-width', strokeWidth)
           .on("mouseover", showTooltip)
           .on("mousemove", showTooltip)
           .on("mouseout", hideTooltip)
@@ -289,7 +317,6 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       .attr('stroke', 'gray')
       .attr('stroke-width', 1);
   
-  
     const linearGradient = defs.append('linearGradient')
       .attr('id', 'linear-gradient')
       .attr('x1', '0%')
@@ -307,14 +334,5 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       .enter().append('stop')
       .attr('offset', (d: { offset: string; color: string }) => d.offset)
       .attr('stop-color', (d: { offset: string; color: string }) => d.color);
- 
   }
-  
-  
-  
-  
-  
-    
-    
-
 }
