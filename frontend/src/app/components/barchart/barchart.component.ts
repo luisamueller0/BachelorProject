@@ -27,9 +27,9 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
 
   // Margins in vw and vh
   private margin = {
-    top: 2,
+    top: 1,
     right: 1,
-    bottom: 7,
+    bottom: 6.5,
     left: 2.5
   };
 

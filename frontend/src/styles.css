@@ -41,8 +41,10 @@
   overflow:hidden;
   }
   h1{
-    font-size: 1vw;
+    font-size: 0.75vw;
     font-weight:600;
+    margin-top:0.1vw;
+    margin-bottom:0.1vw;
   }
 
 

@@ -42,9 +42,9 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   private exhibitionMap: Map<string, Exhibition> = new Map();
 
   private margin = {
-    top: 2,
+    top: 1,
     right: 10,
-    bottom: 4,
+    bottom: 3,
     left: 2
   };
 

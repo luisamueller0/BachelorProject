@@ -1,6 +1,13 @@
 <div class="exhibition-container" #exhibition>
   
-  <p>Overview of all exhibitions</p>
+  <ng-container *ngIf="!isLoading">
+    <h1 *ngIf="!selectedArtists">Overview of all exhibitions of all {{ allArtists.length }} artists</h1>
+    <h1 *ngIf="selectedArtists && selectedArtists.length > 1">Overview of Exhibitions of Cluster with {{ selectedArtists.length }} artists</h1>
+    <h1 *ngIf="selectedArtists && selectedArtists.length === 1">
+      Attended exhibitions of: {{ selectedArtists[0].firstname }} {{ selectedArtists[0].lastname }}
+    </h1>
+
+  </ng-container>
   <div *ngIf="isLoading" class="loading-container">
     <div class="loading-spinner"></div>
   </div>

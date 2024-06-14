@@ -127,26 +127,7 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
           d3.select('#tooltip').style('display', 'none');
         });
 
-       // Append country codes
-/* this.g.selectAll('text')
-.data(filteredData.features)
-.enter()
-.append('text')
-.attr('x', (d: any) => {
-  const centroid = d3.geoCentroid(d);
-  const projectedCentroid = projection(centroid);
-  return projectedCentroid ? projectedCentroid[0] : 0;
-})
-.attr('y', (d: any) => {
-  const centroid = d3.geoCentroid(d);
-  const projectedCentroid = projection(centroid);
-  return projectedCentroid ? projectedCentroid[1] : 0;
-})
-.attr('dy', '.35em')
-.attr('text-anchor', 'middle')
-.text((d: any) => Object.keys(this.countryMap).find(key => this.countryMap[key] === d.properties.name))
-.style('font-size', '10px')
-.style('fill', '#000'); */
+
       })
   );
 }

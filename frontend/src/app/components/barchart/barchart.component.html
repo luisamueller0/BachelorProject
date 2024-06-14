@@ -1,10 +1,10 @@
 <div class="barchart-container" #barChart>
   <ng-container *ngIf="!isLoading">
-    <p *ngIf="!selectedArtists">Overview of Techniques of all {{ allArtists.length }} artists</p>
-    <p *ngIf="selectedArtists && selectedArtists.length > 1">Overview of Techniques of Cluster with {{ selectedArtists.length }} artists</p>
-    <p *ngIf="selectedArtists && selectedArtists.length === 1">
+    <h1 *ngIf="!selectedArtists">Overview of Techniques of all {{ allArtists.length }} artists</h1>
+    <h1 *ngIf="selectedArtists && selectedArtists.length > 1">Overview of Techniques of Cluster with {{ selectedArtists.length }} artists</h1>
+    <h1 *ngIf="selectedArtists && selectedArtists.length === 1">
       Technique distribution of Artist: {{ selectedArtists[0].firstname }} {{ selectedArtists[0].lastname }}
-    </p>
+    </h1>
 
   </ng-container>
       <figure class="svg-container"></figure>

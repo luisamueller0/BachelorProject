@@ -1,10 +1,10 @@
 <div class="artist-gantt-container" #artistGantt>
   <ng-container *ngIf="!isLoading">
-    <p class = "noMargin" *ngIf="!selectedArtists">Overview of Birth and Death years of all artists</p>
-    <p class = "noMargin" *ngIf="selectedArtists && selectedArtists.length > 1">Overview of Birth and Death of selected Cluster</p>
-    <p class = "noMargin" *ngIf="selectedArtists && selectedArtists.length === 1">
+    <h1 *ngIf="!selectedArtists">Overview of Birth and Death years of all artists</h1>
+    <h1  *ngIf="selectedArtists && selectedArtists.length > 1">Overview of Birth and Death of selected Cluster</h1>
+    <h1 class = "noMargin" *ngIf="selectedArtists && selectedArtists.length === 1">
       Birth and death year of artist
-    </p>
+    </h1>
 
   </ng-container>
       <figure class="artist-gantt-svg-container"></figure>
