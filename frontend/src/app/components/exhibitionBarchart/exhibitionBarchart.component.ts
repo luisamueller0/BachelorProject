@@ -258,16 +258,18 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
         unselected: d.data[`${region}-unselected`]
       };
     });
+    const tooltipNode = tooltip.node() as HTMLElement;
+    const tooltipHeight = tooltipNode.offsetHeight;
     if(this.selectedArtists === null || this.selectedArtists.length === 0){
     tooltip.style("display", "block")
         .style("left", `${event.pageX +5}px`)
-        .style("top", `${event.pageY + 5}px`)
+        .style("top", `${event.pageY+ 5 - tooltipHeight}px`)
         .style("font-color", "black")
         .html(`${regions.map(region => `${region.region}: ${region.selected}`).join('<br/>')} `);
   }else{
     tooltip.style("display", "block")
     .style("left", `${event.pageX + 5}px`)
-    .style("top", `${event.pageY + 5}px`)
+    .style("top", `${event.pageY+ 5 - tooltipHeight}px`)
     .style("font-color", "black")
     .html(`Year: ${year}<br/>${regions.map(region => `${region.region}: ${region.selected} out of ${region.unselected}`).join('<br/>')} `);
 
