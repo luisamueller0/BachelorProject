@@ -42,7 +42,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
     this.subscriptions.add(
       this.selectionService.currentAllArtists.subscribe((artists: Artist[] | null) => {
         this.allArtists = artists || [];
-        this.addTestArtists();
+        //this.addTestArtists();
         this.tryInitialize();
       })
     );
@@ -344,7 +344,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       .attr('offset', (d: { offset: string; color: string }) => d.offset)
       .attr('stop-color', (d: { offset: string; color: string }) => d.color);
   }
-  private addTestArtists(): void {
+/*   private addTestArtists(): void {
     if (this.allArtists) {
       this.allArtists.push(
         new Artist({
@@ -413,5 +413,5 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
         })
       );
     }
-  }
+  } */
 }
