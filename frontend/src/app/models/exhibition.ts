@@ -10,6 +10,7 @@ interface ExhibitionData {
   duration: number;
   exhibited_artists:number;
   europeanRegion: string;
+  city: string;
 
   }
 
@@ -25,6 +26,7 @@ interface ExhibitionData {
     duration: number;
     exhibited_artists:number;
     europeanRegion:string;
+    city: string;
     constructor(data: ExhibitionData) {
       this.id = data.id;
       this.start_date = new Date(data.start_date);
@@ -35,6 +37,7 @@ interface ExhibitionData {
       this.duration = data.duration;
       this.exhibited_artists = data.exhibited_artists;
       this.europeanRegion = data.europeanRegion;
+      this.city = data.city;
     }
 
   

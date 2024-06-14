@@ -9,6 +9,7 @@ class Exhibition {
         this.end_date = formatDateString(data.enddate);
         this.name = data.title;
         this.took_place_in_country = data.country;
+        this.city = data.city;
         this.type = data.type;
         this.duration = data.duration;
         this.exhibited_artists = data.exhibited_artists;

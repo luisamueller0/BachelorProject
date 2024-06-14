@@ -270,8 +270,8 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
           const tooltipWidth = tooltipNode.offsetWidth;
 
           tooltip.style("display", "block")
-            .style("left", `${event.pageX - tooltipWidth}px`)
-            .style("top", `${event.pageY + 5}px`)
+            .style("left", `${event.pageX - 2- tooltipWidth}px`)
+            .style("top", `${event.pageY + 2}px`)
             .style("color", "black")
             .html(`Name: ${artist.name}<br/>Birth: ${birthyear} in ${artist.birthCountry}<br/>Death: ${deathyear} in ${artist.deathCountry}<br/>Age: ${age}`);
         };

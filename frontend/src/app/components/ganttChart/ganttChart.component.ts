@@ -156,10 +156,13 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
       id: exhibition.id, // Keep track of the exhibition ID
       name: exhibition.name,
       start: new Date(exhibition.start_date).getTime(),
+      startDate: exhibition.start_date,
+      endDate: exhibition.end_date,
       end: new Date(exhibition.end_date).getTime(),
       duration: new Date(exhibition.end_date).getTime() - new Date(exhibition.start_date).getTime(),
       amountParticipants: exhibition.exhibited_artists,
       country: exhibition.took_place_in_country,
+      city: exhibition.city,
       normalizedParticipants: 0
     }));
   
@@ -243,6 +246,46 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
         const opacity = this.fullOpacityExhibitions.has(exhibition.id.toString()) ? 1 : 0.5; // Ensure ID is a string
         const strokeWidth = this.fullOpacityExhibitions.has(exhibition.id.toString()) ? 0.15 : 0; // Ensure ID is a string
         const singleDay = exhibition.start === exhibition.end;
+
+
+      //tooltip
+
+      const tooltip = d3.select("div#tooltip")
+  
+      const handleMouseOver = (event: any, d: any) =>{
+        tooltip.style('display', 'block');
+      }
+    
+      const handleMouseMove =(event: any, d: any) =>{ 
+        const tooltipNode = tooltip.node() as HTMLElement;
+        const tooltipHeight = tooltipNode.offsetHeight;
+        const tooltipWidth = tooltipNode.offsetWidth;
+
+        const duration = Math.floor(exhibition.duration / (1000 * 60 * 60 * 24)) + 1; // Add 1 to include the end date
+
+     
+        tooltip.style("display", "block")
+        .style("left", `${event.pageX -2 - tooltipWidth}px`)
+        .style("top", `${event.pageY - 2 - tooltipHeight}px`)
+        .style("color", "black")
+        .html(`Name: ${exhibition.name}<br/>Start: ${removeTimeFromDateString(exhibition.startDate.toString())} <br/>End: ${removeTimeFromDateString(exhibition.endDate.toString())} <br/> Duration: ${duration} <br/>in ${exhibition.city} (${exhibition.country}) with ${exhibition.amountParticipants} participants`);
+    };
+
+    const removeTimeFromDateString =(dateString: string) => {
+    // Split the date string by the space character and join the first three parts (month, day, year)
+  const parts = dateString.split(' ');
+  // Join the first three parts to reconstruct the date without the time part
+  return parts.slice(0, 3).join(' ');
+    }
+    
+
+     
+      
+      const handleMouseOut =(event: any, d: any) =>{
+        tooltip.style('display', 'none');
+      }
+    
+      
         if (singleDay) {
           this.svg.append('circle')
             .attr('class', 'bar')
@@ -252,7 +295,10 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
             .attr('fill', timelineData.length !== 1 ? colorScale(exhibition.normalizedParticipants) : colorScale(1))
             .attr('opacity', opacity)
             .attr('stroke', 'black')
-            .attr('stroke-width', strokeWidth);
+            .attr('stroke-width', strokeWidth)
+            .on('mouseover', handleMouseOver)
+            .on('mousemove', handleMouseMove)
+            .on('mouseout', handleMouseOut);
         } else {
 
           this.svg.append('rect')
@@ -264,7 +310,10 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
             .attr('fill', timelineData.length !== 1 ? colorScale(exhibition.normalizedParticipants) : colorScale(1))
             .attr('opacity', opacity)
             .attr('stroke', 'black')
-            .attr('stroke-width', strokeWidth);
+            .attr('stroke-width', strokeWidth) 
+            .on('mouseover', handleMouseOver)
+            .on('mousemove', handleMouseMove)
+            .on('mouseout', handleMouseOut);
         }
         yOffset += barHeight;
       });
