@@ -16,7 +16,8 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
     @ViewChild('gantt', { static: true }) private ganttContainer!: ElementRef;
     private subscriptions: Subscription = new Subscription();
 
-    exhibitions: Exhibition[]|null = null;
+    private exhibitions: Exhibition[]|null = null;
+    private fullOpacityExhibitions: Set<string> = new Set();
     isLoading: boolean = true;
     noExhibitions = true;
     private svg: any;
@@ -39,13 +40,31 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
     ngOnInit(): void {
       this.subscriptions.add(
         this.selectionService.currentExhibitions.subscribe((exhibitions) => {
-          this.exhibitions = exhibitions;
-          this.tryInitialize();
+          if (exhibitions) {
+           
+            // Separate exhibitions into those that should be full opacity and those with less opacity
+            const [fullOpacityExhibitions, lessOpacityExhibitions] = exhibitions;
+            console.log(fullOpacityExhibitions)
+            console.log(lessOpacityExhibitions)
+            if (lessOpacityExhibitions.length === 0) {
+              console.log('hallo')
+           
+              // If the second array is empty, draw all exhibitions with full opacity
+              this.exhibitions = fullOpacityExhibitions;
+            } else {
+              // Combine the two arrays and handle opacity in drawTimeline
+              this.exhibitions = [...fullOpacityExhibitions, ...lessOpacityExhibitions];
+              this.fullOpacityExhibitions = new Set(fullOpacityExhibitions.map(e => e.id.toString()));
+            }
+    
+            this.tryInitialize();
+          }
         })
       );
-
+    
       window.addEventListener('resize', this.onResize.bind(this));
     }
+                
 
     ngOnChanges(): void {
       this.tryInitialize();
@@ -128,188 +147,186 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
   private drawTimeline(): void {
     const exhibitions: Exhibition[] | null = this.exhibitions;
     if (exhibitions === null) {
-        return;
+      return;
     }
-
+  
     const maxBarHeight = 5;
-
+  
     const timelineData = exhibitions.map(exhibition => ({
-        name: exhibition.name,
-        start: new Date(exhibition.start_date).getTime(),
-        end: new Date(exhibition.end_date).getTime(),
-        duration: new Date(exhibition.end_date).getTime() - new Date(exhibition.start_date).getTime(),
-        amountParticipants: exhibition.exhibited_artists,
-        country: exhibition.took_place_in_country,
-        normalizedParticipants: 0
+      id: exhibition.id, // Keep track of the exhibition ID
+      name: exhibition.name,
+      start: new Date(exhibition.start_date).getTime(),
+      end: new Date(exhibition.end_date).getTime(),
+      duration: new Date(exhibition.end_date).getTime() - new Date(exhibition.start_date).getTime(),
+      amountParticipants: exhibition.exhibited_artists,
+      country: exhibition.took_place_in_country,
+      normalizedParticipants: 0
     }));
-
+  
     const normalizedParticipants = this.normalizeLogarithmically(timelineData.map(d => d.amountParticipants));
-
+  
     timelineData.forEach((d, i) => {
-        d.normalizedParticipants = normalizedParticipants[i];
+      d.normalizedParticipants = normalizedParticipants[i];
     });
 
+    console.log(timelineData)
+  
     const groupedByCountry = d3.group(timelineData, d => d.country);
     const sortedCountries = Array.from(groupedByCountry.entries())
-        .sort(([, a], [, b]) => d3.descending(a.length, b.length))
-        .map(([country]) => country);
-
+      .sort(([, a], [, b]) => d3.descending(a.length, b.length))
+      .map(([country]) => country);
+  
     const xScale = d3.scaleTime()
-        .domain([d3.min(timelineData, d => d.start)!, d3.max(timelineData, d => d.end)!])
-        .range([0, this.contentWidth])
-        .nice();
-
+      .domain([d3.min(timelineData, d => d.start)!, d3.max(timelineData, d => d.end)!])
+      .range([0, this.contentWidth])
+      .nice();
+  
     const yScale = d3.scaleBand()
-        .domain(timelineData.map((d, i) => i.toString()))
-        .range([0, this.contentHeight])
-        .padding(0.1)
-        .round(true);
-
+      .domain(timelineData.map((d, i) => i.toString()))
+      .range([0, this.contentHeight])
+      .padding(0.1)
+      .round(true);
+  
     const barHeight = Math.min(yScale.bandwidth(), maxBarHeight);
-
+  
     const colorScale = d3.scaleSequential(d3.interpolatePlasma)
-        .domain([0, 1]);
-
+      .domain([0, 1]);
+  
     // Calculate the total height needed for the bars and extra space
     let yOffset = 0;
     const extraSpace = 0.5 * window.innerWidth / 100;
     sortedCountries.forEach((country) => {
-        const exhibitions = groupedByCountry.get(country)!;
-        yOffset += (exhibitions.length * barHeight) + extraSpace;
+      const exhibitions = groupedByCountry.get(country)!;
+      yOffset += (exhibitions.length * barHeight) + extraSpace;
     });
-
+  
     const xAxis = d3.axisTop(xScale).tickSize(-yOffset);
-
+  
     const xAxisGroup = this.svg.append('g')
-        .call(xAxis)
-        .attr('transform', `translate(0,0)`)
-        .selectAll("text")
-        .style("text-anchor", "end")
-        .attr("dx", "-.8em")
-        .attr("dy", ".15em")
-        .attr("transform", "rotate(65)")
-        .style("font-size", "0.5vw");
-
+      .call(xAxis)
+      .attr('transform', `translate(0,0)`)
+      .selectAll("text")
+      .style("text-anchor", "end")
+      .attr("dx", "-.8em")
+      .attr("dy", ".15em")
+      .attr("transform", "rotate(65)")
+      .style("font-size", "0.5vw");
+  
     this.svg.selectAll('.tick line')
-        .attr('stroke', 'gray');
-
+      .attr('stroke', 'gray');
+  
     yOffset = 0;
     sortedCountries.forEach((country, index) => {
-        const exhibitions = groupedByCountry.get(country)!;
-        exhibitions.sort((a, b) => d3.ascending(a.start, b.start));
-
-        const countryColor = this.artistService.getCountryColor(country, 0.1);
-
-        this.svg.append('rect')
-            .attr('x', 0)
+      const exhibitions = groupedByCountry.get(country)!;
+      exhibitions.sort((a, b) => d3.ascending(a.start, b.start));
+  
+      const countryColor = this.artistService.getCountryColor(country, 0.1);
+  
+      this.svg.append('rect')
+        .attr('x', 0)
+        .attr('y', yOffset)
+        .attr('width', this.contentWidth)
+        .attr('height', exhibitions.length * barHeight)
+        .attr('fill', countryColor);
+  
+      this.svg.append('text')
+        .attr('class', 'label')
+        .attr('x', -10)
+        .attr('y', yOffset + (exhibitions.length * barHeight / 2))
+        .attr('dy', '.35em')
+        .attr('text-anchor', 'end')
+        .attr('fill', this.artistService.getCountryColor(country))
+        .style('font-size', '0.5vw')
+        .text(country);
+  
+      exhibitions.forEach(exhibition => {
+        const opacity = this.fullOpacityExhibitions.has(exhibition.id.toString()) ? 1 : 0.5; // Ensure ID is a string
+  
+     
+          this.svg.append('rect')
+            .attr('class', 'bar')
+            .attr('x', xScale(exhibition.start))
             .attr('y', yOffset)
-            .attr('width', this.contentWidth)
-            .attr('height', exhibitions.length * barHeight)
-            .attr('fill', countryColor);
-
-        this.svg.append('text')
-            .attr('class', 'label')
-            .attr('x', -10)
-            .attr('y', yOffset + (exhibitions.length * barHeight / 2))
-            .attr('dy', '.35em')
-            .attr('text-anchor', 'end')
-            .attr('fill', this.artistService.getCountryColor(country))
-            .style('font-size', '0.5vw')
-            .text(country);
-
-        exhibitions.forEach(exhibition => {
-            const isSingleDay = exhibition.start === exhibition.end;
-
-            if (isSingleDay) {
-                this.svg.append('circle')
-                    .attr('class', 'circle')
-                    .attr('cx', xScale(exhibition.start))
-                    .attr('cy', yOffset + barHeight / 2)
-                    .attr('r', barHeight / 2)
-                    .attr('fill', timelineData.length !== 1 ? colorScale(exhibition.normalizedParticipants) : colorScale(1));
-            } else {
-                this.svg.append('rect')
-                    .attr('class', 'bar')
-                    .attr('x', xScale(exhibition.start))
-                    .attr('y', yOffset)
-                    .attr('width', xScale(exhibition.end) - xScale(exhibition.start) === 0 ? 1 : xScale(exhibition.end) - xScale(exhibition.start))
-                    .attr('height', barHeight)
-                    .attr('fill', timelineData.length !== 1 ? colorScale(exhibition.normalizedParticipants) : colorScale(1));
-            }
-            yOffset += barHeight;
-        });
-
-        yOffset += extraSpace;
+            .attr('width', xScale(exhibition.end) - xScale(exhibition.start) === 0 ? 1 : xScale(exhibition.end) - xScale(exhibition.start))
+            .attr('height', barHeight)
+            .attr('fill', timelineData.length !== 1 ? colorScale(exhibition.normalizedParticipants) : colorScale(1))
+            .attr('opacity', opacity);
+        
+        yOffset += barHeight;
+      });
+  
+      yOffset += extraSpace;
     });
-
+  
     this.svg.append('line')
-        .attr('x1', 0)
-        .attr('x2', this.contentWidth)
-        .attr('y1', yOffset)
-        .attr('y2', yOffset)
-        .attr('stroke', 'gray')
-        .attr('stroke-width', 1);
-
+      .attr('x1', 0)
+      .attr('x2', this.contentWidth)
+      .attr('y1', yOffset)
+      .attr('y2', yOffset)
+      .attr('stroke', 'gray')
+      .attr('stroke-width', 1);
+  
     // Calculate the position of the legend
-  const legendHeight = 0.5 * window.innerWidth / 100;
-  const legendWidth = this.contentWidth/4 * 3;
-  const legendX = (this.contentWidth - legendWidth) / 2; // Center the legend horizontally
-  const legendY = -4.5 * window.innerWidth / 100; // Position the legend based on top margin
-
-  const legend = this.legendGroup
+    const legendHeight = 0.5 * window.innerWidth / 100;
+    const legendWidth = this.contentWidth / 4 * 3;
+    const legendX = (this.contentWidth - legendWidth) / 2; // Center the legend horizontally
+    const legendY = -4.5 * window.innerWidth / 100; // Position the legend based on top margin
+  
+    const legend = this.legendGroup
       .attr('transform', `translate(${legendX}, ${legendY})`);
-
-  // Create gradient for legend
-  const defs = this.svg.append('defs');
-  const linearGradient = defs.append('linearGradient')
+  
+    // Create gradient for legend
+    const defs = this.svg.append('defs');
+    const linearGradient = defs.append('linearGradient')
       .attr('id', 'linear-gradient')
       .attr('x1', '0%')
       .attr('y1', '0%')
       .attr('x2', '100%')
       .attr('y2', '0%');
-
-  const stops = d3.range(0, 1.01, 0.01).map((t: number) => ({
+  
+    const stops = d3.range(0, 1.01, 0.01).map((t: number) => ({
       offset: `${t * 100}%`,
       color: colorScale(t)
-  }));
-
-  linearGradient.selectAll('stop')
+    }));
+  
+    linearGradient.selectAll('stop')
       .data(stops)
       .enter().append('stop')
       .attr('offset', (d: { offset: string; color: string }) => d.offset)
       .attr('stop-color', (d: { offset: string; color: string }) => d.color);
-
-  // Draw legend
-  legend.append('rect')
+  
+    // Draw legend
+    legend.append('rect')
       .attr('width', legendWidth)
       .attr('height', legendHeight)
       .style('fill', 'url(#linear-gradient)');
-
-  // Add participants label above the legend
-  legend.append('text')
+  
+    // Add participants label above the legend
+    legend.append('text')
       .attr('x', legendWidth / 2)
       .attr('y', -0.5 * window.innerWidth / 100) // Adjusted position above the legend rectangle
       .attr('text-anchor', 'middle')
       .style('font-size', '0.5vw')
       .attr('fill', '#2a0052')
-      .text('Normalized Number of Participants')
-     
-
-  // Legend axis with normalized values from 0 to 1
-  const legendScale = d3.scaleLinear()
+      .text('Normalized Number of Participants');
+  
+    // Legend axis with normalized values from 0 to 1
+    const legendScale = d3.scaleLinear()
       .domain([0, 1])
       .range([0, legendWidth]);
-
-  const legendAxis = d3.axisBottom(legendScale)
+  
+    const legendAxis = d3.axisBottom(legendScale)
       .ticks(6)
       .tickFormat(d3.format(".1f")); // Format ticks to show one decimal place
-
-  const legendAxisGroup = legend.append('g')
+  
+    const legendAxisGroup = legend.append('g')
       .attr('transform', `translate(0, ${legendHeight})`)
       .call(legendAxis);
-  legendAxisGroup.selectAll('text')
+  
+    legendAxisGroup.selectAll('text')
       .style('font-size', '0.5vw'); // Smaller font size for legend axis
-}
+  }
+  
   
   
   

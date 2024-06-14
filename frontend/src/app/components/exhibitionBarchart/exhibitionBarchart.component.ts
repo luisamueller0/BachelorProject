@@ -143,6 +143,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
             this.clusterExhibitions.push(exhibition);
           }
         });
+    
       }
       
 
@@ -277,7 +278,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   const handleClick = (event: any, d: any) => {
     const year = d.data.year;
   
-    let exhibitionsByYear: Exhibition[] = [];
+    let exhibitionsByYear: Exhibition[][] = [];
   
     if (this.selectedArtists && this.selectedArtists.length === 1) {
       // If only one artist is selected, include cluster exhibitions
@@ -286,24 +287,25 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
         const endYear = new Date(exhibition.end_date).getFullYear();
         return year >= startYear && year <= endYear;
       });
-  
       const clusterExhibitionsByYear = this.clusterExhibitions.filter(exhibition => {
         const startYear = new Date(exhibition.start_date).getFullYear();
         const endYear = new Date(exhibition.end_date).getFullYear();
         return year >= startYear && year <= endYear;
       });
+      console.log('hallo', clusterExhibitionsByYear)
   
-      exhibitionsByYear = [...selectedExhibitionsByYear, ...clusterExhibitionsByYear];
+      exhibitionsByYear = [selectedExhibitionsByYear, clusterExhibitionsByYear];
     } else {
       // If multiple artists are selected, only include selected exhibitions
-      exhibitionsByYear = this.selectedExhibitions.filter(exhibition => {
+      const exhibitions = this.selectedExhibitions.filter(exhibition => {
         const startYear = new Date(exhibition.start_date).getFullYear();
         const endYear = new Date(exhibition.end_date).getFullYear();
         return year >= startYear && year <= endYear;
       });
+      exhibitionsByYear = [exhibitions,[]];
     }
   
-    this.selectionService.selectExhibitions([exhibitionsByYear]);
+    this.selectionService.selectExhibitions(exhibitionsByYear);
   };
   
   
