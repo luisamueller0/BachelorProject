@@ -26,7 +26,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
 
   // Margins in vw and vh
   private margin = {
-    top: 4,
+    top: 5,
     right: 0.5,
     bottom: 1,
     left: 2
@@ -97,7 +97,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
 
   private createSvg(artists: Artist[]): void {
     d3.select(this.ganttContainer.nativeElement).select("figure.artist-gantt-svg-container").select("svg").remove();
-
+  
     const element = this.ganttContainer.nativeElement.querySelector('figure.artist-gantt-svg-container');
     const margin = {
       top: this.margin.top * window.innerHeight / 100,
@@ -106,27 +106,33 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       left: this.margin.left * window.innerWidth / 100
     };
     const width = element.offsetWidth - margin.left - margin.right;
-
+  
     const numArtists = artists.length;
     const barHeight = 5;
     const extraSpace = 0.5 * window.innerWidth / 100;
-    const calculatedHeight = (numArtists * barHeight) + extraSpace + margin.top + margin.bottom;
-
+  
+    // Group the artists by cluster
+    const groupedByCluster = d3.group(artists, artist => artist.cluster + 1);
+    const numClusters = groupedByCluster.size;
+  
+    // Calculate the required height
+    const calculatedHeight = (numArtists * barHeight) + (numClusters * extraSpace) + margin.top + margin.bottom;
     const height = Math.max(element.offsetHeight, calculatedHeight);
-
+  
     this.svg = d3.select(element).append('svg')
       .attr('width', element.offsetWidth)
       .attr('height', height)
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
-
+  
     this.contentWidth = width;
     this.contentHeight = height - margin.top - margin.bottom;
-
+  
     // Create a group element for the legend
     this.legendGroup = this.svg.append('g')
       .attr('class', 'legend-group');
   }
+  
 
   private drawTimeline(artists: Artist[]): void {
     if (!artists) {
@@ -142,13 +148,13 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       duration: new Date(artist.deathyear, 0).getTime() - new Date(artist.birthyear, 0).getTime(),
       birthCountry: artist.birthcountry,
       deathCountry: artist.deathcountry,
-      clusterIndex: artist.cluster,
+      clusterIndex: artist.cluster + 1,  // Add +1 to each cluster index
       id: artist.id
     }));
   
     const groupedByCluster = d3.group(timelineData, d => d.clusterIndex);
     const sortedClusters = Array.from(groupedByCluster.entries())
-      .sort(([, a], [, b]) => d3.descending(a.length, b.length))
+      .sort((a, b) => d3.ascending(a[0], b[0]))  // Sort by cluster index (ascending)
       .map(([clusterIndex]) => clusterIndex);
   
     const xScale = d3.scaleTime()
@@ -185,7 +191,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       .attr("dx", "-.8em")
       .attr("dy", ".15em")
       .attr("transform", "rotate(65)")
-      .style("font-size", "0.5vw");
+      .style("font-size", "0.6vw");
   
     this.svg.selectAll('.tick line')
       .attr('stroke', 'gray');
@@ -195,9 +201,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
     
     sortedClusters.forEach((cluster, index) => {
       const clusterArtists = groupedByCluster.get(cluster)!;
-      clusterArtists.sort((a, b) => d3.ascending(a.start, b.start));
-  
-     
+      clusterArtists.sort((a, b) => d3.ascending(a.start, b.start));  // Sort by start date (birth year)
   
       this.svg.append('text')
         .attr('class', 'label')
@@ -206,7 +210,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
         .attr('dy', '.35em')
         .attr('text-anchor', 'end')
         .attr('fill', '#2a0052')
-        .style('font-size', '0.5vw')
+        .style('font-size', '0.7vw')
         .text(cluster);
   
       clusterArtists.forEach((artist, index) => {
@@ -251,13 +255,6 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       .attr('stroke', 'gray')
       .attr('stroke-width', 1);
   
-    const legendHeight = 0.5 * window.innerWidth / 100;
-    const legendWidth = this.contentWidth / 4 * 3;
-    const legendX = (this.contentWidth - legendWidth) / 2;
-    const legendY = -4.5 * window.innerWidth / 100;
-  
-    const legend = this.legendGroup
-      .attr('transform', `translate(${legendX}, ${legendY})`);
   
     const linearGradient = defs.append('linearGradient')
       .attr('id', 'linear-gradient')
@@ -276,35 +273,9 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       .enter().append('stop')
       .attr('offset', (d: { offset: string; color: string }) => d.offset)
       .attr('stop-color', (d: { offset: string; color: string }) => d.color);
-  
-    legend.append('rect')
-      .attr('width', legendWidth)
-      .attr('height', legendHeight)
-      .style('fill', 'url(#linear-gradient)');
-  
-    legend.append('text')
-      .attr('x', legendWidth / 2)
-      .attr('y', -0.5 * window.innerWidth / 100)
-      .attr('text-anchor', 'middle')
-      .style('font-size', '0.5vw')
-      .attr('fill', '#2a0052')
-      .text('Normalized Number of Participants');
-  
-    const legendScale = d3.scaleLinear()
-      .domain([0, 1])
-      .range([0, legendWidth]);
-  
-    const legendAxis = d3.axisBottom(legendScale)
-      .ticks(6)
-      .tickFormat(d3.format(".1f"));
-  
-    const legendAxisGroup = legend.append('g')
-      .attr('transform', `translate(0, ${legendHeight})`)
-      .call(legendAxis);
-  
-    legendAxisGroup.selectAll('text')
-      .style('font-size', '0.5vw');
+ 
   }
+  
   
   
   
