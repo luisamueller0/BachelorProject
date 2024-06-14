@@ -76,10 +76,10 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  overflow-y: scroll!important;
+  overflow-y: auto!important;
   overflow-x:hidden;
  
-  scrollbar-color: #7e24c7 white;
+  scrollbar-color: #e5aeff white;
   scrollbar-width: thin;
 
 }
@@ -92,9 +92,9 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  overflow-y: scroll!important;
+  overflow-y: auto!important;
   overflow-x:hidden;
-  scrollbar-color: #7e24c7 white;
+  scrollbar-color: #e5aeff white;
   scrollbar-width: thin;
 }
 

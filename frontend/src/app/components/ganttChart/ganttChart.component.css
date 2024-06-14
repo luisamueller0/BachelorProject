@@ -1,45 +1,39 @@
 .gantt-container {
-    width: 100%;
-    height: 100%;
-    position: relative;
-  }
-  
-  .gantt-svg-container {
-    width: 100%;
-    height: 100%;
-  }
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
 
-  p{
-    font-size:1vw;
-    text-align: center;
-   
-    margin: 0; /* Ensure there's no default margin */
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+.gantt-svg-container {
+  flex: 1; /* Takes the remaining height */
+  width: 100%;
+  height: 100%; /* Ensure it takes full height of the flex item */
+}
 
-    
-  }
+p {
+  font-size: 1vw;
+  text-align: center;
+  margin: 0; /* Ensure there's no default margin */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
 
-  .gantt-container, .gantt-svg-container, svg {
-    padding: 0;
-    margin: 0;
-    box-sizing: border-box;
-  }
-  
-  .noMargin{
-    margin-bottom:0px;
-  }
+.gantt-container, .gantt-svg-container, svg {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
 
-  
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  
-  #legend-container {
-    display: inline-block;
-  }
-  
+.noMargin {
+  margin-bottom: 0px;
+}
+
+
+
+#legend-container {
+  display: inline-block;
+}
