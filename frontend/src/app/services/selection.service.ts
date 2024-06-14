@@ -20,7 +20,7 @@ export class SelectionService {
   private selectedNode = new BehaviorSubject<Artist|null>(null);
   private selectedClusterEdges = new BehaviorSubject<exhibited_with[]>([]);
   private selectedFocusArtist = new BehaviorSubject<Artist|null>(null);
-  private selectedExhibitions = new BehaviorSubject<Exhibition[]|null>(null);
+  private selectedExhibitions = new BehaviorSubject<Exhibition[][]|null>(null);
   private allClusters = new BehaviorSubject<Artist[][]|null>(null);
 
   currentArtists = this.selectedArtists.asObservable();
@@ -32,10 +32,10 @@ export class SelectionService {
   currentNode = this.selectedNode.asObservable();
   currentFocusCluster = this.selectedFocusCluster.asObservable();
   currentClusterEdges= this.selectedClusterEdges.asObservable();
-  currentExhibitions = this.selectedExhibitions.asObservable();
+  currentExhibitions = this.selectedExhibitions.asObservable(); //first array selected, second array not selected
 
 
-  selectExhibitions(exhibitions:Exhibition[]|null){
+  selectExhibitions(exhibitions:Exhibition[][]|null){
     console.log(exhibitions)
     this.selectedExhibitions.next(exhibitions);
   }

@@ -32,6 +32,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   exhibitions: Exhibition[] = [];
   nonSelectedExhibitions: Exhibition[] = [];
   selectedExhibitions: Exhibition[] = [];
+  clusterExhibitions: Exhibition[] = [];
   allArtists: Artist[] = [];
   selectedArtists: Artist[] | null = [];
   isLoading: boolean = true;
@@ -109,8 +110,9 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
 
   private retrieveWantedExhibitions(): void {
     this.exhibitions = [];
-    this.selectedExhibitions = [];
-    this.nonSelectedExhibitions = [];
+  this.selectedExhibitions = [];
+  this.nonSelectedExhibitions = [];
+  this.clusterExhibitions = [];
 
     const allExhibitionIds = new Set(
       this.allArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()))
@@ -126,6 +128,23 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
       const selectedExhibitionIds = new Set(
         this.selectedArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()))
       );
+      //if only one artist, in ganttchart want to display whole cluster
+      const artists = this.selectedArtists;
+      if (artists.length === 1 && artists[0] !== null) {
+        // Find all artists in the same cluster
+        const clusterArtists = this.allArtists.filter(artist => artist.cluster === artists[0].cluster && artist.id !== artists[0].id);
+  
+        // Collect all exhibitions of the artists in the same cluster
+        const clusterExhibitionIds = new Set(
+          clusterArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()))
+        );
+        this.exhibitionMap.forEach((exhibition, id) => {
+          if (clusterExhibitionIds.has(id)) {
+            this.clusterExhibitions.push(exhibition);
+          }
+        });
+      }
+      
 
       this.exhibitions.forEach(exhibition => {
         if (selectedExhibitionIds.has(exhibition.id.toString())) {
@@ -257,13 +276,36 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
 
   const handleClick = (event: any, d: any) => {
     const year = d.data.year;
-    const selectedExhibitionsByYear = this.selectedExhibitions.filter(exhibition => {
-      const startYear = new Date(exhibition.start_date).getFullYear();
-      const endYear = new Date(exhibition.end_date).getFullYear();
-      return year >= startYear && year <= endYear;
-    });
-    this.selectionService.selectExhibitions(selectedExhibitionsByYear);
+  
+    let exhibitionsByYear: Exhibition[] = [];
+  
+    if (this.selectedArtists && this.selectedArtists.length === 1) {
+      // If only one artist is selected, include cluster exhibitions
+      const selectedExhibitionsByYear = this.selectedExhibitions.filter(exhibition => {
+        const startYear = new Date(exhibition.start_date).getFullYear();
+        const endYear = new Date(exhibition.end_date).getFullYear();
+        return year >= startYear && year <= endYear;
+      });
+  
+      const clusterExhibitionsByYear = this.clusterExhibitions.filter(exhibition => {
+        const startYear = new Date(exhibition.start_date).getFullYear();
+        const endYear = new Date(exhibition.end_date).getFullYear();
+        return year >= startYear && year <= endYear;
+      });
+  
+      exhibitionsByYear = [...selectedExhibitionsByYear, ...clusterExhibitionsByYear];
+    } else {
+      // If multiple artists are selected, only include selected exhibitions
+      exhibitionsByYear = this.selectedExhibitions.filter(exhibition => {
+        const startYear = new Date(exhibition.start_date).getFullYear();
+        const endYear = new Date(exhibition.end_date).getFullYear();
+        return year >= startYear && year <= endYear;
+      });
+    }
+  
+    this.selectionService.selectExhibitions([exhibitionsByYear]);
   };
+  
   
   
     this.svg.append('g')
