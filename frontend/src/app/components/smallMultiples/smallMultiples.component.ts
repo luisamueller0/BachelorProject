@@ -374,6 +374,7 @@ export class SmallMultiplesComponent implements OnInit, OnChanges, OnDestroy {
       this.isLoading = true;
       this.artistService.clusterAmountArtists(range, k).subscribe((data) => {
       const clusters = data[0];
+      this.selectionService.selectAllClusters(clusters);
       const intraCommunityEdges = data[1] as exhibited_with[][];
       const interCommunityEdges = data[2] as exhibited_with[];
       
@@ -761,7 +762,8 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
             console.log(artist.firstname, artist.lastname, clusterIndex)
           });
         }); */
-        console.log('clusters:',this.clusters )
+        
+        this.selectionService.selectAllClusters(this.clusters);
         this.clusters.forEach((cluster, clusterIndex) => {
           cluster.forEach(artist => {
             console.log('exhibited:' ,artist.total_exhibitions, 'artworks:', artist.total_exhibited_artworks, 'techniques:')

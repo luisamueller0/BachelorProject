@@ -21,10 +21,12 @@ export class SelectionService {
   private selectedClusterEdges = new BehaviorSubject<exhibited_with[]>([]);
   private selectedFocusArtist = new BehaviorSubject<Artist|null>(null);
   private selectedExhibitions = new BehaviorSubject<Exhibition[]|null>(null);
+  private allClusters = new BehaviorSubject<Artist[][]|null>(null);
 
   currentArtists = this.selectedArtists.asObservable();
   currentCluster = this.selectedCluster.asObservable();
   currentAllArtists = this.allArtists.asObservable();
+  currentAllClusters = this.allClusters.asObservable();
   currentFocusArtist = this.selectedFocusArtist.asObservable();
   currentCountries = this.selectedCountries.asObservable();
   currentNode = this.selectedNode.asObservable();
@@ -39,6 +41,9 @@ export class SelectionService {
   }
   selectArtists(artists:Artist[]|null) {
     this.selectedArtists.next(artists);
+  }
+  selectAllClusters(clusters:Artist[][]|null){
+    this.allClusters.next(clusters);
   }
 
   selectAllArtists(artists:Artist[]|null){

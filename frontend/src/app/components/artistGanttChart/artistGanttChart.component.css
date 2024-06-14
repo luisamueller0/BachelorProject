@@ -1,0 +1,32 @@
+.artist-gantt-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+  
+  .artist-gantt-svg-container {
+    width: 100%;
+    height: 100%;
+  }
+
+  .artist-gantt-container, .artist-gantt-svg-container, svg {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+  }
+  
+  .noMargin{
+    margin-bottom:0px;
+  }
+
+  
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  #legend-container {
+    display: inline-block;
+  }
+  

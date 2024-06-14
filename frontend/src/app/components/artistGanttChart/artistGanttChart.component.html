@@ -1,0 +1,18 @@
+<div class="artist-gantt-container" #artistGantt>
+  <ng-container *ngIf="!isLoading">
+    <p class = "noMargin" *ngIf="!selectedArtists">Overview of Birth and Death years of all artists</p>
+    <p class = "noMargin" *ngIf="selectedArtists && selectedArtists.length > 1">Overview of Birth and Death of selected Cluster</p>
+    <p class = "noMargin" *ngIf="selectedArtists && selectedArtists.length === 1">
+      Birth and death year of artist
+    </p>
+
+  </ng-container>
+      <figure class="artist-gantt-svg-container"></figure>
+      <div id="tooltip" class="tooltip" style="display: none;"></div>
+
+ 
+  <!-- Display loading indicator if data is still loading -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="loading-spinner"></div>
+  </div>
+</div>
