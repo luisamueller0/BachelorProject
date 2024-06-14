@@ -177,7 +177,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
   
     let yOffset = 0;
     const extraSpace = 0.5 * window.innerWidth / 100;
-  
+    const halfExtraSpace = extraSpace / 2;
     sortedClusters.forEach(cluster => {
       const clusterArtists = groupedByCluster.get(cluster)!;
       yOffset += (clusterArtists.length * barHeight) + extraSpace;
@@ -204,6 +204,9 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
     sortedClusters.forEach((cluster, index) => {
       const clusterArtists = groupedByCluster.get(cluster)!;
       clusterArtists.sort((a, b) => d3.ascending(a.start, b.start));  // Sort by start date (birth year)
+
+      yOffset += halfExtraSpace; // Add half of the extra space on top
+
   
       this.svg.append('text')
         .attr('class', 'label')
@@ -275,7 +278,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
         yOffset += barHeight;
       });
   
-      yOffset += extraSpace;
+      yOffset += halfExtraSpace;
     });
   
     this.svg.append('line')

@@ -257,9 +257,14 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
 
   const handleClick = (event: any, d: any) => {
     const year = d.data.year;
-    const selectedExhibitions = this.filterExhibitionsByYear(year);
-    this.selectionService.selectExhibitions(selectedExhibitions);
+    const selectedExhibitionsByYear = this.selectedExhibitions.filter(exhibition => {
+      const startYear = new Date(exhibition.start_date).getFullYear();
+      const endYear = new Date(exhibition.end_date).getFullYear();
+      return year >= startYear && year <= endYear;
+    });
+    this.selectionService.selectExhibitions(selectedExhibitionsByYear);
   };
+  
   
     this.svg.append('g')
       .selectAll('g')
