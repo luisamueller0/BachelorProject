@@ -291,12 +291,15 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
         const endYear = new Date(exhibition.end_date).getFullYear();
         return year >= startYear && year <= endYear;
       });
+      
+      const selectedExhibitionIds = new Set(selectedExhibitionsByYear.map(exhibition => exhibition.id));
+      
       const clusterExhibitionsByYear = this.clusterExhibitions.filter(exhibition => {
         const startYear = new Date(exhibition.start_date).getFullYear();
         const endYear = new Date(exhibition.end_date).getFullYear();
-        return year >= startYear && year <= endYear;
+        return year >= startYear && year <= endYear && !selectedExhibitionIds.has(exhibition.id);
       });
-   
+  
       exhibitionsByYear = [selectedExhibitionsByYear, clusterExhibitionsByYear];
     } else {
       // If multiple artists are selected, only include selected exhibitions
@@ -305,11 +308,12 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
         const endYear = new Date(exhibition.end_date).getFullYear();
         return year >= startYear && year <= endYear;
       });
-      exhibitionsByYear = [exhibitions,[]];
+      exhibitionsByYear = [exhibitions, []];
     }
   
     this.selectionService.selectExhibitions(exhibitionsByYear);
   };
+  
   
   
   
