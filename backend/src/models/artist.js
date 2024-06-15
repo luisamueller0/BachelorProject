@@ -399,8 +399,10 @@ const featureMatrixUTransposed = math.transpose(featureMatrixU);
       // Perform initial kMeans Clustering
       let clusters = kMeansClustering(featureMatrixUTransposed, k, 1); // Assume minClusterSize = 1 for basic example
 
+      const minSize = Math.floor(size / k);
+      const maxSize = Math.ceil(size / k);
       // Redistribute clusters here
-      clusters = redistributeClusters(featureMatrixUTransposed, clusters, k, 5, 15); // Example sizes
+      clusters = redistributeClusters(featureMatrixUTransposed, clusters, k, minSize, maxSize); // Example sizes
   
    // Assuming kMeansClustering and other related functions are d
    
