@@ -14,6 +14,7 @@ import { ArtistService } from '../../services/artist.service';
 })
 export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
     @ViewChild('gantt', { static: true }) private ganttContainer!: ElementRef;
+    @ViewChild('legend', { static: true }) private legendContainer!: ElementRef;
     private subscriptions: Subscription = new Subscription();
 
     private exhibitions: Exhibition[]|null = null;
@@ -27,7 +28,7 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
 
     // Margins in vw and vh
     private margin = {
-      top: 11.5,
+      top: 6.5,
       right: 1.5,
       bottom: 1,
       left: 1.5
@@ -112,7 +113,8 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
       }
   
       d3.select(this.ganttContainer.nativeElement).select("figure.gantt-svg-container").select("svg").remove();
-  
+      d3.select(this.legendContainer.nativeElement).select("svg").remove(); // Remove existing legend
+
       const element = this.ganttContainer.nativeElement.querySelector('figure.gantt-svg-container');
       const margin = {
           top: this.margin.top * window.innerHeight / 100,
@@ -139,263 +141,259 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
       this.contentWidth = width;
       this.contentHeight = height - margin.top - margin.bottom;
 
-        // Create a group element for the legend
-  this.legendGroup = this.svg.append('g')
-  .attr('class', 'legend-group');
-  }
-  
-  private drawTimeline(): void {
-    const exhibitions: Exhibition[] | null = this.exhibitions;
-    if (exhibitions === null) {
-      return;
+      // Create a group element for the legend
+      this.legendGroup = d3.select(this.legendContainer.nativeElement).append('svg')
+        .attr('width', element.offsetWidth)
+        .attr('height', '2.5vw' ) // Adjust height as needed
+        .append('g');
     }
   
-    const maxBarHeight = 5;
-  
-    const timelineData = exhibitions.map(exhibition => ({
-      id: exhibition.id, // Keep track of the exhibition ID
-      name: exhibition.name,
-      start: new Date(exhibition.start_date).getTime(),
-      startDate: exhibition.start_date,
-      endDate: exhibition.end_date,
-      end: new Date(exhibition.end_date).getTime(),
-      duration: new Date(exhibition.end_date).getTime() - new Date(exhibition.start_date).getTime(),
-      amountParticipants: exhibition.exhibited_artists,
-      country: exhibition.took_place_in_country,
-      city: exhibition.city,
-      normalizedParticipants: 0
-    }));
-  
-    const normalizedParticipants = this.normalizeLogarithmically(timelineData.map(d => d.amountParticipants));
-  
-    timelineData.forEach((d, i) => {
-      d.normalizedParticipants = normalizedParticipants[i];
-    });
-
-    console.log(timelineData)
-  
-    const groupedByCountry = d3.group(timelineData, d => d.country);
-    const sortedCountries = Array.from(groupedByCountry.entries())
-      .sort(([, a], [, b]) => d3.descending(a.length, b.length))
-      .map(([country]) => country);
-  
-    const xScale = d3.scaleTime()
-      .domain([d3.min(timelineData, d => d.start)!, d3.max(timelineData, d => d.end)!])
-      .range([0, this.contentWidth])
-      .nice();
-  
-    const yScale = d3.scaleBand()
-      .domain(timelineData.map((d, i) => i.toString()))
-      .range([0, this.contentHeight])
-      .padding(0.1)
-      .round(true);
-  
-    const barHeight = Math.min(yScale.bandwidth(), maxBarHeight);
-  
-    const colorScale = d3.scaleSequential(d3.interpolatePlasma)
-      .domain([0, 1]);
-  
-    // Calculate the total height needed for the bars and extra space
-    let yOffset = 0;
-    const extraSpace = 0.5 * window.innerWidth / 100;
-    sortedCountries.forEach((country) => {
-      const exhibitions = groupedByCountry.get(country)!;
-      yOffset += (exhibitions.length * barHeight) + extraSpace;
-    });
-  
-    const xAxis = d3.axisTop(xScale).tickSize(-yOffset);
-  
-    const xAxisGroup = this.svg.append('g')
-      .call(xAxis)
-      .attr('transform', `translate(0,0)`)
-      .selectAll("text")
-      .style("text-anchor", "end")
-      .attr("dx", "-.8em")
-      .attr("dy", ".15em")
-      .attr("transform", "rotate(65)")
-      .style("font-size", "0.5vw");
-  
-    this.svg.selectAll('.tick line')
-      .attr('stroke', 'gray');
-  
-    yOffset = 0;
-    sortedCountries.forEach((country, index) => {
-      const exhibitions = groupedByCountry.get(country)!;
-      exhibitions.sort((a, b) => d3.ascending(a.start, b.start));
-  
-      const countryColor = this.artistService.getCountryColor(country, 0.1);
-  
-      this.svg.append('rect')
-        .attr('x', 0)
-        .attr('y', yOffset)
-        .attr('width', this.contentWidth)
-        .attr('height', exhibitions.length * barHeight)
-        .attr('fill', countryColor);
-  
-      this.svg.append('text')
-        .attr('class', 'label')
-        .attr('x', -10)
-        .attr('y', yOffset + (exhibitions.length * barHeight / 2))
-        .attr('dy', '.35em')
-        .attr('text-anchor', 'end')
-        .attr('fill', this.artistService.getCountryColor(country))
-        .style('font-size', '0.5vw')
-        .text(country);
-  
-      exhibitions.forEach(exhibition => {
-        const opacity = this.fullOpacityExhibitions.has(exhibition.id.toString()) ? 1 : 0.5; // Ensure ID is a string
-        const strokeWidth = this.fullOpacityExhibitions.has(exhibition.id.toString()) ? 0.15 : 0; // Ensure ID is a string
-        const singleDay = exhibition.start === exhibition.end;
-
-
-      //tooltip
-
-      const tooltip = d3.select("div#tooltip")
-  
-      const handleMouseOver = (event: any, d: any) =>{
-        tooltip.style('display', 'block');
+    private drawTimeline(): void {
+      const exhibitions: Exhibition[] | null = this.exhibitions;
+      if (exhibitions === null) {
+        return;
       }
     
-      const handleMouseMove =(event: any, d: any) =>{ 
-        const tooltipNode = tooltip.node() as HTMLElement;
-        const tooltipHeight = tooltipNode.offsetHeight;
-        const tooltipWidth = tooltipNode.offsetWidth;
-
-        const duration = Math.floor(exhibition.duration / (1000 * 60 * 60 * 24)) + 1; // Add 1 to include the end date
-
-     
-        tooltip.style("display", "block")
-        .style("left", `${event.pageX -2 - tooltipWidth}px`)
-        .style("top", `${event.pageY - 2 - tooltipHeight}px`)
-        .style("color", "black")
-        .html(`Name: ${exhibition.name}<br/>Start: ${removeTimeFromDateString(exhibition.startDate.toString())} <br/>End: ${removeTimeFromDateString(exhibition.endDate.toString())} <br/> Duration: ${duration} <br/>in ${exhibition.city} (${exhibition.country}) with ${exhibition.amountParticipants} participants`);
-    };
-
-    const removeTimeFromDateString =(dateString: string) => {
-    // Split the date string by the space character and join the first three parts (month, day, year)
-  const parts = dateString.split(' ');
-  // Join the first three parts to reconstruct the date without the time part
-  return parts.slice(0, 3).join(' ');
-    }
+      const maxBarHeight = 5;
     
-
-     
-      
-      const handleMouseOut =(event: any, d: any) =>{
-        tooltip.style('display', 'none');
-      }
+      const timelineData = exhibitions.map(exhibition => ({
+        id: exhibition.id, // Keep track of the exhibition ID
+        name: exhibition.name,
+        start: new Date(exhibition.start_date).getTime(),
+        startDate: exhibition.start_date,
+        endDate: exhibition.end_date,
+        end: new Date(exhibition.end_date).getTime(),
+        duration: new Date(exhibition.end_date).getTime() - new Date(exhibition.start_date).getTime(),
+        amountParticipants: exhibition.exhibited_artists,
+        country: exhibition.took_place_in_country,
+        city: exhibition.city,
+        normalizedParticipants: 0
+      }));
     
-      
-        if (singleDay) {
-          this.svg.append('circle')
-            .attr('class', 'bar')
-            .attr('cx', xScale(exhibition.start)) // Corrected 'x' to 'cx'
-            .attr('cy', yOffset + barHeight / 2) // Center the circle vertically
-            .attr('r', barHeight / 2) // Set the radius to half of barHeight
-            .attr('fill', timelineData.length !== 1 ? colorScale(exhibition.normalizedParticipants) : colorScale(1))
-            .attr('opacity', opacity)
-            .attr('stroke', 'black')
-            .attr('stroke-width', strokeWidth)
-            .on('mouseover', handleMouseOver)
-            .on('mousemove', handleMouseMove)
-            .on('mouseout', handleMouseOut);
-        } else {
-
-          this.svg.append('rect')
-            .attr('class', 'bar')
-            .attr('x', xScale(exhibition.start))
-            .attr('y', yOffset)
-            .attr('width', xScale(exhibition.end) - xScale(exhibition.start) === 0 ? 1 : xScale(exhibition.end) - xScale(exhibition.start))
-            .attr('height', barHeight)
-            .attr('fill', timelineData.length !== 1 ? colorScale(exhibition.normalizedParticipants) : colorScale(1))
-            .attr('opacity', opacity)
-            .attr('stroke', 'black')
-            .attr('stroke-width', strokeWidth) 
-            .on('mouseover', handleMouseOver)
-            .on('mousemove', handleMouseMove)
-            .on('mouseout', handleMouseOut);
-        }
-        yOffset += barHeight;
+      const normalizedParticipants = this.normalizeLogarithmically(timelineData.map(d => d.amountParticipants));
+    
+      timelineData.forEach((d, i) => {
+        d.normalizedParticipants = normalizedParticipants[i];
       });
   
-      yOffset += extraSpace;
-    });
+      const groupedByCountry = d3.group(timelineData, d => d.country);
+      const sortedCountries = Array.from(groupedByCountry.entries())
+        .sort(([, a], [, b]) => d3.descending(a.length, b.length))
+        .map(([country]) => country);
+    
+      const xScale = d3.scaleTime()
+        .domain([d3.min(timelineData, d => d.start)!, d3.max(timelineData, d => d.end)!])
+        .range([0, this.contentWidth])
+        .nice();
+    
+      const yScale = d3.scaleBand()
+        .domain(timelineData.map((d, i) => i.toString()))
+        .range([0, this.contentHeight])
+        .padding(0.1)
+        .round(true);
+    
+      const barHeight = Math.min(yScale.bandwidth(), maxBarHeight);
+    
+      const colorScale = d3.scaleSequential(d3.interpolatePlasma)
+        .domain([0, 1]);
+    
+      // Calculate the total height needed for the bars and extra space
+      let yOffset = 0;
+      const extraSpace = 0.5 * window.innerWidth / 100;
+      sortedCountries.forEach((country) => {
+        const exhibitions = groupedByCountry.get(country)!;
+        yOffset += (exhibitions.length * barHeight) + extraSpace;
+      });
+    
+      const xAxis = d3.axisTop(xScale).tickSize(-yOffset);
+    
+      const xAxisGroup = this.svg.append('g')
+        .call(xAxis)
+        .attr('transform', `translate(0,0)`)
+        .selectAll("text")
+        .style("text-anchor", "end")
+        .attr("dx", "-.8em")
+        .attr("dy", ".15em")
+        .attr("transform", "rotate(65)")
+        .style("font-size", "0.5vw");
+    
+      this.svg.selectAll('.tick line')
+        .attr('stroke', 'gray');
+    
+      yOffset = 0;
+      sortedCountries.forEach((country, index) => {
+        const exhibitions = groupedByCountry.get(country)!;
+        exhibitions.sort((a, b) => d3.ascending(a.start, b.start));
+    
+        const countryColor = this.artistService.getCountryColor(country, 0.1);
+    
+        this.svg.append('rect')
+          .attr('x', 0)
+          .attr('y', yOffset)
+          .attr('width', this.contentWidth)
+          .attr('height', exhibitions.length * barHeight)
+          .attr('fill', countryColor);
+    
+        this.svg.append('text')
+          .attr('class', 'label')
+          .attr('x', -10)
+          .attr('y', yOffset + (exhibitions.length * barHeight / 2))
+          .attr('dy', '.35em')
+          .attr('text-anchor', 'end')
+          .attr('fill', this.artistService.getCountryColor(country))
+          .style('font-size', '0.5vw')
+          .text(country);
+    
+        exhibitions.forEach(exhibition => {
+          const opacity = this.fullOpacityExhibitions.has(exhibition.id.toString()) ? 1 : 0.5; // Ensure ID is a string
+          const strokeWidth = this.fullOpacityExhibitions.has(exhibition.id.toString()) ? 0.15 : 0; // Ensure ID is a string
+          const singleDay = exhibition.start === exhibition.end;
   
-    this.svg.append('line')
-      .attr('x1', 0)
-      .attr('x2', this.contentWidth)
-      .attr('y1', yOffset)
-      .attr('y2', yOffset)
-      .attr('stroke', 'gray')
-      .attr('stroke-width', 1);
   
-    // Calculate the position of the legend
-    const legendHeight = 0.5 * window.innerWidth / 100;
-    const legendWidth = this.contentWidth / 4 * 3;
-    const legendX = (this.contentWidth - legendWidth) / 2; // Center the legend horizontally
-    const legendY = -4.5 * window.innerWidth / 100; // Position the legend based on top margin
+        //tooltip
   
-    const legend = this.legendGroup
-      .attr('transform', `translate(${legendX}, ${legendY})`);
+        const tooltip = d3.select("div#tooltip")
+    
+        const handleMouseOver = (event: any, d: any) =>{
+          tooltip.style('display', 'block');
+        }
+      
+        const handleMouseMove =(event: any, d: any) =>{ 
+          const tooltipNode = tooltip.node() as HTMLElement;
+          const tooltipHeight = tooltipNode.offsetHeight;
+          const tooltipWidth = tooltipNode.offsetWidth;
   
-    // Create gradient for legend
-    const defs = this.svg.append('defs');
-    const linearGradient = defs.append('linearGradient')
-      .attr('id', 'linear-gradient')
-      .attr('x1', '0%')
-      .attr('y1', '0%')
-      .attr('x2', '100%')
-      .attr('y2', '0%');
+          const duration = Math.floor(exhibition.duration / (1000 * 60 * 60 * 24)) + 1; // Add 1 to include the end date
   
-    const stops = d3.range(0, 1.01, 0.01).map((t: number) => ({
-      offset: `${t * 100}%`,
-      color: colorScale(t)
-    }));
+       
+          tooltip.style("display", "block")
+          .style("left", `${event.pageX -2 - tooltipWidth}px`)
+          .style("top", `${event.pageY - 2 - tooltipHeight}px`)
+          .style("color", "black")
+          .html(`Name: ${exhibition.name}<br/>Start: ${removeTimeFromDateString(exhibition.startDate.toString())} <br/>End: ${removeTimeFromDateString(exhibition.endDate.toString())} <br/> Duration: ${duration} <br/>in ${exhibition.city} (${exhibition.country}) with ${exhibition.amountParticipants} participants`);
+      };
   
-    linearGradient.selectAll('stop')
-      .data(stops)
-      .enter().append('stop')
-      .attr('offset', (d: { offset: string; color: string }) => d.offset)
-      .attr('stop-color', (d: { offset: string; color: string }) => d.color);
+      const removeTimeFromDateString =(dateString: string) => {
+      // Split the date string by the space character and join the first three parts (month, day, year)
+    const parts = dateString.split(' ');
+    // Join the first three parts to reconstruct the date without the time part
+    return parts.slice(0, 3).join(' ');
+      }
+      
   
-    // Draw legend
-    legend.append('rect')
-      .attr('width', legendWidth)
-      .attr('height', legendHeight)
-      .style('fill', 'url(#linear-gradient)');
+       
+      
+        const handleMouseOut =(event: any, d: any) =>{
+          tooltip.style('display', 'none');
+        }
+      
+        
+          if (singleDay) {
+            this.svg.append('circle')
+              .attr('class', 'bar')
+              .attr('cx', xScale(exhibition.start)) // Corrected 'x' to 'cx'
+              .attr('cy', yOffset + barHeight / 2) // Center the circle vertically
+              .attr('r', barHeight / 2) // Set the radius to half of barHeight
+              .attr('fill', timelineData.length !== 1 ? colorScale(exhibition.normalizedParticipants) : colorScale(1))
+              .attr('opacity', opacity)
+              .attr('stroke', 'black')
+              .attr('stroke-width', strokeWidth)
+              .on('mouseover', handleMouseOver)
+              .on('mousemove', handleMouseMove)
+              .on('mouseout', handleMouseOut);
+          } else {
   
-    // Add participants label above the legend
-    legend.append('text')
-      .attr('x', legendWidth / 2)
-      .attr('y', -0.5 * window.innerWidth / 100) // Adjusted position above the legend rectangle
-      .attr('text-anchor', 'middle')
-      .style('font-size', '0.5vw')
-      .attr('fill', '#2a0052')
-      .text('Normalized Number of Participants');
-  
-    // Legend axis with normalized values from 0 to 1
-    const legendScale = d3.scaleLinear()
-      .domain([0, 1])
-      .range([0, legendWidth]);
-  
-    const legendAxis = d3.axisBottom(legendScale)
-      .ticks(6)
-      .tickFormat(d3.format(".1f")); // Format ticks to show one decimal place
-  
-    const legendAxisGroup = legend.append('g')
-      .attr('transform', `translate(0, ${legendHeight})`)
-      .call(legendAxis);
-  
-    legendAxisGroup.selectAll('text')
-      .style('font-size', '0.5vw'); // Smaller font size for legend axis
-  }
-  
-  
-  
-  
+            this.svg.append('rect')
+              .attr('class', 'bar')
+              .attr('x', xScale(exhibition.start))
+              .attr('y', yOffset)
+              .attr('width', xScale(exhibition.end) - xScale(exhibition.start) === 0 ? 1 : xScale(exhibition.end) - xScale(exhibition.start))
+              .attr('height', barHeight)
+              .attr('fill', timelineData.length !== 1 ? colorScale(exhibition.normalizedParticipants) : colorScale(1))
+              .attr('opacity', opacity)
+              .attr('stroke', 'black')
+              .attr('stroke-width', strokeWidth) 
+              .on('mouseover', handleMouseOver)
+              .on('mousemove', handleMouseMove)
+              .on('mouseout', handleMouseOut);
+          }
+          yOffset += barHeight;
+        });
+    
+        yOffset += extraSpace;
+      });
+    
+      this.svg.append('line')
+        .attr('x1', 0)
+        .attr('x2', this.contentWidth)
+        .attr('y1', yOffset)
+        .attr('y2', yOffset)
+        .attr('stroke', 'gray')
+        .attr('stroke-width', 1);
+    
+      // Calculate the position of the legend
+      const legendHeight = 0.5 * window.innerWidth / 100;
+      const legendWidth = this.contentWidth / 4 * 3;
+      const legendContainerWidth = this.legendContainer.nativeElement.offsetWidth;
+      const legendX = (legendContainerWidth - legendWidth) / 2; // Center the legend horizontally
+      const legendY = 1 * window.innerWidth / 100; // Adjust this value to place the legend at the top
+    
+      const legend = this.legendGroup
+        .attr('transform', `translate(${legendX}, ${legendY})`);
+    
+      // Create gradient for legend
+      const defs = this.legendGroup.append('defs');
+      const linearGradient = defs.append('linearGradient')
+        .attr('id', 'linear-gradient')
+        .attr('x1', '0%')
+        .attr('y1', '0%')
+        .attr('x2', '100%')
+        .attr('y2', '0%');
+    
+      const stops = d3.range(0, 1.01, 0.01).map((t: number) => ({
+        offset: `${t * 100}%`,
+        color: colorScale(t)
+      }));
+    
+      linearGradient.selectAll('stop')
+        .data(stops)
+        .enter().append('stop')
+        .attr('offset', (d: { offset: string; color: string }) => d.offset)
+        .attr('stop-color', (d: { offset: string; color: string }) => d.color);
+    
+      // Draw legend
+      legend.append('rect')
+        .attr('width', legendWidth)
+        .attr('height', legendHeight)
+        .style('fill', 'url(#linear-gradient)');
+    
+      // Add participants label above the legend
+      legend.append('text')
+        .attr('x', legendWidth / 2)
+        .attr('y', -0.5 * window.innerWidth / 100) // Adjusted position above the legend rectangle
+        .attr('text-anchor', 'middle')
+        .style('font-size', '0.5vw')
+        .attr('fill', '#2a0052')
+        .text('Normalized Number of Participants');
+    
+      // Legend axis with normalized values from 0 to 1
+      const legendScale = d3.scaleLinear()
+        .domain([0, 1])
+        .range([0, legendWidth]);
+    
+      const legendAxis = d3.axisBottom(legendScale)
+        .ticks(6)
+        .tickFormat(d3.format(".1f")); // Format ticks to show one decimal place
+    
+      const legendAxisGroup = legend.append('g')
+        .attr('transform', `translate(0, ${legendHeight})`)
+        .call(legendAxis);
+    
+      legendAxisGroup.selectAll('text')
+        .style('font-size', '0.5vw'); // Smaller font size for legend axis
+    }
     
     
-
     private normalizeLogarithmically(values: number[]): number[] {
       const logMaxValue = Math.log1p(Math.max(...values));
       const logMinValue = Math.log1p(Math.min(...values));
