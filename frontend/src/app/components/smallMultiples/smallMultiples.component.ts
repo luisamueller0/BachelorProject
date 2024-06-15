@@ -33,6 +33,13 @@ export class SmallMultiplesComponent implements OnInit, OnChanges, OnDestroy {
     left: 5.5
   };
 
+  private marginSwitched = {
+    top: 5,
+    right: 1,
+    bottom: 3,
+    left: 2
+  };
+
 
   private clusters: Artist[][] = [];
   private intraCommunityEdges: exhibited_with[][] = [];
@@ -44,6 +51,8 @@ export class SmallMultiplesComponent implements OnInit, OnChanges, OnDestroy {
   private selectedClusterNode: ClusterNode | null = null;
   private allCountries: string[] = [];
   private g: any; // Group for zooming
+  private paddingRatio: number = 0.05; // 5% padding
+
 
   private subscriptions: Subscription = new Subscription();
 
@@ -850,12 +859,27 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
     d3.select(this.chartContainer.nativeElement).select(".matrix-svg-container").select("svg").remove();
     
     const element = this.chartContainer.nativeElement.querySelector('.matrix-svg-container');
-    const margin = {
-      top: this.margin.top * window.innerHeight / 100,
-      right: this.margin.right * window.innerWidth / 100,
-      bottom: this.margin.bottom * window.innerWidth / 100,
-      left: this.margin.left * window.innerWidth / 100
-    };
+    const k = this.decisionService.getK();
+    const isSwitched = k < 4;
+    let margin;
+    if(isSwitched){
+      margin = {
+        top: this.marginSwitched.top * window.innerHeight / 100,
+        right: this.marginSwitched.right * window.innerWidth / 100,
+        bottom: this.marginSwitched.bottom * window.innerWidth / 100,
+        left: this.marginSwitched.left * window.innerWidth / 100
+      };
+
+    }else{
+      margin = {
+        top: this.margin.top * window.innerHeight / 100,
+        right: this.margin.right * window.innerWidth / 100,
+        bottom: this.margin.bottom * window.innerWidth / 100,
+        left: this.margin.left * window.innerWidth / 100
+      };
+
+    }
+   
     const width = element.offsetWidth - margin.left - margin.right;
     const height = element.offsetHeight - margin.top - margin.bottom;
     
@@ -923,140 +947,142 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
       .enter()
       .append("g")
       .attr("class", "cell")
-      .attr("transform", (d: any) => `translate(${xScale(isSwitched ? d.x : String(d.x))! + cellWidth / 2},${yScale(isSwitched ? String(d.y) : d.y)! + cellHeight / 2})`);
+      .attr("transform", (d: any) => `translate(${xScale(isSwitched ? d.x : String(d.x))!-5},${yScale(isSwitched ? String(d.y) : d.y)!-5})`);
   
     cells.each((d: any, i: number, nodes: any) => {
       this.drawClusterInCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight, isSwitched);
-    });
+    });2
   }
   
   private drawClusterInCell(cell: any, x: string | number, y: string | number, cellWidth: number, cellHeight: number, isSwitched: boolean): void {
     const clusterIndex = isSwitched ? Number(y) - 1 : Number(x) - 1;
     const cluster = this.clusters[clusterIndex];
     if (!cluster) return;
-  
+
     const cellSize = Math.min(cellWidth, cellHeight);
-    const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, this.clusters[0].length, cellSize);
+    const paddedCellSize = cellSize * (1 - this.paddingRatio); // Reduce cell size by padding ratio
+    const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, this.clusters[0].length, paddedCellSize);
     const clusterNode: ClusterNode = {
-      clusterId: clusterIndex,
-      artists: cluster,
-      outerRadius: outerRadius,
-      innerRadius: innerRadius,
-      x: 0,
-      y: 0,
-      meanAvgDate: new Date(),
-      meanBirthDate: new Date(),
-      totalExhibitedArtworks: 0
+        clusterId: clusterIndex,
+        artists: cluster,
+        outerRadius: outerRadius,
+        innerRadius: innerRadius,
+        x: 0,
+        y: 0,
+        meanAvgDate: new Date(),
+        meanBirthDate: new Date(),
+        totalExhibitedArtworks: 0
     };
-  
+
     const clusterGroup = this.createClusterGroup(clusterNode, isSwitched ? x as string : y as string, cellWidth, cellHeight);
-  
+
     d3.select(clusterGroup).datum(clusterNode);
-  
+
     cell.node().appendChild(clusterGroup);
-  }
+}
+
   
-  private createClusterGroup(clusterNode: ClusterNode, value: string, cellWidth: number, cellHeight: number): SVGGElement {
-    const arcGenerator = d3.arc<any>()
+private createClusterGroup(clusterNode: ClusterNode, value: string, cellWidth: number, cellHeight: number): SVGGElement {
+  const arcGenerator = d3.arc<any>()
       .innerRadius(clusterNode.innerRadius)
       .outerRadius(clusterNode.outerRadius);
-  
-    const countryMap = new Map<string, Artist[]>();
-    let sortedArtists: Artist[] = [];
-  
-    // Populate the country map based on the value parameter
-    switch (value) {
+
+  const countryMap = new Map<string, Artist[]>();
+  let sortedArtists: Artist[] = [];
+
+  // Populate the country map based on the value parameter
+  switch (value) {
       case 'nationality':
-        sortedArtists = this.prepareData(clusterNode.artists, value);
-        sortedArtists.forEach(artist => {
-          if (!countryMap.has(artist.nationality)) {
-            countryMap.set(artist.nationality, []);
-          }
-          countryMap.get(artist.nationality)!.push(artist);
-        });
-        break;
+          sortedArtists = this.prepareData(clusterNode.artists, value);
+          sortedArtists.forEach(artist => {
+              if (!countryMap.has(artist.nationality)) {
+                  countryMap.set(artist.nationality, []);
+              }
+              countryMap.get(artist.nationality)!.push(artist);
+          });
+          break;
       case 'birthcountry':
-        sortedArtists = this.prepareData(clusterNode.artists, value);
-        sortedArtists.forEach(artist => {
-          if (!countryMap.has(artist.birthcountry)) {
-            countryMap.set(artist.birthcountry, []);
-          }
-          countryMap.get(artist.birthcountry)!.push(artist);
-        });
-        break;
+          sortedArtists = this.prepareData(clusterNode.artists, value);
+          sortedArtists.forEach(artist => {
+              if (!countryMap.has(artist.birthcountry)) {
+                  countryMap.set(artist.birthcountry, []);
+              }
+              countryMap.get(artist.birthcountry)!.push(artist);
+          });
+          break;
       case 'deathcountry':
-        sortedArtists = this.prepareData(clusterNode.artists, value);
-        sortedArtists.forEach(artist => {
-          if (!countryMap.has(artist.deathcountry)) {
-            countryMap.set(artist.deathcountry, []);
-          }
-          countryMap.get(artist.deathcountry)!.push(artist);
-        });
-        break;
+          sortedArtists = this.prepareData(clusterNode.artists, value);
+          sortedArtists.forEach(artist => {
+              if (!countryMap.has(artist.deathcountry)) {
+                  countryMap.set(artist.deathcountry, []);
+              }
+              countryMap.get(artist.deathcountry)!.push(artist);
+          });
+          break;
       case 'mostexhibited':
-        sortedArtists = this.prepareData(clusterNode.artists, value);
-        sortedArtists.forEach(artist => {
-          if (!countryMap.has(artist.most_exhibited_in)) {
-            countryMap.set(artist.most_exhibited_in, []);
-          }
-          countryMap.get(artist.most_exhibited_in)!.push(artist);
-        });
-        break;
-    }
-  
-    const countries = Array.from(countryMap.keys());
-    const totalArtists = clusterNode.artists.length;
-    const minimumAngle = Math.PI / 18;
-  
-    let totalAngleAvailable = 2 * Math.PI;
-    const dynamicAngles = new Map<string, number>();
-  
-    countryMap.forEach((artists, country) => {
+          sortedArtists = this.prepareData(clusterNode.artists, value);
+          sortedArtists.forEach(artist => {
+              if (!countryMap.has(artist.most_exhibited_in)) {
+                  countryMap.set(artist.most_exhibited_in, []);
+              }
+              countryMap.get(artist.most_exhibited_in)!.push(artist);
+          });
+          break;
+  }
+
+  const countries = Array.from(countryMap.keys());
+  const totalArtists = clusterNode.artists.length;
+  const minimumAngle = Math.PI / 18;
+
+  let totalAngleAvailable = 2 * Math.PI;
+  const dynamicAngles = new Map<string, number>();
+
+  countryMap.forEach((artists, country) => {
       dynamicAngles.set(country, minimumAngle);
       totalAngleAvailable -= minimumAngle;
-    });
-  
-    countryMap.forEach((artists, country) => {
+  });
+
+  countryMap.forEach((artists, country) => {
       const proportion = artists.length / totalArtists;
       const extraAngle = proportion * totalAngleAvailable;
       const currentAngle = dynamicAngles.get(country) || 0;
       dynamicAngles.set(country, currentAngle + extraAngle);
-    });
-  
-    let currentAngle = 0;
-    const data = countries.map((country) => {
+  });
+
+  let currentAngle = 0;
+  const data = countries.map((country) => {
       const angle = dynamicAngles.get(country) as number;
       const startAngle = currentAngle;
       const endAngle = currentAngle + angle;
       const middleAngle = (startAngle + endAngle) / 2;
       currentAngle = endAngle;
       return {
-        country,
-        startAngle,
-        endAngle,
-        middleAngle,
-        innerRadius: clusterNode.innerRadius,
-        outerRadius: clusterNode.outerRadius,
-        color: this.artistService.getCountryColor(country, 1)
+          country,
+          startAngle,
+          endAngle,
+          middleAngle,
+          innerRadius: clusterNode.innerRadius,
+          outerRadius: clusterNode.outerRadius,
+          color: this.artistService.getCountryColor(country, 1)
       };
-    });
-  
-    const clusterGroup = d3.create("svg:g")
+  });
+
+  const clusterGroup = d3.create("svg:g")
       .attr("class", `cluster cluster-${clusterNode.clusterId} cluster-${value}`)
       .on('click', () => this.onClusterClick(clusterNode))
-      .attr("transform", `translate(0, 0)`);
-  
-    clusterGroup.selectAll("path")
+      .attr("transform", `translate(${cellWidth / 2}, ${cellHeight / 2})`);
+
+  clusterGroup.selectAll("path")
       .data(data)
       .enter()
       .append("path")
       .attr("d", arcGenerator)
       .attr("fill", (d: any) => d.color)
       .style('stroke', 'none');
-  
-    const textsize = 0.5 * Math.min(cellHeight, cellWidth) / 10;
-  
-    clusterGroup.selectAll("text")
+
+  const textsize = 0.5 * Math.min(cellHeight, cellWidth) / 10;
+
+  clusterGroup.selectAll("text")
       .data(data)
       .enter()
       .append("text")
@@ -1066,22 +1092,24 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
       .style("font-size", `${textsize}px`)
       .style("font-weight", "bold")
       .style("fill", "white");
-  
-    let countryCentroids: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } = {};
-    data.forEach(d => {
+
+  let countryCentroids: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } = {};
+  data.forEach(d => {
       countryCentroids[d.country] = {
-        startAngle: d.startAngle,
-        endAngle: d.endAngle,
-        middleAngle: d.middleAngle,
-        color: d.color,
-        country: d.country
+          startAngle: d.startAngle,
+          endAngle: d.endAngle,
+          middleAngle: d.middleAngle,
+          color: d.color,
+          country: d.country
       };
-    });
+  });
+
+  this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
+
+  return clusterGroup.node() as SVGGElement;
+}
+
   
-    this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
-  
-    return clusterGroup.node() as SVGGElement;
-  }
   
 
 
@@ -1246,15 +1274,16 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
   }
 
   private createSunburstProperties(clusterSize: number, maxSize: number, cellSize: number): [number, number] {
-    const minRadius = cellSize / 2 -1.5
-    const maxRadius = cellSize / 2 -1.5; // Adjust max radius to fit within cells
-  
-    const outerRadius = minRadius + ((maxRadius - minRadius) * (clusterSize / maxSize)) - 1;
-    const innerRadius = outerRadius - cellSize/10; // Reduced thickness for small cells
-  
+    const paddedCellSize = cellSize * (1 - this.paddingRatio); // Reduce cell size by padding ratio
+    const minRadius = paddedCellSize / 2;
+    const maxRadius = paddedCellSize / 2; // Adjust max radius to fit within cells
+
+    const outerRadius = minRadius + ((maxRadius - minRadius) * (clusterSize / maxSize));
+    const innerRadius = outerRadius - paddedCellSize / 10; // Reduced thickness for small cells
+
     return [outerRadius, innerRadius];
-  }
-  
+}
+
   
 
   private createColorScale(countries: string[]): d3.ScaleSequential<string, number> {
