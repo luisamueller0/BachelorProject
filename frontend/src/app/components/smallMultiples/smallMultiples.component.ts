@@ -837,7 +837,14 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
   private visualizeData(): void {
     this.isLoading = true;
     this.createSvg();
-    this.drawMatrix();
+
+    const k = this.decisionService.getK();
+    if(k<4){
+      this.drawMatrixSwitched();
+    }else{
+      this.drawMatrix();
+    }
+    
     this.isLoading = false;
   }
 
@@ -1064,6 +1071,211 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
   
     const textsize =  0.5*Math.min(cellHeight,cellWidth)/10;
   
+    clusterGroup.selectAll("text")
+      .data(data)
+      .enter()
+      .append("text")
+      .attr("transform", (d: any) => `translate(${arcGenerator.centroid(d)})`)
+      .attr("text-anchor", "middle")
+      .text((d: any) => d.country)
+      .style("font-size", `${textsize}px`)
+      .style("font-weight", "bold")
+      .style("fill", "white");
+  
+    let countryCentroids: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } = {};
+    data.forEach(d => {
+      countryCentroids[d.country] = {
+        startAngle: d.startAngle,
+        endAngle: d.endAngle,
+        middleAngle: d.middleAngle,
+        color: d.color,
+        country: d.country
+      };
+    });
+  
+    this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
+  
+    return clusterGroup.node() as SVGGElement;
+  }
+
+
+  private drawMatrixSwitched(): void {
+    const k = this.decisionService.getK();
+    const yData = d3.range(1, k + 1); // Adjust to dynamic range based on k
+    const xData = ['nationality', 'birthcountry', 'deathcountry', 'mostexhibited']; // The desired categories
+  
+    const cellWidth = this.contentWidth / xData.length;
+    const cellHeight = this.contentHeight / yData.length;
+  
+    const xScale = d3.scaleBand()
+      .domain(xData)
+      .range([0, this.contentWidth])
+      .padding(0.1);
+  
+    const yScale = d3.scaleBand()
+      .domain(yData.map(String))
+      .range([0, this.contentHeight])
+      .padding(0.1);
+  
+    // Draw x-axis
+    this.g.append("g")
+      .attr("transform", `translate(0,0)`)
+      .call(d3.axisTop(xScale));
+  
+    // Draw y-axis
+    this.g.append("g")
+      .call(d3.axisLeft(yScale))
+      .selectAll(".tick text")
+      .attr("class", (d: any) => `y-axis-label y-axis-label-${d}`);
+  
+    // Draw cells
+    const cells = this.g.selectAll("g.cell")
+      .data(yData.flatMap(y => xData.map(x => ({ x, y }))))
+      .enter()
+      .append("g")
+      .attr("class", "cell")
+      .attr("transform", (d: any) => `translate(${xScale(d.x)},${yScale(String(d.y))})`);
+  
+    cells.each((d: any, i: number, nodes: any) => {
+      console.log(`Drawing cell for category ${d.x} and cluster ${d.y}`);
+      this.drawClusterInCellSwitched(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight);
+    });
+}
+
+private drawClusterInCellSwitched(cell: any, x: string, y: number, cellWidth: number, cellHeight: number): void {
+  const clusterIndex = y - 1;
+  const cluster = this.clusters[clusterIndex];
+  if (!cluster) {
+    console.log(`No cluster data for index ${clusterIndex}`);
+    return;
+  }
+
+  const cellSize = Math.min(cellWidth, cellHeight);
+  const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, this.clusters[0].length, cellSize);
+  const clusterNode: ClusterNode = {
+    clusterId: clusterIndex,
+    artists: cluster,
+    outerRadius: outerRadius,
+    innerRadius: innerRadius,
+    x: 0,
+    y: 0,
+    meanAvgDate: new Date(),
+    meanBirthDate: new Date(),
+    totalExhibitedArtworks: 0
+  };
+
+  const clusterGroup = this.createClusterGroupSwitched(clusterNode, x, cellWidth, cellHeight);
+
+  // Bind the clusterNode data to the clusterGroup
+  d3.select(clusterGroup).datum(clusterNode);
+
+  cell.node().appendChild(clusterGroup);
+}
+
+
+private createClusterGroupSwitched(clusterNode: ClusterNode, value: string, cellWidth:number, cellHeight:number): SVGGElement {
+    const arcGenerator = d3.arc<any>()
+      .innerRadius(clusterNode.innerRadius)
+      .outerRadius(clusterNode.outerRadius);
+  
+    const countryMap = new Map<string, Artist[]>();
+    let sortedArtists: Artist[] = [];
+  
+    // Populate the country map based on the value parameter
+    switch (value) {
+      case 'nationality':
+        sortedArtists = this.prepareData(clusterNode.artists, value);
+        sortedArtists.forEach(artist => {
+          if (!countryMap.has(artist.nationality)) {
+            countryMap.set(artist.nationality, []);
+          }
+          countryMap.get(artist.nationality)!.push(artist);
+        });
+        break;
+      case 'birthcountry':
+        sortedArtists = this.prepareData(clusterNode.artists, value);
+        sortedArtists.forEach(artist => {
+          if (!countryMap.has(artist.birthcountry)) {
+            countryMap.set(artist.birthcountry, []);
+          }
+          countryMap.get(artist.birthcountry)!.push(artist);
+        });
+        break;
+      case 'deathcountry':
+        sortedArtists = this.prepareData(clusterNode.artists, value);
+        sortedArtists.forEach(artist => {
+          if (!countryMap.has(artist.deathcountry)) {
+            countryMap.set(artist.deathcountry, []);
+          }
+          countryMap.get(artist.deathcountry)!.push(artist);
+        });
+        break;
+      case 'mostexhibited':
+        sortedArtists = this.prepareData(clusterNode.artists, value);
+        sortedArtists.forEach(artist => {
+          if (!countryMap.has(artist.most_exhibited_in)) {
+            countryMap.set(artist.most_exhibited_in, []);
+          }
+          countryMap.get(artist.most_exhibited_in)!.push(artist);
+        });
+        break;
+    }
+  
+    const countries = Array.from(countryMap.keys());
+    const totalArtists = clusterNode.artists.length;
+    const minimumAngle = Math.PI / 18;
+  
+    let totalAngleAvailable = 2 * Math.PI;
+    const dynamicAngles = new Map<string, number>();
+  
+    countryMap.forEach((artists, country) => {
+      dynamicAngles.set(country, minimumAngle);
+      totalAngleAvailable -= minimumAngle;
+    });
+  
+    countryMap.forEach((artists, country) => {
+      const proportion = artists.length / totalArtists;
+      const extraAngle = proportion * totalAngleAvailable;
+      const currentAngle = dynamicAngles.get(country) || 0;
+      dynamicAngles.set(country, currentAngle + extraAngle);
+    });
+  
+    let currentAngle = 0;
+    const data = countries.map((country) => {
+      const angle = dynamicAngles.get(country) as number;
+      const startAngle = currentAngle;
+      const endAngle = currentAngle + angle;
+      const middleAngle = (startAngle + endAngle) / 2;
+      currentAngle = endAngle;
+      return {
+        country,
+        startAngle,
+        endAngle,
+        middleAngle,
+        innerRadius: clusterNode.innerRadius,
+        outerRadius: clusterNode.outerRadius,
+        color: this.artistService.getCountryColor(country, 1)
+      };
+    });
+  
+    const yLength = this.decisionService.getK() + 1;
+    const xLength = 4;
+    const clusterGroup = d3.create("svg:g")
+      .attr("class", `cluster cluster-${clusterNode.clusterId} cluster-${value}`)
+      .on('click', () => this.onClusterClick(clusterNode))
+      .attr("transform", `translate(${this.contentWidth / xLength / 2}, ${this.contentHeight / yLength / 2})`);
+  
+    clusterGroup.selectAll("path")
+      .data(data)
+      .enter()
+      .append("path")
+      .attr("d", arcGenerator)
+      .attr("fill", (d: any) => d.color)
+      .style('stroke', 'none');
+  
+    const textsize =  0.5*Math.min(cellHeight,cellWidth)/10;
+
+    
     clusterGroup.selectAll("text")
       .data(data)
       .enter()
