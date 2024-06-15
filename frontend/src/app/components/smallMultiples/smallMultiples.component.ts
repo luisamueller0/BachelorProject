@@ -28,9 +28,9 @@ export class SmallMultiplesComponent implements OnInit, OnChanges, OnDestroy {
   private contentHeight: number = 0;
   private margin = {
     top: 5,
-    right: 2,
-    bottom: 5,
-    left: 2
+    right: 1,
+    bottom: 3,
+    left: 5.5
   };
 
 
@@ -884,81 +884,80 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
 
   private drawMatrix(): void {
     const k = this.decisionService.getK();
-    const yData = d3.range(1, k + 1); // Adjust to dynamic range based on k
-    const xData = ['nationality', 'birthcountry', 'deathcountry', 'mostexhibited']; // The desired categories
-  
+    const xData = d3.range(1, k + 1); // Adjust to dynamic range based on k
+    const yData = ['nationality', 'birthcountry', 'deathcountry', 'mostexhibited']; // The desired categories
+    
     const cellWidth = this.contentWidth / xData.length;
     const cellHeight = this.contentHeight / yData.length;
-  
+    
     const xScale = d3.scaleBand()
-      .domain(xData)
+      .domain(xData.map(String))
       .range([0, this.contentWidth])
       .padding(0.1);
-  
+    
     const yScale = d3.scaleBand()
-      .domain(yData.map(String))
+      .domain(yData)
       .range([0, this.contentHeight])
       .padding(0.1);
-  
+    
     // Draw x-axis
     this.g.append("g")
-      .attr("transform", `translate(0,0)`)
-      .call(d3.axisTop(xScale));
-  
+      .call(d3.axisTop(xScale).tickFormat(d => `Cluster ${d}`));
+    
     // Draw y-axis
     this.g.append("g")
-      .call(d3.axisLeft(yScale))
-      .selectAll(".tick text")
-      .attr("class", (d: any) => `y-axis-label y-axis-label-${d}`);
-  
+      .call(d3.axisLeft(yScale));
+    
     // Draw cells
     const cells = this.g.selectAll("g.cell")
-      .data(yData.flatMap(y => xData.map(x => ({ x, y }))))
+      .data(xData.flatMap(x => yData.map(y => ({ x, y }))))
       .enter()
       .append("g")
       .attr("class", "cell")
-      .attr("transform", (d: any) => `translate(${xScale(d.x)},${yScale(String(d.y))})`);
-  
+      .attr("transform", (d: any) => `translate(${xScale(String(d.x))},${yScale(d.y)})`);
+    
     cells.each((d: any, i: number, nodes: any) => {
-      console.log(`Drawing cell for category ${d.x} and cluster ${d.y}`);
-      this.drawClusterInCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight);
+      console.log(`Drawing cell for cluster ${d.x} and category ${d.y}`);
+      this.drawClusterInCell(d3.select(nodes[i]), d.y, d.x, cellWidth, cellHeight);
     });
-}
-
-  
-  
-  
-  
-private drawClusterInCell(cell: any, x: string, y: number, cellWidth: number, cellHeight: number): void {
-  const clusterIndex = y - 1;
-  const cluster = this.clusters[clusterIndex];
-  if (!cluster) {
-    console.log(`No cluster data for index ${clusterIndex}`);
-    return;
   }
+  
+ 
 
-  const cellSize = Math.min(cellWidth, cellHeight);
-  const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, this.clusters[0].length, cellSize);
-  const clusterNode: ClusterNode = {
-    clusterId: clusterIndex,
-    artists: cluster,
-    outerRadius: outerRadius,
-    innerRadius: innerRadius,
-    x: 0,
-    y: 0,
-    meanAvgDate: new Date(),
-    meanBirthDate: new Date(),
-    totalExhibitedArtworks: 0
-  };
-
-  const clusterGroup = this.createClusterGroup(clusterNode, x, cellWidth, cellHeight);
-
-  // Bind the clusterNode data to the clusterGroup
-  d3.select(clusterGroup).datum(clusterNode);
-
-  cell.node().appendChild(clusterGroup);
-}
-
+  
+  
+  
+  
+  private drawClusterInCell(cell: any, y: string, x: number, cellWidth: number, cellHeight: number): void {
+    const clusterIndex = x - 1;
+    const cluster = this.clusters[clusterIndex];
+    if (!cluster) {
+      console.log(`No cluster data for index ${clusterIndex}`);
+      return;
+    }
+  
+    const cellSize = Math.min(cellWidth, cellHeight);
+    const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, this.clusters[0].length, cellSize);
+    const clusterNode: ClusterNode = {
+      clusterId: clusterIndex,
+      artists: cluster,
+      outerRadius: outerRadius,
+      innerRadius: innerRadius,
+      x: 0,
+      y: 0,
+      meanAvgDate: new Date(),
+      meanBirthDate: new Date(),
+      totalExhibitedArtworks: 0
+    };
+  
+    const clusterGroup = this.createClusterGroup(clusterNode, y, cellWidth, cellHeight);
+  
+    // Bind the clusterNode data to the clusterGroup
+    d3.select(clusterGroup).datum(clusterNode);
+  
+    cell.node().appendChild(clusterGroup);
+  }
+  
   
   
 
@@ -1048,8 +1047,8 @@ private drawClusterInCell(cell: any, x: string, y: number, cellWidth: number, ce
       };
     });
   
-    const yLength = this.decisionService.getK() + 1;
-    const xLength = 4;
+    const yLength = 4;
+    const xLength = this.decisionService.getK() + 1;
     const clusterGroup = d3.create("svg:g")
       .attr("class", `cluster cluster-${clusterNode.clusterId} cluster-${value}`)
       .on('click', () => this.onClusterClick(clusterNode))
@@ -1064,8 +1063,7 @@ private drawClusterInCell(cell: any, x: string, y: number, cellWidth: number, ce
       .style('stroke', 'none');
   
     const textsize =  0.5*Math.min(cellHeight,cellWidth)/10;
-
-    
+  
     clusterGroup.selectAll("text")
       .data(data)
       .enter()
@@ -1092,6 +1090,7 @@ private drawClusterInCell(cell: any, x: string, y: number, cellWidth: number, ce
   
     return clusterGroup.node() as SVGGElement;
   }
+  
   
   private createArtistNetwork(value: string, clusterGroup: any, cluster: ClusterNode, countryCentroids: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } }): void {
     const artists = cluster.artists;
@@ -1248,8 +1247,8 @@ private drawClusterInCell(cell: any, x: string, y: number, cellWidth: number, ce
   }
 
   private createSunburstProperties(clusterSize: number, maxSize: number, cellSize: number): [number, number] {
-    const minRadius = cellSize / 2
-    const maxRadius = cellSize / 2; // Adjust max radius to fit within cells
+    const minRadius = cellSize / 2 -1.5
+    const maxRadius = cellSize / 2 -1.5; // Adjust max radius to fit within cells
   
     const outerRadius = minRadius + ((maxRadius - minRadius) * (clusterSize / maxSize)) - 1;
     const innerRadius = outerRadius - cellSize/10; // Reduced thickness for small cells
