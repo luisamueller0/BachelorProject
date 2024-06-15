@@ -923,13 +923,13 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
       .enter()
       .append("g")
       .attr("class", "cell")
-      .attr("transform", (d: any) => `translate(${xScale(isSwitched ? d.x : d.x)},${yScale(isSwitched ? d.y : d.y)})`);
+      .attr("transform", (d: any) => `translate(${xScale(isSwitched ? d.x : String(d.x))! + cellWidth / 2},${yScale(isSwitched ? String(d.y) : d.y)! + cellHeight / 2})`);
   
     cells.each((d: any, i: number, nodes: any) => {
       this.drawClusterInCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight, isSwitched);
     });
   }
-
+  
   private drawClusterInCell(cell: any, x: string | number, y: string | number, cellWidth: number, cellHeight: number, isSwitched: boolean): void {
     const clusterIndex = isSwitched ? Number(y) - 1 : Number(x) - 1;
     const cluster = this.clusters[clusterIndex];
@@ -956,8 +956,7 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
     cell.node().appendChild(clusterGroup);
   }
   
-
-  private createClusterGroup(clusterNode: ClusterNode, value: string, cellWidth:number, cellHeight:number): SVGGElement {
+  private createClusterGroup(clusterNode: ClusterNode, value: string, cellWidth: number, cellHeight: number): SVGGElement {
     const arcGenerator = d3.arc<any>()
       .innerRadius(clusterNode.innerRadius)
       .outerRadius(clusterNode.outerRadius);
@@ -1042,12 +1041,10 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
       };
     });
   
-    const yLength = 4;
-    const xLength = this.decisionService.getK() + 1;
     const clusterGroup = d3.create("svg:g")
       .attr("class", `cluster cluster-${clusterNode.clusterId} cluster-${value}`)
       .on('click', () => this.onClusterClick(clusterNode))
-      .attr("transform", `translate(${this.contentWidth / xLength / 2}, ${this.contentHeight / yLength / 2})`);
+      .attr("transform", `translate(0, 0)`);
   
     clusterGroup.selectAll("path")
       .data(data)
@@ -1057,7 +1054,7 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
       .attr("fill", (d: any) => d.color)
       .style('stroke', 'none');
   
-    const textsize =  0.5*Math.min(cellHeight,cellWidth)/10;
+    const textsize = 0.5 * Math.min(cellHeight, cellWidth) / 10;
   
     clusterGroup.selectAll("text")
       .data(data)
@@ -1085,7 +1082,7 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
   
     return clusterGroup.node() as SVGGElement;
   }
-
+  
 
 
 
