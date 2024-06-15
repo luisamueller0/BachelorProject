@@ -316,6 +316,10 @@ private onClusterClick(clusterNode: ClusterNode): void {
       .style('stroke', 'black')
       .style('stroke-width', `${size}vw`); // Adjust the border width as needed
 
+        // Copy the list of artist names to the clipboard
+  const artistNames = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname}`).join('\n');
+  navigator.clipboard.writeText(artistNames);
+  
     // Select the new cluster node
     this.selectionService.selectArtists(selectedArtists);
     this.selectionService.selectCluster(selectedArtists);
