@@ -1364,7 +1364,7 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
           const dx = d.x - centralNode.x;
           const dy = d.y - centralNode.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
-          const minDistance = radius  + d.radius;
+          const minDistance = radius  + d.radius + 0.5;
           if (distance < minDistance) {
             const angle = Math.atan2(dy, dx);
             d.x = centralNode.x + Math.cos(angle) * minDistance;
@@ -1446,7 +1446,7 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
     const padding = innerRadius/100*0.05;
     return d3.scaleLinear()
       .domain([0, 1])
-      .range([innerRadius - padding, 10]);
+      .range([innerRadius - padding, 0]);
   }
 
   private calculateRadiusForNode(value: number, innerRadius: number): number {
