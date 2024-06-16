@@ -1159,7 +1159,7 @@ private createClusterGroup(clusterNode: ClusterNode, value: string, cellWidth: n
 
     formattedRelationships.sort((a, b) => a.sharedExhibitionMinArtworks - b.sharedExhibitionMinArtworks);
 
-    const width = 0.1 * cluster.innerRadius / 100;
+    const width = 0.0025 * window.innerWidth / 100;
     const edges = clusterGroup.selectAll(".artist-edge")
         .data(formattedRelationships)
         .enter()
