@@ -240,6 +240,8 @@ export class SmallMultiplesComponent implements OnInit, OnChanges, OnDestroy {
 
 
 
+
+
 private resetNode() {
   if (this.selectedNode) {
     const previousNode = this.selectedNode[0];
@@ -256,13 +258,14 @@ private resetNode() {
     const previousArtistNodeData = d3.select(previousNode).datum() as ArtistNode;
     const previousArtistNodeId = previousArtistNodeData.id;
 
-
-      this.selectionService.selectArtists(null);
-
+    this.selectionService.selectArtists(null);
   }
 
   // Reset styles for all artist nodes and edges across categories
-  this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
+  const threshold = 0.4;
+  this.g.selectAll(".artist-edge")
+    .style('stroke', (d: any) => d.sharedExhibitionMinArtworks >= threshold ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none');
+    
   this.g.selectAll(".artist-node").style('opacity', '1').style('filter', 'none');
 
   this.selectedNode = null;
@@ -272,6 +275,7 @@ private resetNode() {
   // Ensure no countries are selected when resetting node selection
   this.selectionService.selectCountries(this.allCountries);
 }
+
 
   
   
@@ -618,7 +622,10 @@ private resetNodeSelection() {
   }
 
   // Reset styles for all artist nodes and edges across categories
-  this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
+  const threshold = 0.4;
+  this.g.selectAll(".artist-edge")
+    .style('stroke', (d: any) => d.sharedExhibitionMinArtworks >= threshold ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none');
+
   this.g.selectAll(".artist-node").style('opacity', '1').style('filter', 'none');
 
   this.selectedNode = null;
@@ -628,8 +635,6 @@ private resetNodeSelection() {
   // Ensure no countries are selected when resetting node selection
   this.selectionService.selectCountries(this.allCountries);
 }
-
-
 
   
 private selectNode(artistNode: ArtistNode, circle: SVGCircleElement) {
@@ -1140,7 +1145,7 @@ private createClusterGroup(clusterNode: ClusterNode, value: string, cellWidth: n
 
     const sharedExhibitionMinArtworksValues = relationships.map((relationship: any) => relationship.sharedExhibitionMinArtworks);
     const normalizedSharedExhibitionMinArtworks = this.normalizeSqrt(new Map(sharedExhibitionMinArtworksValues.map((value, index) => [index, value])));
-    const threshold = 0.2;  // Threshold for visibility
+    const threshold = 0.4;  // Threshold for visibility
     const formattedRelationships = relationships.map((relationship: any, index: number) => {
         const sourceIndex = getNodeIndexById(relationship.startId);
         const targetIndex = getNodeIndexById(relationship.endId);
