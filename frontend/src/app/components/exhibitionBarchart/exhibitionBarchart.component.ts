@@ -379,7 +379,8 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   }
   
   private hasExhibitionValue(year: number): boolean {
-    return this.exhibitions.some(exhibition => {
+    
+    return this.selectedExhibitions.some(exhibition => {
       const startYear = new Date(exhibition.start_date).getFullYear();
       const endYear = new Date(exhibition.end_date).getFullYear();
       return year >= startYear && year <= endYear;
