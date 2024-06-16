@@ -852,7 +852,7 @@ const streamQuery = async (query, params) => {
 const findAllRange = async (minLimit, maxLimit) => {
     const query = `
         MATCH (a:Artist)
-        WHERE a.TotalExhibitedArtworks >= $minLimit AND a.TotalExhibitedArtworks <= $maxLimit
+        WHERE a.TotalExhibitions >= $minLimit AND a.TotalExhibitions <= $maxLimit
         WITH a
         WITH collect(a) AS selectedArtists
 

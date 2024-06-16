@@ -11,7 +11,7 @@ export class DecisionService {
   private orderSource = new BehaviorSubject<string>('');
   private sizeSource = new BehaviorSubject<string>('default: Importance (Degree)');
   private thicknessSource = new BehaviorSubject<string>('');
-  private rangeSource = new BehaviorSubject<number[]>([200,2217]); // Default range
+  private rangeSource = new BehaviorSubject<number[]>([30,92]); // Default range
   private kSource = new BehaviorSubject<number>(7); 
   private searchedArtistId = new BehaviorSubject<string| null>(null);
 

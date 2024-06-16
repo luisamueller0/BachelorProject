@@ -795,7 +795,7 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
   private createChart(): void {
     
     // Fetch data from backend
-    this.artistService.clusterAmountArtists([200, 2217], 7)
+    this.artistService.clusterAmountArtists([30, 92], 7)
       .subscribe(data => {
     
         this.clusters = data[0];
