@@ -109,7 +109,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
     const width = element.offsetWidth - margin.left - margin.right;
   
     const numArtists = artists.length;
-    const barHeight = 5;
+    const barHeight = 0.8 *window.innerHeight / 100;
     const extraSpace = 0.5 * window.innerWidth / 100;
   
     // Group the artists by cluster
@@ -140,7 +140,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     const allArtists = this.allArtists || [];
-    const maxBarHeight = 5;
+    const maxBarHeight = 0.8 *window.innerHeight / 100;
 
     // Map of all artists by ID for easy lookup
     const allArtistsMap = new Map<number, Artist>();
