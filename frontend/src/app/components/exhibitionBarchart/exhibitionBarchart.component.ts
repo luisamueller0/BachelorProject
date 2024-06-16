@@ -45,7 +45,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   private margin = {
     top: 1,
     right: 10,
-    bottom: 3,
+    bottom: 2,
     left: 2
   };
 
