@@ -122,7 +122,7 @@ export class DecisionsComponent implements OnInit {
   async fetchArtistsAndUpdateRange() {
     try {
       // Step 1: Fetch artists based on the selected range
-      const data = await firstValueFrom(this.artistService.getAmountArtistsWithNationalityTechnique(this.range));
+      const data = await firstValueFrom(this.artistService.getArtistsWithRange(this.range));
       this.artists = data[0];
       this.numberOfArtists = this.artists.length;
 
