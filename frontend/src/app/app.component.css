@@ -54,6 +54,7 @@
   width: 100%;
   border: 1px solid #e5aeff;
   box-sizing: border-box;
+  overflow:hidden;
 }
 
 .sidebar-right app-plot {
