@@ -359,6 +359,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     const legend = this.svg.append('g')
       .attr('class', 'legend')
       .attr('transform', `translate(${this.contentWidth + 20}, 20)`);
+    
   
     legend.selectAll('rect')
       .data(this.legendOrder)
