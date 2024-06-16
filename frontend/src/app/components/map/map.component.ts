@@ -237,13 +237,16 @@ legendItems.append('rect')
     .attr('height', 30)
     .attr('fill', (d:any) => `url(#gradient-${d.region.replace(/\s+/g, '-')})`);
 
+    const element = this.mapContainer.nativeElement;
+
+    const size = 8*element.offsetWidth / 100;
 // Add text for each legend item
 legendItems.append('text')
     .attr('x', 110)
     .attr('y', 15)
     .attr('dy', '.35em')
     .text((d:any) => d.region)
-    .style('font-size', '1.5vw')
+    .style('font-size', size)
     .style('font-weight', 'bold')
     
     .style('font-family', 'Roboto, sans-serif');
