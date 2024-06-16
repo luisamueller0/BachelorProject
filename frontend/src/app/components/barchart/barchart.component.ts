@@ -266,25 +266,7 @@ return d3.color(baseColor)?.brighter(1)!.copy({ opacity: 0.7 })!.toString() || '
                 : this.techniqueColorScale(d.data.technique);
         });
 
-    // Add legend
-    const legend = this.svg.append("g")
-        .attr("transform", `translate(${this.contentWidth + 20}, 0)`);
-
-    const categories = Array.from(new Set(this.techniquesHierarchy.map(d => d.parent)));
-    categories.forEach((category, index) => {
-        legend.append("rect")
-            .attr("x", 0)
-            .attr("y", index * 20)
-            .attr("width", 18)
-            .attr("height", 18)
-            .style("fill", this.categoryColorScale(category));
-        
-        legend.append("text")
-            .attr("x", 24)
-            .attr("y", index * 20 + 9)
-            .attr("dy", ".35em")
-            .text(category);
-    });
+   
 }
 
   

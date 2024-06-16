@@ -1172,7 +1172,7 @@ private createClusterGroup(clusterNode: ClusterNode, value: string, cellWidth: n
             const clusterId = cluster.clusterId;
             return this.intraCommunityEdges[clusterId].length === 2 ? 'black' : this.edgeColorScale(d.sharedExhibitionMinArtworks);
         })
-        .style('stroke-width', `${width}vw`)
+        .style('stroke-width', '.05em')
         .attr('x1', (d: any) => d.source.x)
         .attr('y1', (d: any) => d.source.y)
         .attr('x2', (d: any) => d.target.x)
