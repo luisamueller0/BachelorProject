@@ -159,16 +159,13 @@ export class ArtistService {
 
 
 public europeanRegions = {
-  "North Europe": ["DK", "EE", "FI", "IS", "IE", "LV", "LT", "NO", "SE", "GB"],
-  "Eastern Europe": ["AZ", "BY", "BG", "CZ", "HU", "MD", "PL", "RO", "RU", "SK", "UA", "AM", "GE"],
-  "Southern Europe": ["BA", "HR", "GI", "GR", "IT", "ME", "PT", "RS", "SI", "ES", "AL", "AD", "MT", "MK", "SM"],
-  "Western Europe": ["AT", "BE", "FR", "DE", "LU", "MC", "NL", "CH", "LI"],
-  "Others": [
-      "US", "AU", "GE", "MX", "AM", "IL", "CL", "AR", "CA", "DO", "PE", "JP", "TR",
-      "BR", "ZA", "NZ", "VE", "GT", "UY", "SV", "PY", "IN", "PF", "KZ", "UZ", "VN", 
-      "NA", "JO", "IR", "KH", "JM", "SA", "DZ", "CN", "EG", "VI", "ID", "CU", "TN", 
-      "MQ", "MU", "LK", "EC", "SG", "BL", "TH", "BO"
-  ],
+    "North Europe": ["DK", "EE", "FI", "IE", "LV", "LT", "NO", "SE", "GB"],
+    "Eastern Europe": ["BY", "BG", "CZ", "HU", "PL", "MD", "RO", "RU", "SK", "UA"],
+    "Southern Europe": ["BA", "HR", "GI", "GR", "IT", "ME", "PT", "RS", "SI", "ES"],
+ "Western Europe": ["AT", "BE", "FR", "DE", "LU", "NL", "CH"],
+ "Others": ["ID", "US", "AU", "CA", "GE", "DZ", "MX", "AZ", "EE", "AR", "UY", "CU", "TN", "EG", "TR", "VI", "DO", 
+       "JP", "MQ", "IN", "MU", "CL", "ZA", "NZ", "KH", "VE", "GT", "SV", "PY", "LK", "EC", "BR", "SG", "BL", 
+       "PE", "TH", "PF", "AM", "IL", "MC", "CN", "UZ", "KZ", "MA", "BO", "VN", "NA", "JO", "IR", "JM", "SA"],
   "\\N" :["\\N"]
 };
 
@@ -203,45 +200,38 @@ public getColorScale(palette: string[]): (t: number) => string {
 public greyColorPalette: string[] = [
   "black"
 ];
-//10
+//9
 public cyanColorPalette: string[] = [
-  "#144E49", // Darker turquoise
-  "#1C6B5D",
-  "#257775",
-  "#2E938D",
-  "#38AFA5",
-  "#42CABC",
-  "#57D2C4",
-  "#6BD9CB",
-  "#7EDFD3",
-  "#91E5DA",
-  "#A4EBD1"  // Light turquoise, but not too light
+  "#18857f",
+  "#28918b",
+  "#359d97",
+  "#41a9a3",
+  "#4db6af",
+  "#59c2bb",
+  "#64cfc8",
+  "#70dcd4",
+  "#7be9e1"
 ];
 
 
-//13
+//10
 public blueColorPalette: string[] = [
-  "#0F5491", // Darker blue
-  "#1266A9",
-  "#1578C1",
-  "#188ADB",
-  "#3A9DEA",
-  "#4DACF1",
-  "#5FBDF8",
-  "#72CEFF",
-  "#85D8FF",
-  "#98E2FF",
-  "#ABE8FF",
-  "#BDEFFF",
-  "#D0F5FF"  // Light blue, but not too light
+  "#0f5a91", // Darker blue added
+  "#1575c2",
+  "#2183cb",
+  "#2f92d3",
+  "#3fa0db",
+  "#50aee3",
+  "#62bcea",
+  "#75caf1",
+  "#88d8f8",
+  "#9ce6ff"
 ];
 
 
 
-//15
+//10
 public purpleColorPalette: string[] = [
-  "#471377", // Dark purple
-  "#54168F",
   "#6019A6",
   "#6D1DBD",
   "#7A21D4",
@@ -251,15 +241,12 @@ public purpleColorPalette: string[] = [
   "#A764F6",
   "#B27AF8",
   "#BD90FA",
-  "#C7A6FC",
-  "#D2BCFE",
-  "#DDCFFE",
-  "#E7E3FF"  // Light purple
+  "#C7A6FC"
 ];
 
 
 
-//9
+//8
 public pinkColorPalette: string[] = [
   "#EA2BB7", // Dark pink
   "#ED3EBE",

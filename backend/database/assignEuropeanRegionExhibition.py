@@ -35,6 +35,22 @@ def update_exhibition_with_european_region(driver, exhibition_id, region):
 
 def determine_region(country_code):
     europeanRegions = {
+        "North Europe": ["DK", "EE", "FI", "IE", "LV", "LT", "NO", "SE", "GB"],
+        "Eastern Europe": ["BY", "BG", "CZ", "HU", "PL", "MD", "RO", "RU", "SK", "UA"],
+        "Southern Europe": ["BA", "HR", "GI", "GR", "IT", "ME", "PT", "RS", "SI", "ES"],
+     "Western Europe": ["AT", "BE", "FR", "DE", "LU", "NL", "CH"],
+     "Others": ["ID", "US", "AU", "CA", "GE", "DZ", "MX", "AZ", "EE", "AR", "UY", "CU", "TN", "EG", "TR", "VI", "DO", 
+           "JP", "MQ", "IN", "MU", "CL", "ZA", "NZ", "KH", "VE", "GT", "SV", "PY", "LK", "EC", "BR", "SG", "BL", 
+           "PE", "TH", "PF", "AM", "IL", "MC", "CN", "UZ", "KZ", "MA", "BO", "VN", "NA", "JO", "IR", "JM", "SA"]
+    }
+    
+    """     "GB", "ID", "UA", "CH", "RU", "NL", "DE", "BY", "IT", "LT", "US", "HU", "FR", "AU", "BE", "CZ", "AT", "NO", 
+    "GR", "SE", "PL", "LV", "FI", "ES", "MD", "CA", "BG", "GE", "DZ", "MX", "AZ", "RO", "EE", "DK", "AR", "UY", 
+    "CU", "PT", "HR", "SI", "TN", "EG", "SK", "TR", "VI", "RS", "IE", "DO", "JP", "MQ", "IN", "MU", "ME", "CL", 
+    "ZA", "NZ", "KH", "LU", "GI", "VE", "GT", "SV", "PY", "LK", "BA", "EC", "BR", "SG", "BL", "PE", "TH", "PF", 
+    "AM", "IL", "MC", "CN", "UZ", "KZ", "MA", "BO", "VN", "NA", "JO", "IR", "JM", "SA"
+
+    europeanRegions = {
         "North Europe": ["DK", "EE", "FI", "IS", "IE", "LV", "LT", "NO", "SE", "GB"],
         "Eastern Europe": ["AZ", "BY", "BG", "CZ", "HU", "MD", "PL", "RO", "RU", "SK", "UA", "AM", "GE"],
         "Southern Europe": ["BA", "HR", "GI", "GR", "IT", "ME", "PT", "RS", "SI", "ES", "AL", "AD", "MT", "MK", "SM"],
@@ -44,8 +60,8 @@ def determine_region(country_code):
             "BR", "ZA", "NZ", "VE", "GT", "UY", "SV", "PY", "IN", "PF", "KZ", "UZ", "VN", 
             "NA", "JO", "IR", "KH", "JM", "SA", "DZ", "CN", "EG", "VI", "ID", "CU", "TN", 
             "MQ", "MU", "LK", "EC", "SG", "BL", "TH", "BO"
-        ] 
-    }
+        ]  """
+    
 
     for region, countries in europeanRegions.items():
         if country_code in countries:
