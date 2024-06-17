@@ -126,7 +126,7 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
   
       const numExhibitions = exhibitions.length;
       const numCountries = new Set(exhibitions.map(exhibition => exhibition.took_place_in_country)).size;
-      const barHeight = 5;
+      const barHeight = 0.8 *window.innerHeight / 100;
       const extraSpace = 0.5 * window.innerWidth / 100;
       const calculatedHeight = (numExhibitions * barHeight) + (numCountries * extraSpace) + margin.top + margin.bottom;
   
@@ -154,7 +154,7 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
         return;
       }
     
-      const maxBarHeight = 5;
+      const maxBarHeight = 0.8 *window.innerHeight / 100;
     
       const timelineData = exhibitions.map(exhibition => ({
         id: exhibition.id, // Keep track of the exhibition ID

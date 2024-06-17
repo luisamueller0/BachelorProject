@@ -318,7 +318,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
     this.selectedClusterNode = clusterNode;
     this.g.selectAll(`.cluster-${clusterNode.clusterId} path`)
       .style('stroke', 'black')
-      .style('stroke-width', `${size}vw`); // Adjust the border width as needed
+      .style('stroke-width', '.1em'); // Adjust the border width as needed
 
         // Copy the list of artist names to the clipboard
   const artistNames = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname}`).join('\n');
@@ -781,7 +781,7 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
       this.selectedClusterNode = clusterNode;
       this.g.selectAll(`.cluster-${clusterNode.clusterId} path`)
         .style('stroke', 'black')
-        .style('stroke-width', `${width}vw`);
+        .style('stroke-width', '.1em');
        
   
       // Select the new cluster node
@@ -1159,7 +1159,7 @@ private createClusterGroup(clusterNode: ClusterNode, value: string, cellWidth: n
 
     formattedRelationships.sort((a, b) => a.sharedExhibitionMinArtworks - b.sharedExhibitionMinArtworks);
 
-    const width = 0.1 * cluster.innerRadius / 100;
+    const width = 0.0025 * window.innerWidth / 100;
     const edges = clusterGroup.selectAll(".artist-edge")
         .data(formattedRelationships)
         .enter()
@@ -1172,7 +1172,7 @@ private createClusterGroup(clusterNode: ClusterNode, value: string, cellWidth: n
             const clusterId = cluster.clusterId;
             return this.intraCommunityEdges[clusterId].length === 2 ? 'black' : this.edgeColorScale(d.sharedExhibitionMinArtworks);
         })
-        .style('stroke-width', `${width}vw`)
+        .style('stroke-width', '.05em')
         .attr('x1', (d: any) => d.source.x)
         .attr('y1', (d: any) => d.source.y)
         .attr('x2', (d: any) => d.target.x)

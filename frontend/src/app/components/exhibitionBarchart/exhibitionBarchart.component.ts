@@ -45,7 +45,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   private margin = {
     top: 1,
     right: 10,
-    bottom: 3,
+    bottom: 2,
     left: 2
   };
 
@@ -359,27 +359,34 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     const legend = this.svg.append('g')
       .attr('class', 'legend')
       .attr('transform', `translate(${this.contentWidth + 20}, 20)`);
+    
   
-    legend.selectAll('rect')
-      .data(this.legendOrder)
-      .enter().append('rect')
-      .attr('x', 0)
-      .attr('y', (d: any, i: number) => i * 20)
-      .attr('width', 18)
-      .attr('height', 18)
-      .attr('fill', (d: any) => colorMap[d as keyof typeof colorMap]);
-  
-    legend.selectAll('text')
-      .data(this.legendOrder)
-      .enter().append('text')
-      .attr('x', 24)
-      .attr('y', (d: any, i: number) => i * 20 + 9)
-      .attr('dy', '.35em')
-      .text((d: any) => d);
+      const size = 0.9 * window.innerWidth / 100;
+      const fontSize = 0.7 * window.innerWidth / 100;  // Adjust this multiplier as needed for desired text size
+      
+      legend.selectAll('rect')
+        .data(this.legendOrder)
+        .enter().append('rect')
+        .attr('x', 0)
+        .attr('y', (d: any, i: number) => i * (size + 4))  // Added spacing between rectangles
+        .attr('width', size)
+        .attr('height', size)
+        .attr('fill', (d: any) => colorMap[d as keyof typeof colorMap]);
+      
+      legend.selectAll('text')
+        .data(this.legendOrder)
+        .enter().append('text')
+        .attr('x', size + 4)  // Adjusted position based on rectangle size
+        .attr('y', (d: any, i: number) => i * (size + 4) + size / 2)
+        .attr('dy', '.35em')
+        .style('font-size', `${fontSize}px`)
+        .text((d: any) => d);
+      
   }
   
   private hasExhibitionValue(year: number): boolean {
-    return this.exhibitions.some(exhibition => {
+    
+    return this.selectedExhibitions.some(exhibition => {
       const startYear = new Date(exhibition.start_date).getFullYear();
       const endYear = new Date(exhibition.end_date).getFullYear();
       return year >= startYear && year <= endYear;

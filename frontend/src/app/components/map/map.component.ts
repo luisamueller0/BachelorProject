@@ -187,68 +187,92 @@ private getKeyByValue(value: string): string |undefined {
     const legendY = svgHeight - legendHeight - margin;
   
     const legend = this.svg.append('g')
-    .attr('class', 'legend')
-    .attr('transform', `translate(${legendX}, ${legendY})`);
-
-// Add white background for the legend
-legend.append('rect')
-    .attr('x', 0)
-    .attr('y', 0)
-    .attr('width', legendWidth)
-    .attr('height', legendHeight)
-    .attr('fill', '#fff')
-    .attr('stroke', '#000')
-    .attr('stroke-width', 2)
-    .attr('rx', 10)
-    .attr('ry', 10);
-
-// Add legend items
-const legendItems = legend.selectAll('.legend-item')
-    .data(legendData)
-    .enter()
-    .append('g')
-    .attr('class', 'legend-item')
-    .attr('transform', (d:any, i:number) => `translate(10, ${i * 40 + 10})`);
-
-// Create gradients
-const defs = this.svg.append('defs');
-legendData.forEach(d => {
-    const gradientId = `gradient-${d.region.replace(/\s+/g, '-')}`;
-    const gradient = defs.append('linearGradient')
+      .attr('class', 'legend')
+      .attr('transform', `translate(${legendX}, ${legendY})`);
+  
+    // Add white background for the legend
+    legend.append('rect')
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('width', legendWidth)
+      .attr('height', legendHeight)
+      .attr('fill', '#fff')
+      .attr('stroke', '#000')
+      .attr('stroke-width', 2)
+      .attr('rx', 10)
+      .attr('ry', 10);
+  
+    // Add legend items
+    const legendItems = legend.selectAll('.legend-item')
+      .data(legendData)
+      .enter()
+      .append('g')
+      .attr('class', 'legend-item')
+      .attr('transform', (d: any, i: number) => `translate(10, ${i * 40 + 10})`);
+  
+    // Create gradients
+    const defs = this.svg.append('defs');
+    legendData.forEach(d => {
+      const gradientId = `gradient-${d.region.replace(/\s+/g, '-')}`;
+      const gradient = defs.append('linearGradient')
         .attr('id', gradientId)
         .attr('x1', '0%')
         .attr('y1', '0%')
         .attr('x2', '100%')
         .attr('y2', '0%');
-
-    // Create gradient stops
-    for (let j = 0; j <= 10; j++) {
+  
+      // Create gradient stops
+      for (let j = 0; j <= 10; j++) {
         gradient.append('stop')
-            .attr('offset', `${j * 10}%`)
-            .attr('stop-color', d.colorScale(j / 10));
+          .attr('offset', `${j * 10}%`)
+          .attr('stop-color', d.colorScale(j / 10));
+      }
+    });
+  
+    // Add gradient rects to legend items
+    legendItems.append('rect')
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('width', 100)
+      .attr('height', 30)
+      .attr('fill', (d: any) => `url(#gradient-${d.region.replace(/\s+/g, '-')})`);
+  
+    // Add text for each legend item
+    const textElements = legendItems.append('text')
+      .attr('x', 110)
+      .attr('y', 15)
+      .attr('dy', '.35em')
+      .text((d: any) => d.region)
+      .style('font-family', 'Roboto, sans-serif')
+      .style('font-weight', 'bold');
+  
+    // Calculate the maximum font size for the longest text
+    const longestText = legendData.reduce((max, d) => d.region.length > max.length ? d.region : max, "");
+    const textElement = this.svg.append('text')
+      .attr('x', -9999)
+      .attr('y', -9999)
+      .text(longestText)
+      .style('font-family', 'Roboto, sans-serif')
+      .style('font-weight', 'bold');
+  
+    const availableWidth = legendWidth - 120; // 120 is the position of text start + padding
+    let newFontSize = 30; // Start with a larger initial font size
+    const minFontSize = 8; // Set a minimum font size
+    textElement.style('font-size', `${newFontSize}px`);
+    let textLength = textElement.node()!.getComputedTextLength();
+  
+    while (textLength > availableWidth && newFontSize > minFontSize) {
+      newFontSize -= 1;
+      textElement.style('font-size', `${newFontSize}px`);
+      textLength = textElement.node()!.getComputedTextLength();
     }
-});
-
-// Add gradient rects to legend items
-legendItems.append('rect')
-    .attr('x', 0)
-    .attr('y', 0)
-    .attr('width', 100)
-    .attr('height', 30)
-    .attr('fill', (d:any) => `url(#gradient-${d.region.replace(/\s+/g, '-')})`);
-
-// Add text for each legend item
-legendItems.append('text')
-    .attr('x', 110)
-    .attr('y', 15)
-    .attr('dy', '.35em')
-    .text((d:any) => d.region)
-    .style('font-size', '1.5vw')
-    .style('font-weight', 'bold')
-    
-    .style('font-family', 'Roboto, sans-serif');
-}
-
+  
+    textElement.remove();
+  
+    // Apply the calculated font size to all text elements
+    textElements.style('font-size', `${newFontSize}px`);
+  }
+  
 @HostListener('window:resize')
 onResize(): void {
 this.setWidthHeight();
