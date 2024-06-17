@@ -318,7 +318,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
     this.selectedClusterNode = clusterNode;
     this.g.selectAll(`.cluster-${clusterNode.clusterId} path`)
       .style('stroke', 'black')
-      .style('stroke-width', `${size}vw`); // Adjust the border width as needed
+      .style('stroke-width', '.1em'); // Adjust the border width as needed
 
         // Copy the list of artist names to the clipboard
   const artistNames = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname}`).join('\n');
@@ -781,7 +781,7 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
       this.selectedClusterNode = clusterNode;
       this.g.selectAll(`.cluster-${clusterNode.clusterId} path`)
         .style('stroke', 'black')
-        .style('stroke-width', `${width}vw`);
+        .style('stroke-width', '.1em');
        
   
       // Select the new cluster node
