@@ -159,13 +159,14 @@ export class ArtistService {
 
 
 public europeanRegions = {
+
     "North Europe": ["DK", "EE", "FI", "IE", "LV", "LT", "NO", "SE", "GB"],
     "Eastern Europe": ["BY", "BG", "CZ", "HU", "PL", "MD", "RO", "RU", "SK", "UA"],
-    "Southern Europe": ["BA", "HR", "GI", "GR", "IT", "ME", "PT", "RS", "SI", "ES"],
+    "Southern Europe": ["BA", "HR", "GI", "GR", "IT", "ME", "PT", "RS", "SI", "ES", "XK","MT", "MK"],
  "Western Europe": ["AT", "BE", "FR", "DE", "LU", "NL", "CH"],
  "Others": ["ID", "US", "AU", "CA", "GE", "DZ", "MX", "AZ", "EE", "AR", "UY", "CU", "TN", "EG", "TR", "VI", "DO", 
        "JP", "MQ", "IN", "MU", "CL", "ZA", "NZ", "KH", "VE", "GT", "SV", "PY", "LK", "EC", "BR", "SG", "BL", 
-       "PE", "TH", "PF", "AM", "IL", "MC", "CN", "UZ", "KZ", "MA", "BO", "VN", "NA", "JO", "IR", "JM", "SA"],
+       "PE", "TH", "PF", "AM", "IL", "MC", "CN", "UZ", "KZ", "MA", "BO", "VN", "NA", "JO", "IR", "JM", "SA", "CD", "CW","SY","GY"],
   "\\N" :["\\N"]
 };
 
@@ -230,8 +231,9 @@ public blueColorPalette: string[] = [
 
 
 
-//10
+//13
 public purpleColorPalette: string[] = [
+ "#471377",
   "#6019A6",
   "#6D1DBD",
   "#7A21D4",
@@ -241,7 +243,10 @@ public purpleColorPalette: string[] = [
   "#A764F6",
   "#B27AF8",
   "#BD90FA",
-  "#C7A6FC"
+  "#C7A6FC",
+  "#D2BCFE",
+  "#C7A6FC",
+  "#D2BCFE"
 ];
 
 
