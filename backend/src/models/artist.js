@@ -21,7 +21,7 @@ class Artist {
         this.sex = data.sex;
         this.title = data.title;
         this.techniques = data.artForms;
-        this.amount_techniques=data.amountArtForms;
+        this.amount_techniques=data.distinctArtForms.length;
         this.distinct_techniques=data.distinctArtForms;
         this.europeanRegionNationality = data.europeanRegionNationality
         this.most_exhibited_in = data.mostExhibitedInCountry;

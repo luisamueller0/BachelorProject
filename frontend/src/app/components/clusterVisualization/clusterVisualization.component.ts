@@ -313,42 +313,53 @@ export class ClusterVisualizationComponent implements OnInit {
     const normalizedMaps: { [clusterId: number]: Map<number, number> } = {};
   
     this.clusters.forEach((cluster, clusterId) => {
-      let metricMap = new Map<number, number>();
+        let metricMap = new Map<number, number>();
   
-      if (metric === 'Amount of Exhibitions') {
-      
-          cluster.forEach((artist: Artist) => {
-            metricMap.set(artist.id, artist.total_exhibited_artworks);
-          });
-          this.totalExhibitionsMap[clusterId] = this.normalizeLinear(metricMap);
-        
-      } else if (metric === 'Amount of different techniques') {
-    
-          cluster.forEach((artist: Artist) => {
-            metricMap.set(artist.id, artist.amount_techniques);
-          });
-          this.differentTechniquesMap[clusterId] = this.normalizeLinear(metricMap);
-        
-      } else if (metric === 'Amount of exhibited Artworks') {
+        if (metric === 'Amount of Exhibitions') {
+            cluster.forEach((artist: Artist) => {
+                metricMap.set(artist.id, artist.total_exhibitions);
+            });
+        } else if (metric === 'Amount of different techniques') {
+            cluster.forEach((artist: Artist) => {
+                metricMap.set(artist.id, artist.amount_techniques);
+            });
+        } else if (metric === 'Amount of exhibited Artworks') {
+            cluster.forEach((artist: Artist) => {
+                metricMap.set(artist.id, artist.total_exhibited_artworks);
+            });
+        } else if (metric === 'default: Importance (Degree)') {
+            this.calculateNodeDegreesForClusters();
+            metricMap = this.degreesMap[clusterId];
+        }
 
-          cluster.forEach((artist: Artist) => {
-            metricMap.set(artist.id, artist.total_exhibited_artworks);
-          });
-          this.totalExhibitedArtworksMap[clusterId] = this.normalizeLinear(metricMap);
-        
-      } else if (metric === 'default: Importance (Degree)') {
-
-          // Calculate degrees only if not already done
-          this.calculateNodeDegreesForClusters();
-          metricMap = this.degreesMap[clusterId];
-        
-      }
-
-      normalizedMaps[clusterId] = this.normalizeLinear(metricMap);
+        // Decide normalization method dynamically
+        const normalizedMap = this.normalizeDynamically(metricMap);
+        normalizedMaps[clusterId] = normalizedMap;
     });
   
     return normalizedMaps;
-  }
+}
+
+private normalizeDynamically(values: Map<number, number>): Map<number, number> {
+    const maxValue = Math.max(...Array.from(values.values()));
+    const minValue = Math.min(...Array.from(values.values()));
+
+    if (maxValue - minValue === 0) {
+        // Avoid division by zero
+        return new Map(values);
+    }
+
+    // Define thresholds or criteria for choosing normalization method
+    if (maxValue > 1000) {
+        return this.normalizeLogarithmically(values);
+    } else if (maxValue / minValue > 10) {
+        return this.normalizeSqrt(values);
+    } else {
+        return this.normalizeLinear(values);
+    }
+}
+
+
   
   private updateNodeSize(metric: string) {
     const normalizedMaps = this.calculateNormalizedMaps(metric);
