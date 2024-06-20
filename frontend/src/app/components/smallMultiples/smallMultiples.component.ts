@@ -444,6 +444,8 @@ private onClusterClick(clusterNode: ClusterNode): void {
           sharedExhibitionMinArtworks: edge.sharedExhibitionMinArtworks,
         }));
       }}
+      this.isLoading = false;
+      this.decisionService.changeLoadingBackendK(false);
     let allArtists:Artist[]= [];
     this.clusters.forEach((cluster, clusterIndex) => {
       allArtists.push(...cluster);
@@ -481,6 +483,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
     this.calculateNodeDegreesForClusters();
 
 this.visualizeData();
+this.isLoading = true;
     
 
   }

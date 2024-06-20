@@ -14,6 +14,9 @@ export class DecisionService {
   private rangeSource = new BehaviorSubject<number[]>([200,2217]); // Default range
   private kSource = new BehaviorSubject<number>(7); 
   private searchedArtistId = new BehaviorSubject<string| null>(null);
+  private loadingBackendRange = new BehaviorSubject<boolean>(false);
+  private loadingBackendK = new BehaviorSubject<boolean>(false);
+
 
   currentSunburst = this.sunburstSource.asObservable();
   currentOrder = this.orderSource.asObservable();
@@ -22,6 +25,16 @@ export class DecisionService {
   currentRange = this.rangeSource.asObservable();
   currentK = this.kSource.asObservable();
   currentSearchedArtistId = this.searchedArtistId.asObservable();
+  currentLoadingBackendRange = this.loadingBackendRange.asObservable();
+  currentLoadingBackendK = this.loadingBackendK.asObservable();
+
+
+  changeLoadingBackendRange(loading: boolean) {
+    this.loadingBackendRange.next(loading);
+  }
+  changeLoadingBackendK(loading: boolean) {
+    this.loadingBackendK.next(loading);
+  }
 
   changeDecisionSunburst(sunburst: string) {
     this.sunburstSource.next(sunburst);

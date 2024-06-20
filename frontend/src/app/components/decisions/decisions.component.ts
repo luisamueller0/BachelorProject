@@ -141,17 +141,21 @@ export class DecisionsComponent implements OnInit {
   async onRangeChange() {
     if (this.useRange) {
       this.rangeChanged = false; // Reset the rangeChanged flag
+      this.decisionService.changeLoadingBackendRange(true);
     
 
       // Fetch artists and update range
       await this.fetchArtistsAndUpdateRange();
       this.showK = true; // Show the K slider after fetching artists
       this.decisionService.changeDecisionRange(this.range);
+      
 
       // Add a delay before resetting useRange to show the green check mark
       setTimeout(() => {
         this.useRange = false; // Reset the checkbox after action
-      }, 2000); // Adjust delay as needed
+        this.decisionService.changeLoadingBackendRange(false);
+      }, 1000); // Adjust delay as needed
+
     }
   }
 
@@ -159,6 +163,7 @@ export class DecisionsComponent implements OnInit {
     if (this.useK) {
       this.kChanged = false; // Reset the kChanged flag
       this.decisionService.changeK(this.k);
+      this.decisionService.changeLoadingBackendK(true);
    
       this.showK = false;
     }
@@ -166,7 +171,9 @@ export class DecisionsComponent implements OnInit {
     setTimeout(() => {
       this.useK = false; // Reset the checkbox after action
       this.showK = false;
-    }, 2000); // Adjust delay as needed
+      this.decisionService.changeLoadingBackendK(false);
+    }, 1000); // Adjust delay as needed
+   
   }
 
   onRangeSliderChange() {
