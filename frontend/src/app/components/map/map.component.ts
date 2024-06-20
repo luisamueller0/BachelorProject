@@ -154,7 +154,7 @@ private getKeyByValue(value: string): string |undefined {
       .attr('fill', (d: any) => {
         const countryCode = Object.keys(this.countryMap).find(key => this.countryMap[key] === d.properties.name);
         const base = this.artistService.getCountryColor(countryCode,1);
-        const unselected = this.artistService.getCountryColor(countryCode,0.05);
+        const unselected = 'white';
         return (countryCode && selectedCountries.includes(countryCode)) ? base: unselected;
       });
   }

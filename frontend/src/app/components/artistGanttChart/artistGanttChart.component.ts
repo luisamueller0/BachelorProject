@@ -161,6 +161,8 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
           deathCountry: artist.deathcountry,
           birthyear: artist.birthyear,
           deathyear: artist.deathyear,
+          birthplace: artist.birthplace,
+          deathplace: artist.deathplace,
           clusterIndex: artist.cluster + 1,
           id: artist.id
         }))
@@ -173,6 +175,8 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
           deathCountry: artist.deathcountry,
           birthyear: artist.birthyear,
           deathyear: artist.deathyear,
+          birthplace: artist.birthplace,
+          deathplace: artist.deathplace,
           clusterIndex: artist.cluster + 1,
           id: artist.id
         }));
@@ -273,8 +277,8 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
             .style("left", `${event.pageX - 2- tooltipWidth}px`)
             .style("top", `${event.pageY + 2}px`)
             .style("color", "black")
-            .html(`Name: ${artist.name}<br/>Birth: ${birthyear} in ${artist.birthCountry}<br/>Death: ${deathyear} in ${artist.deathCountry}<br/>Age: ${age}`);
-        };
+            .html(`Name: ${artist.name}<br/>Born: ${birthyear} in ${artist.birthplace} (${artist.birthCountry})<br/>Died: ${deathyear} in ${artist.deathplace} (${artist.deathCountry})<br/>Age: ${age}`);
+          };
 
         const hideTooltip = () => {
           tooltip.style("display", "none");

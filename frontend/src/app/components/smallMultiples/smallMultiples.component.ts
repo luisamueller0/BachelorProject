@@ -1070,13 +1070,38 @@ private createClusterGroup(clusterNode: ClusterNode, value: string, cellWidth: n
       .on('click', () => this.onClusterClick(clusterNode))
       .attr("transform", `translate(${cellWidth / 2}, ${cellHeight / 2})`);
 
+
+      const tooltip = d3.select("div#tooltip");
+
+        const showTooltip = (event: any, d: any) => {
+         
+      const countryCode = d.country;
+      const fullCountryName = this.artistService.countryMap[countryCode]
+     
+
+      tooltip.style("display", "block")
+        .style("left", `${event.pageX +5}px`)
+        .style("top", `${event.pageY + 5}px`)
+        .style("color", "black")
+        .html(`${fullCountryName}<br/>`);
+    };
+
+    const hideTooltip = () => {
+      tooltip.style("display", "none");
+    };
+
   clusterGroup.selectAll("path")
       .data(data)
       .enter()
       .append("path")
       .attr("d", arcGenerator)
       .attr("fill", (d: any) => d.color)
-      .style('stroke', 'none');
+      .style('stroke', 'none')
+      .on("mouseover", showTooltip)
+      .on("mousemove", showTooltip)
+      .on('mouseout', hideTooltip);
+    
+
 
   const textsize = 0.5 * Math.min(cellHeight, cellWidth) / 10;
 
