@@ -419,8 +419,8 @@ private onClusterClick(clusterNode: ClusterNode): void {
       const intraCommunityEdges = data[1] as exhibited_with[][];
       const interCommunityEdges = data[2] as exhibited_with[];
       
-      const value = this.decisionService.getDecisionSunburst();
-      this.loadNewData(clusters, intraCommunityEdges, interCommunityEdges, value);
+    
+      this.loadNewData(clusters, intraCommunityEdges, interCommunityEdges);
 
     }, error => {
       console.error('There was an error', error);
@@ -431,7 +431,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
     }
   }
 
-  private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][], interCommunityEdges: exhibited_with[]|InterCommunityEdge[], value: string){
+  private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][], interCommunityEdges: exhibited_with[]|InterCommunityEdge[]){
     // Remove the existing SVG element
     
     this.clusters = clusters;
@@ -460,37 +460,21 @@ private onClusterClick(clusterNode: ClusterNode): void {
     this.biggestClusterId = biggestClusterId;
     this.selectionService.selectFocusCluster([[biggestCluster], [biggestClusterEdges]]); */
 
-    switch(value){
-      case 'nationality':
-        this.allArtists.forEach(artist => {
-          if(!this.allCountries.includes(artist.nationality)){
-            this.allCountries.push(artist.nationality)
-          }
-        });
-        break;
-      case 'birthcountry':
-        this.allArtists.forEach(artist => {
-          if(!this.allCountries.includes(artist.birthcountry)){
-            this.allCountries.push(artist.birthcountry)
-          }
-        });
-        break;
-      case 'deathcountry':
-        this.allArtists.forEach(artist => {
-          if(!this.allCountries.includes(artist.deathcountry)){
-            this.allCountries.push(artist.deathcountry)
-          }
-        });
-        break;
-      case 'mostexhibited':
-        this.allArtists.forEach(artist => {
-          if(!this.allCountries.includes(artist.most_exhibited_in)){
-            this.allCountries.push(artist.most_exhibited_in)
-          }
-        });
-        break;
-    }
+    
+    const allCountriesSet = new Set<string>();
+
+    this.allArtists.forEach(artist => {
+      if (artist.nationality) allCountriesSet.add(artist.nationality);
+      if (artist.birthcountry) allCountriesSet.add(artist.birthcountry);
+      if (artist.deathcountry) allCountriesSet.add(artist.deathcountry);
+      if (artist.most_exhibited_in) allCountriesSet.add(artist.most_exhibited_in);
+    });
+
+    this.allCountries = Array.from(allCountriesSet);
+
     this.selectionService.selectCountries(this.allCountries);
+          
+    
  
 
     // Calculate degrees for each cluster
@@ -505,7 +489,7 @@ this.visualizeData();
   private updateNetwork(): void {
     if (!this.chartContainer) return;
     const value=this.decisionService.getDecisionSunburst();
-    this.loadNewData(this.clusters,this.intraCommunityEdges,this.interCommunityEdges,value)
+    this.loadNewData(this.clusters,this.intraCommunityEdges,this.interCommunityEdges)
   }
   
   private highlightArtistNode(id: string | null) {
@@ -831,12 +815,17 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
         this.allArtists = allArtists;
         this.selectionService.selectAllArtists(allArtists);
         
-        // Add for map a list of all countries
-        this.allArtists.forEach(artist => {
-          if(!this.allCountries.includes(artist.nationality)){
-            this.allCountries.push(artist.nationality)
-          }
-        });
+            
+    const allCountriesSet = new Set<string>();
+
+    this.allArtists.forEach(artist => {
+      if (artist.nationality) allCountriesSet.add(artist.nationality);
+      if (artist.birthcountry) allCountriesSet.add(artist.birthcountry);
+      if (artist.deathcountry) allCountriesSet.add(artist.deathcountry);
+      if (artist.most_exhibited_in) allCountriesSet.add(artist.most_exhibited_in);
+    });
+
+    this.allCountries = Array.from(allCountriesSet);
 
         this.selectionService.selectCountries(this.allCountries);
 

@@ -184,7 +184,7 @@ public getRegionColorScale(region: string): (t: number) => string {
     case "Others":
       return this.getYellowOrangeColor;
     case "\\N":
-      return this.getColorScale(this.greyColorPalette); 
+      return this.getColorScale(this.capuccinoColorPalette); 
     default:
       return this.getColorScale(this.greyColorPalette); // Default color scale if region is not found
   }
@@ -197,6 +197,9 @@ public getColorScale(palette: string[]): (t: number) => string {
     return palette[index];
   };
 }
+public capuccinoColorPalette: string[] = [
+  "#c9ada7"
+];
 
 public greyColorPalette: string[] = [
   "black"

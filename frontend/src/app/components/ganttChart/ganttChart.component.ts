@@ -154,10 +154,10 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
         return;
       }
     
-      const maxBarHeight = 0.8 *window.innerHeight / 100;
+      const maxBarHeight = 0.8 * window.innerHeight / 100;
     
       const timelineData = exhibitions.map(exhibition => ({
-        id: exhibition.id, // Keep track of the exhibition ID
+        id: exhibition.id,
         name: exhibition.name,
         start: new Date(exhibition.start_date).getTime(),
         startDate: exhibition.start_date,
@@ -175,7 +175,7 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
       timelineData.forEach((d, i) => {
         d.normalizedParticipants = normalizedParticipants[i];
       });
-  
+    
       const groupedByCountry = d3.group(timelineData, d => d.country);
       const sortedCountries = Array.from(groupedByCountry.entries())
         .sort(([, a], [, b]) => d3.descending(a.length, b.length))
@@ -194,10 +194,9 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
     
       const barHeight = Math.min(yScale.bandwidth(), maxBarHeight);
     
-      const colorScale = d3.scaleSequential(d3.interpolatePlasma)
+      const colorScale = d3.scaleSequential(d3.interpolateGreys)
         .domain([0, 1]);
     
-      // Calculate the total height needed for the bars and extra space
       let yOffset = 0;
       const extraSpace = 0.5 * window.innerWidth / 100;
       sortedCountries.forEach((country) => {
@@ -245,55 +244,45 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
           .text(country);
     
         exhibitions.forEach(exhibition => {
-          const opacity = this.fullOpacityExhibitions.has(exhibition.id.toString()) ? 1 : 0.5; // Ensure ID is a string
-          const strokeWidth = this.fullOpacityExhibitions.has(exhibition.id.toString()) ? 0.15 : 0; // Ensure ID is a string
+          const opacity = this.fullOpacityExhibitions.has(exhibition.id.toString()) ? 1 : 0.4;
+          const strokeWidth = this.fullOpacityExhibitions.has(exhibition.id.toString()) ? 0.85 : 0.15;
           const singleDay = exhibition.start === exhibition.end;
-  
-  
-        //tooltip
-  
-        const tooltip = d3.select("div#tooltip")
     
-        const handleMouseOver = (event: any, d: any) =>{
-          tooltip.style('display', 'block');
-        }
-      
-        const handleMouseMove =(event: any, d: any) =>{ 
-          const tooltipNode = tooltip.node() as HTMLElement;
-          const tooltipHeight = tooltipNode.offsetHeight;
-          const tooltipWidth = tooltipNode.offsetWidth;
-  
-          const duration = Math.floor(exhibition.duration / (1000 * 60 * 60 * 24)) + 1; // Add 1 to include the end date
-  
-       
-          tooltip.style("display", "block")
-          .style("left", `${event.pageX -2 - tooltipWidth}px`)
-          .style("top", `${event.pageY - 2 - tooltipHeight}px`)
-          .style("color", "black")
-          .html(`Name: ${exhibition.name}<br/>Start: ${removeTimeFromDateString(exhibition.startDate.toString())} <br/>End: ${removeTimeFromDateString(exhibition.endDate.toString())} <br/> Duration: ${duration} <br/>in ${exhibition.city} (${exhibition.country}) with ${exhibition.amountParticipants} participants`);
-      };
-  
-      const removeTimeFromDateString =(dateString: string) => {
-      // Split the date string by the space character and join the first three parts (month, day, year)
-    const parts = dateString.split(' ');
-    // Join the first three parts to reconstruct the date without the time part
-    return parts.slice(0, 3).join(' ');
-      }
-      
-  
-       
-      
-        const handleMouseOut =(event: any, d: any) =>{
-          tooltip.style('display', 'none');
-        }
-      
-        
+          const tooltip = d3.select("div#tooltip");
+    
+          const handleMouseOver = (event: any, d: any) => {
+            tooltip.style('display', 'block');
+          };
+    
+          const handleMouseMove = (event: any, d: any) => {
+            const tooltipNode = tooltip.node() as HTMLElement;
+            const tooltipHeight = tooltipNode.offsetHeight;
+            const tooltipWidth = tooltipNode.offsetWidth;
+    
+            const duration = Math.floor(exhibition.duration / (1000 * 60 * 60 * 24)) + 1;
+    
+            tooltip.style("display", "block")
+              .style("left", `${event.pageX - 2 - tooltipWidth}px`)
+              .style("top", `${event.pageY - 2 - tooltipHeight}px`)
+              .style("color", "black")
+              .html(`Name: ${exhibition.name}<br/>Start: ${removeTimeFromDateString(exhibition.startDate.toString())} <br/>End: ${removeTimeFromDateString(exhibition.endDate.toString())} <br/> Duration: ${duration} <br/>in ${exhibition.city} (${exhibition.country}) with ${exhibition.amountParticipants} participants`);
+          };
+    
+          const removeTimeFromDateString = (dateString: string) => {
+            const parts = dateString.split(' ');
+            return parts.slice(0, 3).join(' ');
+          };
+    
+          const handleMouseOut = (event: any, d: any) => {
+            tooltip.style('display', 'none');
+          };
+    
           if (singleDay) {
             this.svg.append('circle')
               .attr('class', 'bar')
-              .attr('cx', xScale(exhibition.start)) // Corrected 'x' to 'cx'
-              .attr('cy', yOffset + barHeight / 2) // Center the circle vertically
-              .attr('r', barHeight / 2) // Set the radius to half of barHeight
+              .attr('cx', xScale(exhibition.start))
+              .attr('cy', yOffset + barHeight / 2)
+              .attr('r', barHeight / 2)
               .attr('fill', timelineData.length !== 1 ? colorScale(exhibition.normalizedParticipants) : colorScale(1))
               .attr('opacity', opacity)
               .attr('stroke', 'black')
@@ -302,7 +291,6 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
               .on('mousemove', handleMouseMove)
               .on('mouseout', handleMouseOut);
           } else {
-  
             this.svg.append('rect')
               .attr('class', 'bar')
               .attr('x', xScale(exhibition.start))
@@ -312,7 +300,7 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
               .attr('fill', timelineData.length !== 1 ? colorScale(exhibition.normalizedParticipants) : colorScale(1))
               .attr('opacity', opacity)
               .attr('stroke', 'black')
-              .attr('stroke-width', strokeWidth) 
+              .attr('stroke-width', strokeWidth)
               .on('mouseover', handleMouseOver)
               .on('mousemove', handleMouseMove)
               .on('mouseout', handleMouseOut);
@@ -331,20 +319,19 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
         .attr('stroke', 'gray')
         .attr('stroke-width', 1);
     
-      // Calculate the position of the legend
       const legendHeight = 0.5 * window.innerWidth / 100;
       const legendWidth = this.contentWidth / 4 * 3;
       const legendContainerWidth = this.legendContainer.nativeElement.offsetWidth;
-      const legendX = (legendContainerWidth - legendWidth) / 2; // Center the legend horizontally
-      const legendY = 1 * window.innerWidth / 100; // Adjust this value to place the legend at the top
+      const legendX = (legendContainerWidth - legendWidth) / 2;
+      const legendY = 1 * window.innerWidth / 100;
     
       const legend = this.legendGroup
         .attr('transform', `translate(${legendX}, ${legendY})`);
+        
     
-      // Create gradient for legend
       const defs = this.legendGroup.append('defs');
       const linearGradient = defs.append('linearGradient')
-        .attr('id', 'linear-gradient')
+        .attr('id', 'linear-gradient-grey')
         .attr('x1', '0%')
         .attr('y1', '0%')
         .attr('x2', '100%')
@@ -352,7 +339,7 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
     
       const stops = d3.range(0, 1.01, 0.01).map((t: number) => ({
         offset: `${t * 100}%`,
-        color: colorScale(t)
+        color: d3.interpolateGreys(t)
       }));
     
       linearGradient.selectAll('stop')
@@ -361,36 +348,33 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
         .attr('offset', (d: { offset: string; color: string }) => d.offset)
         .attr('stop-color', (d: { offset: string; color: string }) => d.color);
     
-      // Draw legend
       legend.append('rect')
         .attr('width', legendWidth)
         .attr('height', legendHeight)
-        .style('fill', 'url(#linear-gradient)');
+        .style('fill', 'url(#linear-gradient-grey)');
     
-      // Add participants label above the legend
       legend.append('text')
         .attr('x', legendWidth / 2)
-        .attr('y', -0.5 * window.innerWidth / 100) // Adjusted position above the legend rectangle
+        .attr('y', -0.5 * window.innerWidth / 100)
         .attr('text-anchor', 'middle')
         .style('font-size', '0.5vw')
         .attr('fill', '#2a0052')
-        .text('Normalized Number of Participants');
+        .text('Scale: Number of Participants');
     
-      // Legend axis with normalized values from 0 to 1
       const legendScale = d3.scaleLinear()
         .domain([0, 1])
         .range([0, legendWidth]);
     
       const legendAxis = d3.axisBottom(legendScale)
         .ticks(6)
-        .tickFormat(d3.format(".1f")); // Format ticks to show one decimal place
+        .tickFormat(d3.format(".1f"));
     
       const legendAxisGroup = legend.append('g')
         .attr('transform', `translate(0, ${legendHeight})`)
         .call(legendAxis);
     
       legendAxisGroup.selectAll('text')
-        .style('font-size', '0.5vw'); // Smaller font size for legend axis
+        .style('font-size', '0.5vw');
     }
     
     

@@ -209,17 +209,9 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
       "Southern Europe": "#AF73E8",
       "Western Europe": "#F06ACD",
       "Others": "#FFDA75",
-      "\\N": "#C3C3C3"
+      "\\N": "#c9ada7"
     };
-  
-    const selectedColorMap: { [key: string]: string } = {
-      "North Europe": "#A9E5DC",
-      "Eastern Europe": "#A1C9F6",
-      "Southern Europe": "#D1B3F1",
-      "Western Europe": "#F4A5E1",
-      "Others": "#FFEBA6",
-      "\\N": "#E1E1E1"
-    };
+ 
   
     const transformedData: any[] = yearData.map(d => {
       const data: any = { year: d.year };
@@ -321,14 +313,24 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
       .selectAll('g')
       .data(stackedData)
       .enter().append('g')
-      .attr('fill', (d: any) => {
+     /*  .attr('fill', (d: any) => {
         const region = d.key.split('-')[0];
-        return colorMap[region];
-      })
+        const bool = d.key.split('-')[1];
+        return (bool === "unselected")?'white':colorMap[region];
+      }) */
+        .attr('fill', (d: any) => {
+          const region = d.key.split('-')[0];
+          return colorMap[region];
+        })
+      .attr('stroke', (d: any) => {
+        const region = d.key.split('-')[0];
+        const bool = d.key.split('-')[1];
+        return (bool==='unselected') ? colorMap[region]:d3.color(colorMap[region])?.darker(1)})
+      .attr('stroke-width', 0.5)
       .attr('opacity', (d: any) => {
         const region = d.key.split('-')[0];
         const bool = d.key.split('-')[1];
-        return (bool === 'unselected') ? 0.3 : 1;
+        return (bool === 'unselected') ? 0.2 : 1;
       })
       .selectAll('rect')
       .data((d: any) => d)

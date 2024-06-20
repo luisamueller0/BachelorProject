@@ -157,7 +157,7 @@ export class ExhibitionVisualizationComponent implements OnInit, OnChanges, OnDe
       .range([0, this.contentHeight])
       .padding(0.1);
   
-    const colorScale = d3.scaleSequential(d3.interpolatePlasma)
+    const colorScale = d3.scaleSequential(d3.interpolateGreys)
       .domain([0, 1]); // Normalized participants are between 0 and 1
   
     // Create x-axis with grid lines at the top
