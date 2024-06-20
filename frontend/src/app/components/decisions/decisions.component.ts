@@ -3,7 +3,7 @@ import { DecisionService } from '../../services/decision.service';
 import { Options } from '@angular-slider/ngx-slider';
 import { ArtistService } from '../../services/artist.service';
 import { Artist } from '../../models/artist';
-import { firstValueFrom } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
 import Fuse from 'fuse.js';
 
 interface SearchedArtist {
@@ -24,6 +24,9 @@ export class DecisionsComponent implements OnInit {
   public notInCurrentRange: boolean = false;
   public searchQuery: string = '';
   public filteredArtists: { id: number; name: string; artworks: number }[] = [];
+  public isLoadingK: boolean = false;
+public isLoadingRange: boolean = false;
+
 
   private fuse: Fuse<{ id: number; name: string; artworks: number }>;
 
@@ -35,6 +38,15 @@ export class DecisionsComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.subscription.add(this.decisionService.currentLoadingBackendK.subscribe(bool => {
+      if(!bool){
+        this.useK = false; // Reset the checkbox after action
+        this.showK = false;
+        this.isLoadingK = false; // Hide spinner  
+        
+      }
+    }));
+    
     // Fetch default data from the database and set it as default values
     this.artistService.getArtistsWithRange(this.range).subscribe(
       (data) => {
@@ -79,6 +91,8 @@ export class DecisionsComponent implements OnInit {
     ceil: 7,
     step: 1,
   };
+  private subscription: Subscription = new Subscription();
+
   useK = false; // whether to use the selected K
   numberOfArtists = 0; // Number of artists
   rangeChanged = false; // Track if the range was changed
@@ -141,40 +155,38 @@ export class DecisionsComponent implements OnInit {
   async onRangeChange() {
     if (this.useRange) {
       this.rangeChanged = false; // Reset the rangeChanged flag
+      this.isLoadingRange = true; // Show spinner
       this.decisionService.changeLoadingBackendRange(true);
-    
-
+  
       // Fetch artists and update range
       await this.fetchArtistsAndUpdateRange();
       this.showK = true; // Show the K slider after fetching artists
       this.decisionService.changeDecisionRange(this.range);
-      
-
+  
       // Add a delay before resetting useRange to show the green check mark
-      setTimeout(() => {
+      
         this.useRange = false; // Reset the checkbox after action
+        this.isLoadingRange = false; // Hide spinner
         this.decisionService.changeLoadingBackendRange(false);
-      }, 1000); // Adjust delay as needed
-
+      // Adjust delay as needed
     }
   }
-
+  
   onKChange() {
     if (this.useK) {
       this.kChanged = false; // Reset the kChanged flag
+      this.isLoadingK = true; // Show spinner
       this.decisionService.changeK(this.k);
       this.decisionService.changeLoadingBackendK(true);
-   
+  
       this.showK = false;
+      // Add a delay before resetting useK to show the green check mark
+      
+  
+     // Adjust delay as needed
     }
-    // Add a delay before resetting useK to show the green check mark
-    setTimeout(() => {
-      this.useK = false; // Reset the checkbox after action
-      this.showK = false;
-      this.decisionService.changeLoadingBackendK(false);
-    }, 1000); // Adjust delay as needed
-   
   }
+  
 
   onRangeSliderChange() {
     this.rangeChanged = true;

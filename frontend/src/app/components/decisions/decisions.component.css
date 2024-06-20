@@ -8,23 +8,37 @@
     justify-content: space-around;
 }
 
-.loading-con {
+/* Spinner styles */
+.spinner {
+    border: 0.3vw solid #f3f3f3; /* Light grey border */
+    border-top: 0.2vw solid #09af2d; /* Dark purple border */
+    border-radius: 50%;
+    width: 1vw;
+    height: 1vw;
+    animation: spin 2s linear infinite; /* Spin animation */
+  }
+  /* Disable interaction with the slider when loading */
+.custom-slider.disabled {
+    pointer-events: none;
+    opacity: 0.5;
+  }
+  /* Disable interaction with the checkbox label when loading */
+.custom-checkbox.disabled {
+    pointer-events: none;
+    opacity: 0.5;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Ensure the spinner and checkbox are of similar size and alignment */
+  .custom-checkbox, .spinner {
     display: flex;
     justify-content: center;
     align-items: center;
-    height:100%;
   }
   
-  .spinner {
-    border: 2vw solid #f3f3f3; /* Light grey border */
-    border-top: 2vw solid #7e24c7; /* Dark purple border */
-    border-radius: 50%;
-    width: 10vw;
-    height: 10vw;
-    margin-top:4%;
-    margin-bottom:4%;
-    animation: spin 2s linear infinite; /* Spin animation */
-  }
 
 /* Styles for each dropdown group */
 .dropdown-group {
