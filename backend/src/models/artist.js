@@ -339,6 +339,59 @@ const normalizeLogarithmically = (values) => {
     return normalized;
 };
 
+function countArtistsByRegion(clusteredArtists) {
+    const regionOrder = ["North Europe", "Eastern Europe", "Southern Europe", "Western Europe", "Others", "\\N"];
+    return clusteredArtists.map(cluster => {
+        const regionCounts = cluster.reduce((counts, artist) => {
+            const region = artist.europeanRegionNationality || "\\N";
+            counts[region] = (counts[region] || 0) + 1;
+            return counts;
+        }, {});
+
+        const totalArtists = cluster.length;
+        const regionProportions = regionOrder.reduce((proportions, region) => {
+            proportions[region] = (regionCounts[region] || 0) / totalArtists;
+            return proportions;
+        }, {});
+
+        return { cluster, regionProportions };
+    });
+}
+
+
+
+function sortClustersByRegionProportions(clusteredArtists) {
+    const countedClusters = countArtistsByRegion(clusteredArtists);
+
+    // Sort clusters based on the highest region proportion and then by region proportions
+    countedClusters.sort((a, b) => {
+        const maxProportionA = Math.max(...Object.values(a.regionProportions));
+        const maxProportionB = Math.max(...Object.values(b.regionProportions));
+
+        // Sort by the highest proportion region
+        if (maxProportionA !== maxProportionB) {
+            return maxProportionB - maxProportionA;
+        }
+
+        // Sort within the highest proportion region by the proportion values
+        const sortedRegionsA = Object.entries(a.regionProportions).sort(([, propA], [, propB]) => propB - propA);
+        const sortedRegionsB = Object.entries(b.regionProportions).sort(([, propA], [, propB]) => propB - propA);
+
+        for (let i = 0; i < sortedRegionsA.length; i++) {
+            if (sortedRegionsA[i][1] !== sortedRegionsB[i][1]) {
+                return sortedRegionsB[i][1] - sortedRegionsA[i][1];
+            }
+        }
+
+        return 0;
+    });
+
+    return countedClusters.map(clusterData => clusterData.cluster);
+}
+
+
+
+
 async function spectralClustering(artists, relationships, k) {
     console.log('cluster')
     // Step 0: Extract sharedExhibitionMinArtworks values for normalization
@@ -418,17 +471,21 @@ const featureMatrixUTransposed = math.transpose(featureMatrixU);
 });
    
     // Initialize an array of k empty arrays for the clusters
-const clusteredArtists = Array.from({ length: k }, () => []);
+let clusteredArtists = Array.from({ length: k }, () => []);
 
 // Populate the cluster arrays with artists
 artists.forEach((artist, index) => {
   const clusterIndex = clusters[index]; // Retrieve the cluster index assigned to the artist
   clusteredArtists[clusterIndex].push(artist); // Add the artist to the corresponding cluster
 });
+clusteredArtists = sortClustersByRegionProportions(clusteredArtists);
 
+// Update clusterMap with the new cluster indices after sorting
 const clusterMap = new Map();
-artists.forEach((artist, index) => {
-    clusterMap.set(artist.id, clusters[index]); // Correctly associate artist ID with cluster index
+clusteredArtists.forEach((cluster, sortedClusterIndex) => {
+  cluster.forEach(artist => {
+    clusterMap.set(artist.id, sortedClusterIndex); // Correctly associate artist ID with new cluster index
+  });
 });
 
 
