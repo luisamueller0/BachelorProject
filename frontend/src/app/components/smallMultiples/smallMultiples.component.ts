@@ -173,6 +173,7 @@ private updateNodeSize(metric: string) {
 
       self.createArtistNetwork(category, clusterGroup, cluster, countryCentroids);
     });
+   
   });
 }
 
