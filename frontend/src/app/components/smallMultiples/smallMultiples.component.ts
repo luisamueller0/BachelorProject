@@ -47,7 +47,7 @@ export class SmallMultiplesComponent implements OnInit, OnChanges, OnDestroy {
   private clusterNodes: ClusterNode[] = [];
   public allArtists: Artist[] = [];
   private artistClusterMap: Map<number, ClusterNode> = new Map<number, ClusterNode>();
-  private artistNodes: ArtistNode[][] = [];
+  private artistNodes: { [clusterId: number]: { [category: string]: ArtistNode[] } } = {};
   private selectedClusterNode: ClusterNode | null = null;
   private allCountries: string[] = [];
   private g: any; // Group for zooming
@@ -80,7 +80,15 @@ export class SmallMultiplesComponent implements OnInit, OnChanges, OnDestroy {
   private countryIndexMap = new Map<string, number>();
 
   private clusterCountryCentroids: { [clusterId: number]: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } } = {};
-  private simulations: { [clusterId: number]: { [category: string]: d3.Simulation<ArtistNode, undefined> } } = {};
+  private simulationsN: { [clusterId: number]: d3.Simulation<ArtistNode, undefined> }  = {};
+  private simulationsB: { [clusterId: number]: d3.Simulation<ArtistNode, undefined> }  = {};
+  private simulationsD: { [clusterId: number]: d3.Simulation<ArtistNode, undefined> }  = {};
+  private simulationsM: { [clusterId: number]: d3.Simulation<ArtistNode, undefined> }  = {};
+  private countryCentroids: { [category: string]: { [clusterId: number]: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } } } = {};
+
+
+
+
 
 
 
@@ -135,107 +143,40 @@ export class SmallMultiplesComponent implements OnInit, OnChanges, OnDestroy {
     return `Displaying ${this.allArtists.length} artists and ${this.clusters.length} clusters`;
   }
 
-  private updateNodeSize(metric: string) {
-    console.log(`updateNodeSize called with metric: ${metric}`);
-    const normalizedMaps = this.calculateNormalizedMaps(metric);
-    console.log('normalizedMaps:', normalizedMaps);
+private updateNodeSize(metric: string) {
+  console.log(`updateNodeSize called with metric: ${metric}`);
+  const normalizedMaps = this.calculateNormalizedMaps(metric);
+  console.log('normalizedMaps:', normalizedMaps);
 
-    const self = this;
+  const self = this;
 
-    // Iterate over all clusters
-    this.g.selectAll(".cluster").each(function (this: SVGGElement, d: ClusterNode, i: number, nodes: any[]) {
-        const cluster = d3.select(this).datum() as ClusterNode;
-        console.log('Processing cluster:', cluster, 'index:', i);
+  // Iterate over all clusters
+  this.g.selectAll(".cluster").each(function (this: SVGGElement, d: ClusterNode) {
+    const cluster = d3.select(this).datum() as ClusterNode;
+    const clusterGroup = d3.select(this);
+    const clusterId = cluster.clusterId;
+    const normalizedMap = normalizedMaps[clusterId];
+    console.log('ClusterId:', clusterId, 'NormalizedMap:', normalizedMap);
 
-        const clusterGroup = d3.select(this);
-        const clusterId = cluster.clusterId;
-        const normalizedMap = normalizedMaps[clusterId];
-        console.log('ClusterId:', clusterId, 'NormalizedMap:', normalizedMap);
+    if (!normalizedMap) {
+      console.error('No normalized map found for cluster:', clusterId);
+      return;
+    }
 
-        if (!normalizedMap) {
-            console.error('No normalized map found for cluster:', clusterId);
-            return;
-        }
+    // Remove existing nodes and edges for this cluster
+    clusterGroup.selectAll(".artist-node").remove();
+    clusterGroup.selectAll(".artist-edge").remove();
 
-        const updatedSizes: number[] = [];
+    // Recreate the artist network for each category
+    ['nationality', 'birthcountry', 'deathcountry', 'mostexhibited'].forEach(category => {
+      const countryCentroids = self.countryCentroids[category][clusterId];
 
-        function calculateNodeRadius(artistId: number, normalizedMap: Map<number, number>, innerRadius: number): number {
-            const normalizedValue = normalizedMap.get(artistId) || 0;
-            return self.calculateRadiusForNode(normalizedValue, innerRadius);
-        }
-
-        clusterGroup.selectAll<SVGCircleElement, ArtistNode>(".artist-node")
-            .attr('r', (d: ArtistNode) => {
-                const artistId = d.artist.id;
-                const innerRadius = cluster.innerRadius;
-                const radius = calculateNodeRadius(artistId, normalizedMap, innerRadius);
-                updatedSizes[d.id] = radius;
-                return radius;
-            });
-
-        function updateSimulation(updatedSizes: number[], clusterGroup: any, cluster: ClusterNode, category: string) {
-            if (self.simulations[cluster.clusterId] && self.simulations[cluster.clusterId][category]) {
-                const artistNodes = self.artistNodes[cluster.clusterId];
-                console.log('Updating simulation for cluster:', cluster.clusterId, 'with artistNodes:', artistNodes);
-
-                if (!artistNodes) {
-                    console.error('No artist nodes found for cluster:', cluster.clusterId);
-                    return;
-                }
-
-                const type = self.decisionService.getDecisionSunburst();
-                const degreeMap = self.degreesMap[cluster.clusterId];
-                const metricMap = self.calculateNormalizedMaps(self.decisionService.getDecisionSize())[cluster.clusterId];
-                artistNodes.forEach(node => {
-                    const newPos = self.calculateNewPosition(type, node.artist, node.countryData, degreeMap, metricMap, cluster, 0, 0);
-                    node.x = newPos.x;
-                    node.y = newPos.y;
-                    node.vx = 0;
-                    node.vy = 0;
-                });
-
-                const edges = clusterGroup.selectAll(".artist-edge");
-                const circles = clusterGroup.selectAll(".artist-node");
-                const centralNode = artistNodes.reduce((maxNode, node) => {
-                    const degree = degreeMap.get(node.artist.id) || 0;
-                    return degree > (degreeMap.get(maxNode.artist.id) || 0) ? node : maxNode;
-                }, artistNodes[0]);
-
-                const padding = cluster.innerRadius / 100 * 0.2;
-
-                self.simulations[cluster.clusterId][category]
-                    .nodes(artistNodes)
-                    .force("collision", d3.forceCollide((d: any) => {
-                        if (d.id === centralNode.id) {
-                            return 0;
-                        }
-                        return self.calculateCollisionRadius(updatedSizes[d.id] || 0);
-                    }))
-                    .force("boundary", self.boundaryForce(artistNodes, cluster.innerRadius - padding))
-                    .force("repelFromCenter", self.repelFromCenterForce(artistNodes, centralNode, updatedSizes[centralNode.id]))
-                    .on("tick", () => {
-                        circles
-                            .attr('cx', (d: ArtistNode) => d.x)
-                            .attr('cy', (d: ArtistNode) => d.y);
-                        edges
-                            .attr("x1", (d: any) => d.source.x)
-                            .attr("y1", (d: any) => d.source.y)
-                            .attr("x2", (d: any) => d.target.x)
-                            .attr("y2", (d: any) => d.target.y);
-                    });
-
-                self.simulations[cluster.clusterId][category].alpha(1).restart();
-            } else {
-                console.log('No simulation found for cluster:', cluster.clusterId, 'and category:', category);
-            }
-        }
-
-        // Update simulations for all categories
-        ['nationality', 'birthcountry', 'deathcountry', 'mostexhibited'].forEach(category => {
-            updateSimulation(updatedSizes, clusterGroup, cluster, category);
-        });
+      self.createArtistNetwork(category, clusterGroup, cluster, countryCentroids);
     });
+  });
 }
+
+  
 
 
 
@@ -350,49 +291,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
   }
 }
 
-  private updateSimulation(updatedSizes: number[], clusterGroup: any, cluster: ClusterNode) {
-    if (this.simulation[cluster.clusterId]) {
-      const artistNodes = this.artistNodes[cluster.clusterId];
-  
-      const type = this.decisionService.getDecisionSunburst();
-      const degreeMap = this.degreesMap[cluster.clusterId];
-      const metricMap = this.calculateNormalizedMaps(this.decisionService.getDecisionSize())[cluster.clusterId];
-  
-      artistNodes.forEach(node => {
-        const newPos = this.calculateNewPosition(type, node.artist, node.countryData, degreeMap, metricMap, cluster, 0, 0);
-        node.x = newPos.x;
-        node.y = newPos.y;
-        node.vx = 0;
-        node.vy = 0;
-      });
-  
-      const edges = clusterGroup.selectAll(".artist-edge");
-      const circles = clusterGroup.selectAll(".artist-node");
-      const centralNode = artistNodes.reduce((maxNode, node) => {
-        const degree = degreeMap.get(node.artist.id) || 0;
-        return degree > (degreeMap.get(maxNode.artist.id) || 0) ? node : maxNode;
-      }, artistNodes[0]);
-  
-      const padding = cluster.innerRadius / 100 * 0.2;
-  
-      this.simulation[cluster.clusterId]
-        .nodes(artistNodes)
-        .force("collision", d3.forceCollide((d: any) => {
-          if (d.id === centralNode.id) {
-            return 0;
-          }
-          return this.calculateCollisionRadius(updatedSizes[d.id] || 0);
-        }))
-        .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - padding))
-        .force("repelFromCenter", this.repelFromCenterForce(artistNodes, centralNode, updatedSizes[centralNode.id]))
-        .on("tick", () => {
-          circles.attr('cx', (d: ArtistNode) => d.x).attr('cy', (d: ArtistNode) => d.y);
-          edges.attr("x1", (d: any) => d.source.x).attr("y1", (d: any) => d.source.y).attr("x2", (d: any) => d.target.x).attr("y2", (d: any) => d.target.y);
-        });
-  
-      this.simulation[cluster.clusterId].alpha(1).restart();
-    }
-  }
+
   
   private calculateNodeRadius(artistId: number, normalizedMap: Map<number, number>, innerRadius: number): number {
     const normalizedValue = normalizedMap.get(artistId) || 0;
@@ -1129,6 +1028,10 @@ private createClusterGroup(clusterNode: ClusterNode, value: string, cellWidth: n
           country: d.country
       };
   });
+  if (!this.countryCentroids[value]) {
+    this.countryCentroids[value] = {};
+  }
+  this.countryCentroids[value][clusterNode.clusterId] = countryCentroids;
 
   this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
 
@@ -1145,112 +1048,138 @@ private createClusterGroup(clusterNode: ClusterNode, value: string, cellWidth: n
 
   
   
-  private createArtistNetwork(value: string, clusterGroup: any, cluster: ClusterNode, countryCentroids: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } }): void {
-    const artists = cluster.artists;
-    const relationships = this.intraCommunityEdges[cluster.clusterId];
-    const size = this.decisionService.getDecisionSize();
+private createArtistNetwork(value: string, clusterGroup: any, cluster: ClusterNode, countryCentroids: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } }): void {
+  const artists = cluster.artists;
+  const relationships = this.intraCommunityEdges[cluster.clusterId];
+  const size = this.decisionService.getDecisionSize();
 
-    const metricMap = this.calculateNormalizedMaps(size)[cluster.clusterId];
-    const degreeMap = this.degreesMap[cluster.clusterId] || new Map<number, number>();
+  const metricMap = this.calculateNormalizedMaps(size)[cluster.clusterId];
+  const degreeMap = this.degreesMap[cluster.clusterId] || new Map<number, number>();
 
-    const centerX = 0;
-    const centerY = 0;
+  const centerX = 0;
+  const centerY = 0;
 
-    let artistNodes: any[] = this.createArtistNodes(artists, countryCentroids, degreeMap, metricMap, cluster, centerX, centerY, value);
+  let artistNodes: any[] = this.createArtistNodes(artists, countryCentroids, degreeMap, metricMap, cluster, centerX, centerY, value);
 
-    const getNodeIndexById = (id: number) => artistNodes.findIndex((node: any) => node.id === id);
+  const getNodeIndexById = (id: number) => artistNodes.findIndex((node: any) => node.id === id);
 
-    const sharedExhibitionMinArtworksValues = relationships.map((relationship: any) => relationship.sharedExhibitionMinArtworks);
-    const normalizedSharedExhibitionMinArtworks = this.normalizeSqrt(new Map(sharedExhibitionMinArtworksValues.map((value, index) => [index, value])));
-    const threshold = 0.4;  // Threshold for visibility
-    const formattedRelationships = relationships.map((relationship: any, index: number) => {
-        const sourceIndex = getNodeIndexById(relationship.startId);
-        const targetIndex = getNodeIndexById(relationship.endId);
-        return {
-            source: artistNodes[sourceIndex],
-            target: artistNodes[targetIndex],
-            sharedExhibitions: relationship.sharedExhibitions,
-            sharedExhibitionMinArtworks: normalizedSharedExhibitionMinArtworks.get(index) || 0
-        };
-    });
+  const sharedExhibitionMinArtworksValues = relationships.map((relationship: any) => relationship.sharedExhibitionMinArtworks);
+  const normalizedSharedExhibitionMinArtworks = this.normalizeSqrt(new Map(sharedExhibitionMinArtworksValues.map((value, index) => [index, value])));
+  const threshold = 0.4;  // Threshold for visibility
+  const formattedRelationships = relationships.map((relationship: any, index: number) => {
+      const sourceIndex = getNodeIndexById(relationship.startId);
+      const targetIndex = getNodeIndexById(relationship.endId);
+      return {
+          source: artistNodes[sourceIndex],
+          target: artistNodes[targetIndex],
+          sharedExhibitions: relationship.sharedExhibitions,
+          sharedExhibitionMinArtworks: normalizedSharedExhibitionMinArtworks.get(index) || 0
+      };
+  });
 
-    formattedRelationships.sort((a, b) => a.sharedExhibitionMinArtworks - b.sharedExhibitionMinArtworks);
+  formattedRelationships.sort((a, b) => a.sharedExhibitionMinArtworks - b.sharedExhibitionMinArtworks);
 
-    const width = 0.0025 * window.innerWidth / 100;
-    const edges = clusterGroup.selectAll(".artist-edge")
-        .data(formattedRelationships)
-        .enter()
-        .append("line")
-        .attr("class", `artist-edge artist-edge-${cluster.clusterId}-${value}`)
-        .style('stroke', (d: any) => {
-            if (d.sharedExhibitionMinArtworks < threshold) {
-                return 'white';
-            }
-            const clusterId = cluster.clusterId;
-            return this.intraCommunityEdges[clusterId].length === 2 ? 'black' : this.edgeColorScale(d.sharedExhibitionMinArtworks);
-        })
-        .style('stroke-width', '.05em')
-        .attr('x1', (d: any) => d.source.x)
-        .attr('y1', (d: any) => d.source.y)
-        .attr('x2', (d: any) => d.target.x)
-        .attr('y2', (d: any) => d.target.y);
+  const width = 0.0025 * window.innerWidth / 100;
+  const edges = clusterGroup.selectAll(".artist-edge")
+      .data(formattedRelationships)
+      .enter()
+      .append("line")
+      .attr("class", `artist-edge artist-edge-${cluster.clusterId}-${value}`)
+      .style('stroke', (d: any) => {
+          if (d.sharedExhibitionMinArtworks < threshold) {
+              return 'white';
+          }
+          const clusterId = cluster.clusterId;
+          return this.intraCommunityEdges[clusterId].length === 2 ? 'black' : this.edgeColorScale(d.sharedExhibitionMinArtworks);
+      })
+      .style('stroke-width', '.05em')
+      .attr('x1', (d: any) => d.source.x)
+      .attr('y1', (d: any) => d.target.y)
+      .attr('x2', (d: any) => d.target.x)
+      .attr('y2', (d: any) => d.target.y);
 
-    const circles = clusterGroup.selectAll(".artist-node")
-        .data(artistNodes)
-        .enter()
-        .append("circle")
-        .attr("class", `artist-node artist-node-${cluster.clusterId}-${value}`)
-        .attr('r', (d: any) => d.radius)
-        .attr('cx', (d: any) => d.x)
-        .attr('cy', (d: any) => d.y)
-        .style('fill', (d: any) => d.color)
-        .on('mouseover', function (this: SVGCircleElement, event: MouseEvent, d: any) {
-            const element = d3.select(this);
-            const [x, y] = d3.pointer(event, window.document.body);
-            d3.select('#tooltip')
-                .style('display', 'block')
-                .style('left', `${x + 10}px`)
-                .style('top', `${y + 10}px`)
-                .html(`${d.artist.firstname} ${d.artist.lastname}<br/>`);
-        })
-        .on('mouseout', function () {
-            d3.select('#tooltip').style('display', 'none');
-        })
-        .on('click', (event: MouseEvent, d: any) => this.handleNodeClick(d, event));
+  const circles = clusterGroup.selectAll(".artist-node")
+      .data(artistNodes)
+      .enter()
+      .append("circle")
+      .attr("class", `artist-node artist-node-${cluster.clusterId}-${value}`)
+      .attr('r', (d: any) => d.radius)
+      .attr('cx', (d: any) => d.x)
+      .attr('cy', (d: any) => d.y)
+      .style('fill', (d: any) => d.color)
+      .on('mouseover', function (this: SVGCircleElement, event: MouseEvent, d: any) {
+          const element = d3.select(this);
+          const [x, y] = d3.pointer(event, window.document.body);
+          d3.select('#tooltip')
+              .style('display', 'block')
+              .style('left', `${x + 10}px`)
+              .style('top', `${y + 10}px`)
+              .html(`${d.artist.firstname} ${d.artist.lastname}<br/>`);
+      })
+      .on('mouseout', function () {
+          d3.select('#tooltip').style('display', 'none');
+      })
+      .on('click', (event: MouseEvent, d: any) => this.handleNodeClick(d, event));
 
-    const sizes = this.getNodeSize(clusterGroup);
-    const padding = cluster.innerRadius / 100 * 0.05;
-    const centralNode = artistNodes.reduce((maxNode, node) => {
-        const degree = degreeMap.get(node.artist.id) || 0;
-        return degree > (degreeMap.get(maxNode.artist.id) || 0) ? node : maxNode;
-    }, artistNodes[0]);
+  const sizes = this.getNodeSize(clusterGroup);
+  const padding = cluster.innerRadius / 100 * 0.05;
+  const centralNode = artistNodes.reduce((maxNode, node) => {
+      const degree = degreeMap.get(node.artist.id) || 0;
+      return degree > (degreeMap.get(maxNode.artist.id) || 0) ? node : maxNode;
+  }, artistNodes[0]);
 
-    // Initialize the force simulation
-    const simulation = d3.forceSimulation(artistNodes)
-        .force("collision", d3.forceCollide((d: any) => {
-            if (d.id === centralNode.id) {
-                return 0;
-            }
-            return this.calculateCollisionRadius(sizes[d.id] || 0);
-        }))
-        .force("repelFromCenter", this.repelFromCenterForce(artistNodes, centralNode, sizes[centralNode.id]))
-        .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - padding))
-        .on("tick", () => {
-            circles
-                .attr('cx', (d: any) => d.x)
-                .attr('cy', (d: any) => d.y);
-            edges
-                .attr("x1", (d: any) => d.source.x)
-                .attr("y1", (d: any) => d.source.y)
-                .attr("x2", (d: any) => d.target.x)
-                .attr("y2", (d: any) => d.target.y);
-        });
+  // Initialize the force simulation
+  const simulation = d3.forceSimulation(artistNodes)
+      .force("collision", d3.forceCollide((d: any) => {
+          if (d.id === centralNode.id) {
+              return 0;
+          }
+          return this.calculateCollisionRadius(sizes[d.id] || 0);
+      }))
+      .force("repelFromCenter", this.repelFromCenterForce(artistNodes, centralNode, sizes[centralNode.id]))
+      .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - padding))
+      .on("tick", () => {
+          circles
+              .attr('cx', (d: any) => d.x)
+              .attr('cy', (d: any) => d.y);
+          edges
+              .attr("x1", (d: any) => d.source.x)
+              .attr("y1", (d: any) => d.source.y)
+              .attr("x2", (d: any) => d.target.x)
+              .attr("y2", (d: any) => d.target.y);
+      });
 
-    // Store the artistNodes and the simulation
-    this.artistNodes[cluster.clusterId] = artistNodes;
-    this.simulations[cluster.clusterId] = this.simulations[cluster.clusterId] || {};
-    this.simulations[cluster.clusterId][value] = simulation;
+  // Store the artistNodes and the simulation
+  if (!this.artistNodes[cluster.clusterId]) {
+    this.artistNodes[cluster.clusterId] = {};
+  }
+  this.artistNodes[cluster.clusterId][value] = artistNodes;
+
+  switch (value) {
+      case 'nationality':
+        this.simulationsN[cluster.clusterId] = simulation;
+          break;
+      case 'birthcountry':
+        this.simulationsB[cluster.clusterId] = simulation;
+          break;
+      case 'deathcountry':
+        this.simulationsD[cluster.clusterId] = simulation;
+          break;
+      case 'mostexhibited':
+        this.simulationsM[cluster.clusterId] = simulation;
+          break;
+  }
+  console.log('sim', this.simulationsN)
+    console.log('sim', this.simulationsB)
+
+  console.log('sim', this.simulationsD)
+  console.log('sim', this.simulationsM)
+
+  // Logging to debug
+  console.log(`Simulation stored for cluster ${cluster.clusterId} and category ${value}`);
 }
+
+
 
 
 
