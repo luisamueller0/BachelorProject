@@ -480,6 +480,7 @@ artists.forEach((artist, index) => {
 });
 clusteredArtists = sortClustersByRegionProportions(clusteredArtists);
 
+
 // Update clusterMap with the new cluster indices after sorting
 const clusterMap = new Map();
 clusteredArtists.forEach((cluster, sortedClusterIndex) => {
@@ -487,6 +488,12 @@ clusteredArtists.forEach((cluster, sortedClusterIndex) => {
     clusterMap.set(artist.id, sortedClusterIndex); // Correctly associate artist ID with new cluster index
   });
 });
+
+  // Update the cluster property of each artist to reflect the sorted cluster index
+  artists.forEach(artist => {
+    artist.cluster = clusterMap.get(artist.id);
+});
+
 
 
 const intraClusterRelationships = Array.from({ length: k }, () => []);

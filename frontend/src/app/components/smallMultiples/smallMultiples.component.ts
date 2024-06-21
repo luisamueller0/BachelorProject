@@ -144,37 +144,7 @@ export class SmallMultiplesComponent implements OnInit, OnChanges, OnDestroy {
   }
 
 private updateNodeSize(metric: string) {
-  console.log(`updateNodeSize called with metric: ${metric}`);
-  const normalizedMaps = this.calculateNormalizedMaps(metric);
-  console.log('normalizedMaps:', normalizedMaps);
-
-  const self = this;
-
-  // Iterate over all clusters
-  this.g.selectAll(".cluster").each(function (this: SVGGElement, d: ClusterNode) {
-    const cluster = d3.select(this).datum() as ClusterNode;
-    const clusterGroup = d3.select(this);
-    const clusterId = cluster.clusterId;
-    const normalizedMap = normalizedMaps[clusterId];
-    console.log('ClusterId:', clusterId, 'NormalizedMap:', normalizedMap);
-
-    if (!normalizedMap) {
-      console.error('No normalized map found for cluster:', clusterId);
-      return;
-    }
-
-    // Remove existing nodes and edges for this cluster
-    clusterGroup.selectAll(".artist-node").remove();
-    clusterGroup.selectAll(".artist-edge").remove();
-
-    // Recreate the artist network for each category
-    ['nationality', 'birthcountry', 'deathcountry', 'mostexhibited'].forEach(category => {
-      const countryCentroids = self.countryCentroids[category][clusterId];
-
-      self.createArtistNetwork(category, clusterGroup, cluster, countryCentroids);
-    });
-   
-  });
+  this.visualizeData();
 }
 
   
@@ -1251,31 +1221,58 @@ private createArtistNetwork(value: string, clusterGroup: any, cluster: ClusterNo
 
   private calculateNormalizedMaps(metric: string): { [clusterId: number]: Map<number, number> } {
     const normalizedMaps: { [clusterId: number]: Map<number, number> } = {};
+  
     this.clusters.forEach((cluster, clusterId) => {
-      let metricMap = new Map<number, number>();
-      if (metric === 'Amount of Exhibitions') {
-        cluster.forEach((artist: Artist) => {
-          metricMap.set(artist.id, artist.total_exhibitions);
-        });
-        this.totalExhibitionsMap[clusterId] = this.normalizeLinear(metricMap);
-      } else if (metric === 'Amount of different techniques') {
-        cluster.forEach((artist: Artist) => {
-          metricMap.set(artist.id, artist.amount_techniques);
-        });
-        this.differentTechniquesMap[clusterId] = this.normalizeLinear(metricMap);
-      } else if (metric === 'Amount of exhibited Artworks') {
-        cluster.forEach((artist: Artist) => {
-          metricMap.set(artist.id, artist.total_exhibited_artworks);
-        });
-        this.totalExhibitedArtworksMap[clusterId] = this.normalizeLinear(metricMap);
-      } else if (metric === 'default: Importance (Degree)') {
-        this.calculateNodeDegreesForClusters();
-        metricMap = this.degreesMap[clusterId];
-      }
-      normalizedMaps[clusterId] = this.normalizeLinear(metricMap);
+        let metricMap = new Map<number, number>();
+  
+        if (metric === 'Amount of Exhibitions') {
+            cluster.forEach((artist: Artist) => {
+                metricMap.set(artist.id, artist.total_exhibitions);
+            });
+        } else if (metric === 'Amount of different techniques') {
+            cluster.forEach((artist: Artist) => {
+                metricMap.set(artist.id, artist.amount_techniques);
+            });
+        } else if (metric === 'Amount of exhibited Artworks') {
+            cluster.forEach((artist: Artist) => {
+                metricMap.set(artist.id, artist.total_exhibited_artworks);
+            });
+        } else if (metric === 'default: Importance (Degree)') {
+            this.calculateNodeDegreesForClusters();
+            metricMap = this.degreesMap[clusterId];
+        }
+
+        // Decide normalization method dynamically
+        if(metric === 'default: Importance (Degree)' ){
+            const normalizedMap = this.normalizeLinear(metricMap);
+            normalizedMaps[clusterId] = normalizedMap;
+        }else{
+        const normalizedMap = this.normalizeDynamically(metricMap);
+        normalizedMaps[clusterId] = normalizedMap;
+        }
     });
+  
     return normalizedMaps;
-  }
+}
+
+private normalizeDynamically(values: Map<number, number>): Map<number, number> {
+    const maxValue = Math.max(...Array.from(values.values()));
+    const minValue = Math.min(...Array.from(values.values()));
+
+    if (maxValue - minValue === 0) {
+        // Avoid division by zero
+        return new Map(values);
+    }
+
+    // Define thresholds or criteria for choosing normalization method
+    if (maxValue > 1000) {
+        return this.normalizeLogarithmically(values);
+    } else if (maxValue / minValue > 10) {
+        return this.normalizeSqrt(values);
+    } else {
+        return this.normalizeLinear(values);
+    }
+}
 
   private normalizeLinear(values: Map<number, number>): Map<number, number> {
     const maxValue = Math.max(...values.values());
