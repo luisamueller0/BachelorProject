@@ -72,7 +72,6 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     this.subscriptions.add(
       this.selectionService.currentArtists.subscribe((artists: Artist[] | null) => {
         this.selectedArtists = artists;
-        this.selectionService.selectExhibitions(null);
         this.tryInitialize();
       })
     );
@@ -263,7 +262,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     .style("left", `${event.pageX + 5}px`)
     .style("top", `${event.pageY+ 5 - tooltipHeight}px`)
     .style("font-color", "black")
-    .html(`Year: ${year}<br/>${regions.map(region => `${region.region}: ${region.selected} out of ${region.unselected}`).join('<br/>')} `);
+    .html(`Year: ${year}<br/>${regions.map(region => `${region.region}: ${region.selected} out of ${region.unselected + region.selected}`).join('<br/>')} `);
 
   }
   }
