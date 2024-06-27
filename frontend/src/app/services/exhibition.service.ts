@@ -18,5 +18,4 @@ export class ExhibitionService {
   getAllExhibitions(): Observable<any[]> {
     return this.http.get<any[]>(this.dataUrl + '/exhibition/').pipe(shareReplay());
   }
-  
 }
