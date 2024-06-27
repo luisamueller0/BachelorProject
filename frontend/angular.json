@@ -31,7 +31,7 @@
             ],
             "tsConfig": "tsconfig.app.json",
             "assets": [
-              "src/LogoNew.ico",
+              "src/Logo.ico",
               "src/assets"
             ],
             "styles": [
@@ -91,7 +91,7 @@
             ],
             "tsConfig": "tsconfig.spec.json",
             "assets": [
-              "src/LogoNew.ico",
+              "src/Logo.ico",
               "src/assets"
             ],
             "styles": [
