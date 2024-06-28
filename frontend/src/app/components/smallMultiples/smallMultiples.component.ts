@@ -1048,17 +1048,19 @@ private createArtistNetwork(value: string, clusterGroup: any, cluster: ClusterNo
   formattedRelationships.sort((a, b) => a.sharedExhibitionMinArtworks - b.sharedExhibitionMinArtworks);
 
   const width = 0.0025 * window.innerWidth / 100;
+  console.log('size' ,this.intraCommunityEdges[cluster.clusterId].length)
   const edges = clusterGroup.selectAll(".artist-edge")
       .data(formattedRelationships)
       .enter()
       .append("line")
       .attr("class", `artist-edge artist-edge-${cluster.clusterId}-${value}`)
       .style('stroke', (d: any) => {
-          if (d.sharedExhibitionMinArtworks < threshold) {
+          if (d.sharedExhibitionMinArtworks < threshold &&this.intraCommunityEdges[cluster.clusterId].length > 2) {
               return 'white';
           }
           const clusterId = cluster.clusterId;
-          return this.intraCommunityEdges[clusterId].length === 2 ? 'black' : this.edgeColorScale(d.sharedExhibitionMinArtworks);
+         
+          return this.intraCommunityEdges[clusterId].length <= 2 ? 'black' : this.edgeColorScale(d.sharedExhibitionMinArtworks);
       })
       .style('stroke-width', '.05em')
       .attr('x1', (d: any) => d.source.x)
@@ -1431,18 +1433,39 @@ private normalizeDynamically(values: Map<number, number>): Map<number, number> {
     const minRadius = 6 * innerRadius / 10 / amount;
     const maxRadius = 20 * innerRadius / 10 / amount;
     
-    const lowerBound = 2 * innerRadius/100; // Define a lower bound for the minimum radius
-    const upperBound = 10 * innerRadius/100; // Define an upper bound for the maximum radius
+    const lowerBoundMin = 2 * innerRadius / 100; // Define a lower bound for the minimum radius
+    const upperBoundMin = 5 * innerRadius / 100; // Define an upper bound for the minimum radius
+    const lowerBoundMax = 6 * innerRadius / 100; // Define a lower bound for the maximum radius
+    const upperBoundMax = 12 * innerRadius / 100; // Define an upper bound for the maximum radius
 
-    const calculatedMinRadius = Math.max(minRadius, lowerBound); // Ensure the minimum radius is at least the lower bound
+    console.log('sizes', minRadius, maxRadius, lowerBoundMax, upperBoundMax, lowerBoundMin, upperBoundMin);
+
+    let calculatedMinRadius = 0;
+    if (minRadius > upperBoundMin) {
+        calculatedMinRadius = upperBoundMin;
+    } else if (minRadius < lowerBoundMin) {
+        calculatedMinRadius = lowerBoundMin;
+    } else {
+        calculatedMinRadius = minRadius;
+    }
+
     let calculatedMaxRadius = 0;
-    if(calculatedMinRadius === lowerBound){
-    calculatedMaxRadius = upperBound
-    }else{
-    calculatedMaxRadius =maxRadius} // Ensure the maximum radius does not exceed the upper bound
+    if (maxRadius > upperBoundMax) {
+        calculatedMaxRadius = upperBoundMax;
+    } else if (maxRadius < lowerBoundMax) {
+        calculatedMaxRadius = lowerBoundMax;
+    } else {
+        calculatedMaxRadius = maxRadius;
+    }
+
+    // Ensure calculatedMaxRadius is always greater than or equal to calculatedMinRadius
+    if (calculatedMaxRadius < calculatedMinRadius) {
+        calculatedMaxRadius = calculatedMinRadius;
+    }
 
     const calculatedRadius = calculatedMinRadius + (calculatedMaxRadius - calculatedMinRadius) * value;
     return calculatedRadius;
 }
+
 
 }
