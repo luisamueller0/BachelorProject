@@ -264,10 +264,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
 
 
   
-  private calculateNodeRadius(artistId: number, normalizedMap: Map<number, number>, innerRadius: number): number {
-    const normalizedValue = normalizedMap.get(artistId) || 0;
-    return this.calculateRadiusForNode(normalizedValue, innerRadius);
-}
+
 
   
   private   updateCluster(k: number) {
@@ -1418,7 +1415,7 @@ private normalizeDynamically(values: Map<number, number>): Map<number, number> {
     return {
       x: x,
       y: y,
-      radius: this.calculateRadiusForNode(nodeRadius, cluster.innerRadius),
+      radius: this.calculateRadiusForNode(nodeRadius, cluster.innerRadius, cluster.artists.length),
       color: this.artistService.getCountryColor(countryData.country, 1)
     };
   }
@@ -1430,10 +1427,22 @@ private normalizeDynamically(values: Map<number, number>): Map<number, number> {
       .range([innerRadius - padding, 0]);
   }
 
-  private calculateRadiusForNode(value: number, innerRadius: number): number {
-    const minRadius = 3 * innerRadius / 100;
-    const maxRadius = 14* innerRadius / 100;
-    const calculatedRadius = minRadius + (maxRadius - minRadius) * value;
+  private calculateRadiusForNode(value: number, innerRadius: number, amount: number): number {
+    const minRadius = 6 * innerRadius / 10 / amount;
+    const maxRadius = 20 * innerRadius / 10 / amount;
+    
+    const lowerBound = 2 * innerRadius/100; // Define a lower bound for the minimum radius
+    const upperBound = 10 * innerRadius/100; // Define an upper bound for the maximum radius
+
+    const calculatedMinRadius = Math.max(minRadius, lowerBound); // Ensure the minimum radius is at least the lower bound
+    let calculatedMaxRadius = 0;
+    if(calculatedMinRadius === lowerBound){
+    calculatedMaxRadius = upperBound
+    }else{
+    calculatedMaxRadius =maxRadius} // Ensure the maximum radius does not exceed the upper bound
+
+    const calculatedRadius = calculatedMinRadius + (calculatedMaxRadius - calculatedMinRadius) * value;
     return calculatedRadius;
-  }
+}
+
 }
