@@ -348,11 +348,11 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
         .attr('x2', '100%')
         .attr('y2', '0%');
     
-      const stops = d3.range(0, 1.01, 0.01).map((t: number) => ({
-        offset: `${t * 100}%`,
-        color: d3.interpolateGreys(t)
-      }));
-    
+     // Reverse the stops from 1 to 0
+  const stops = d3.range(1, -0.01, -0.01).map((t: number) => ({
+    offset: `${(1 - t) * 100}%`,
+    color: d3.interpolateGreys(t)
+  }));
       linearGradient.selectAll('stop')
         .data(stops)
         .enter().append('stop')
