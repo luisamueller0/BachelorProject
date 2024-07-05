@@ -199,7 +199,7 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
       const barHeight = Math.min(yScale.bandwidth(), maxBarHeight);
     
       const colorScale = d3.scaleSequential(d3.interpolateGreys)
-        .domain([0, 1]);
+        .domain([1, 0]);
     
       let yOffset = 0;
       const extraSpace = 0.5 * window.innerWidth / 100;
