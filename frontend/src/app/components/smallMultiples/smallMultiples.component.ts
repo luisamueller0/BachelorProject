@@ -1106,7 +1106,12 @@ private createArtistNetwork(value: string, clusterGroup: any, cluster: ClusterNo
           }
           return this.calculateCollisionRadius(sizes[d.id] || 0);
       }))
-      .force("repelFromCenter", this.repelFromCenterForce(artistNodes, centralNode, sizes[centralNode.id]))
+      .force("radial", d3.forceRadial((d:ArtistNode)=> {
+          const radialScale = this.setupRadialScale(cluster.innerRadius);
+          const degree = degreeMap.get(d.artist.id) || 0;
+          return radialScale(degree);
+      }, centerX, centerY).strength(0.5)) // Adjust the strength as needed
+      .force("repelFromCenter", this.repelFromCenterForce(artistNodes, centralNode, sizes[centralNode.id],cluster.innerRadius))
       .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - padding))
       .on("tick", () => {
           circles
@@ -1139,15 +1144,9 @@ private createArtistNetwork(value: string, clusterGroup: any, cluster: ClusterNo
         this.simulationsM[cluster.clusterId] = simulation;
           break;
   }
-  console.log('sim', this.simulationsN)
-    console.log('sim', this.simulationsB)
 
-  console.log('sim', this.simulationsD)
-  console.log('sim', this.simulationsM)
-
-  // Logging to debug
-  console.log(`Simulation stored for cluster ${cluster.clusterId} and category ${value}`);
 }
+
 
 
 
@@ -1335,7 +1334,7 @@ private normalizeDynamically(values: Map<number, number>): Map<number, number> {
     return baseRadius + padding;
   }
 
-  private repelFromCenterForce(artistNodes: any[], centralNode: any, radius: number): (alpha: number) => void {
+  private repelFromCenterForce(artistNodes: any[], centralNode: any, radius: number, innerRadius:number): (alpha: number) => void {
     return function (alpha: number) {
       centralNode.x = 0;
       centralNode.y = 0;
@@ -1344,11 +1343,11 @@ private normalizeDynamically(values: Map<number, number>): Map<number, number> {
           const dx = d.x - centralNode.x;
           const dy = d.y - centralNode.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
-          const minDistance = radius  + d.radius + 0.5;
+       const minDistance = radius  + d.radius + innerRadius/100*2;
           if (distance < minDistance) {
             const angle = Math.atan2(dy, dx);
-            d.x = centralNode.x + Math.cos(angle) * minDistance;
-            d.y = centralNode.y + Math.sin(angle) * minDistance;
+            d.x = centralNode.x + Math.cos(angle) * minDistance ;
+            d.y = centralNode.y + Math.sin(angle) * minDistance ;
           }
         }
       });
@@ -1408,12 +1407,14 @@ private normalizeDynamically(values: Map<number, number>): Map<number, number> {
 
   private calculateNewPosition(type: string, artist: Artist, countryData: any, degreeMap: Map<number, number>, metricMap: Map<number, number>, cluster: ClusterNode, centerX: number, centerY: number): { x: number, y: number, radius: number, color: string | number } {
     const degree = degreeMap.get(artist.id) || 0;
+   
     const radialScale = this.setupRadialScale(cluster.innerRadius);
     const radial = radialScale(degree);
     const nodeRadius = metricMap.get(artist.id) || 0;
     const angle = countryData.middleAngle;
     const x = centerX + radial * Math.sin(angle);
     const y = centerY - radial * Math.cos(angle);
+
     return {
       x: x,
       y: y,
@@ -1426,7 +1427,7 @@ private normalizeDynamically(values: Map<number, number>): Map<number, number> {
     const padding = innerRadius/100*0.05;
     return d3.scaleLinear()
       .domain([0, 1])
-      .range([innerRadius - padding, 0]);
+      .range([innerRadius - padding, 0.0000001]);
   }
 
   private calculateRadiusForNode(value: number, innerRadius: number, amount: number): number {
