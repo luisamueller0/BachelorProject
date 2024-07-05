@@ -41,6 +41,11 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   private contentHeight: number = 0;
   private regionKeys: string[] = ["North Europe", "Eastern Europe", "Southern Europe", "Western Europe", "Others", "\\N"];
   private exhibitionMap: Map<string, Exhibition> = new Map();
+  private selectedYear: number | null = null;  // Add this line
+  private previouslySelectedYear: number | null = null;
+
+
+  
 
   private margin = {
     top: 1,
@@ -272,6 +277,13 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
 
   const handleClick = (event: any, d: any) => {
     const year = d.data.year;
+    if (this.previouslySelectedYear === year) {
+      // Deselect the year if it's the same as the previously selected year
+      this.previouslySelectedYear = null;
+      this.selectionService.selectYear(null);
+      this.selectionService.selectExhibitions([[], []]);
+    } else {
+      this.previouslySelectedYear = year;
   
     let exhibitionsByYear: Exhibition[][] = [];
   
@@ -302,7 +314,9 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
       exhibitionsByYear = [exhibitions, []];
     }
   
+    this.selectionService.selectYear(year)
     this.selectionService.selectExhibitions(exhibitionsByYear);
+  }
   };
   
   

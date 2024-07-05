@@ -1,5 +1,12 @@
 <div class="gantt-container" #gantt>
-  <h1>Overview of selected exhibitions</h1>
+  <div *ngIf="noExhibitions">
+    <h1>Overview of individual exhibitions</h1>
+  </div>
+  <div *ngIf="!noExhibitions">
+    <h1>Overview of selected exhibitions of the year {{year}}</h1>
+  </div>
+
+ 
   <div #legend class="legend-container"></div>
   <div *ngIf="isLoading" class="loading-container">
     <div class="loading-spinner"></div>

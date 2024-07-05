@@ -25,6 +25,7 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
     private contentWidth: number = 0;
     private contentHeight: number = 0;
     private legendGroup: any;
+    public year:number|null = null;
 
     // Margins in vw and vh
     private margin = {
@@ -62,6 +63,9 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
           }
         })
       );
+      this.subscriptions.add(this.selectionService.currentSelectedYear.subscribe((year) => {
+        this.year = year;
+      }));
     
       window.addEventListener('resize', this.onResize.bind(this));
     }
@@ -265,9 +269,10 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
               .style("left", `${event.pageX - 2 - tooltipWidth}px`)
               .style("top", `${event.pageY - 2 - tooltipHeight}px`)
               .style("color", "black")
-              .html(`Name: ${exhibition.name}<br/>Start: ${removeTimeFromDateString(exhibition.startDate.toString())} <br/>End: ${removeTimeFromDateString(exhibition.endDate.toString())} <br/> Duration: ${duration} <br/>in ${exhibition.city} (${exhibition.country}) with ${exhibition.amountParticipants} participants`);
+              .html(`Name: ${exhibition.name}<br/> Duration: ${duration} <br/>in ${exhibition.city} (${exhibition.country}) with ${exhibition.amountParticipants} participants`);
           };
-    
+    //              .html(`Name: ${exhibition.name}<br/>Start: ${removeTimeFromDateString(exhibition.startDate.toString())} <br/>End: ${removeTimeFromDateString(exhibition.endDate.toString())} <br/> Duration: ${duration} <br/>in ${exhibition.city} (${exhibition.country}) with ${exhibition.amountParticipants} participants`);
+
           const removeTimeFromDateString = (dateString: string) => {
             const parts = dateString.split(' ');
             return parts.slice(0, 3).join(' ');
