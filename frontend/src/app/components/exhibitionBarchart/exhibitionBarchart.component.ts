@@ -36,12 +36,12 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   allArtists: Artist[] = [];
   selectedArtists: Artist[] | null = [];
   isLoading: boolean = true;
+  private selectedYear:number|null = null;
   private svg: any;
   private contentWidth: number = 0;
   private contentHeight: number = 0;
   private regionKeys: string[] = ["North Europe", "Eastern Europe", "Southern Europe", "Western Europe", "Others", "\\N"];
   private exhibitionMap: Map<string, Exhibition> = new Map();
-  private selectedYear: number | null = null;  // Add this line
   private previouslySelectedYear: number | null = null;
 
 
@@ -110,9 +110,111 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     } else {
       this.retrieveWantedExhibitions();
       this.createChart();
+      this.clickOnSelectedYear();
       this.isLoading = false;
     }
   }
+  private clickOnSelectedYear(): void {
+    if (this.previouslySelectedYear !== null) {
+      this.handleYearSelectionWithoutClick(this.previouslySelectedYear);
+    }
+  }
+
+  private handleYearSelectionWithoutClick(year: number): void {
+  
+      let exhibitionsByYear: Exhibition[][] = [];
+  
+      if (this.selectedArtists && this.selectedArtists.length === 1) {
+        // If only one artist is selected, include cluster exhibitions
+        const selectedExhibitionsByYear = this.selectedExhibitions.filter(exhibition => {
+          const startYear = new Date(exhibition.start_date).getFullYear();
+          const endYear = new Date(exhibition.end_date).getFullYear();
+          return year >= startYear && year <= endYear;
+        });
+  
+        const selectedExhibitionIds = new Set(selectedExhibitionsByYear.map(exhibition => exhibition.id));
+  
+        const clusterExhibitionsByYear = this.clusterExhibitions.filter(exhibition => {
+          const startYear = new Date(exhibition.start_date).getFullYear();
+          const endYear = new Date(exhibition.end_date).getFullYear();
+          return year >= startYear && year <= endYear && !selectedExhibitionIds.has(exhibition.id);
+        });
+  
+        exhibitionsByYear = [selectedExhibitionsByYear, clusterExhibitionsByYear];
+      } else {
+        // If multiple artists are selected, only include selected exhibitions
+        const exhibitions = this.selectedExhibitions.filter(exhibition => {
+          const startYear = new Date(exhibition.start_date).getFullYear();
+          const endYear = new Date(exhibition.end_date).getFullYear();
+          return year >= startYear && year <= endYear;
+        });
+        exhibitionsByYear = [exhibitions, []];
+      }
+  
+      this.selectionService.selectExhibitions(exhibitionsByYear);
+    
+  }
+  
+/*   private clickOnSelectedYear(): void {
+    if (this.previouslySelectedYear !== null) {
+      const bar = this.svg.selectAll('rect')
+        .filter((d: any) =>{ if(d.data){console.log(d.data.year,  typeof d.data.year)
+          console.log(this.previouslySelectedYear, typeof this.previouslySelectedYear)
+        d.data.year === this.previouslySelectedYear}})
+        .node();
+  
+      if (bar) {
+        bar.dispatchEvent(new MouseEvent('click'));
+      }
+    }
+  } */
+
+    private handleYearSelection(year: number): void {
+      if (this.previouslySelectedYear === year) {
+        // Deselect the year if it's the same as the previously selected year
+        this.previouslySelectedYear = null;
+        this.selectedYear = null;
+        this.selectionService.selectYear(null);
+        this.selectionService.selectExhibitions([[], []]);
+      } else {
+        this.previouslySelectedYear = year;
+        this.selectedYear = year;
+    
+        let exhibitionsByYear: Exhibition[][] = [];
+    
+        if (this.selectedArtists && this.selectedArtists.length === 1) {
+          // If only one artist is selected, include cluster exhibitions
+          const selectedExhibitionsByYear = this.selectedExhibitions.filter(exhibition => {
+            const startYear = new Date(exhibition.start_date).getFullYear();
+            const endYear = new Date(exhibition.end_date).getFullYear();
+            return year >= startYear && year <= endYear;
+          });
+    
+          const selectedExhibitionIds = new Set(selectedExhibitionsByYear.map(exhibition => exhibition.id));
+    
+          const clusterExhibitionsByYear = this.clusterExhibitions.filter(exhibition => {
+            const startYear = new Date(exhibition.start_date).getFullYear();
+            const endYear = new Date(exhibition.end_date).getFullYear();
+            return year >= startYear && year <= endYear && !selectedExhibitionIds.has(exhibition.id);
+          });
+    
+          exhibitionsByYear = [selectedExhibitionsByYear, clusterExhibitionsByYear];
+        } else {
+          // If multiple artists are selected, only include selected exhibitions
+          const exhibitions = this.selectedExhibitions.filter(exhibition => {
+            const startYear = new Date(exhibition.start_date).getFullYear();
+            const endYear = new Date(exhibition.end_date).getFullYear();
+            return year >= startYear && year <= endYear;
+          });
+          exhibitionsByYear = [exhibitions, []];
+        }
+    
+        this.selectionService.selectYear(year);
+        this.selectionService.selectExhibitions(exhibitionsByYear);
+      }
+    }
+    
+  
 
   private retrieveWantedExhibitions(): void {
     this.exhibitions = [];
@@ -277,47 +379,9 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
 
   const handleClick = (event: any, d: any) => {
     const year = d.data.year;
-    if (this.previouslySelectedYear === year) {
-      // Deselect the year if it's the same as the previously selected year
-      this.previouslySelectedYear = null;
-      this.selectionService.selectYear(null);
-      this.selectionService.selectExhibitions([[], []]);
-    } else {
-      this.previouslySelectedYear = year;
-  
-    let exhibitionsByYear: Exhibition[][] = [];
-  
-    if (this.selectedArtists && this.selectedArtists.length === 1) {
-      // If only one artist is selected, include cluster exhibitions
-      const selectedExhibitionsByYear = this.selectedExhibitions.filter(exhibition => {
-        const startYear = new Date(exhibition.start_date).getFullYear();
-        const endYear = new Date(exhibition.end_date).getFullYear();
-        return year >= startYear && year <= endYear;
-      });
-      
-      const selectedExhibitionIds = new Set(selectedExhibitionsByYear.map(exhibition => exhibition.id));
-      
-      const clusterExhibitionsByYear = this.clusterExhibitions.filter(exhibition => {
-        const startYear = new Date(exhibition.start_date).getFullYear();
-        const endYear = new Date(exhibition.end_date).getFullYear();
-        return year >= startYear && year <= endYear && !selectedExhibitionIds.has(exhibition.id);
-      });
-  
-      exhibitionsByYear = [selectedExhibitionsByYear, clusterExhibitionsByYear];
-    } else {
-      // If multiple artists are selected, only include selected exhibitions
-      const exhibitions = this.selectedExhibitions.filter(exhibition => {
-        const startYear = new Date(exhibition.start_date).getFullYear();
-        const endYear = new Date(exhibition.end_date).getFullYear();
-        return year >= startYear && year <= endYear;
-      });
-      exhibitionsByYear = [exhibitions, []];
-    }
-  
-    this.selectionService.selectYear(year)
-    this.selectionService.selectExhibitions(exhibitionsByYear);
-  }
+    this.handleYearSelection(year);
   };
+  
   
   
   
@@ -415,6 +479,10 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
       return year >= startYear && year <= endYear;
     });
   }
+
+
+  
+
   
 
   private getYearlyExhibitionData(selectedExhibitions: Exhibition[], unselectedExhibitions: Exhibition[]): YearData[] {
