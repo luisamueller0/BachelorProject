@@ -281,6 +281,11 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
           const handleMouseOut = (event: any, d: any) => {
             tooltip.style('display', 'none');
           };
+
+          const handleMouseClick = (event: any, d: any) => {
+            navigator.clipboard.writeText(exhibition.name);
+
+          }
     
           if (singleDay) {
             this.svg.append('circle')
@@ -308,7 +313,8 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
               .attr('stroke-width', strokeWidth)
               .on('mouseover', handleMouseOver)
               .on('mousemove', handleMouseMove)
-              .on('mouseout', handleMouseOut);
+              .on('mouseout', handleMouseOut)
+              .on('click', handleMouseClick);
           }
           yOffset += barHeight;
         });
