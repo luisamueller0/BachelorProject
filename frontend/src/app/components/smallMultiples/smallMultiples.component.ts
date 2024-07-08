@@ -448,6 +448,8 @@ private resetNodeSelection() {
 
     console.log("Resetting node:", previousNode, "to color:", previousColor);
 
+    d3.select(previousNode)
+    .style("stroke-width", "0px")
     // Use d3 to select the previous node and remove the filter
     d3.select(previousNode)
       .style("fill", previousColor)
@@ -510,9 +512,14 @@ private selectNode(artistNode: ArtistNode, circle: SVGCircleElement) {
  
   this.selectedNode = [circle, circle.style.fill];
   d3.select(circle).style("filter", "url(#shadow)");
+  d3.select(circle)
+  .style("stroke-width", "0.2px")
+  .style("stroke", "black");
 
   const originalColor = d3.color(circle.style.fill) as d3.RGBColor;
   const darkerColor = d3.rgb(originalColor).darker(1);
+
+
 
   const sharedExhibitionMinArtworksValues: number[] = [];
   this.g.selectAll(".artist-edge").each((d: any) => {
@@ -592,9 +599,12 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
     .each((d: any, i: number, nodes: any) => {
       const circle = nodes[i] as SVGCircleElement;
       circle.style.filter = 'url(#shadow)';
-    });
-}
+      circle.style.strokeWidth= '0.2px';
+      circle.style.stroke =  'black';
+    })
 
+    
+  }
 
 
 
