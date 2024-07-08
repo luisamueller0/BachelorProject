@@ -27,17 +27,17 @@ export class SmallMultiplesComponent implements OnInit, OnChanges, OnDestroy {
   private contentWidth: number = 0;
   private contentHeight: number = 0;
   private margin = {
-    top: 5,
-    right: 1,
-    bottom: 3,
+    top: 0.5,
+    right: 0.5,
+    bottom: 1.5,
     left: 5.5
   };
 
   private marginSwitched = {
-    top: 5,
-    right: 1,
-    bottom: 3,
-    left: 2
+    top: 3,
+    right: 0.5,
+    bottom: 1.5,
+    left: 0.5
   };
 
 
@@ -805,20 +805,74 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
       .range([0, this.contentHeight])
       .padding(0.1);
   
-    this.drawAxes(xScale, yScale, isSwitched);
     this.drawCells(xScale, yScale, xData, yData, cellWidth, cellHeight, isSwitched);
+  
+    if (isSwitched) {
+      this.drawVerticalSeparators(xScale, xData);  // Draw vertical lines
+      this.drawAxes(xScale, yScale, isSwitched, true, false);  // Draw x-axis only
+    } else {
+      this.drawHorizontalSeparators(yScale, yData);  // Draw horizontal lines
+      this.drawAxes(xScale, yScale, isSwitched, false, true);  // Draw y-axis only
+    }
   }
+  
+  private drawAxes(xScale: d3.ScaleBand<string>, yScale: d3.ScaleBand<string>, isSwitched: boolean, drawX: boolean, drawY: boolean): void {
+    const axisColor = "#2a0052";  // Change this to your desired color for the axis lines
+  
+    if (drawX) {
+      this.g.append("g")
+        .call(d3.axisTop(xScale).tickFormat(d => d))
+        .selectAll("path, line")
+        .attr("stroke", axisColor);
+    }
+  
+    if (drawY) {
+      this.g.append("g")
+        .call(d3.axisLeft(yScale).tickFormat(d => d))
+        .selectAll("path, line")
+        .attr("stroke", axisColor)
+        .selectAll(".tick text")
+        .attr("class", (d: any) => isSwitched ? `y-axis-label y-axis-label-${d}` : '');
+    }
+  }
+  
+  private drawVerticalSeparators(xScale: d3.ScaleBand<string>, xData: string[]): void {
+    // Draw vertical lines between columns
+    xData.forEach((d, i) => {
+      if (i > 0) {  // Skip the first index to avoid a line at the start
+        const x = xScale(d)! - 2.5;
+        this.g.append("line")
+          .attr("x1", x)
+          .attr("y1", 0)
+          .attr("x2", x)
+          .attr("y2", this.contentHeight)
+          .attr("stroke", "#e5aeff")  // Light gray color
+          .attr("stroke-width", 1)
+          .attr("stroke-dasharray", "4,4")  // Dashed line
+          .attr("opacity", 0.7);  // Adjust opacity
+      }
+    });
+  }
+  
+private drawHorizontalSeparators(yScale: d3.ScaleBand<string>, yData: string[]): void {
+  // Draw horizontal lines between rows
+  yData.forEach((d, i) => {
+    if (i > 0) {  // Skip the first index to avoid a line at the start
+      const y = yScale(d)! - 2.5;
+      this.g.append("line")
+        .attr("x1", 0)
+        .attr("y1", y)
+        .attr("x2", this.contentWidth)
+        .attr("y2", y)
+        .attr("stroke", "#e5aeff")  // Light gray color
+        .attr("stroke-width", 1)
+        .attr("stroke-dasharray", "4,4")  // Dashed line
+        .attr("opacity", 1);  // Adjust opacity
+    }
+  });
+}
 
-  private drawAxes(xScale: d3.ScaleBand<string>, yScale: d3.ScaleBand<string>, isSwitched: boolean): void {
-    this.g.append("g")
-      .call(d3.axisTop(xScale).tickFormat(d => isSwitched ? d : `Cluster ${d}`));
-  
-    this.g.append("g")
-      .call(d3.axisLeft(yScale))
-      .selectAll(".tick text")
-      .attr("class", (d: any) => isSwitched ? `y-axis-label y-axis-label-${d}` : '');
-  }
-  
+
   private drawCells(xScale: d3.ScaleBand<string>, yScale: d3.ScaleBand<string>, xData: string[], yData: string[], cellWidth: number, cellHeight: number, isSwitched: boolean): void {
     const cells = this.g.selectAll("g.cell")
       .data(isSwitched ? yData.flatMap(y => xData.map(x => ({ x, y }))) : xData.flatMap(x => yData.map(y => ({ x, y }))))
