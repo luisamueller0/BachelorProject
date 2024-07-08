@@ -20,7 +20,7 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
   allArtists: Artist[] = [];
   selectedArtists: Artist[] | null = [];
   nonselectedArtists: Artist[] = [];
-  selectedCluster: Artist[] = [];
+  selectedCluster: Artist[]|null= [];
   isLoading: boolean = true;
   private svg: any;
   private contentWidth: number = 0;
@@ -99,8 +99,8 @@ private categoryColorScale = d3.scaleOrdinal<string, string>()
         this.tryInitialize();
       })
     );
-    this.selectionService.currentFocusArtist.subscribe((artist: Artist | null) => {
-      this.selectedArtists = artist ? [artist] : [];
+    this.selectionService.currentFocusedCluster.subscribe((cluster: Artist[]| null) => {
+      this.selectedCluster = cluster;
       this.tryInitialize();
     });
 
@@ -176,9 +176,20 @@ private categoryColorScale = d3.scaleOrdinal<string, string>()
     const selectedArtists = this.selectedArtists || [];
   
     if (selectedArtists.length === 0) {
+      //case that nothing is selected
       this.nonselectedArtists = this.allArtists;
     } else {
-      this.nonselectedArtists = this.allArtists.filter(artist => !selectedArtists.find(a => a.id === artist.id));
+      //case that a cluster is selected
+      if(this.selectedArtists?.length === this.selectedCluster?.length){
+        this.nonselectedArtists = [];
+      }
+      //case that an individual artist of a cluster is selected
+      else{
+        if(this.selectedCluster){
+          this.nonselectedArtists = this.selectedCluster.filter(artist => !selectedArtists.find(a => a.id === artist.id));
+        }
+      
+      }
     }
   
     const nonselectedTechniqueDistribution = this.calculateTechniqueDistribution(this.nonselectedArtists);
