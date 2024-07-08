@@ -213,8 +213,8 @@ private onClusterClick(clusterNode: ClusterNode): void {
     this.selectionService.selectCluster(this.allArtists);
     this.selectionService.selectClusterEdges([]);
     this.selectionService.selectCountries(this.allCountries);
-    this.selectionService.selectFocusCluster(null);
     this.selectionService.selectExhibitions(null);
+    this.selectionService.selectFocusedCluster(null);
 
     // Reset node selection as well
     this.resetNode();
@@ -236,7 +236,6 @@ private onClusterClick(clusterNode: ClusterNode): void {
     this.selectionService.selectArtists(selectedArtists);
     this.selectionService.selectCluster(selectedArtists);
     this.selectionService.selectClusterEdges(selectedEdges);
-    this.selectionService.selectFocusCluster([[selectedArtists], [selectedEdges]]);
     const countries: string[] = [];
     selectedArtists.forEach(artist => {
       switch (type) {
@@ -255,6 +254,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
       }
     });
     this.selectionService.selectCountries(countries);
+    this.selectionService.selectFocusedCluster(selectedArtists);
 
     // Reduce opacity of all clusters
     this.g.selectAll('.cluster').style('opacity', '0.2');
@@ -487,6 +487,7 @@ private resetNodeSelection() {
   this.selectionService.selectCluster(this.allArtists);
   this.selectionService.selectClusterEdges([]);
   this.selectionService.selectFocusArtist(null);
+
   // Ensure no countries are selected when resetting node selection
   this.selectionService.selectCountries(this.allCountries);
 
@@ -584,6 +585,8 @@ private selectNode(artistNode: ArtistNode, circle: SVGCircleElement) {
       });
 
       this.focusHandler(clusterNode);
+      this.selectionService.selectFocusedCluster(clusterNode.artists);
+
   }
 
   this.selectionService.selectFocusArtist(artistNode.artist);
@@ -667,7 +670,6 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
       // Select the new cluster node
       this.selectionService.selectCluster(selectedArtists);
       this.selectionService.selectClusterEdges(selectedEdges);
-      this.selectionService.selectFocusCluster([[selectedArtists], [selectedEdges]]);
    
       
     

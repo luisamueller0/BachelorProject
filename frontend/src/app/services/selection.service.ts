@@ -16,13 +16,13 @@ export class SelectionService {
   private selectedArtists  = new BehaviorSubject<Artist[]|null>(null);
   private selectedCluster = new BehaviorSubject<Artist[]>([]);
   private selectedCountries = new BehaviorSubject<string[]>([]);
-  private selectedFocusCluster = new BehaviorSubject<[Artist[][], exhibited_with[][]]|null>(null); // Change the initial value to undefined
   private selectedNode = new BehaviorSubject<Artist|null>(null);
   private selectedClusterEdges = new BehaviorSubject<exhibited_with[]>([]);
   private selectedFocusArtist = new BehaviorSubject<Artist|null>(null);
   private selectedExhibitions = new BehaviorSubject<Exhibition[][]|null>(null);
   private selectedYear = new BehaviorSubject<number|null>(null);
   private allClusters = new BehaviorSubject<Artist[][]|null>(null);
+  private focusedCluster = new BehaviorSubject<Artist[]|null>(null);
 
   currentArtists = this.selectedArtists.asObservable();
   currentCluster = this.selectedCluster.asObservable();
@@ -31,11 +31,16 @@ export class SelectionService {
   currentFocusArtist = this.selectedFocusArtist.asObservable();
   currentCountries = this.selectedCountries.asObservable();
   currentNode = this.selectedNode.asObservable();
-  currentFocusCluster = this.selectedFocusCluster.asObservable();
   currentClusterEdges= this.selectedClusterEdges.asObservable();
   currentExhibitions = this.selectedExhibitions.asObservable(); //first array selected, second array not selected
   currentSelectedYear = this.selectedYear.asObservable();
+  currentFocusedCluster = this.focusedCluster.asObservable();
 
+
+  selectFocusedCluster(cluster:Artist[]|null){
+    console.log('focused', cluster)
+    this.focusedCluster.next(cluster);
+  }
  selectYear(year:number|null){
     this.selectedYear.next(year);
  }
@@ -64,11 +69,6 @@ export class SelectionService {
     this.selectedCluster.next(cluster);
   }
 
-  selectFocusCluster(cluster:[Artist[][], exhibited_with[][]]|null){
-  console.log('selected focus cluster', cluster)
-  console.log('selected focus edges', exhibited_with)
-    this.selectedFocusCluster.next(cluster);
-  };
 
   selectCountries(countries:string[]){
     this.selectedCountries.next(countries);
@@ -83,6 +83,10 @@ export class SelectionService {
     this.selectedClusterEdges.next(edges);
   }
 
+  getFocusedCluster(){
+    return this.focusedCluster.value;
+  }
+
   getFocusArtist(){
     return this.selectedFocusArtist.value;
   }
@@ -92,9 +96,7 @@ export class SelectionService {
   }
 
 
-  getFocusCluster(){
-    return this.selectedFocusCluster.value;
-  }
+
 
   getNode(){
     return this.selectedNode.value;

@@ -20,6 +20,7 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
   allArtists: Artist[] = [];
   selectedArtists: Artist[] | null = [];
   nonselectedArtists: Artist[] = [];
+  selectedCluster: Artist[] = [];
   isLoading: boolean = true;
   private svg: any;
   private contentWidth: number = 0;
@@ -98,6 +99,10 @@ private categoryColorScale = d3.scaleOrdinal<string, string>()
         this.tryInitialize();
       })
     );
+    this.selectionService.currentFocusArtist.subscribe((artist: Artist | null) => {
+      this.selectedArtists = artist ? [artist] : [];
+      this.tryInitialize();
+    });
 
     window.addEventListener('resize', this.onResize.bind(this));
   
