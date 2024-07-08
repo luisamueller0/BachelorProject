@@ -33,6 +33,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   nonSelectedExhibitions: Exhibition[] = [];
   selectedExhibitions: Exhibition[] = [];
   clusterExhibitions: Exhibition[] = [];
+  selectedCluster: Artist[] |null = [];
   allArtists: Artist[] = [];
   selectedArtists: Artist[] | null = [];
   isLoading: boolean = true;
@@ -77,6 +78,13 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     this.subscriptions.add(
       this.selectionService.currentArtists.subscribe((artists: Artist[] | null) => {
         this.selectedArtists = artists;
+        this.tryInitialize();
+      })
+    );
+
+    this.subscriptions.add(
+      this.selectionService.currentFocusedCluster.subscribe((cluster: Artist[] | null) => {
+        this.selectedCluster = cluster;
         this.tryInitialize();
       })
     );
@@ -222,6 +230,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   this.nonSelectedExhibitions = [];
   this.clusterExhibitions = [];
 
+
     const allExhibitionIds = new Set(
       this.allArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()))
     );
@@ -232,17 +241,14 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
       }
     });
 
-    if (this.selectedArtists !== null && this.selectedArtists.length > 0) {
+    if (this.selectedArtists && this.selectedArtists.length > 0) {
       const selectedExhibitionIds = new Set(
         this.selectedArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()))
       );
-      //if only one artist, in ganttchart want to display whole cluster
-      const artists = this.selectedArtists;
-      if (artists.length === 1 && artists[0] !== null) {
-        // Find all artists in the same cluster
-        const clusterArtists = this.allArtists.filter(artist => artist.cluster === artists[0].cluster && artist.id !== artists[0].id);
-  
-        // Collect all exhibitions of the artists in the same cluster
+      if(this.selectedArtists.length ===1){
+        if(this.selectedCluster){
+          const clusterArtists = this.selectedCluster;
+             // Collect all exhibitions of the artists in the same cluster
         const clusterExhibitionIds = new Set(
           clusterArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()))
         );
@@ -251,21 +257,32 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
             this.clusterExhibitions.push(exhibition);
           }
         });
-    
+  
       }
-      
-
-      this.exhibitions.forEach(exhibition => {
+      this.clusterExhibitions.forEach(exhibition => {
         if (selectedExhibitionIds.has(exhibition.id.toString())) {
           this.selectedExhibitions.push(exhibition);
         } else {
           this.nonSelectedExhibitions.push(exhibition);
         }
       });
-    } else {
+      
+    } else{
+      this.exhibitions.forEach(exhibition => {
+        if (selectedExhibitionIds.has(exhibition.id.toString())) {
+          this.selectedExhibitions.push(exhibition);
+        } 
+      });
+      this.nonSelectedExhibitions = [];
+
+      
+    }
+  }
+      else {
       this.selectedExhibitions = this.exhibitions;
       this.nonSelectedExhibitions = [];
     }
+  
   }
 
   private createChart(): void {
