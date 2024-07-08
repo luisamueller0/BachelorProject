@@ -218,24 +218,20 @@ private onClusterClick(clusterNode: ClusterNode): void {
 
     // Reset node selection as well
     this.resetNode();
+
+    // Restore opacity of all clusters
+    this.g.selectAll('.cluster').style('opacity', '1');
   } else {
     // Reset the previous cluster node's border if there is one
-    if (this.selectedClusterNode) {
-      this.g.selectAll(`.cluster-${this.selectedClusterNode.clusterId} path`).style('stroke', 'none');
-    }
 
     const size = 0.5 * clusterNode.innerRadius / 100;
 
     // Set the new cluster node as selected and change its border
     this.selectedClusterNode = clusterNode;
-    this.g.selectAll(`.cluster-${clusterNode.clusterId} path`)
-      .style('stroke', 'black')
-      .style('stroke-width', '.1em'); // Adjust the border width as needed
+    // Copy the list of artist names to the clipboard
+    const artistNames = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname}`).join('\n');
+    navigator.clipboard.writeText(artistNames);
 
-        // Copy the list of artist names to the clipboard
-  const artistNames = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname}`).join('\n');
-  navigator.clipboard.writeText(artistNames);
-  
     // Select the new cluster node
     this.selectionService.selectArtists(selectedArtists);
     this.selectionService.selectCluster(selectedArtists);
@@ -259,6 +255,11 @@ private onClusterClick(clusterNode: ClusterNode): void {
       }
     });
     this.selectionService.selectCountries(countries);
+
+    // Reduce opacity of all clusters
+    this.g.selectAll('.cluster').style('opacity', '0.2');
+    // Set opacity of selected cluster to 1
+    this.g.selectAll(`.cluster-${clusterNode.clusterId}`).style('opacity', '1');
   }
 }
 
@@ -425,19 +426,13 @@ this.isLoading = true;
 
     // Highlight the corresponding y-axis label
     this.highlightYAxisLabel(artistNode);
-}
 
-
-private highlightYAxisLabel(artistNode: ArtistNode): void {
+    // Reduce opacity of all clusters
+    this.g.selectAll('.cluster').style('opacity', '0.2');
+    // Set opacity of the selected cluster to 1
     const clusterNode = this.artistClusterMap.get(artistNode.id);
     if (clusterNode) {
-        const clusterId = clusterNode.clusterId;
-
-        // Remove previous highlights
-        d3.selectAll('.y-axis-label').classed('highlighted', false);
-
-        // Highlight the corresponding y-axis label
-        d3.select(`.y-axis-label-${clusterId}`).classed('highlighted', true);
+        this.g.selectAll(`.cluster-${clusterNode.clusterId}`).style('opacity', '1');
     }
 }
 
@@ -450,6 +445,7 @@ private resetNodeSelection() {
 
     d3.select(previousNode)
     .style("stroke-width", "0px")
+    .style("stroke", "none");
     // Use d3 to select the previous node and remove the filter
     d3.select(previousNode)
       .style("fill", previousColor)
@@ -484,13 +480,36 @@ private resetNodeSelection() {
 
   this.g.selectAll(".artist-node").style('opacity', '1').style('filter', 'none');
 
+  this.g.selectAll(".artist-node").style("stroke-width", "0px")
+    .style("stroke", "none");
+
   this.selectedNode = null;
   this.selectionService.selectCluster(this.allArtists);
   this.selectionService.selectClusterEdges([]);
   this.selectionService.selectFocusArtist(null);
   // Ensure no countries are selected when resetting node selection
   this.selectionService.selectCountries(this.allCountries);
+
+  // Restore opacity of all clusters
+  this.g.selectAll('.cluster').style('opacity', '1');
 }
+
+
+
+private highlightYAxisLabel(artistNode: ArtistNode): void {
+    const clusterNode = this.artistClusterMap.get(artistNode.id);
+    if (clusterNode) {
+        const clusterId = clusterNode.clusterId;
+
+        // Remove previous highlights
+        d3.selectAll('.y-axis-label').classed('highlighted', false);
+
+        // Highlight the corresponding y-axis label
+        d3.select(`.y-axis-label-${clusterId}`).classed('highlighted', true);
+    }
+}
+
+
 
   
 private selectNode(artistNode: ArtistNode, circle: SVGCircleElement) {
@@ -643,9 +662,6 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
 
       const width= 0.5*clusterNode.innerRadius/100;
       this.selectedClusterNode = clusterNode;
-      this.g.selectAll(`.cluster-${clusterNode.clusterId} path`)
-        .style('stroke', 'black')
-        .style('stroke-width', '.1em');
        
   
       // Select the new cluster node
