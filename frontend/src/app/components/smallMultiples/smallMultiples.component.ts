@@ -1518,8 +1518,8 @@ private normalizeDynamically(values: Map<number, number>): Map<number, number> {
     
     const lowerBoundMin = 2 * innerRadius / 100; // Define a lower bound for the minimum radius
     const upperBoundMin = 5 * innerRadius / 100; // Define an upper bound for the minimum radius
-    const lowerBoundMax = 6 * innerRadius / 100; // Define a lower bound for the maximum radius
-    const upperBoundMax = 14 * innerRadius / 100; // Define an upper bound for the maximum radius
+    const lowerBoundMax = 10 * innerRadius / 100; // Define a lower bound for the maximum radius
+    const upperBoundMax = 15 * innerRadius / 100; // Define an upper bound for the maximum radius
 
     console.log('sizes', minRadius, maxRadius, lowerBoundMax, upperBoundMax, lowerBoundMin, upperBoundMin);
 
