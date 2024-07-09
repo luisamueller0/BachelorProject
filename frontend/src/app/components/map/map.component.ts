@@ -121,7 +121,7 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
             .style('display', 'block')
             .style('left', `${x + 10}px`)
             .style('top', `${y + 10}px`)
-            .html(`Country: ${d.properties.name} (${this.getKeyByValue(d.properties.name)})`);
+            .html(`${d.properties.name} (${this.getKeyByValue(d.properties.name)})`);
         })
         .on('mouseout', () => {
           d3.select('#tooltip').style('display', 'none');
