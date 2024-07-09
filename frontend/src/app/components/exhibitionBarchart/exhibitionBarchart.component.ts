@@ -131,8 +131,9 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   private handleYearSelectionWithoutClick(year: number): void {
   
       let exhibitionsByYear: Exhibition[][] = [];
-  
+      this.updateBarOpacity(year);
       if (this.selectedArtists && this.selectedArtists.length === 1) {
+       
         // If only one artist is selected, include cluster exhibitions
         const selectedExhibitionsByYear = this.selectedExhibitions.filter(exhibition => {
           const startYear = new Date(exhibition.start_date).getFullYear();
@@ -177,16 +178,33 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     }
   } */
 
+    private resetBarOpacity(): void {
+      this.svg.selectAll('rect')
+        .attr('opacity', 1); // Reset all bars to full opacity
+    }
+    
+    private updateBarOpacity(selectedYear: number): void {
+      this.svg.selectAll('rect')
+        .attr('opacity', (d: any) => {
+          if(d.data === undefined) return 0.2;
+          const year = d.data.year;
+          return (year === selectedYear) ? 1 : 0.2; // Highlight selected year and dim others
+        });
+    }
+
     private handleYearSelection(year: number): void {
+    
       if (this.previouslySelectedYear === year) {
         // Deselect the year if it's the same as the previously selected year
         this.previouslySelectedYear = null;
         this.selectedYear = null;
         this.selectionService.selectYear(null);
         this.selectionService.selectExhibitions([[], []]);
+        this.resetBarOpacity();
       } else {
         this.previouslySelectedYear = year;
         this.selectedYear = year;
+        this.updateBarOpacity(year);
     
         let exhibitionsByYear: Exhibition[][] = [];
     
