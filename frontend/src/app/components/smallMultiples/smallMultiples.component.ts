@@ -826,12 +826,12 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
     this.drawCells(xScale, yScale, xData, yData, cellWidth, cellHeight, isSwitched);
   
     if (isSwitched) {
-      this.drawVerticalSeparators(xScale, xData);  // Draw vertical lines
-      this.drawAxes(xScale, yScale, isSwitched, true, false);  // Draw x-axis only
-    } else {
-      this.drawHorizontalSeparators(yScale, yData);  // Draw horizontal lines
-      this.drawAxes(xScale, yScale, isSwitched, false, true);  // Draw y-axis only
-    }
+      this.drawHorizontalSeparators(yScale, yData); // Draw horizontal lines
+      this.drawAxes(xScale, yScale, isSwitched, true, false); // Draw x-axis only
+  } else {
+      this.drawVerticalSeparators(xScale, xData); // Draw vertical lines
+      this.drawAxes(xScale, yScale, isSwitched, false, true); // Draw y-axis only
+  }
   }
   
   private drawAxes(xScale: d3.ScaleBand<string>, yScale: d3.ScaleBand<string>, isSwitched: boolean, drawX: boolean, drawY: boolean): void {
@@ -855,40 +855,40 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
   }
   
   private drawVerticalSeparators(xScale: d3.ScaleBand<string>, xData: string[]): void {
-    // Draw vertical lines between columns
     xData.forEach((d, i) => {
-      if (i > 0) {  // Skip the first index to avoid a line at the start
-        const x = xScale(d)! - 2.5;
-        this.g.append("line")
-          .attr("x1", x)
-          .attr("y1", 0)
-          .attr("x2", x)
-          .attr("y2", this.contentHeight)
-          .attr("stroke", "#e5aeff")  // Light gray color
-          .attr("stroke-width", 1)
-          .attr("stroke-dasharray", "4,4")  // Dashed line
-          .attr("opacity", 0.7);  // Adjust opacity
-      }
+        if (i > 0) { // Skip the first index to avoid a line at the start
+            const x = xScale(d)! -2.5;
+            this.g.append("line")
+              .attr("x1", x)
+              .attr("y1", 0)
+              .attr("x2", x)
+              .attr("y2", this.contentHeight)
+              .attr("stroke", "#e5aeff") // Light gray color
+              .attr("stroke-width", 1)
+              .attr("stroke-dasharray", "4,4") // Dashed line
+              .attr("opacity", 0.7); // Adjust opacity
+        }
     });
-  }
-  
-private drawHorizontalSeparators(yScale: d3.ScaleBand<string>, yData: string[]): void {
-  // Draw horizontal lines between rows
-  yData.forEach((d, i) => {
-    if (i > 0) {  // Skip the first index to avoid a line at the start
-      const y = yScale(d)! - 2.5;
-      this.g.append("line")
-        .attr("x1", 0)
-        .attr("y1", y)
-        .attr("x2", this.contentWidth)
-        .attr("y2", y)
-        .attr("stroke", "#e5aeff")  // Light gray color
-        .attr("stroke-width", 1)
-        .attr("stroke-dasharray", "4,4")  // Dashed line
-        .attr("opacity", 1);  // Adjust opacity
-    }
-  });
 }
+
+  
+  private drawHorizontalSeparators(yScale: d3.ScaleBand<string>, yData: string[]): void {
+    yData.forEach((d, i) => {
+        if (i > 0) { // Skip the first index to avoid a line at the start
+            const y = yScale(d)! - 2.5;
+            this.g.append("line")
+              .attr("x1", 0)
+              .attr("y1", y)
+              .attr("x2", this.contentWidth)
+              .attr("y2", y)
+              .attr("stroke", "#e5aeff") // Light gray color
+              .attr("stroke-width", 1)
+              .attr("stroke-dasharray", "4,4") // Dashed line
+              .attr("opacity", 1); // Adjust opacity
+        }
+    });
+}
+
 
 
   private drawCells(xScale: d3.ScaleBand<string>, yScale: d3.ScaleBand<string>, xData: string[], yData: string[], cellWidth: number, cellHeight: number, isSwitched: boolean): void {
