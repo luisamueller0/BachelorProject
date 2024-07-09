@@ -9,7 +9,7 @@ import relationship from '../models/exhibited_with'
 export class DecisionService {
   private sunburstSource = new BehaviorSubject<string>('nationality');
   private orderSource = new BehaviorSubject<string>('');
-  private sizeSource = new BehaviorSubject<string>('default: Importance (Degree)');
+  private sizeSource = new BehaviorSubject<string>('Amount of Exhibitions');
   private thicknessSource = new BehaviorSubject<string>('');
   private rangeSource = new BehaviorSubject<number[]>([200,2217]); // Default range
   private kSource = new BehaviorSubject<number>(7); 

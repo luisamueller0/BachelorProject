@@ -102,8 +102,8 @@ public isLoadingRange: boolean = false;
   SunburstOptions: string[] = ['nationality', 'birthcountry', 'deathcountry', 'mostexhibited'];
   selectedSize: string = '';
   SizeOptions: string[] = [
-    'default: Importance (Degree)',
     'Amount of Exhibitions',
+    'default: Importance (Degree)',
     'Amount of different techniques',
     'Amount of exhibited Artworks',
   ];
