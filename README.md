@@ -15,6 +15,7 @@ Bachelor project "Exploring Modern European Art: Visualizing Clusters of Exhibit
 - Run the database.
 ## Install needed npm modules
 - open terminal in frontend folder and run "npm install"
+- open terminal in backend foldern and run "npm install"
 # How to run the website
 - Open a terminal in both the backend and frontend folder. 
 - Run "npm start" in both terminals.
