@@ -21,6 +21,7 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
     private fullOpacityExhibitions: Set<string> = new Set();
     isLoading: boolean = true;
     noExhibitions = true;
+    public selectedArtist: Artist | null = null;
     private svg: any;
     private contentWidth: number = 0;
     private contentHeight: number = 0;
@@ -46,11 +47,16 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
             // Separate exhibitions into those that should be full opacity and those with less opacity
             const [fullOpacityExhibitions, lessOpacityExhibitions] = exhibitions;
             if (lessOpacityExhibitions.length === 0) {
+              this.selectedArtist = null;
               // If the second array is empty, draw all exhibitions with full opacity
               this.exhibitions = fullOpacityExhibitions;
               this.fullOpacityExhibitions = new Set(fullOpacityExhibitions.map(e => e.id.toString()));
             } else {
               // Combine the two arrays and handle opacity in drawTimeline
+              const currentArtist = this.selectionService.getCurrentArtists();
+              if(currentArtist){
+                this.selectedArtist = currentArtist[0];
+              }
               this.exhibitions = [...fullOpacityExhibitions, ...lessOpacityExhibitions];
               this.fullOpacityExhibitions = new Set(fullOpacityExhibitions.map(e => e.id.toString()));
             }

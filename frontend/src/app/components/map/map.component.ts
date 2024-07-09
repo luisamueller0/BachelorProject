@@ -243,6 +243,7 @@ private getKeyByValue(value: string): string |undefined {
       .attr('y', 15)
       .attr('dy', '.35em')
       .text((d: any) => d.region)
+      .style('fill', '#2a0052')
       .style('font-family', 'Roboto, sans-serif')
       .style('font-weight', 'bold');
   
@@ -252,11 +253,12 @@ private getKeyByValue(value: string): string |undefined {
       .attr('x', -9999)
       .attr('y', -9999)
       .text(longestText)
+      .style('fill', '#2a0052')
       .style('font-family', 'Roboto, sans-serif')
       .style('font-weight', 'bold');
   
-    const availableWidth = legendWidth - 120; // 120 is the position of text start + padding
-    let newFontSize = 30; // Start with a larger initial font size
+    const availableWidth = legendWidth - 150; // 120 is the position of text start + padding
+    let newFontSize = 30; // Start with larger initial font size
     const minFontSize = 8; // Set a minimum font size
     textElement.style('font-size', `${newFontSize}px`);
     let textLength = textElement.node()!.getComputedTextLength();

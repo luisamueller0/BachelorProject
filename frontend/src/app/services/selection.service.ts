@@ -104,4 +104,7 @@ export class SelectionService {
   getSelectedYear(){
     return this.selectedYear.value;
   }
+  getCurrentArtists(){
+    return this.selectedArtists.value;
+  }
 }

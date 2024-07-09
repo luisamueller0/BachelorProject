@@ -1,17 +1,20 @@
 <div class="gantt-container" #gantt>
   <div *ngIf="noExhibitions">
-    <h1>Overview of individual exhibitions</h1>
+    <h1>Overview of exhibition timelines</h1>
   </div>
-  <div *ngIf="!noExhibitions">
-    <h1>Overview of selected exhibitions of the year {{year}}</h1>
+  <div *ngIf="!noExhibitions && !selectedArtist">
+    <h1>Overview of exhibitions of selected cluster in {{year}}</h1>
+  </div>
+  <div *ngIf="!noExhibitions && selectedArtist">
+    <h1>Exhibitions of {{selectedArtist.firstname}} {{selectedArtist.lastname}} in {{year}} </h1>
   </div>
 
- 
+
   <div #legend class="legend-container"></div>
   <div *ngIf="isLoading" class="loading-container">
     <div class="loading-spinner"></div>
   </div>
-  <p *ngIf="noExhibitions">Click on a bar in the overview of the exhibitions to show timeline of these exhibitions.</p>
+  <p *ngIf="noExhibitions">Click on a bar in the overview of the exhibitions to display the timeline of these exhibitions.</p>
   <figure class="gantt-svg-container"></figure>
   <div #tooltip class="tooltip" style="display: none;"></div>
 </div>

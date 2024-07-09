@@ -1,9 +1,9 @@
 <div class="barchart-container" #barChart>
   <ng-container *ngIf="!isLoading">
-    <h1 *ngIf="!selectedArtists">Overview of Techniques of all {{ allArtists.length }} artists</h1>
-    <h1 *ngIf="selectedArtists && selectedArtists.length > 1">Overview of Techniques of Cluster with {{ selectedArtists.length }} artists</h1>
+    <h1 *ngIf="!selectedArtists">Overview of techniques used by all {{ allArtists.length }} artists</h1>
+    <h1 *ngIf="selectedArtists && selectedArtists.length > 1">Overview of techniques used by artists of selected cluster</h1>
     <h1 *ngIf="selectedArtists && selectedArtists.length === 1">
-      Technique distribution of Artist: {{ selectedArtists[0].firstname }} {{ selectedArtists[0].lastname }}
+      Techniques used by {{ selectedArtists[0].firstname }} {{ selectedArtists[0].lastname }}
     </h1>
 
   </ng-container>

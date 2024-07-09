@@ -4,10 +4,10 @@
     <div class="loading-spinner"></div>
 </div>
   <ng-container *ngIf="!isLoading">
-      <h1 *ngIf="!selectedArtists">Overview of Birth and Death years of all artists</h1>
-      <h1 *ngIf="selectedArtists && selectedArtists.length > 1">Overview of Birth and Death of selected Cluster</h1>
+      <h1 *ngIf="!selectedArtists">Overview of all artists' lifespans</h1>
+      <h1 *ngIf="selectedArtists && selectedArtists.length > 1">Overview of artists' lifespans in the selected cluster</h1>
       <h1 class="noMargin" *ngIf="selectedArtists && selectedArtists.length === 1">
-          Birth and death year of artist
+          Lifespan of {{selectedArtists[0].firstname}} {{selectedArtists[0].lastname}}
       </h1>
   </ng-container>
   <figure class="artist-gantt-svg-container"></figure>
