@@ -186,7 +186,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     private updateBarOpacity(selectedYear: number): void {
       this.svg.selectAll('rect')
         .attr('opacity', (d: any) => {
-          if(d.data === undefined) return 0.2;
+          if(d.data === undefined) return 1;
           const year = d.data.year;
           return (year === selectedYear) ? 1 : 0.2; // Highlight selected year and dim others
         });
@@ -438,7 +438,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
         const region = d.key.split('-')[0];
         const bool = d.key.split('-')[1];
         return (bool==='unselected') ? colorMap[region]:d3.color(colorMap[region])?.darker(1)})
-      .attr('stroke-width', 0.5)
+      .attr('stroke-width', 0.8)
       .attr('opacity', (d: any) => {
         const region = d.key.split('-')[0];
         const bool = d.key.split('-')[1];
@@ -485,7 +485,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
         .attr('y', (d: any, i: number) => i * (size + 4))  // Added spacing between rectangles
         .attr('width', size)
         .attr('height', size)
-        .attr('fill', (d: any) => colorMap[d as keyof typeof colorMap]);
+        .attr('fill', (d: any) => colorMap[d as keyof typeof colorMap])
       
       legend.selectAll('text')
         .data(this.legendOrder)
