@@ -119,7 +119,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
     const numClusters = groupedByCluster.size;
   
     // Calculate the required height
-    const calculatedHeight = (numArtists * 5) + (numClusters * extraSpace) + margin.top + margin.bottom;
+    const calculatedHeight = (numArtists * barHeight) + (numClusters * extraSpace) + margin.top + margin.bottom;
     const height =  calculatedHeight;
   
     this.svg = d3.select(element).append('svg')
@@ -140,18 +140,18 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
     if (!artists) {
       return;
     }
-
+  
     const allArtists = this.allArtists || [];
     const maxBarHeight = 0.8 *window.innerHeight / 100;
-
+  
     // Map of all artists by ID for easy lookup
     const allArtistsMap = new Map<number, Artist>();
     allArtists.forEach(artist => allArtistsMap.set(artist.id, artist));
-
+  
     // Determine if there is only one selected artist
     const selectedArtist = this.selectedArtists && this.selectedArtists.length === 1 ? this.selectedArtists[0] : null;
     const selectedCluster = selectedArtist ? selectedArtist.cluster + 1 : null;
-
+  
     // Create timeline data based on selected artist and clusters
     const timelineData = selectedCluster
       ? allArtists.filter(artist => artist.cluster + 1 === selectedCluster).map(artist => ({
@@ -182,28 +182,28 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
           clusterIndex: artist.cluster + 1,
           id: artist.id
         }));
-
+  
     const groupedByCluster = d3.group(timelineData, d => d.clusterIndex);
     const sortedClusters = Array.from(groupedByCluster.entries())
       .sort((a, b) => d3.ascending(a[0], b[0]))  // Sort by cluster index (ascending)
       .map(([clusterIndex]) => clusterIndex);
-
+  
     const xScale = d3.scaleTime()
       .domain([d3.min(timelineData, d => d.start || d.end)!, d3.max(timelineData, d => d.end || d.start)!])
       .range([0, this.contentWidth])
       .nice();
-
+  
     const yScale = d3.scaleBand()
       .domain(timelineData.map((d, i) => i.toString()))
       .range([0, this.contentHeight])
       .padding(0.1)
       .round(true);
-
-    const barHeight = 5;
-
+  
+    const barHeight = 0.8 *window.innerHeight / 100;
+  
     const colorScale = d3.scaleSequential(d3.interpolatePlasma)
       .domain([0, 1]);
-
+  
     let yOffset = 0;
     const extraSpace = 0.5 * window.innerWidth / 100;
     const halfExtraSpace = extraSpace / 2;
@@ -211,9 +211,9 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       const clusterArtists = groupedByCluster.get(cluster)!;
       yOffset += (clusterArtists.length * barHeight) + extraSpace;
     });
-
+  
     const xAxis = d3.axisTop(xScale).tickSize(-yOffset);
-
+  
     this.svg.append('g')
       .call(xAxis)
       .attr('transform', `translate(0,0)`)
@@ -223,18 +223,19 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       .attr("dy", ".15em")
       .attr("transform", "rotate(65)")
       .style("font-size", "0.6vw");
-
+  
     this.svg.selectAll('.tick line')
       .attr('stroke', 'gray');
-
+  
     yOffset = 0;
     const defs = this.svg.append('defs');
-
+  
     sortedClusters.forEach((cluster, index) => {
-      let clusterArtists = groupedByCluster.get(cluster)!;
-
+      // Sort artists within the cluster by birth year
+      let clusterArtists = groupedByCluster.get(cluster)!.sort((a, b) => d3.ascending(a.birthyear, b.birthyear));
+  
       yOffset += halfExtraSpace; // Add half of the extra space on top
-
+  
       this.svg.append('text')
         .attr('class', 'label')
         .attr('x', -10)
@@ -244,56 +245,56 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
         .attr('fill', '#2a0052')
         .style('font-size', '0.7vw')
         .text(cluster);
-
+  
       clusterArtists.forEach((artist, index) => {
         const gradientId = `gradient-${artist.id}`;
         const birthColor = this.artistService.getCountryColor(artist.birthCountry);
         const deathColor = this.artistService.getCountryColor(artist.deathCountry);
-
+  
         const gradient = defs.append('linearGradient')
           .attr('id', gradientId)
           .attr('x1', '0%')
           .attr('y1', '0%')
           .attr('x2', '100%')
           .attr('y2', '0%');
-
+  
         gradient.append('stop')
           .attr('offset', '0%')
           .attr('stop-color', birthColor);
-
+  
         gradient.append('stop')
           .attr('offset', '100%')
           .attr('stop-color', deathColor);
-
+  
         const tooltip = d3.select("div#tooltip");
-
+  
         const showTooltip = (event: any, d: any) => {
           const birthyear = artist.birthyear !== -1 ? artist.birthyear : 'unknown';
           const deathyear = artist.deathyear !== -1 ? artist.deathyear : 'unknown';
           const age = artist.birthyear !== -1 && artist.deathyear !== -1 ? artist.deathyear - artist.birthyear : 'unknown';
-
+  
           const tooltipNode = tooltip.node() as HTMLElement;
           const tooltipWidth = tooltipNode.offsetWidth;
-
+  
           tooltip.style("display", "block")
             .style("left", `${event.pageX - 2- tooltipWidth}px`)
             .style("top", `${event.pageY + 2}px`)
             .style("color", "black")
             .html(`Name: ${artist.name}<br/>Born: ${birthyear} in ${artist.birthplace} (${artist.birthCountry})<br/>Died: ${deathyear} in ${artist.deathplace} (${artist.deathCountry})<br/>Age: ${age}`);
           };
-
+  
         const hideTooltip = () => {
           tooltip.style("display", "none");
         };
-
+  
         const click = (event: any, d: any) => {
           this.decisionService.changeSearchedArtistId(artist.id.toString());
           console.log('hallo', typeof artist.id);
         };
-
+  
         const opacity = selectedArtist && selectedCluster === artist.clusterIndex ? (selectedArtist.id === artist.id ? 1 : 0.3) : 1;
         const strokeWidth = selectedArtist && selectedCluster === artist.clusterIndex ? (selectedArtist.id === artist.id ? 0.1 : 0) : 0.2;
-
+  
         if (artist.start && artist.end) {
           this.svg.append('rect')
             .attr('class', 'bar')
@@ -325,13 +326,13 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
             .on("mouseout", hideTooltip)
             .on("click", click);
         }
-
+  
         yOffset += barHeight;
       });
-
+  
       yOffset += halfExtraSpace;
     });
-
+  
     this.svg.append('line')
       .attr('x1', 0)
       .attr('x2', this.contentWidth)
@@ -339,25 +340,28 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       .attr('y2', yOffset)
       .attr('stroke', 'gray')
       .attr('stroke-width', 1);
-
+  
     const linearGradient = defs.append('linearGradient')
       .attr('id', 'linear-gradient')
       .attr('x1', '0%')
       .attr('y1', '0%')
       .attr('x2', '100%')
       .attr('y2', '0%');
-
+  
     const stops = d3.range(0, 1.01, 0.01).map((t: number) => ({
       offset: `${t * 100}%`,
       color: colorScale(t)
     }));
-
+  
     linearGradient.selectAll('stop')
       .data(stops)
       .enter().append('stop')
       .attr('offset', (d: { offset: string; color: string }) => d.offset)
       .attr('stop-color', (d: { offset: string; color: string }) => d.color);
   }
+  
+  
+  
 /*    private addTestArtists(): void {
     if (this.allArtists) {
       this.allArtists.push(
