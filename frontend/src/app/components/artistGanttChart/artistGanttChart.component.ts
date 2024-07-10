@@ -107,8 +107,10 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       left: this.margin.left * window.innerWidth / 100
     };
     const width = element.offsetWidth - margin.left - margin.right;
+
+    const cluster = this.selectionService.getFocusedCluster() || [];
   
-    const numArtists = artists.length;
+    const numArtists = artists.length < cluster.length ? cluster.length : artists.length;
     const barHeight = 0.8 *window.innerHeight / 100;
     const extraSpace = 0.5 * window.innerWidth / 100;
   
@@ -117,8 +119,8 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
     const numClusters = groupedByCluster.size;
   
     // Calculate the required height
-    const calculatedHeight = (numArtists * barHeight) + (numClusters * extraSpace) + margin.top + margin.bottom;
-    const height = Math.max(element.offsetHeight, calculatedHeight);
+    const calculatedHeight = (numArtists * 5) + (numClusters * extraSpace) + margin.top + margin.bottom;
+    const height =  calculatedHeight;
   
     this.svg = d3.select(element).append('svg')
       .attr('width', element.offsetWidth)
@@ -197,7 +199,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       .padding(0.1)
       .round(true);
 
-    const barHeight = Math.min(yScale.bandwidth(), maxBarHeight);
+    const barHeight = 5;
 
     const colorScale = d3.scaleSequential(d3.interpolatePlasma)
       .domain([0, 1]);
