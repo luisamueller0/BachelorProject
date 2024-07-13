@@ -102,6 +102,8 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
         this.isLoading = false;
         if (this.svg) {
           d3.select(this.ganttContainer.nativeElement).select("figure.gantt-svg-container").select("svg").remove();
+          d3.select(this.legendContainer.nativeElement).select("svg").remove(); // Remove existing legend
+
         }
         return;
       } else {
@@ -181,6 +183,13 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
       }));
     
       const normalizedParticipants = this.normalizeLogarithmically(timelineData.map(d => d.amountParticipants));
+      const amountParticipants = timelineData.map(d => d.amountParticipants);
+
+
+      const min = Math.min(...amountParticipants);
+      const max = Math.max(...amountParticipants);
+
+      const legendDomain = [min,this.denormalizeLogarithmically(0.2, min, max),this.denormalizeLogarithmically(0.4, min, max), this.denormalizeLogarithmically(0.6, min, max), this.denormalizeLogarithmically(0.8, min, max),max];
     
       timelineData.forEach((d, i) => {
         d.normalizedParticipants = normalizedParticipants[i];
@@ -378,22 +387,33 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
         .attr('fill', '#2a0052')
         .text('Scale: Number of Participants');
     
-      const legendScale = d3.scaleLinear()
-        .domain([0, 1])
-        .range([0, legendWidth]);
-    
-      const legendAxis = d3.axisBottom(legendScale)
-        .ticks(6)
-        .tickFormat(d3.format(".1f"));
-    
-      const legendAxisGroup = legend.append('g')
-        .attr('transform', `translate(0, ${legendHeight})`)
-        .call(legendAxis);
-    
-      legendAxisGroup.selectAll('text')
-        .style('font-size', '0.5vw');
+     // Create the normalized scale
+  const normalizedScale = d3.scaleLinear()
+    .domain([0, 1])
+    .range([0, legendWidth]);
+
+    const legendAxis = d3.axisBottom(normalizedScale)
+    .tickValues([0, 0.2, 0.4, 0.6, 0.8, 1])
+    .tickFormat((d, i) => legendDomain[i] as unknown as string); // Use type assertion
+    const legendAxisGroup = legend.append('g')
+    .attr('transform', `translate(0, ${legendHeight})`)
+    .call(legendAxis);
+  
+  // Style the tick text
+  legendAxisGroup.selectAll('text')
+    .style('font-size', '0.5vw');
     }
     
+    private denormalizeLogarithmically(normalizedValue: number, minValue: number, maxValue: number): number {
+      const logMinValue = Math.log1p(minValue);
+      const logMaxValue = Math.log1p(maxValue);
+      const range = logMaxValue - logMinValue;
+    
+      const originalLogValue = normalizedValue * range + logMinValue;
+      const originalValue = Math.expm1(originalLogValue);
+    
+      return Math.round(originalValue);    }
+  
     
     private normalizeLogarithmically(values: number[]): number[] {
       const logMaxValue = Math.log1p(Math.max(...values));
