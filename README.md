@@ -1,22 +1,51 @@
-# BachelorProject
-Bachelor project "Exploring Modern European Art: Visualizing Clusters of Exhibited Artists"
-# How to setup:
-## Install node.js
-- https://nodejs.org/en/download/prebuilt-installer
-## Install angular
-- "npm install -g @angular/cli@17" in a command prompt
-## Install neo4j desktop.
-- create new project
-- click on reveal files in explorer
-- copy the "artvis-db.dump" file into the folder
-- the file should be visible in the nep4j app
-- click on the three points and choose "Create new DBMS from dump"
-- Choose the following: name: "artvis-db", password: "24032102", version: "4.4.5"
-- Run the database.
-## Install needed npm modules
-- open terminal in frontend folder and run "npm install"
-- open terminal in backend foldern and run "npm install"
-# How to run the website
-- Open a terminal in both the backend and frontend folder. 
-- Run "npm start" in both terminals.
-- Open website at localhost:4200
+# Bachelor Project: "Exploring Modern European Art: Visualizing Clusters of Exhibited Artists"
+
+## Setup Instructions
+
+This guide provides step-by-step instructions for setting up and running the project.
+
+### 1. Install Node.js
+1. Download and install Node.js from the [official website](https://nodejs.org/en/download/).
+2. Follow the installation instructions for your operating system.
+
+### 2. Install Angular CLI
+1. Open a command prompt or terminal.
+2. Run the following command to install Angular CLI:
+   ```bash
+   npm install -g @angular/cli@17
+
+### 3. Install Neo4j Desktop
+1. Download and install Neo4j Desktop from the [official website](https://neo4j.com/download/).
+2. Open Neo4j Desktop and create a new project.
+3. Click on the project and select "Reveal files in explorer" to open the project folder.
+4. Copy the `artvis-db.dump` file into the revealed folder.
+5. In Neo4j Desktop, ensure the `artvis-db.dump` file is visible.
+6. Click on the three dots (options) next to the `artvis-db.dump` file and choose "Create new DBMS from dump".
+7. Configure the new DBMS with the following settings:
+   - **Name**: `artvis-db`
+   - **Password**: `24032102`
+   - **Version**: `4.4.5`
+8. Run the database by clicking the play button.
+
+### 4. Install Required npm Modules
+#### Frontend
+1. Open a terminal and navigate to the `frontend` folder.
+2. Run the following command to install the necessary npm modules:
+   ```bash
+   npm install
+#### Backend
+1. Open a terminal and navigate to the backend folder.
+2. Run the following command to install the necessary npm module
+    ```bash
+   npm install
+
+## How to Run the Project after Setup
+
+1. Open two terminals:
+   - One in the `frontend` folder.
+   - One in the `backend` folder.
+2. In the both terminals, run:
+   ```bash
+   npm start
+3. Open your web browser and navigate to http://localhost:4200 to access the website.
+
