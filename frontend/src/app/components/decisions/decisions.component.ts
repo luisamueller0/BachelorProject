@@ -103,10 +103,11 @@ public isLoadingRange: boolean = false;
   selectedSize: string = '';
   SizeOptions: string[] = [
     'Amount of Exhibitions',
-    'default: Importance (Degree)',
+   
     'Amount of different techniques',
     'Amount of exhibited Artworks',
   ];
+  // 'default: Importance (Degree)',
 
   selectedOrder: string = '';
   OrderOptions: string[] = [
