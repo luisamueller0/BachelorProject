@@ -1,4 +1,4 @@
-# Bachelor Project: "Exploring Modern European Art: Visualizing Clusters of Exhibited Artists"
+# Bachelor Project: "Exploring Avant-Garde: Visualizing Clusters of Exhibited Artists"
 ## Preview on developed Tool
 ![image](https://github.com/user-attachments/assets/5915fdaa-6eb0-44f0-9d07-597516b62085)
 
