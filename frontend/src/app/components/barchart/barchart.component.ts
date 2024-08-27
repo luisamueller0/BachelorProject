@@ -29,8 +29,8 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
   // Margins in vw and vh
   private margin = {
     top: 1,
-    right: 1,
-    bottom: 5.5,
+    right: 1.2,
+    bottom: 5,
     left: 2.5
   };
 
@@ -163,27 +163,25 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
 
     this.contentWidth = width;
     this.contentHeight = height;
+
+
   }
 
   private drawBars(): void {
+
     if (!this.allArtists.length) return;
   
     const selectedArtists = this.selectedArtists || [];
   
     if (selectedArtists.length === 0) {
-      //case that nothing is selected
       this.nonselectedArtists = this.allArtists;
     } else {
-      //case that a cluster is selected
-      if(this.selectedArtists?.length === this.selectedCluster?.length){
+      if (this.selectedArtists?.length === this.selectedCluster?.length) {
         this.nonselectedArtists = [];
-      }
-      //case that an individual artist of a cluster is selected
-      else{
-        if(this.selectedCluster){
+      } else {
+        if (this.selectedCluster) {
           this.nonselectedArtists = this.selectedCluster.filter(artist => !selectedArtists.find(a => a.id === artist.id));
         }
-      
       }
     }
   
@@ -197,79 +195,133 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
       combinedData.some(data => data.technique === technique && (data.nonselectedArtists > 0 || data.selectedArtists > 0))
     );
   
+    // Group techniques by their parent category
     const groupedTechniques = d3.group(presentTechniques, technique => this.techniquesHierarchy.find(d => d.sub === technique)?.parent);
   
-    const x = d3.scaleBand()
-      .domain(presentTechniques)
-      .range([0, this.contentWidth])
-      .padding(0.1);
+    const groupPadding = 0.05; // Adjust this value for padding between groups
+    const barPadding = 0.05; // Adjust this value for padding between bars within a group
   
-    const techniquePositions = new Map<string, number>();
-    let currentPosition = 0;
+    // Calculate the total number of bars (including padding between groups)
+    let totalBars = 0;
     groupedTechniques.forEach((techniques, parent) => {
-      techniques.forEach((technique: string, index: number) => {
-        techniquePositions.set(technique, currentPosition + x.bandwidth() / 2); // Set midpoint for labels
-        currentPosition += x.bandwidth() * (index === techniques.length - 1 ? 1.2 : 1); // Increase padding between different parents
+      totalBars += techniques.length;
+    });
+    const groupCount = groupedTechniques.size;
+    const totalWidth = this.contentWidth;
+    const totalPaddingWidth = (groupCount - 1) * groupPadding * totalWidth;
+    const barWidth = (totalWidth - totalPaddingWidth) / totalBars;
+  
+
+    
+      // Draw a manual horizontal line where the x-axis should be
+this.svg.append("line")
+.attr("x1", 0)  // Start at the leftmost edge (after the left margin)
+.attr("y1", this.contentHeight)  // Position at the bottom of the chart (y-axis height)
+.attr("x2", this.contentWidth+barWidth)  // End at the rightmost edge (before the right margin)
+.attr("y2", this.contentHeight)  // Keep it horizontal by maintaining the same y-coordinate
+.attr("stroke", "black")  // Set the color of the line
+.attr("stroke-width", 1);  // Set the thickness of the line
+
+
+    let currentXPosition = 0;
+    const techniquePositions: { technique: string; x: number }[] = [];
+  
+    groupedTechniques.forEach((techniques, parent) => {
+      techniques.forEach((technique) => {
+        techniquePositions.push({ technique, x: currentXPosition });
+        currentXPosition += barWidth + (barWidth * barPadding);
       });
+      currentXPosition += groupPadding * totalWidth; // Add padding after each group
     });
   
-    const customXScale = d3.scaleBand()
-      .domain(Array.from(techniquePositions.keys()))
-      .range([0, this.contentWidth])
-      .padding(0.1);
+    // Create a custom x-scale based on calculated positions
+    const xScale = d3.scaleOrdinal<string, number>()
+      .domain(techniquePositions.map(d => d.technique))
+      .range(techniquePositions.map(d => d.x));
   
-    const xAxis = this.svg.append("g")
-      .attr("transform", `translate(0,${this.contentHeight})`)
-      .call(d3.axisBottom(customXScale))
-      .selectAll("text")
-      .attr("transform", "translate(-10,0)rotate(-45)")
-      .style("text-anchor", "end")
+    // Define y-scale
+    const maxTechniqueValue = d3.max(combinedData, d => d.nonselectedArtists + d.selectedArtists) || 0;
+    const yScale = d3.scaleLinear()
+      .domain([0, maxTechniqueValue])
+      .range([this.contentHeight, 0])
+      .nice();
+  
+ 
+// Draw x-axis with individual technique labels
+const xAxis = this.svg.append("g")
+  .attr("transform", `translate(${barWidth/2},${this.contentHeight})`)
+  .call(d3.axisBottom(xScale)
+    .tickSizeOuter(0)  // This removes the outer ticks
+    .tickFormat((d: string) => d));
+
+    
+// Adjust label alignment and rotation
+xAxis.selectAll("text")
+  .attr("transform", "translate(-10,0)rotate(-45)") // Adjust rotation and position
+  .style("text-anchor", "end")
       .style("font-weight", '700')
       .style("font-size", "0.6vw")
-      .style("color", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? 'black' : 'lightgray') : 'black')
+      .style("opacity", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? '1' : '0.4') : '1')
+
+      .style("color", 'black')
       .style("font-weight", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? 'bold' : '700') : '700');
-  
-    xAxis.style("opacity", (d: string) => this.hasTechniqueValue(d, combinedData) ? 1 : 0.3);
-  
-    const maxTechniqueValue: number = d3.max(combinedData, d => d.nonselectedArtists + d.selectedArtists) || 0;
-    const y = d3.scaleLinear()
-      .domain([0, maxTechniqueValue])
-      .range([this.contentHeight, 0]).nice()
-  
+
+
+// Adjust tick lines
+xAxis.selectAll('.tick line')
+   
+      .attr("stroke", "black") // Set the tick line color to black
+  .attr('stroke-width', 1) // Thickness of the ticks
+  .attr('y2', 4); // Length of the ticks
+
+
+// Adjust opacity based on data
+xAxis.style("opacity", (d: string) => !this.hasTechniqueValue(d, combinedData) ? 1 : 0.3);
+
+
+
+    // Draw y-axis
     const yAxis = this.svg.append("g")
-      .call(d3.axisLeft(y));
+      .call(d3.axisLeft(yScale));
   
+      // Optionally, style the ticks as well
+yAxis.selectAll(".tick line")  // Select all the tick lines in the y-axis
+.attr("stroke", "black");  // Set the tick line color to black
+    // Style y-axis labels
     yAxis.selectAll("text")
+    .style('color', 'black')
       .style("font-size", "0.6vw"); // Adjust the size as needed
   
+    // Stack data for the bars
     const stack = d3.stack()
       .keys(['nonselectedArtists', 'selectedArtists']);
   
     const stackedData = stack(combinedData);
   
-    const bars = this.svg.append("g")
+    // Draw bars for each technique
+    this.svg.append("g")
       .selectAll("g")
       .data(stackedData)
       .enter().append("g")
       .selectAll("rect")
       .data((d: any) => d)
       .enter().append("rect")
-      .attr("x", (d: any) => customXScale(d.data.technique) || 0)
-      .attr("y", (d: any) => y(d[1]))
-      .attr("height", (d: any) => y(d[0]) - y(d[1]))
-      .attr("width", customXScale.bandwidth())
+      .attr("x", (d: any) => {
+        const techniquePosition = techniquePositions.find(pos => pos.technique === d.data.technique);
+        return techniquePosition ? techniquePosition.x : 0;
+      })
+      .attr("y", (d: any) => yScale(d[1]))
+      .attr("height", (d: any) => yScale(d[0]) - yScale(d[1]))
+      .attr("width", barWidth)
       .attr("stroke", "black")
       .attr("stroke-width", 0.2)
       .attr("opacity", (d: any, i: number, nodes: any) => {
         const seriesIndex = nodes[i].parentNode.__data__.key;
-        return seriesIndex === 'nonselectedArtists' && selectedArtists.length > 0
-          ? 0.2
-          : 1;
+        return seriesIndex === 'nonselectedArtists' && selectedArtists.length > 0 ? 0.2 : 1;
       })
-      .attr("fill", 'grey');
-  }
-  
 
+      .attr("fill", '#4A4A4A');
+  }
   
   
   
