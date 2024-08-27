@@ -73,11 +73,6 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
     "other medium"
   ];
 
- // Define color scales for parent categories
-private categoryColorScale = d3.scaleOrdinal<string, string>()
-.domain(["Drawing", "Painting",  "Other", "Mural Painting"])
-.range([d3.interpolateGreys(0.9), d3.interpolateGreys(0.7), d3.interpolateGreys(0.5), d3.interpolateGreys(0.3)]);
-
 
 
   constructor(private selectionService: SelectionService,
@@ -271,9 +266,7 @@ private categoryColorScale = d3.scaleOrdinal<string, string>()
           ? 0.2
           : 1;
       })
-      .attr("fill", (d: any, i: number, nodes: any) => {
-        return this.categoryColorScale(this.techniquesHierarchy.find(t => t.sub === d.data.technique)?.parent || "Other");
-      });
+      .attr("fill", 'grey');
   }
   
 
