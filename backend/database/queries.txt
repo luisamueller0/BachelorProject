@@ -213,6 +213,27 @@ MATCH (a)-[r:EXHIBITED_MODIFIED]->(b:Exhibition)
 WHERE r.AmountExhibitedArtworks = maxArtworks AND b.country IS NOT NULL
 SET a.mostExhibitedInCountry = b.country
 
+
+NOW mostExhibitedInCountry: Getting the sum of exhibited artworks for each country and choosing country with highest amount
+Test:
+MATCH (a:Artist)-[r:EXHIBITED_MODIFIED]->(b:Exhibition)
+WHERE a.lastname = 'Gogh'
+WITH b.country AS country, collect(b) AS exhibitions, sum(r.AmountExhibitedArtworks) AS totalExhibitedArtworks
+RETURN country, totalExhibitedArtworks
+
+FInal query:
+MATCH (a:Artist)-[r:EXHIBITED_MODIFIED]->(b:Exhibition)
+WITH a, b.country AS country, sum(r.AmountExhibitedArtworks) AS totalExhibitedArtworks
+ORDER BY totalExhibitedArtworks DESC
+WITH a, country, totalExhibitedArtworks
+ORDER BY totalExhibitedArtworks DESC
+WITH a, collect({country: country, total: totalExhibitedArtworks}) AS countryTotals
+WITH a, countryTotals[0].country AS topCountry, countryTotals[0].total as topTotal
+SET a.mostExhibitedInCountry = topCountry,  a.mostExhibitedInCountryAmount = topTotal
+RETURN a.lastname AS artist, a.mostExhibitedInCountry, a.mostExhibitedInCountryAmount
+
+
+
 FOR COMMUNITY DETECTION
 ^^^^^^^^^^^^^^^^^^^^^^
 // First, collect the necessary nodes and relationships into lists
