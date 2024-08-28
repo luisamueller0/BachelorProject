@@ -891,18 +891,58 @@ private highlightSameNodeInOtherClusters(artistId: number): void {
 
 
 
-  private drawCells(xScale: d3.ScaleBand<string>, yScale: d3.ScaleBand<string>, xData: string[], yData: string[], cellWidth: number, cellHeight: number, isSwitched: boolean): void {
-    const cells = this.g.selectAll("g.cell")
-      .data(isSwitched ? yData.flatMap(y => xData.map(x => ({ x, y }))) : xData.flatMap(x => yData.map(y => ({ x, y }))))
-      .enter()
-      .append("g")
-      .attr("class", "cell")
-      .attr("transform", (d: any) => `translate(${xScale(isSwitched ? d.x : String(d.x))!-5},${yScale(isSwitched ? String(d.y) : d.y)!-5})`);
+private drawCells(xScale: d3.ScaleBand<string>, yScale: d3.ScaleBand<string>, xData: string[], yData: string[], cellWidth: number, cellHeight: number, isSwitched: boolean): void {
+  const cells = this.g.selectAll("g.cell")
+    .data(isSwitched ? yData.flatMap(y => xData.map(x => ({ x, y }))) : xData.flatMap(x => yData.map(y => ({ x, y }))))
+    .enter()
+    .append("g")
+    .attr("class", "cell")
+    .attr("transform", (d: any) => `translate(${xScale(isSwitched ? d.x : String(d.x))!-5},${yScale(isSwitched ? String(d.y) : d.y)!-5})`);
   
-    cells.each((d: any, i: number, nodes: any) => {
-      this.drawClusterInCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight, isSwitched);
-    });2
-  }
+  cells.each((d: any, i: number, nodes: any) => {
+    this.drawClusterInCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight, isSwitched);
+    this.addButtonToCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight, isSwitched); // Add the button
+  });
+}
+
+private addButtonToCell(cell: any, x: string | number, y: string | number, cellWidth: number, cellHeight: number, isSwitched: boolean): void {
+  const buttonSize = 15 * cellWidth / 100;  // Size of the button
+  const marginRight = 5; // Margin for positioning
+  const marginTop = 10;   // Margin for positioning
+
+  // Adjust position to top right corner
+  const positionX = cellWidth - buttonSize - marginRight;
+  const positionY = marginTop;
+
+  // Append a button element within a foreignObject
+  const button = cell.append("foreignObject")
+    .attr("x", positionX)
+    .attr("y", positionY)
+    .attr("width", buttonSize + marginRight) // Ensure foreignObject is wide enough
+    .attr("height", buttonSize + marginTop)  // Ensure foreignObject is tall enough
+    .append("xhtml:div")  // Use div instead of button for better control
+    .style("width", `${buttonSize}px`)
+    .style("height", `${buttonSize}px`)
+    .style("background-color", "#f5e0ff")
+    .style("border", "0.2vh solid #f5e0ff")
+    .style("border-radius", "50%")
+    .style("display", "flex")
+    .style("align-items", "center")
+    .style("justify-content", "center")
+    .style("font-size", `${buttonSize * 0.8}px`)  // Adjust font size relative to the button size
+    .style("font-weight", `800`) 
+    .style("line-height", `${buttonSize}px`)  // Ensure the symbol is centered
+    .style("color", "#7e24c7")  // Set text color
+    .html("✧") // Use the ✧ symbol
+    .on("click", () => {
+      console.log(`Button clicked for cluster ${x}, ${y}`);
+      // Add your button click logic here
+    });
+}
+
+
+
+
   
   private drawClusterInCell(cell: any, x: string | number, y: string | number, cellWidth: number, cellHeight: number, isSwitched: boolean): void {
     const clusterIndex = isSwitched ? Number(y) - 1 : Number(x) - 1;

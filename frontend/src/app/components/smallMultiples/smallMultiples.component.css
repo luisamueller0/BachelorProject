@@ -25,3 +25,14 @@
   margin-top:0px;
 }
   
+button {
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #ddd;
+}
+
+button:active {
+  background-color: #bbb;
+}
