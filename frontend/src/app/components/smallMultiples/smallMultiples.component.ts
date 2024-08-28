@@ -914,6 +914,8 @@ private addButtonToCell(cell: any, x: string | number, y: string | number, cellW
   const positionX = cellWidth - buttonSize - marginRight;
   const positionY = marginTop;
 
+  const clusterIndex = isSwitched ? Number(y) - 1 : Number(x) - 1; // Determine cluster index based on the current cell
+
   // Append a button element within a foreignObject
   const button = cell.append("foreignObject")
     .attr("x", positionX)
@@ -921,6 +923,7 @@ private addButtonToCell(cell: any, x: string | number, y: string | number, cellW
     .attr("width", buttonSize + marginRight) // Ensure foreignObject is wide enough
     .attr("height", buttonSize + marginTop)  // Ensure foreignObject is tall enough
     .append("xhtml:div")  // Use div instead of button for better control
+    .attr("data-cluster-index", clusterIndex) // Store the cluster index as a data attribute
     .style("width", `${buttonSize}px`)
     .style("height", `${buttonSize}px`)
     .style("background-color", "#f5e0ff")
@@ -934,11 +937,29 @@ private addButtonToCell(cell: any, x: string | number, y: string | number, cellW
     .style("line-height", `${buttonSize}px`)  // Ensure the symbol is centered
     .style("color", "#7e24c7")  // Set text color
     .html("✧") // Use the ✧ symbol
-    .on("click", () => {
-      console.log(`Button clicked for cluster ${x}, ${y}`);
-      // Add your button click logic here
+    .on("click", (event: MouseEvent) => {
+      const target = event.currentTarget as HTMLElement;
+      const clusterIndex = target.getAttribute('data-cluster-index');
+      this.handleButtonClick(clusterIndex); // Call the handler with the cluster index
     });
 }
+
+// Handler function for button click
+private handleButtonClick(clusterIndex: string | null): void {
+  if (clusterIndex === null) return;
+
+  // Convert the cluster index back to a number
+  const index = Number(clusterIndex);
+
+  // Retrieve the corresponding cluster and network information
+  const cluster = this.clusters[index];
+  const artistNames = cluster.map(artist => `${artist.firstname} ${artist.lastname}`);
+
+  console.log(`Button clicked for cluster ${index}. Artists:`, artistNames);
+
+  // You can now use this information as needed, e.g., displaying it in a tooltip, modal, etc.
+}
+
 
 
 
