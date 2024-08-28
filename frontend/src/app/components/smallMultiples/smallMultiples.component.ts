@@ -6,6 +6,7 @@ import { DecisionService } from '../../services/decision.service';
 import { ArtistService } from '../../services/artist.service';
 import { Artist, ArtistNode, ClusterNode } from '../../models/artist';
 import exhibited_with from '../../models/exhibited_with';
+import { GenerativeAIService } from '../../services/generativeAI.service';
 
 interface InterCommunityEdge extends d3.SimulationLinkDatum<ClusterNode> {
   source: number | ClusterNode;
@@ -40,6 +41,7 @@ export class SmallMultiplesComponent implements OnInit, OnChanges, OnDestroy {
     left: 0.5
   };
 
+  aiResponse: string = '';  // To store the AI response
 
   private clusters: Artist[][] = [];
   private intraCommunityEdges: exhibited_with[][] = [];
@@ -95,7 +97,8 @@ export class SmallMultiplesComponent implements OnInit, OnChanges, OnDestroy {
   constructor(
     private selectionService: SelectionService,
     private decisionService: DecisionService,
-    private artistService: ArtistService
+    private artistService: ArtistService,
+    private generativeAIService: GenerativeAIService
   ) {
     //this.handleNodeClick = this.handleNodeClick.bind(this);
   }
@@ -956,6 +959,19 @@ private handleButtonClick(clusterIndex: string | null): void {
   const artistNames = cluster.map(artist => `${artist.firstname} ${artist.lastname}`);
 
   console.log(`Button clicked for cluster ${index}. Artists:`, artistNames);
+
+  const prompt = "Direkte Verbindung zwischen Gino Severini und Umberto Boccioni in 2 Sätzen.";
+
+    this.generativeAIService.generateAIResponse(prompt).subscribe(
+      response => {
+        this.aiResponse = response;  // Store the response
+        console.log("AI Response:", this.aiResponse);
+      },
+      error => {
+        console.error("Error generating AI response:", error);
+      }
+    );
+  
 
   // You can now use this information as needed, e.g., displaying it in a tooltip, modal, etc.
 }
