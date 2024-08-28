@@ -320,7 +320,7 @@ yAxis.selectAll(".tick line")  // Select all the tick lines in the y-axis
         return seriesIndex === 'nonselectedArtists' && selectedArtists.length > 0 ? 0.2 : 1;
       })
 
-      .attr("fill", '#4A4A4A');
+      .attr("fill", 'grey');
   }
   
   

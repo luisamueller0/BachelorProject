@@ -1221,7 +1221,7 @@ private createArtistNetwork(value: string, clusterGroup: any, cluster: ClusterNo
          
           return this.intraCommunityEdges[clusterId].length <= 2 ? 'black' : this.edgeColorScale(d.sharedExhibitionMinArtworks);
       })
-      .style('stroke-width', '.05em')
+      .style('stroke-width', '.045em')
       .attr('x1', (d: any) => d.source.x)
       .attr('y1', (d: any) => d.target.y)
       .attr('x2', (d: any) => d.target.x)
