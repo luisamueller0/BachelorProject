@@ -29,7 +29,7 @@ class GenerativeAIModel {
       ) {
         // Extract the text from the correct path in the response
         const text = result.response.candidates[0].content.parts[0].text;
-        console.log("Generated Text:", text);
+        console.log("Text generated");
         return text;
       } else {
         throw new Error("No content generated.");

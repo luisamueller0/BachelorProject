@@ -960,11 +960,11 @@ private handleButtonClick(clusterIndex: string | null): void {
 
   console.log(`Button clicked for cluster ${index}. Artists:`, artistNames);
 
-  const prompt = "Direkte Verbindung zwischen Gino Severini und Umberto Boccioni in 2 Sätzen.";
+  const prompt = "What do all of the following artists have in common: " + artistNames.join(", ") + ". In 5 sentences.";
 
     this.generativeAIService.generateAIResponse(prompt).subscribe(
       response => {
-        this.aiResponse = response;  // Store the response
+        this.aiResponse = response.content;  // Store the response
         console.log("AI Response:", this.aiResponse);
       },
       error => {
