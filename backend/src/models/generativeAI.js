@@ -16,8 +16,6 @@ class GenerativeAIModel {
       // Generate content based on the prompt
       const result = await model.generateContent(prompt);
 
-      console.log("Result:", result);
-
       // Access the generated text
       if (
         result.response &&
