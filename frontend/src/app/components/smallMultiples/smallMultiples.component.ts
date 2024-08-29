@@ -479,7 +479,8 @@ private resetNodeSelection() {
   // Reset styles for all artist nodes and edges across categories
   const threshold = 0.4;
   this.g.selectAll(".artist-edge")
-    .style('stroke', (d: any) => d.sharedExhibitionMinArtworks >= threshold ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none');
+    .style('stroke', (d: any) => d.sharedExhibitionMinArtworks >= threshold ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none')
+    .style('opacity', 1)
 
   this.g.selectAll(".artist-node").style('opacity', '1').style('filter', 'none');
 
@@ -516,45 +517,44 @@ private highlightYAxisLabel(artistNode: ArtistNode): void {
 
 
   
+
 private selectNode(artistNode: ArtistNode, circle: SVGCircleElement) {
+  // Reset previously selected node and restore all edges and nodes to default styles
   if (this.selectedNode) {
       const previousNode = this.selectedNode[0];
       const previousColor = this.selectedNode[1];
 
       console.log("Previous node:", previousNode, "Previous color:", previousColor);
-      
-      // Use d3 to select the previous node and remove the filter
+
+      // Restore the previously selected node's style
       d3.select(previousNode)
           .style("fill", previousColor)
-          .style("filter", "none"); // Explicitly set filter to "none"
+          .style("filter", "none");
 
-      this.g.selectAll(".artist-edge").style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks));
+      // Restore all edges to their original styles and visibility
+      this.g.selectAll(".artist-edge")
+          .style('stroke', (d: any) => this.edgeColorScale(d.sharedExhibitionMinArtworks))
+          .style('opacity', '1');
+
+
+      // Restore all nodes' opacity to 1
       this.g.selectAll(".artist-node").style('opacity', '1');
   }
 
- 
+  // Set the selected node
   this.selectedNode = [circle, circle.style.fill];
   d3.select(circle).style("filter", "url(#shadow)");
   d3.select(circle)
-  .style("stroke-width", "0.2px")
-  .style("stroke", "black");
+      .style("stroke-width", "0.2px")
+      .style("stroke", "black");
 
   const originalColor = d3.color(circle.style.fill) as d3.RGBColor;
-  const darkerColor = d3.rgb(originalColor).darker(1);
 
-
-
-  const sharedExhibitionMinArtworksValues: number[] = [];
-  this.g.selectAll(".artist-edge").each((d: any) => {
-      sharedExhibitionMinArtworksValues.push(d.sharedExhibitionMinArtworks);
-  });
-
-  const minArtworks = d3.min(sharedExhibitionMinArtworksValues) ?? 0;
-  const maxArtworks = d3.max(sharedExhibitionMinArtworksValues) ?? 1;
-  const edgeColorScale = this.createEdgeColorScale(darkerColor.toString(), minArtworks, maxArtworks);
 
   const selectedNodeId = artistNode.id;
   const connectedNodeIds: Set<number> = new Set<number>();
+
+  // Identify connected nodes
   this.g.selectAll(".artist-edge").each((d: any) => {
       if (d.source.id === selectedNodeId) {
           connectedNodeIds.add(d.target.id);
@@ -563,33 +563,47 @@ private selectNode(artistNode: ArtistNode, circle: SVGCircleElement) {
       }
   });
 
-  this.g.selectAll(".artist-edge").filter((d: any) => {
-      return d.source.id === selectedNodeId || d.target.id === selectedNodeId;
-  }).style('stroke', (d: any) => edgeColorScale(d.sharedExhibitionMinArtworks));
+  const categories = ['nationality', 'birthcountry', 'deathcountry', 'mostexhibited'];
+  categories.forEach(category => {
+      const clusterId = this.artistClusterMap.get(artistNode.id)?.clusterId;
 
-  this.g.selectAll(".artist-edge").filter((d: any) => {
-      const clusterNode = this.artistClusterMap.get(artistNode.id);
-      if (!clusterNode) return false;
-      const clusterId = clusterNode.clusterId;
-      const sourceClusterNode = this.artistClusterMap.get(d.source.id);
-      const targetClusterNode = this.artistClusterMap.get(d.target.id);
+      if (clusterId !== undefined) {
+          const clusterNode = this.clusters[clusterId];
+          const artistColor = this.getArtistColorBasedOnCategory(artistNode.artist, category);
 
-      return (sourceClusterNode && sourceClusterNode.clusterId === clusterId) && (targetClusterNode && targetClusterNode.clusterId === clusterId) && (d.source.id !== selectedNodeId && d.target.id !== selectedNodeId);
-  }).style('stroke', 'none');
+          const sharedExhibitionMinArtworksValues: number[] = [];
+          this.g.selectAll(`.artist-edge-${clusterId}-${category}`).each((d: any) => {
+              sharedExhibitionMinArtworksValues.push(d.sharedExhibitionMinArtworks);
+          });
+
+          const minArtworks = d3.min(sharedExhibitionMinArtworksValues) ?? 0;
+          const maxArtworks = d3.max(sharedExhibitionMinArtworksValues) ?? 1;
+          const edgeColorScale = this.createEdgeColorScale(artistColor, minArtworks, maxArtworks);
+
+          // Update edges connected to the selected node with the scaled color
+          this.g.selectAll(`.artist-edge-${clusterId}-${category}`)
+              .style('stroke', (d: any) => {
+                  if (d.source.id === artistNode.id || d.target.id === artistNode.id) {
+                      return edgeColorScale(d.sharedExhibitionMinArtworks);
+                  } else {
+                      return this.edgeColorScale(d.sharedExhibitionMinArtworks);
+                  }
+              })
+              .style('opacity', (d: any) => {
+                  return (d.source.id === artistNode.id || d.target.id === artistNode.id) ? '1' : '0';
+              });
+
+          // Reduce opacity for nodes not connected to the selected node
+          this.g.selectAll(`.artist-node-${clusterId}-${category}`)
+              .filter((d: any) => d.id !== artistNode.id && !connectedNodeIds.has(d.id))
+              .style('opacity', '0.2');
+      }
+  });
 
   const clusterNode = this.artistClusterMap.get(artistNode.id);
   if (clusterNode) {
-      const clusterId = clusterNode.clusterId;
-      this.g.selectAll(".artist-node").each((d: any, i: number, nodes: any) => {
-          const nodeCluster = this.artistClusterMap.get(d.id);
-          if (!connectedNodeIds.has(d.id) && d.id !== selectedNodeId && nodeCluster && nodeCluster.clusterId === clusterId) {
-              d3.select(nodes[i]).style('opacity', '0.2');
-          }
-      });
-
       this.focusHandler(clusterNode);
       this.selectionService.selectFocusedCluster(clusterNode.artists);
-
   }
 
   this.selectionService.selectFocusArtist(artistNode.artist);
@@ -600,12 +614,11 @@ private selectNode(artistNode: ArtistNode, circle: SVGCircleElement) {
   countries.push(artist.nationality);
   countries.push(artist.birthcountry);
   countries.push(artist.deathcountry);
-  countries.push(artist.most_exhibited_in)
+  countries.push(artist.most_exhibited_in);
   this.selectionService.selectCountries(countries);
-    // Copy artist's name to clipboard
-    navigator.clipboard.writeText(`${artist.firstname} ${artist.lastname}`);
 
-  
+  // Copy artist's name to clipboard
+  navigator.clipboard.writeText(`${artist.firstname} ${artist.lastname}`);
 
   const clusterNode2 = this.artistClusterMap.get(artistNode.id);
   if (clusterNode2) {
@@ -614,43 +627,69 @@ private selectNode(artistNode: ArtistNode, circle: SVGCircleElement) {
       this.selectionService.selectCluster(selectedClusterArtists);
       this.selectionService.selectClusterEdges(selectedClusterEdges);
   }
-
-  // Highlight the same node in other clusters/categories
-  this.highlightSameNodeInOtherClusters(artistNode.id);
-}
-
-private highlightSameNodeInOtherClusters(artistId: number): void {
-  this.g.selectAll(".artist-node").filter((d: any) => d.artist.id === artistId)
-    .each((d: any, i: number, nodes: any) => {
-      const circle = nodes[i] as SVGCircleElement;
-      circle.style.filter = 'url(#shadow)';
-      circle.style.strokeWidth= '0.2px';
-      circle.style.stroke =  'black';
-    })
-
-    
+    // Highlight the same node in other clusters/categories
+    this.highlightSameNodeInOtherClusters(artistNode.id);
   }
-
-
-
-  private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks: number): d3.ScaleLinear<string, number> {
-    const baseColorRGB = d3.rgb(baseColor);
-    const lighterColor = d3.color(baseColorRGB.toString());
-    if (lighterColor) {
-      lighterColor.opacity = 0.1; // Set the opacity to 0.1 (10%)
+  
+  private highlightSameNodeInOtherClusters(artistId: number): void {
+    this.g.selectAll(".artist-node").filter((d: any) => d.artist.id === artistId)
+      .each((d: any, i: number, nodes: any) => {
+        const circle = nodes[i] as SVGCircleElement;
+        circle.style.filter = 'url(#shadow)';
+        circle.style.strokeWidth= '0.2px';
+        circle.style.stroke =  'black';
+      })
+  
+      
     }
   
-    if (minArtworks === maxArtworks) {
-      // If all values are the same, return a scale that maps everything to the darker color
-      return d3.scaleLinear<string, number>()
-        .domain([0, 1])
-        .range([baseColor, baseColor]);
-    } else {
-      return d3.scaleLinear<string, number>()
-        .domain([minArtworks, maxArtworks])
-        .range([lighterColor?.toString() || baseColor, baseColor]);
-    }
+
+
+private getArtistColorBasedOnCategory(artist: Artist, category: string): string {
+  let countryCode: string;
+  switch (category) {
+      case 'nationality':
+          countryCode = artist.nationality;
+          break;
+      case 'birthcountry':
+          countryCode = artist.birthcountry;
+          break;
+      case 'deathcountry':
+          countryCode = artist.deathcountry;
+          break;
+      case 'mostexhibited':
+          countryCode = artist.most_exhibited_in;
+          break;
+      default:
+          countryCode = artist.nationality;
+          break;
   }
+  const originalColor = this.artistService.getCountryColor(countryCode, 1)
+  return d3.rgb(originalColor).darker(0.5).toString();  // Corrected: call toString()
+}
+
+private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks: number): d3.ScaleLinear<string, number> {
+  const baseColorRGB = d3.rgb(baseColor);
+  const lighterColor = d3.color(baseColorRGB.toString());
+  if (lighterColor) {
+      lighterColor.opacity = 0.1; // Set the opacity to 0.1 (10%)
+  }
+
+  if (minArtworks === maxArtworks) {
+      // If all values are the same, return a scale that maps everything to the base color
+      return d3.scaleLinear<string, number>()
+          .domain([0, 1])
+          .range([baseColor, baseColor]);
+  } else {
+      return d3.scaleLinear<string, number>()
+          .domain([minArtworks, maxArtworks])
+          .range([lighterColor?.toString() || baseColor, baseColor]);
+  }
+}
+
+
+
+
   
   private focusHandler(clusterNode:ClusterNode){
    
