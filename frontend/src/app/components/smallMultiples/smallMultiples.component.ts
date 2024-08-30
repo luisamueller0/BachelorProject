@@ -967,8 +967,11 @@ private drawCells(xScale: d3.ScaleBand<string>, yScale: d3.ScaleBand<string>, xD
 
 private addButtonToCell(cell: any, x: string | number, y: string | number, cellWidth: number, cellHeight: number, isSwitched: boolean): void {
   const buttonSize = 15 * cellWidth / 100;  // Size of the button
-  const marginRight = 5; // Margin for positioning
-  const marginTop = 2;   // Margin for positioning
+
+  //const buttonSize = Math.min(cellWidth, cellHeight) * 0.2;  // Size of the button is 20% of the smaller cell dimension
+  const marginRight = cellWidth * 0.05; // 5% of the cell width for right margin
+  const marginTop = cellHeight * 0.001;  // 5% of the cell height for top margin
+
 
   // Adjust position to top right corner
   const positionX = cellWidth - buttonSize - marginRight;
