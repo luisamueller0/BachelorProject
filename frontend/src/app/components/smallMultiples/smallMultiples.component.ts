@@ -983,7 +983,6 @@ private addButtonToCell(cell: any, x: string | number, y: string | number, cellW
     .style("width", `${buttonSize}px`)
     .style("height", `${buttonSize}px`)
     .style("background-color", "#f5e0ff")
-    .style("border", "0.2vh solid #f5e0ff")
     .style("border-radius", "50%")
     .style("display", "flex")
     .style("align-items", "center")
@@ -1275,6 +1274,8 @@ private createArtistNetwork(value: string, clusterGroup: any, cluster: ClusterNo
   formattedRelationships.sort((a, b) => a.sharedExhibitionMinArtworks - b.sharedExhibitionMinArtworks);
 
   const width = 0.0025 * window.innerWidth / 100;
+  const edgeWidth = cluster.innerRadius / 100 * 0.12;
+
   console.log('size' ,this.intraCommunityEdges[cluster.clusterId].length)
   const edges = clusterGroup.selectAll(".artist-edge")
       .data(formattedRelationships)
@@ -1289,7 +1290,7 @@ private createArtistNetwork(value: string, clusterGroup: any, cluster: ClusterNo
          
           return this.intraCommunityEdges[clusterId].length <= 2 ? 'black' : this.edgeColorScale(d.sharedExhibitionMinArtworks);
       })
-      .style('stroke-width', '.045em')
+      .style('stroke-width', `${edgeWidth}vw`)  // Ensure the edgeWidth is a string with 'vh'
       .attr('x1', (d: any) => d.source.x)
       .attr('y1', (d: any) => d.target.y)
       .attr('x2', (d: any) => d.target.x)
