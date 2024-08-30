@@ -997,8 +997,22 @@ private addButtonToCell(cell: any, x: string | number, y: string | number, cellW
       const target = event.currentTarget as HTMLElement;
       const clusterIndex = target.getAttribute('data-cluster-index');
       this.handleButtonClick(clusterIndex); // Call the handler with the cluster index
-    });
-}
+    })
+    .on("mouseover", (event: MouseEvent) => {
+      const target = event.currentTarget as HTMLElement;
+    //  target.style.borderColor = "#7e24c7";  // Change background color on hover
+      target.style.backgroundColor = "#e0baf2"
+    })
+    .on("mouseout", (event: MouseEvent) => {
+      const target = event.currentTarget as HTMLElement;
+     // target.style.borderColor = "#f5e0ff";  // Reset background color on mouse out
+      target.style.backgroundColor = "#f5e0ff"
+
+    })
+  }
+
+ 
+    
 
 // Handler function for button click
 private handleButtonClick(clusterIndex: string | null): void {
