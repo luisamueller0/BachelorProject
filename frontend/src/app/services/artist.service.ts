@@ -281,28 +281,44 @@ public pinkColorPalette: string[] = [
 
 // Function to get color based on country and region
 public getCountryColor(countryName: string | undefined, opacity: number = 1): string {
-  if (countryName === undefined) return d3.interpolateGreys(0.5); // Default color for undefined countries
-
-  for (const [region, countries] of Object.entries(this.europeanRegions)) {
-    const index = countries.indexOf(countryName);
-    if (index !== -1) {
-      const colorScale = this.getRegionColorScale(region);
-      const t = index / (countries.length - 1); // Calculate interpolation factor
-      let color = d3.color(colorScale(t));
-      if (color) {
-        color.opacity = opacity;
-        return color.toString();
+  // Explicitly handle the case where the region or country is \N
+  if (countryName === "\\N") {
+      let capuccinoColor = d3.color(this.capuccinoColorPalette[0]);
+      if (capuccinoColor) {
+          capuccinoColor.opacity = opacity;
+          return capuccinoColor.toString();
       }
-    }
+      return d3.interpolateGreys(0.5); // Fallback
   }
 
+  // If countryName is undefined, return a default color
+  if (countryName === undefined) {
+      return d3.interpolateGreys(0.5); // Default color for undefined countries
+  }
+
+  // Iterate through the regions and find the matching country
+  for (const [region, countries] of Object.entries(this.europeanRegions)) {
+      const index = countries.indexOf(countryName);
+      if (index !== -1) {
+          const colorScale = this.getRegionColorScale(region);
+          const t = index / (countries.length - 1); // Calculate interpolation factor
+          let color = d3.color(colorScale(t));
+          if (color) {
+              color.opacity = opacity;
+              return color.toString();
+          }
+      }
+  }
+
+  // Fallback color if no match is found
   let defaultColor = d3.color("#C3C3C3");
   if (defaultColor) {
-    defaultColor.opacity = opacity;
-    return defaultColor.toString();
+      defaultColor.opacity = opacity;
+      return defaultColor.toString();
   }
   return d3.interpolateGreys(0.5); // Fallback
 }
+
 
 public countryMap : { [key: string]: string } = {
   "AL": "Albania",

@@ -43,6 +43,7 @@ export class SmallMultiplesComponent implements OnInit, OnChanges, OnDestroy {
 
   aiResponse: string = '';  // To store the AI response
 
+  private innerRadius: number = 0;
   private clusters: Artist[][] = [];
   private intraCommunityEdges: exhibited_with[][] = [];
   private interCommunityEdges: InterCommunityEdge[] = [];
@@ -558,9 +559,7 @@ private selectNode(artistNode: ArtistNode, circle: SVGCircleElement) {
   // Set the selected node
   this.selectedNode = [circle, circle.style.fill];
   d3.select(circle).style("filter", "url(#shadow)");
-  d3.select(circle)
-      .style("stroke-width", "0.2px")
-      .style("stroke", "black");
+
 
   const originalColor = d3.color(circle.style.fill) as d3.RGBColor;
 
@@ -584,6 +583,10 @@ private selectNode(artistNode: ArtistNode, circle: SVGCircleElement) {
       if (clusterId !== undefined) {
           const clusterNode = this.clusters[clusterId];
           const artistColor = this.getArtistColorBasedOnCategory(artistNode.artist, category);
+
+
+        
+    
 
           const sharedExhibitionMinArtworksValues: number[] = [];
           this.g.selectAll(`.artist-edge-${clusterId}-${category}`).each((d: any) => {
@@ -646,11 +649,12 @@ private selectNode(artistNode: ArtistNode, circle: SVGCircleElement) {
   }
   
   private highlightSameNodeInOtherClusters(artistId: number): void {
+    const width = 0.07 * this.innerRadius / 100;
     this.g.selectAll(".artist-node").filter((d: any) => d.artist.id === artistId)
       .each((d: any, i: number, nodes: any) => {
         const circle = nodes[i] as SVGCircleElement;
         circle.style.filter = 'url(#shadow)';
-        circle.style.strokeWidth= '0.2px';
+        circle.style.strokeWidth= `${width}vw`;
         circle.style.stroke =  'black';
       })
   
@@ -1056,6 +1060,7 @@ private handleButtonClick(clusterIndex: string | null): void {
     const cellSize = Math.min(cellWidth, cellHeight);
     const paddedCellSize = cellSize * (1 - this.paddingRatio); // Reduce cell size by padding ratio
     const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, this.clusters[0].length, paddedCellSize);
+    this.innerRadius = innerRadius; 
     const clusterNode: ClusterNode = {
         clusterId: clusterIndex,
         artists: cluster,
