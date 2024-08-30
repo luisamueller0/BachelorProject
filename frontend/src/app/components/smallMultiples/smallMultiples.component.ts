@@ -394,27 +394,32 @@ this.isLoading = true;
 
 
   private handleNodeClick(artistNode: ArtistNode, event: MouseEvent): void {
-    let defs = this.svg.append('defs');
-  
-    let filter = defs.append('filter')
-        .attr('id', 'shadow')
-        .attr('x', '-50%')
-        .attr('y', '-50%')
-        .attr('width', '200%')
-        .attr('height', '200%');
+    // Ensure defs and filter are only created once
+    let defs = this.svg.select('defs');
+    if (defs.empty()) {
+        defs = this.svg.append('defs');
+    }
+
+    let filter = defs.select('#shadow');
+    if (filter.empty()) {
+        filter = defs.append('filter')
+            .attr('id', 'shadow')
+            .attr('x', '-50%')
+            .attr('y', '-50%')
+            .attr('width', '200%')
+            .attr('height', '200%');
 
         filter.append('feDropShadow')
-        .attr('dx', 0)
-        .attr('dy', 0)
-        .attr('stdDeviation', 2)  // Keep stdDeviation low to maintain the circular shape
-        .attr('flood-color', 'black')
-        .attr('flood-opacity', 1);  // Increase opacity for a darker shadow
+            .attr('dx', 0)
+            .attr('dy', 0)
+            .attr('flood-color', 'black')
+            .attr('flood-opacity', 1);
 
-
-    let feMerge = filter.append('feMerge');
-    feMerge.append('feMergeNode');
-    feMerge.append('feMergeNode')
-        .attr('in', 'SourceGraphic');
+        let feMerge = filter.append('feMerge');
+        feMerge.append('feMergeNode');
+        feMerge.append('feMergeNode')
+            .attr('in', 'SourceGraphic');
+    }
 
     this.isNodeClick = true;
 
@@ -425,6 +430,14 @@ this.isLoading = true;
     } else {
         this.resetNodeSelection(); // Reset any previously selected node
         this.selectNode(artistNode, circle);
+
+        // Dynamically adjust the shadow based on the radius of the selected node
+        const radius = parseFloat(d3.select(circle).attr('r')); // Get the radius of the node
+        filter.select('feDropShadow')
+            .attr('stdDeviation', Math.max(0.5, radius / 3)); // Adjust stdDeviation relative to the node size
+
+        // Apply the filter to the selected node
+        d3.select(circle).style("filter", "url(#shadow)");
     }
 
     // Highlight the corresponding y-axis label
@@ -438,6 +451,7 @@ this.isLoading = true;
         this.g.selectAll(`.cluster-${clusterNode.clusterId}`).style('opacity', '1');
     }
 }
+
 
 private resetNodeSelection() {
   if (this.selectedNode) {
@@ -1000,6 +1014,7 @@ private handleButtonClick(clusterIndex: string | null): void {
   console.log(`Button clicked for cluster ${index}. Artists:`, artistNames);
 
   const prompt = "What do all of the following artists have in common: " + artistNames.join(", ") + ". In 5 sentences.";
+  //Summarize the connections between the following artists:
 
     this.generativeAIService.generateAIResponse(prompt).subscribe(
       response => {
