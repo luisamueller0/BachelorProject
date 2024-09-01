@@ -451,9 +451,9 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
       .attr('y', (d: any) => yScale(d[1]))
       .attr('height', (d: any) => yScale(d[0]) - yScale(d[1]))
       .attr('width', xScale.bandwidth())
-      .on('mouseover', handleMouseOver)
+     /*  .on('mouseover', handleMouseOver)
       .on('mousemove', handleMouseMove)
-      .on('mouseout',handleMouseOut)
+      .on('mouseout',handleMouseOut) */
       .on('click', handleClick);
 
   
