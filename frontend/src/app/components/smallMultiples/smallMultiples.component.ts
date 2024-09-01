@@ -109,7 +109,6 @@ export class SmallMultiplesComponent implements OnInit, OnChanges, OnDestroy {
     this.createChart();
 
     this.subscriptions.add(this.decisionService.currentSize.subscribe(size => {
-      console.log(`currentSize emitted: ${size}`);
       this.updateNodeSize(size);
     }));
     
@@ -163,7 +162,7 @@ private resetNode() {
     const previousNode = this.selectedNode[0];
     const previousColor = this.selectedNode[1];
 
-    console.log("Resetting node:", previousNode, "to color:", previousColor);
+    ////console.log("Resetting node:", previousNode, "to color:", previousColor);
 
     // Use d3 to select the previous node and remove the filter
     d3.select(previousNode)
@@ -375,7 +374,7 @@ this.isLoading = true;
   
     const selectedCircle = this.g.selectAll(".artist-node").filter((d: any) => d.artist.id.toString() === id).node() as SVGCircleElement;
     if (!selectedCircle) {
-      console.log('No circle found for artist id:', id);
+      //console.log('No circle found for artist id:', id);
       return; // If no node is found, exit the function
     }
   
@@ -386,8 +385,8 @@ this.isLoading = true;
       view: window
     });
   
-    console.log('selectedNodeData:',selectedNodeData)
-    console.log('selected event:',simulatedEvent)
+    //console.log('selectedNodeData:',selectedNodeData)
+    //console.log('selected event:',simulatedEvent)
     this.handleNodeClick(selectedNodeData, simulatedEvent);
   }
 
@@ -459,7 +458,7 @@ private resetNodeSelection() {
     const previousNode = this.selectedNode[0];
     const previousColor = this.selectedNode[1];
 
-    console.log("Resetting node:", previousNode, "to color:", previousColor);
+    //console.log("Resetting node:", previousNode, "to color:", previousColor);
 
     d3.select(previousNode)
     .style("stroke-width", "0px")
@@ -539,7 +538,7 @@ private selectNode(artistNode: ArtistNode, circle: SVGCircleElement) {
       const previousNode = this.selectedNode[0];
       const previousColor = this.selectedNode[1];
 
-      console.log("Previous node:", previousNode, "Previous color:", previousColor);
+      //console.log("Previous node:", previousNode, "Previous color:", previousColor);
 
       // Restore the previously selected node's style
       d3.select(previousNode)
@@ -742,22 +741,22 @@ private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks
     
         this.clusters = data[0];
        /*  this.clusters.forEach((cluster, clusterIndex) => {
-          console.log('Cluster ', clusterIndex, ':')
+          //console.log('Cluster ', clusterIndex, ':')
           cluster.forEach(artist => {
-            console.log(artist.firstname, artist.lastname, clusterIndex)
+            //console.log(artist.firstname, artist.lastname, clusterIndex)
           });
         }); */
         
         this.selectionService.selectAllClusters(this.clusters);
         this.clusters.forEach((cluster, clusterIndex) => {
           cluster.forEach(artist => {
-            console.log('exhibited:' ,artist.total_exhibitions, 'artworks:', artist.total_exhibited_artworks, 'techniques:')
+            //console.log('exhibited:' ,artist.total_exhibitions, 'artworks:', artist.total_exhibited_artworks, 'techniques:')
           });
         })
 
         this.intraCommunityEdges = data[1] as exhibited_with[][];
         const interCommunityEdgesRaw = data[2] as exhibited_with[];
-        console.log('edges',data[3])
+        //console.log('edges',data[3])
     
         this.interCommunityEdges = interCommunityEdgesRaw.map(edge => ({
           source: edge.startId,
@@ -1284,7 +1283,7 @@ private createArtistNetwork(value: string, clusterGroup: any, cluster: ClusterNo
   const width = 0.0025 * window.innerWidth / 100;
   const edgeWidth = cluster.innerRadius / 100 * 0.12;
 
-  console.log('size' ,this.intraCommunityEdges[cluster.clusterId].length)
+  //console.log('size' ,this.intraCommunityEdges[cluster.clusterId].length)
   const edges = clusterGroup.selectAll(".artist-edge")
       .data(formattedRelationships)
       .enter()
@@ -1350,6 +1349,9 @@ private createArtistNetwork(value: string, clusterGroup: any, cluster: ClusterNo
       .force("repelFromCenter", this.repelFromCenterForce(artistNodes, centralNode, sizes[centralNode.id],cluster.innerRadius))
       .force("boundary", this.boundaryForce(artistNodes, cluster.innerRadius - padding))
       .on("tick", () => {
+        artistNodes.forEach(node => {
+          this.constrainAngularMovement(node, countryCentroids[node.countryData.country]);
+      });
           circles
               .attr('cx', (d: any) => d.x)
               .attr('cy', (d: any) => d.y);
@@ -1389,6 +1391,26 @@ private createArtistNetwork(value: string, clusterGroup: any, cluster: ClusterNo
 
 
   
+private constrainAngularMovement(node: any, countryData: any) {
+  const angle = node.angle;
+  const radialDistance = Math.sqrt(node.x * node.x + node.y * node.y);
+  const radialMax = countryData.outerRadius;
+
+  // Constrain radial movement
+  if (radialDistance > radialMax) {
+      node.x = radialMax * Math.cos(angle);
+      node.y = radialMax * Math.sin(angle);
+  }
+
+  // Constrain angular movement
+  if (angle < countryData.startAngle) {
+      node.x = radialMax * Math.cos(countryData.startAngle);
+      node.y = radialMax * Math.sin(countryData.startAngle);
+  } else if (angle > countryData.endAngle) {
+      node.x = radialMax * Math.cos(countryData.endAngle);
+      node.y = radialMax * Math.sin(countryData.endAngle);
+  }
+}
 
   private prepareData(artists: Artist[], value: string): Artist[] {
     const regionMap = new Map<string, any[]>();
@@ -1590,6 +1612,8 @@ private normalizeDynamically(values: Map<number, number>): Map<number, number> {
     };
   }
 
+
+
   private boundaryForce(artistNodes: any[], innerRadius: number): (alpha: number) => void {
     const padding = window.innerWidth / 100 * 0.05;
     return function (alpha: number) {
@@ -1675,7 +1699,7 @@ private normalizeDynamically(values: Map<number, number>): Map<number, number> {
     const lowerBoundMax = 8 * innerRadius / 100; // Define a lower bound for the maximum radius
     const upperBoundMax = 15 * innerRadius / 100; // Define an upper bound for the maximum radius
 
-    console.log('sizes', minRadius, maxRadius, lowerBoundMax, upperBoundMax, lowerBoundMin, upperBoundMin);
+    //console.log('sizes', minRadius, maxRadius, lowerBoundMax, upperBoundMax, lowerBoundMin, upperBoundMin);
 
     let calculatedMinRadius = 0;
     if (minRadius > upperBoundMin) {

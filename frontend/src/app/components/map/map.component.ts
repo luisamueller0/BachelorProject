@@ -136,7 +136,7 @@ private handleCountryClick(country: string, event: MouseEvent): void {
  
 
   const countryOnMap = event.currentTarget as SVGPathElement;
-  console.log(country, this.getKeyByValue(country));
+ 
   //this.selectionService.selectMapCountry(this.getKeyByValue(country));
 }
 

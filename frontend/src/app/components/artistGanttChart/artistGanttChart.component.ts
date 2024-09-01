@@ -289,7 +289,6 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
   
         const click = (event: any, d: any) => {
           this.decisionService.changeSearchedArtistId(artist.id.toString());
-          console.log('hallo', typeof artist.id);
         };
   
         const opacity = selectedArtist && selectedCluster === artist.clusterIndex ? (selectedArtist.id === artist.id ? 1 : 0.3) : 1;

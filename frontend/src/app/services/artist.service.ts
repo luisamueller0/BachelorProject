@@ -35,7 +35,7 @@ export class ArtistService {
   
 
   getArtistsWithRange(range:number[]):Observable<any[][]>{
-    console.log(range)
+    //console.log(range)
     const [minLimit, maxLimit] = range;
     const params = new HttpParams()
       .set('minLimit', minLimit.toString())
@@ -57,7 +57,7 @@ export class ArtistService {
   }
 
   getAmountArtistsWithNationalityTechnique(range:number[]):Observable<any[][]>{
-    console.log(range)
+    //console.log(range)
     const [minLimit, maxLimit] = range;
     const params = new HttpParams()
       .set('minLimit', minLimit.toString())

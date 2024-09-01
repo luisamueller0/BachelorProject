@@ -167,8 +167,8 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
 /*   private clickOnSelectedYear(): void {
     if (this.previouslySelectedYear !== null) {
       const bar = this.svg.selectAll('rect')
-        .filter((d: any) =>{ if(d.data){console.log(d.data.year,  typeof d.data.year)
-          console.log(this.previouslySelectedYear, typeof this.previouslySelectedYear)
+        .filter((d: any) =>{ if(d.data){//console.log(d.data.year,  typeof d.data.year)
+          //console.log(this.previouslySelectedYear, typeof this.previouslySelectedYear)
         d.data.year === this.previouslySelectedYear}})
         .node();
   

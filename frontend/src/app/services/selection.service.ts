@@ -38,14 +38,14 @@ export class SelectionService {
 
 
   selectFocusedCluster(cluster:Artist[]|null){
-    console.log('focused', cluster)
+    //console.log('focused', cluster)
     this.focusedCluster.next(cluster);
   }
  selectYear(year:number|null){
     this.selectedYear.next(year);
  }
   selectExhibitions(exhibitions:Exhibition[][]|null){
-    console.log(exhibitions)
+    //console.log(exhibitions)
     this.selectedExhibitions.next(exhibitions);
   }
   selectArtists(artists:Artist[]|null) {
@@ -65,7 +65,7 @@ export class SelectionService {
  
 
   selectCluster(cluster:Artist[]){
-    console.log('selected cluster', cluster.length)
+    //console.log('selected cluster', cluster.length)
     this.selectedCluster.next(cluster);
   }
 
@@ -79,7 +79,7 @@ export class SelectionService {
     this.selectedNode.next(node);
   }
   selectClusterEdges(edges:exhibited_with[]){
-    console.log('selected cluster edges', edges.length)
+    //console.log('selected cluster edges', edges.length)
     this.selectedClusterEdges.next(edges);
   }
 
