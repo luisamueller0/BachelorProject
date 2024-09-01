@@ -917,7 +917,7 @@ private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks
   private drawVerticalSeparators(xScale: d3.ScaleBand<string>, xData: string[]): void {
     xData.forEach((d, i) => {
         if (i > 0) { // Skip the first index to avoid a line at the start
-            const x = xScale(d)! -2.5;
+            const x = xScale(d)! -4;
             this.g.append("line")
               .attr("x1", x)
               .attr("y1", 0)
@@ -935,7 +935,7 @@ private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks
   private drawHorizontalSeparators(yScale: d3.ScaleBand<string>, yData: string[]): void {
     yData.forEach((d, i) => {
         if (i > 0) { // Skip the first index to avoid a line at the start
-            const y = yScale(d)! - 2.5;
+            const y = yScale(d)! ;
             this.g.append("line")
               .attr("x1", 0)
               .attr("y1", y)
