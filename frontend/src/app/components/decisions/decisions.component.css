@@ -93,7 +93,8 @@
 .info-text {
     color: red;
     font-weight: 700;
-    font-size: 0.6vw;}
+    font-size: 0.6vw;
+margin-bottom: 0.2vh;}
 
 /* Styles for dropdowns and search input */
 .dropdown,
@@ -143,6 +144,7 @@
     align-items: center;
     justify-content: start;
     gap: 0;
+    margin-bottom: -0.8vh;
 }
 
 .checkbox-group {
