@@ -47,6 +47,7 @@ export class SmallMultiplesComponent implements OnInit, OnChanges, OnDestroy {
   private clusters: Artist[][] = [];
   private intraCommunityEdges: exhibited_with[][] = [];
   private interCommunityEdges: InterCommunityEdge[] = [];
+  private singleInterCommunityEdges: exhibited_with[][] = [];
   private clusterNodes: ClusterNode[] = [];
   public allArtists: Artist[] = [];
   private artistClusterMap: Map<number, ClusterNode> = new Map<number, ClusterNode>();
@@ -289,6 +290,8 @@ private onClusterClick(clusterNode: ClusterNode): void {
       this.selectionService.selectAllClusters(clusters);
       const intraCommunityEdges = data[1] as exhibited_with[][];
       const interCommunityEdges = data[2] as exhibited_with[];
+      this.singleInterCommunityEdges = data[3] as exhibited_with[][];
+
       
     
       this.loadNewData(clusters, intraCommunityEdges, interCommunityEdges);
@@ -306,6 +309,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
     // Remove the existing SVG element
     
     this.clusters = clusters;
+
     this.intraCommunityEdges = intraCommunityEdges;
     if (Array.isArray(interCommunityEdges) && interCommunityEdges.length > 0) {
       if (interCommunityEdges[0] instanceof exhibited_with) {
@@ -395,6 +399,8 @@ this.isLoading = true;
 
   private handleNodeClick(artistNode: ArtistNode, event: MouseEvent): void {
     // Ensure defs and filter are only created once
+console.log('HALLO', this.singleInterCommunityEdges)
+
     let defs = this.svg.select('defs');
     if (defs.empty()) {
         defs = this.svg.append('defs');
@@ -429,6 +435,12 @@ this.isLoading = true;
         this.resetNodeSelection();
     } else {
         this.resetNodeSelection(); // Reset any previously selected node
+
+        const clusterNode = this.artistClusterMap.get(artistNode.id);
+        if (clusterNode) {
+        
+       this.highlightInterClusterConnections(artistNode.id, clusterNode?.clusterId);
+        }
         this.selectNode(artistNode, circle);
 
         // Dynamically adjust the shadow based on the radius of the selected node
@@ -444,13 +456,81 @@ this.isLoading = true;
     this.highlightYAxisLabel(artistNode);
 
     // Reduce opacity of all clusters
-    this.g.selectAll('.cluster').style('opacity', '0.2');
+    //this.g.selectAll('.cluster').style('opacity', '0.2');
     // Set opacity of the selected cluster to 1
-    const clusterNode = this.artistClusterMap.get(artistNode.id);
-    if (clusterNode) {
-        this.g.selectAll(`.cluster-${clusterNode.clusterId}`).style('opacity', '1');
-    }
+ 
+
+  }
+  private highlightInterClusterConnections(artistId: number, clusterId: number): void {
+    const connectedNodeIds = new Set<number>();
+    const unconnectedNodeIds = new Set<number>();
+
+    const width = 0.07 * this.innerRadius / 100;
+  
+    
+
+    // Identify connected and unconnected nodes
+    const clusterEdges = this.singleInterCommunityEdges[clusterId];
+    clusterEdges.forEach(edge => {
+        if (edge.startId === artistId) {
+            connectedNodeIds.add(edge.endId);
+        } else if (edge.endId === artistId) {
+            connectedNodeIds.add(edge.startId);
+        }
+    });
+
+    // Populate unconnectedNodeIds excluding nodes in the same cluster
+    this.g.selectAll(".artist-node").each((d: any) => {
+        if (!connectedNodeIds.has(d.id) && d.artist.cluster !== clusterId) {
+            unconnectedNodeIds.add(d.id);
+        }
+    });
+
+    const connectedOpacity = 0.8;
+    const unconnectedOpacity = 0.2;
+    const strokeWidth = 0.07 * this.innerRadius / 100;
+
+    console.log(connectedNodeIds);
+
+    // Highlight connected nodes and nodes in the same cluster
+    this.g.selectAll(".artist-node")
+        .filter((d: any) => connectedNodeIds.has(d.id) )
+        .style('opacity', connectedOpacity)
+        .style("stroke-width", `${width}vw`)
+        .style("stroke", "grey");
+
+        this.g.selectAll(".artist-node")
+        .filter((d: any) => d.artist.cluster === clusterId)
+        .style('opacity', 1);
+  
+
+    // Lower opacity for unconnected nodes that are not in the same cluster
+    this.g.selectAll(".artist-node")
+        .filter((d: any) => unconnectedNodeIds.has(d.id))
+        .style('opacity', unconnectedOpacity);
+
+
+        this.g.selectAll(".artist-edge")
+        .filter((d: any) => 
+            (d.source.cluster === clusterId && d.target.cluster === clusterId)
+        )
+        .style('opacity', 1);
+
+    // Lower opacity for unconnected edges that are not within the same cluster
+    this.g.selectAll(".artist-edge")
+        .filter((d: any) => 
+            !(d.source.cluster === clusterId && d.target.cluster === clusterId)
+        )
+        .style('opacity', 0.1);
+
+    // Adjust opacity for the `path` elements in each cluster
+    this.g.selectAll(`path`)
+        .style('opacity', unconnectedOpacity);
+
+    // Set opacity to 1 for paths in the selected cluster
+    this.g.selectAll(`.cluster-${clusterId} path`).style('opacity', '1');
 }
+
 
 
 private resetNodeSelection() {
@@ -467,6 +547,17 @@ private resetNodeSelection() {
     d3.select(previousNode)
       .style("fill", previousColor)
       .style("filter", "none"); // Explicitly set filter to "none"
+
+          this.g.selectAll(`path`)
+        .style('opacity', 1);
+
+        this.g.selectAll(".artist-edge")
+        .style('opacity', 1);
+
+        this.g.selectAll(".artist-node")
+        .style('opacity', 1);
+
+        
 
     // Retrieve the bound data using D3's datum function
     const previousArtistNodeData = d3.select(previousNode).datum() as ArtistNode;
@@ -747,7 +838,7 @@ private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks
           });
         }); */
 
-        console.log('inter', data[3])
+        this.singleInterCommunityEdges = data[3] as exhibited_with[][];
         
         this.selectionService.selectAllClusters(this.clusters);
         this.clusters.forEach((cluster, clusterIndex) => {
@@ -962,7 +1053,7 @@ private drawCells(xScale: d3.ScaleBand<string>, yScale: d3.ScaleBand<string>, xD
   
   cells.each((d: any, i: number, nodes: any) => {
     this.drawClusterInCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight, isSwitched);
-    this.addButtonToCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight, isSwitched); // Add the button
+    //this.addButtonToCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight, isSwitched); // Add the button
   });
 }
 
@@ -1171,78 +1262,73 @@ private createClusterGroup(clusterNode: ClusterNode, value: string, cellWidth: n
   });
 
   const clusterGroup = d3.create("svg:g")
-      .attr("class", `cluster cluster-${clusterNode.clusterId} cluster-${value}`)
-      .on('click', () => this.onClusterClick(clusterNode))
-      .attr("transform", `translate(${cellWidth / 2}, ${cellHeight / 2})`);
+  .attr("class", `cluster cluster-${clusterNode.clusterId} cluster-${value}`)
+  .on('click', () => this.onClusterClick(clusterNode))
+  .attr("transform", `translate(${cellWidth / 2}, ${cellHeight / 2})`);
 
+const tooltip = d3.select("div#tooltip");
 
-      const tooltip = d3.select("div#tooltip");
+const showTooltip = (event: any, d: any) => {
+  const countryCode = d.country;
+  const fullCountryName = this.artistService.countryMap[countryCode];
 
-        const showTooltip = (event: any, d: any) => {
-         
-      const countryCode = d.country;
-      const fullCountryName = this.artistService.countryMap[countryCode]
-     
+  tooltip.style("display", "block")
+      .style("left", `${event.pageX + 5}px`)
+      .style("top", `${event.pageY + 5}px`)
+      .style("color", "black")
+      .html(`${fullCountryName}<br/>`);
+};
 
-      tooltip.style("display", "block")
-        .style("left", `${event.pageX +5}px`)
-        .style("top", `${event.pageY + 5}px`)
-        .style("color", "black")
-        .html(`${fullCountryName}<br/>`);
-    };
+const hideTooltip = () => {
+  tooltip.style("display", "none");
+};
 
-    const hideTooltip = () => {
-      tooltip.style("display", "none");
-    };
+const paths = clusterGroup.selectAll("path")
+  .data(data)
+  .enter()
+  .append("path")
+  .attr("d", arcGenerator)
+  .attr("fill", (d: any) => d.color)
+  .style('stroke', 'none')
+  .on("mouseover", showTooltip)
+  .on("mousemove", showTooltip)
+  .on('mouseout', hideTooltip);
 
-  clusterGroup.selectAll("path")
-      .data(data)
-      .enter()
-      .append("path")
-      .attr("d", arcGenerator)
-      .attr("fill", (d: any) => d.color)
-      .style('stroke', 'none')
-      .on("mouseover", showTooltip)
-      .on("mousemove", showTooltip)
-      .on('mouseout', hideTooltip);
-    
+// [Optional: Store paths in clusterNode for later access]
 
+const textsize = 0.5 * Math.min(cellHeight, cellWidth) / 10;
 
-  const textsize = 0.5 * Math.min(cellHeight, cellWidth) / 10;
+clusterGroup.selectAll("text")
+  .data(data)
+  .enter()
+  .append("text")
+  .attr("transform", (d: any) => `translate(${arcGenerator.centroid(d)})`)
+  .attr("text-anchor", "middle")
+  .text((d: any) => d.country)
+  .style("font-size", `${textsize}px`)
+  .style("font-weight", "bold")
+  .style("fill", "white");
 
-  clusterGroup.selectAll("text")
-      .data(data)
-      .enter()
-      .append("text")
-      .attr("transform", (d: any) => `translate(${arcGenerator.centroid(d)})`)
-      .attr("text-anchor", "middle")
-      .text((d: any) => d.country)
-      .style("font-size", `${textsize}px`)
-      .style("font-weight", "bold")
-      .style("fill", "white");
+let countryCentroids: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } = {};
+data.forEach(d => {
+  countryCentroids[d.country] = {
+      startAngle: d.startAngle,
+      endAngle: d.endAngle,
+      middleAngle: d.middleAngle,
+      color: d.color,
+      country: d.country
+  };
+});
 
-  let countryCentroids: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } = {};
-  data.forEach(d => {
-      countryCentroids[d.country] = {
-          startAngle: d.startAngle,
-          endAngle: d.endAngle,
-          middleAngle: d.middleAngle,
-          color: d.color,
-          country: d.country
-      };
-  });
-  if (!this.countryCentroids[value]) {
-    this.countryCentroids[value] = {};
-  }
-  this.countryCentroids[value][clusterNode.clusterId] = countryCentroids;
-
-  this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
-
-  return clusterGroup.node() as SVGGElement;
+if (!this.countryCentroids[value]) {
+  this.countryCentroids[value] = {};
 }
+this.countryCentroids[value][clusterNode.clusterId] = countryCentroids;
 
-  
-  
+this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
+
+return clusterGroup.node() as SVGGElement;
+}
 
 
 
