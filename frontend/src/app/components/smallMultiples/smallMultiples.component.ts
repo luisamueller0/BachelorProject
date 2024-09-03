@@ -433,12 +433,16 @@ console.log('HALLO', this.singleInterCommunityEdges)
 
     if (this.selectedNode && this.selectedNode[0] === circle) {
         this.resetNodeSelection();
-    } else {
+        this.g.selectAll('.cluster').style('opacity', '0.2');
+        const clusterNode = this.artistClusterMap.get(artistNode.id);
+        if(clusterNode){
+          this.g.selectAll(`.cluster-${clusterNode.clusterId}`).style('opacity', '1');
+        }
+      } else {
         this.resetNodeSelection(); // Reset any previously selected node
 
         const clusterNode = this.artistClusterMap.get(artistNode.id);
         if (clusterNode) {
-        
        this.highlightInterClusterConnections(artistNode.id, clusterNode?.clusterId);
         }
         this.selectNode(artistNode, circle);
@@ -534,38 +538,40 @@ console.log('HALLO', this.singleInterCommunityEdges)
 
 
 private resetNodeSelection() {
+ 
+  // Check if there's a previously selected node
   if (this.selectedNode) {
+    // Retrieve the DOM element of the previously selected node and its original color
     const previousNode = this.selectedNode[0];
     const previousColor = this.selectedNode[1];
 
+    // Log the reset process (this line is commented out)
     //console.log("Resetting node:", previousNode, "to color:", previousColor);
 
+    // Reset the stroke width and stroke color of the previously selected node
     d3.select(previousNode)
-    .style("stroke-width", "0px")
-    .style("stroke", "none");
-    // Use d3 to select the previous node and remove the filter
+      .style("stroke-width", "0px") // Remove any border/stroke
+      .style("stroke", "none");     // Ensure no stroke color is applied
+
+    // Reset the fill color and remove any filters applied to the node
     d3.select(previousNode)
-      .style("fill", previousColor)
-      .style("filter", "none"); // Explicitly set filter to "none"
+      .style("fill", previousColor)  // Restore the original color
+      .style("filter", "none");      // Remove any shadow or other filter effects
 
-          this.g.selectAll(`path`)
-        .style('opacity', 1);
-
-        this.g.selectAll(".artist-edge")
-        .style('opacity', 1);
-
-        this.g.selectAll(".artist-node")
-        .style('opacity', 1);
-
-        
-
-    // Retrieve the bound data using D3's datum function
+    // Retrieve the bound data (ArtistNode) from the DOM element using D3's datum function
     const previousArtistNodeData = d3.select(previousNode).datum() as ArtistNode;
     const previousArtistNodeId = previousArtistNodeData.id;
 
+    // Get the cluster information for the previously selected node using its ID
     const clusterNode = this.artistClusterMap.get(previousArtistNodeId);
+
+   
+
+    // If the node belongs to a cluster, select the artists within that cluster
     if (clusterNode) {
       this.selectionService.selectArtists(clusterNode.artists);
+
+      // Gather and select the countries related to the artists in the cluster
       const countries: string[] = [];
       clusterNode.artists.map(artist => {
         countries.push(artist.nationality);
@@ -575,34 +581,55 @@ private resetNodeSelection() {
       });
       this.selectionService.selectCountries(countries);
     } else {
+      // If no cluster was found, clear the selected artists
       this.selectionService.selectArtists(null);
     }
   } else {
+    // If no node was selected previously, clear the selected artists
     this.selectionService.selectArtists(null);
   }
 
   // Reset styles for all artist nodes and edges across categories
-  const threshold = 0.4;
+  const threshold = 0.4; // Threshold for deciding which edges are visible
+
+  // Reset the stroke color and opacity for all artist edges
   this.g.selectAll(".artist-edge")
-    .style('stroke', (d: any) => d.sharedExhibitionMinArtworks >= threshold ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none')
-    .style('opacity', 1)
+    .style('stroke', (d: any) => 
+      d.sharedExhibitionMinArtworks >= threshold ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none'
+    ) // Show only edges that meet the threshold
+    .style('opacity', 1); // Set full opacity for all edges
 
-  this.g.selectAll(".artist-node").style('opacity', '1').style('filter', 'none');
+  // Reset opacity and remove filters for all artist nodes
+  this.g.selectAll(".artist-node")
+    .style('opacity', '1')   // Set full opacity for all nodes
+    .style('filter', 'none') // Remove any shadow or other filter effects
 
-  this.g.selectAll(".artist-node").style("stroke-width", "0px")
-    .style("stroke", "none");
+  // Reset stroke width and color for all artist nodes
+  this.g.selectAll(".artist-node")
+    .style("stroke-width", "0px") // Remove any border/stroke
+    .style("stroke", "none");     // Ensure no stroke color is applied
 
+  // Clear the selectedNode variable as no node is selected now
   this.selectedNode = null;
-  this.selectionService.selectCluster(this.allArtists);
-  this.selectionService.selectClusterEdges([]);
-  this.selectionService.selectFocusArtist(null);
 
-  // Ensure no countries are selected when resetting node selection
+  // Reset the selection to include all artists and clear any selected cluster or edges
+  this.selectionService.selectCluster(this.allArtists); // Select all artists
+  this.selectionService.selectClusterEdges([]);         // Clear selected edges
+  this.selectionService.selectFocusArtist(null);        // Clear the focused artist
+
+  // Ensure that no specific countries are selected when resetting node selection
   this.selectionService.selectCountries(this.allCountries);
 
-  // Restore opacity of all clusters
+  // Restore full opacity to all clusters
   this.g.selectAll('.cluster').style('opacity', '1');
+  this.g.selectAll(".artist-node")
+  .style('opacity', 1);
+  this.g.selectAll(".artist-edge")
+  .style('opacity', 1);
+  this.g.selectAll(`path`)
+  .style('opacity', 1);
 }
+
 
 
 
@@ -644,6 +671,7 @@ private selectNode(artistNode: ArtistNode, circle: SVGCircleElement) {
 
       // Restore all nodes' opacity to 1
       this.g.selectAll(".artist-node").style('opacity', '1');
+
   }
 
   // Set the selected node
@@ -803,13 +831,7 @@ private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks
    
     const selectedArtists = clusterNode.artists;
     const selectedEdges = this.intraCommunityEdges[clusterNode.clusterId];
-  
 
-      // Reset the previous cluster node's border if there is one
-      if (this.selectedClusterNode) {
-        this.g.selectAll(`.cluster-${this.selectedClusterNode.clusterId} path`)
-          .style('stroke', 'none');
-      }
   
       // Set the new cluster node as selected and change its border
 
