@@ -1283,7 +1283,9 @@ private createArtistNetwork(value: string, clusterGroup: any, cluster: ClusterNo
   formattedRelationships.sort((a, b) => a.sharedExhibitionMinArtworks - b.sharedExhibitionMinArtworks);
 
   const width = 0.0025 * window.innerWidth / 100;
-  const edgeWidth = cluster.innerRadius / 100 * 0.12;
+  const maxNodeSize = d3.max(artistNodes, (d: any) => d.radius);
+
+  const edgeWidth = maxNodeSize / 100 * 0.6;
 
   //console.log('size' ,this.intraCommunityEdges[cluster.clusterId].length)
   const edges = clusterGroup.selectAll(".artist-edge")
