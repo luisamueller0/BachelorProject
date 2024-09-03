@@ -962,7 +962,7 @@ private drawCells(xScale: d3.ScaleBand<string>, yScale: d3.ScaleBand<string>, xD
   
   cells.each((d: any, i: number, nodes: any) => {
     this.drawClusterInCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight, isSwitched);
-    this.addButtonToCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight, isSwitched); // Add the button
+    //this.addButtonToCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight, isSwitched); // Add the button
   });
 }
 
