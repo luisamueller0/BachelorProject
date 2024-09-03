@@ -525,7 +525,7 @@ console.log('HALLO', this.singleInterCommunityEdges)
         .filter((d: any) => 
             !(d.source.cluster === clusterId && d.target.cluster === clusterId)
         )
-        .style('opacity', 0.1);
+        .style('opacity', 0.05);
 
     // Adjust opacity for the `path` elements in each cluster
     this.g.selectAll(`path`)
