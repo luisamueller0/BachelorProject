@@ -746,6 +746,8 @@ private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks
             //console.log(artist.firstname, artist.lastname, clusterIndex)
           });
         }); */
+
+        console.log('inter', data[3])
         
         this.selectionService.selectAllClusters(this.clusters);
         this.clusters.forEach((cluster, clusterIndex) => {
