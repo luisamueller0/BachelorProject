@@ -258,12 +258,12 @@ export class ExhibitionAreachartComponent implements OnInit, OnChanges, OnDestro
     .selectAll('path')
     .data(stackedData)
     .enter().append('path')
-    .attr('d', area)
     .attr('class', (d: any) => {
       const region = d.key.split('-')[0];
       const selectionType = d.key.split('-')[1]; // 'selected' or 'unselected'
-      return `region-${region.replace(/ /g, '-')}-${selectionType}`;
+      return `region-path region-${region.replace(/ /g, '-')}-${selectionType}`;
     })
+    .attr('d', area)
     .attr('fill', (d: any) => {
       const region = d.key.split('-')[0];
       return colorMap[region];
@@ -272,6 +272,7 @@ export class ExhibitionAreachartComponent implements OnInit, OnChanges, OnDestro
       const selectionType = d.key.split('-')[1];
       return (selectionType === 'selected') ? 1 : 0.3;
     });
+  
   
     // Add x-axis
     this.svg.append('g')
@@ -329,9 +330,9 @@ export class ExhibitionAreachartComponent implements OnInit, OnChanges, OnDestro
 
 
     // Fade out all paths
-    this.svg.selectAll('path')
-      .attr('opacity', 0.1);
-      
+     // Fade out only region paths, not the axes
+     this.svg.selectAll('.region-path')
+     .attr('opacity', 0.1);
     // Highlight both selected and unselected paths for the hovered region
     this.svg.selectAll(regionClassSelected).attr('opacity', 1);
     this.svg.selectAll(regionClassUnselected).attr('opacity', 0.5);  // Use a slightly lower opacity for unselected
@@ -355,9 +356,9 @@ legend.selectAll('text')
     const regionClassUnselected = `.region${d.replace(/ /g, '-')}-unselected`;
 
     // Fade out all paths
-    this.svg.selectAll('path')
-      .attr('opacity', 0.1);
-
+   // Fade out only region paths, not the axes
+   this.svg.selectAll('.region-path')
+   .attr('opacity', 0.1);
     // Highlight both selected and unselected paths for the hovered region
     this.svg.selectAll(regionClassSelected).attr('opacity', 1);
     this.svg.selectAll(regionClassUnselected).attr('opacity', 0.5);  // Use a slightly lower opacity for unselected
@@ -392,7 +393,7 @@ legend.selectAll('text')
       exhibitions.forEach(exhibition => {
         const startDate = new Date(exhibition.start_date);
         const endDate = new Date(exhibition.end_date);
-        const region = exhibition.europeanRegion || "Others";
+        const region = exhibition.europeanRegion;
 
         for (let date = startDate; date <= endDate; date.setMonth(date.getMonth() + 1)) {
           const key = date.toISOString().slice(0, 7); // Year-month format
