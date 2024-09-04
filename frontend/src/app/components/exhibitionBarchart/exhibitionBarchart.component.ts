@@ -178,6 +178,8 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     }
   } */
 
+    
+
     private resetBarOpacity(): void {
       this.svg.selectAll('rect')
         .attr('opacity', 1); // Reset all bars to full opacity
