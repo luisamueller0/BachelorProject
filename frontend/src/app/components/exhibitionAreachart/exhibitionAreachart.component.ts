@@ -214,17 +214,25 @@ export class ExhibitionAreachartComponent implements OnInit, OnChanges, OnDestro
       return data;
     });
   
+    // Order regions by the total sum of exhibitions for each region
+    const orderedRegionKeys = this.regionKeys.sort((a, b) => {
+      const sumA = d3.sum(transformedData, d => d[`${a}-selected`] + d[`${a}-unselected`]);
+      const sumB = d3.sum(transformedData, d => d[`${b}-selected`] + d[`${b}-unselected`]);
+      return sumA - sumB; // Smallest to largest
+    });
+  
     const stack = d3.stack()
-      .keys(this.regionKeys.flatMap(region => [`${region}-selected`, `${region}-unselected`]));
+      .keys(orderedRegionKeys.flatMap(region => [`${region}-selected`, `${region}-unselected`]));
   
     const area = d3.area()
       .x((d: any) => xScale(d.data.date)!)
       .y0((d: any) => yScale(d[0]))
-      .y1((d: any) => yScale(d[1]));
+      .y1((d: any) => yScale(d[1]))
+      .curve(d3.curveMonotoneX);  // Smooth area transitions
   
     const stackedData = stack(transformedData);
   
-    this.svg.append('g')
+    const paths = this.svg.append('g')
       .selectAll('path')
       .data(stackedData)
       .enter().append('path')
@@ -232,20 +240,32 @@ export class ExhibitionAreachartComponent implements OnInit, OnChanges, OnDestro
       .attr('fill', (d: any) => {
         const region = d.key.split('-')[0];
         return colorMap[region];
+      })
+      .attr('opacity', 0.8)  // Apply transparency for overlapping areas
+      .attr('class', (d: any) => `region-${d.key.split('-')[0].replace(/ /g, '-')}`)  // Add a class to identify each region
+      .on('mouseover', (event: any, d: any) => {
+        // Fade out other regions
+        paths.attr('opacity', 0.1);
+        // Highlight the hovered region
+        d3.select(event.currentTarget).attr('opacity', 1);
+      })
+      .on('mouseout', () => {
+        // Restore opacity of all regions
+        paths.attr('opacity', 0.8);
       });
   
-    // Append x-axis
+    // Add x-axis with more ticks
     this.svg.append('g')
       .attr('class', 'x-axis')
-      .attr('transform', `translate(0, ${this.contentHeight})`)  // Moves the x-axis to the bottom of the chart
-      .call(d3.axisBottom(xScale));
+      .attr('transform', `translate(0, ${this.contentHeight})`)
+      .call(d3.axisBottom(xScale).ticks(d3.timeYear.every(1)));
   
-    // Append y-axis
+    // Add y-axis with 5 ticks
     this.svg.append('g')
       .attr('class', 'y-axis')
-      .call(d3.axisLeft(yScale));
+      .call(d3.axisLeft(yScale).ticks(5));
   
-    // Brush setup as before
+    // Brush setup for time range selection
     const brush = d3.brushX()
       .extent([[0, 0], [this.contentWidth, this.contentHeight]])
       .on('brush end', (event) => {
@@ -264,7 +284,59 @@ export class ExhibitionAreachartComponent implements OnInit, OnChanges, OnDestro
     this.svg.append('g')
       .attr('class', 'brush')
       .call(brush);
+  
+    // Legend creation with hover functionality
+    const legend = this.svg.append('g')
+      .attr('class', 'legend')
+      .attr('transform', `translate(${this.contentWidth + 20}, 20)`);
+  
+    const size = 0.9 * window.innerWidth / 100;
+    const fontSize = 0.7 * window.innerWidth / 100;
+  
+    // Adding rectangles for each region in the legend
+    legend.selectAll('rect')
+      .data(this.legendOrder)
+      .enter().append('rect')
+      .attr('x', 0)
+      .attr('y', (d: any, i: number) => i * (size + 4))  // Added spacing between rectangles
+      .attr('width', size)
+      .attr('height', size)
+      .attr('fill', (d: any) => colorMap[d as keyof typeof colorMap])
+      .on('mouseover', (event: any, d: string) => {
+        const selectedRegionClass = `.region-${d.replace(/ /g, '-')}`;
+        // Fade out all areas
+        paths.attr('opacity', 0.1);
+        // Highlight the corresponding region in the area chart
+        this.svg.selectAll(selectedRegionClass).attr('opacity', 1);
+      })
+      .on('mouseout', () => {
+        // Restore opacity for all regions
+        paths.attr('opacity', 0.8);
+      });
+  
+    // Adding labels for each region in the legend
+    legend.selectAll('text')
+      .data(this.legendOrder)
+      .enter().append('text')
+      .attr('x', size + 4)  // Adjusted position based on rectangle size
+      .attr('y', (d: any, i: number) => i * (size + 4) + size / 2)
+      .attr('dy', '.35em')
+      .style('font-size', `${fontSize}px`)
+      .text((d: any) => d)
+      .on('mouseover', (event: any, d: string) => {
+        const selectedRegionClass = `.region-${d.replace(/ /g, '-')}`;
+        // Fade out all areas
+        paths.attr('opacity', 0.1);
+        // Highlight the corresponding region in the area chart
+        this.svg.selectAll(selectedRegionClass).attr('opacity', 1);
+      })
+      .on('mouseout', () => {
+        // Restore opacity for all regions
+        paths.attr('opacity', 0.8);
+      });
   }
+  
+  
   
   private isSingleYear(startDate: Date, endDate: Date): boolean {
     return startDate.getFullYear() === endDate.getFullYear();
