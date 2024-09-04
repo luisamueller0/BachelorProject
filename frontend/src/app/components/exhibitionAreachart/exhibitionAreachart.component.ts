@@ -24,10 +24,8 @@ interface YearData {
 })
 export class ExhibitionAreachartComponent implements OnInit, OnChanges, OnDestroy {
   @ViewChild('exhibition', { static: true }) private exhibitionContainer!: ElementRef;
-  @ViewChild('tooltip', { static: true }) private tooltip!: ElementRef;
   private subscriptions: Subscription = new Subscription();
   private legendOrder: string[] = ["North Europe", "Eastern Europe", "Southern Europe", "Western Europe", "Others", "\\N"];
-
   allExhibitions: Exhibition[] = [];
   exhibitions: Exhibition[] = [];
   nonSelectedExhibitions: Exhibition[] = [];
@@ -44,6 +42,13 @@ export class ExhibitionAreachartComponent implements OnInit, OnChanges, OnDestro
   private regionKeys: string[] = ["North Europe", "Eastern Europe", "Southern Europe", "Western Europe", "Others", "\\N"];
   private exhibitionMap: Map<string, Exhibition> = new Map();
 
+  getArtistName(): string {
+    if (this.selectedArtists && this.selectedArtists.length === 1) {
+      return `${this.selectedArtists[0].firstname} ${this.selectedArtists[0].lastname}`;
+    }
+    return '';
+  }
+
   private margin = {
     top: 1,
     right: 10,
@@ -51,15 +56,7 @@ export class ExhibitionAreachartComponent implements OnInit, OnChanges, OnDestro
     left: 2
   };
 
-  getArtistName(): string {
-    if (this.selectedArtists && this.selectedArtists.length === 1) {
-      return `${this.selectedArtists[0].firstname} ${this.selectedArtists[0].lastname}`;
-    }
-    return '';
-  }
-  
-
-  constructor(private selectionService: SelectionService, private exhibitionService: ExhibitionService) { }
+  constructor(private selectionService: SelectionService, private exhibitionService: ExhibitionService) {}
 
   ngOnInit(): void {
     this.exhibitionService.getAllExhibitions().subscribe((exhibitions) => {
@@ -145,11 +142,33 @@ export class ExhibitionAreachartComponent implements OnInit, OnChanges, OnDestro
       const selectedExhibitionIds = new Set(
         this.selectedArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()))
       );
-      this.exhibitions.forEach(exhibition => {
-        if (selectedExhibitionIds.has(exhibition.id.toString())) {
-          this.selectedExhibitions.push(exhibition);
+      if (this.selectedArtists.length === 1) {
+        if (this.selectedCluster) {
+          const clusterArtists = this.selectedCluster;
+          const clusterExhibitionIds = new Set(
+            clusterArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()))
+          );
+          this.exhibitionMap.forEach((exhibition, id) => {
+            if (clusterExhibitionIds.has(id)) {
+              this.clusterExhibitions.push(exhibition);
+            }
+          });
+
+          this.clusterExhibitions.forEach(exhibition => {
+            if (selectedExhibitionIds.has(exhibition.id.toString())) {
+              this.selectedExhibitions.push(exhibition);
+            } else {
+              this.nonSelectedExhibitions.push(exhibition);
+            }
+          });
         }
-      });
+      } else {
+        this.exhibitions.forEach(exhibition => {
+          if (selectedExhibitionIds.has(exhibition.id.toString())) {
+            this.selectedExhibitions.push(exhibition);
+          }
+        });
+      }
     } else {
       this.selectedExhibitions = this.exhibitions;
       this.nonSelectedExhibitions = [];
@@ -214,58 +233,64 @@ export class ExhibitionAreachartComponent implements OnInit, OnChanges, OnDestro
       return data;
     });
   
-    // Order regions by the total sum of exhibitions for each region
-    const orderedRegionKeys = this.regionKeys.sort((a, b) => {
-      const sumA = d3.sum(transformedData, d => d[`${a}-selected`] + d[`${a}-unselected`]);
-      const sumB = d3.sum(transformedData, d => d[`${b}-selected`] + d[`${b}-unselected`]);
-      return sumA - sumB; // Smallest to largest
+    // Calculate the total exhibitions for each region
+    const regionTotals: { [key: string]: number } = {};
+    this.regionKeys.forEach(region => {
+      regionTotals[region] = d3.sum(transformedData, d => d[`${region}-selected`] + d[`${region}-unselected`]);
     });
   
+    // Sort the regions from smallest to biggest
+    const sortedRegions = this.regionKeys.sort((a, b) => regionTotals[a] - regionTotals[b]);
+  
+    // Apply the stacking with sorted region keys
     const stack = d3.stack()
-      .keys(orderedRegionKeys.flatMap(region => [`${region}-selected`, `${region}-unselected`]));
+      .keys(sortedRegions.flatMap(region => [`${region}-selected`, `${region}-unselected`]));
   
     const area = d3.area()
       .x((d: any) => xScale(d.data.date)!)
       .y0((d: any) => yScale(d[0]))
       .y1((d: any) => yScale(d[1]))
-      .curve(d3.curveMonotoneX);  // Smooth area transitions
+      .curve(d3.curveMonotoneX);
   
     const stackedData = stack(transformedData);
   
     const paths = this.svg.append('g')
-      .selectAll('path')
-      .data(stackedData)
-      .enter().append('path')
-      .attr('d', area)
-      .attr('fill', (d: any) => {
-        const region = d.key.split('-')[0];
-        return colorMap[region];
-      })
-      .attr('opacity', 0.8)  // Apply transparency for overlapping areas
-      .attr('class', (d: any) => `region-${d.key.split('-')[0].replace(/ /g, '-')}`)  // Add a class to identify each region
-      .on('mouseover', (event: any, d: any) => {
-        // Fade out other regions
-        paths.attr('opacity', 0.1);
-        // Highlight the hovered region
-        d3.select(event.currentTarget).attr('opacity', 1);
-      })
-      .on('mouseout', () => {
-        // Restore opacity of all regions
-        paths.attr('opacity', 0.8);
-      });
+    .selectAll('path')
+    .data(stackedData)
+    .enter().append('path')
+    .attr('d', area)
+    .attr('class', (d: any) => {
+      const region = d.key.split('-')[0];
+      const selectionType = d.key.split('-')[1]; // 'selected' or 'unselected'
+      return `region-${region.replace(/ /g, '-')}-${selectionType}`;
+    })
+    .attr('fill', (d: any) => {
+      const region = d.key.split('-')[0];
+      return colorMap[region];
+    })
+    .attr('opacity', (d: any) => {
+      const selectionType = d.key.split('-')[1];
+      return (selectionType === 'selected') ? 1 : 0.3;
+    });
   
-    // Add x-axis with more ticks
+    // Add x-axis
     this.svg.append('g')
       .attr('class', 'x-axis')
       .attr('transform', `translate(0, ${this.contentHeight})`)
-      .call(d3.axisBottom(xScale).ticks(d3.timeYear.every(1)));
+      .call(d3.axisBottom(xScale).ticks(d3.timeYear.every(1)))
+      .selectAll("line")  // Ensure both ticks and labels are black
+      .attr("stroke", "black")
+      .attr("fill", "black");
   
-    // Add y-axis with 5 ticks
+    // Add y-axis
     this.svg.append('g')
       .attr('class', 'y-axis')
-      .call(d3.axisLeft(yScale).ticks(5));
+      .call(d3.axisLeft(yScale).ticks(5))
+      .selectAll("line")
+      .attr("stroke", "black")
+      .attr("fill", "black");
   
-    // Brush setup for time range selection
+    // Add brush functionality
     const brush = d3.brushX()
       .extent([[0, 0], [this.contentWidth, this.contentHeight]])
       .on('brush end', (event) => {
@@ -274,10 +299,7 @@ export class ExhibitionAreachartComponent implements OnInit, OnChanges, OnDestro
           const [startX, endX] = selection;
           const startDate = xScale.invert(startX);
           const endDate = xScale.invert(endX);
-  
-          if (this.isSingleYear(startDate, endDate)) {
-            this.handleDateRangeSelection([startDate, endDate]);
-          }
+          this.handleDateRangeSelection([startDate, endDate]);
         }
       });
   
@@ -285,7 +307,7 @@ export class ExhibitionAreachartComponent implements OnInit, OnChanges, OnDestro
       .attr('class', 'brush')
       .call(brush);
   
-    // Legend creation with hover functionality
+    // Add legend
     const legend = this.svg.append('g')
       .attr('class', 'legend')
       .attr('transform', `translate(${this.contentWidth + 20}, 20)`);
@@ -293,59 +315,65 @@ export class ExhibitionAreachartComponent implements OnInit, OnChanges, OnDestro
     const size = 0.9 * window.innerWidth / 100;
     const fontSize = 0.7 * window.innerWidth / 100;
   
-    // Adding rectangles for each region in the legend
     legend.selectAll('rect')
-      .data(this.legendOrder)
-      .enter().append('rect')
-      .attr('x', 0)
-      .attr('y', (d: any, i: number) => i * (size + 4))  // Added spacing between rectangles
-      .attr('width', size)
-      .attr('height', size)
-      .attr('fill', (d: any) => colorMap[d as keyof typeof colorMap])
-      .on('mouseover', (event: any, d: string) => {
-        const selectedRegionClass = `.region-${d.replace(/ /g, '-')}`;
-        // Fade out all areas
-        paths.attr('opacity', 0.1);
-        // Highlight the corresponding region in the area chart
-        this.svg.selectAll(selectedRegionClass).attr('opacity', 1);
-      })
-      .on('mouseout', () => {
-        // Restore opacity for all regions
-        paths.attr('opacity', 0.8);
-      });
-  
-    // Adding labels for each region in the legend
-    legend.selectAll('text')
-      .data(this.legendOrder)
-      .enter().append('text')
-      .attr('x', size + 4)  // Adjusted position based on rectangle size
-      .attr('y', (d: any, i: number) => i * (size + 4) + size / 2)
-      .attr('dy', '.35em')
-      .style('font-size', `${fontSize}px`)
-      .text((d: any) => d)
-      .on('mouseover', (event: any, d: string) => {
-        const selectedRegionClass = `.region-${d.replace(/ /g, '-')}`;
-        // Fade out all areas
-        paths.attr('opacity', 0.1);
-        // Highlight the corresponding region in the area chart
-        this.svg.selectAll(selectedRegionClass).attr('opacity', 1);
-      })
-      .on('mouseout', () => {
-        // Restore opacity for all regions
-        paths.attr('opacity', 0.8);
-      });
-  }
-  
-  
-  
-  private isSingleYear(startDate: Date, endDate: Date): boolean {
-    return startDate.getFullYear() === endDate.getFullYear();
-  }
+  .data(this.legendOrder)
+  .enter().append('rect')
+  .attr('x', 0)
+  .attr('y', (d: any, i: number) => i * (size + 4))
+  .attr('width', size)
+  .attr('height', size)
+  .attr('fill', (d: any) => colorMap[d as keyof typeof colorMap])
+  .on('mouseover', (event: any, d: string) => {
+    const regionClassSelected = `.region-${d.replace(/ /g, '-')}-selected`;
+    const regionClassUnselected = `.region-${d.replace(/ /g, '-')}-unselected`;
 
+
+    // Fade out all paths
+    this.svg.selectAll('path')
+      .attr('opacity', 0.1);
+      
+    // Highlight both selected and unselected paths for the hovered region
+    this.svg.selectAll(regionClassSelected).attr('opacity', 1);
+    this.svg.selectAll(regionClassUnselected).attr('opacity', 0.5);  // Use a slightly lower opacity for unselected
+  })
+  .on('mouseout', () => {
+    // Restore opacity for all paths
+    this.svg.selectAll('path')
+      .attr('opacity', (d: any) => (d.key.split('-')[1] === 'selected') ? 1 : 0.3);
+  });
+
+legend.selectAll('text')
+  .data(this.legendOrder)
+  .enter().append('text')
+  .attr('x', size + 4)
+  .attr('y', (d: any, i: number) => i * (size + 4) + size / 2)
+  .attr('dy', '.35em')
+  .style('font-size', `${fontSize}px`)
+  .text((d: any) => d)
+  .on('mouseover', (event: any, d: string) => {
+    const regionClassSelected = `.region${d.replace(/ /g, '-')}-selected`;
+    const regionClassUnselected = `.region${d.replace(/ /g, '-')}-unselected`;
+
+    // Fade out all paths
+    this.svg.selectAll('path')
+      .attr('opacity', 0.1);
+
+    // Highlight both selected and unselected paths for the hovered region
+    this.svg.selectAll(regionClassSelected).attr('opacity', 1);
+    this.svg.selectAll(regionClassUnselected).attr('opacity', 0.5);  // Use a slightly lower opacity for unselected
+  })
+  .on('mouseout', () => {
+    // Restore opacity for all paths
+    this.svg.selectAll('path')
+      .attr('opacity', (d: any) => (d.key.split('-')[1] === 'selected') ? 1 : 0.3);
+  });
+
+  }
+  
   private handleDateRangeSelection(range: [Date, Date]): void {
     const [startDate, endDate] = range;
     this.selectedRange = range;
-    
+
     // Filter exhibitions within this range
     const exhibitionsInRange = this.selectedExhibitions.filter(exhibition => {
       const startYear = new Date(exhibition.start_date);
@@ -354,7 +382,7 @@ export class ExhibitionAreachartComponent implements OnInit, OnChanges, OnDestro
     });
 
     this.selectionService.selectExhibitions([exhibitionsInRange, []]);
-    this.selectionService.selectYear(startDate.getFullYear()); // optional to indicate year
+    this.selectionService.selectYear(startDate.getFullYear()); // Optional to indicate year
   }
 
   private getYearlyExhibitionData(selectedExhibitions: Exhibition[], unselectedExhibitions: Exhibition[]): YearData[] {
