@@ -331,172 +331,105 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     this.contentHeight = height;
   }
 
-  private drawBinnedChart(): void {
-    const yearData = this.getYearlyExhibitionData(this.selectedExhibitions, this.nonSelectedExhibitions);
-  
-    const xScale = d3.scaleBand()
-      .domain(yearData.map(d => d.year.toString()))
-      .range([0, this.contentWidth])
-      .padding(0.1);
-  
-    const yScale = d3.scaleLinear()
-      .domain([0, d3.max(yearData, d => d.totalExhibitions)!])
-      .nice()
-      .range([this.contentHeight, 0]);
-  
-    const colorMap: { [key: string]: string } = {
-      "North Europe": "#67D0C0",
-      "Eastern Europe": "#59A3EE",
-      "Southern Europe": "#AF73E8",
-      "Western Europe": "#F06ACD",
-      "Others": "#FFDA75",
-      "\\N": "#c9ada7"
-    };
- 
-  
-    const transformedData: any[] = yearData.map(d => {
-      const data: any = { year: d.year };
-      this.regionKeys.forEach(region => {
-        data[`${region}-selected`] = d.regions[region].selected;
-        data[`${region}-unselected`] = d.regions[region].unselected;
-      });
-      return data;
-    });
-  
-    const regionTotals: { [key: string]: number } = {};
-    this.regionKeys.forEach(region => {
-      regionTotals[region] = d3.sum(transformedData, d => d[`${region}-selected`] + d[`${region}-unselected`]);
-    });
-  
-    const sortedRegions = this.regionKeys.sort((a, b) => regionTotals[b] - regionTotals[a]);
-    const sortedKeys = sortedRegions.flatMap(region => [`${region}-selected`, `${region}-unselected`]);
-  
-    const stack = d3.stack()
-      .keys(sortedKeys);
-  
-    const stackedData = stack(transformedData);
+private drawBinnedChart(): void {
+  const monthData = this.getMonthlyExhibitionData(this.selectedExhibitions, this.nonSelectedExhibitions);
 
-    const tooltip = d3.select("div#tooltip")
-  
-    const handleMouseOver = (event: any, d: any) =>{
-    tooltip.style('display', 'block');
-  }
+  // Create xScale based on unique years
+  const years = Array.from(new Set(monthData.map(d => d.year.toString())));
+  const xScale = d3.scaleBand()
+    .domain(years)
+    .range([0, this.contentWidth])
+    .padding(0.1);
 
-  const handleMouseMove =(event: any, d: any) =>{
-    const year = d.data.year;
-    const regions = this.regionKeys.map(region => {
-      return {
-        region,
-        selected: d.data[`${region}-selected`],
-        unselected: d.data[`${region}-unselected`]
-      };
-    });
-    const tooltipNode = tooltip.node() as HTMLElement;
-    const tooltipHeight = tooltipNode.offsetHeight;
-    if(this.selectedArtists === null || this.selectedArtists.length === 0){
-    tooltip.style("display", "block")
-        .style("left", `${event.pageX +5}px`)
-        .style("top", `${event.pageY+ 5 - tooltipHeight}px`)
-        .style("font-color", "black")
-        .html(`${regions.map(region => `${region.region}: ${region.selected}`).join('<br/>')} `);
-  }else{
-    tooltip.style("display", "block")
-    .style("left", `${event.pageX + 5}px`)
-    .style("top", `${event.pageY+ 5 - tooltipHeight}px`)
-    .style("font-color", "black")
-    .html(`Year: ${year}<br/>${regions.map(region => `${region.region}: ${region.selected} out of ${region.unselected + region.selected}`).join('<br/>')} `);
+  const yScale = d3.scaleLinear()
+    .domain([0, d3.max(monthData, d => d.totalExhibitions)!])
+    .nice()
+    .range([this.contentHeight, 0]);
 
-  }
-  }
-  const handleMouseOut =(event: any, d: any) =>{
-    tooltip.style('display', 'none');
-  }
-
-  const handleClick = (event: any, d: any) => {
-    const year = d.data.year;
-    this.handleYearSelection(year);
+  const colorMap: { [key: string]: string } = {
+    "North Europe": "#67D0C0",
+    "Eastern Europe": "#59A3EE",
+    "Southern Europe": "#AF73E8",
+    "Western Europe": "#F06ACD",
+    "Others": "#FFDA75",
+    "\\N": "#c9ada7"
   };
-  
-  
-  
-  
-  
-    this.svg.append('g')
-      .selectAll('g')
-      .data(stackedData)
-      .enter().append('g')
-     /*  .attr('fill', (d: any) => {
-        const region = d.key.split('-')[0];
-        const bool = d.key.split('-')[1];
-        return (bool === "unselected")?'white':colorMap[region];
-      }) */
-        .attr('fill', (d: any) => {
-          const region = d.key.split('-')[0];
-          return colorMap[region];
-        })
-      .attr('stroke', (d: any) => {
-        const region = d.key.split('-')[0];
-        const bool = d.key.split('-')[1];
-        return (bool==='unselected') ? colorMap[region]:d3.color(colorMap[region])?.darker(1)})
-      .attr('stroke-width', 0.8)
-      .attr('opacity', (d: any) => {
-        const region = d.key.split('-')[0];
-        const bool = d.key.split('-')[1];
-        return (bool === 'unselected') ? 0.2 : 1;
-      })
-      .selectAll('rect')
-      .data((d: any) => d)
-      .enter().append('rect')
-      .attr('x', (d: any) => xScale(d.data.year.toString())!)
-      .attr('y', (d: any) => yScale(d[1]))
-      .attr('height', (d: any) => yScale(d[0]) - yScale(d[1]))
-      .attr('width', xScale.bandwidth())
-     /*  .on('mouseover', handleMouseOver)
-      .on('mousemove', handleMouseMove)
-      .on('mouseout',handleMouseOut) */
-      .on('click', handleClick);
 
+  // Create stack layout
+  const stack = d3.stack()
+    .keys(this.regionKeys.flatMap(region => [`${region}-selected`, `${region}-unselected`]));
+
+  const stackedData = stack(monthData.map(d => {
+    const data: any = { year: d.year, month: d.month };
+    this.regionKeys.forEach(region => {
+      data[`${region}-selected`] = d.regions[region].selected;
+      data[`${region}-unselected`] = d.regions[region].unselected;
+    });
+    return data;
+  }));
+
+  // Group the data by year to draw multiple bars for each month under the same year
+  this.svg.append('g')
+    .selectAll('g')
+    .data(stackedData)
+    .enter().append('g')
+    .attr('fill', (d: any) => {
+      const region = d.key.split('-')[0];
+      return colorMap[region];
+    })
+    .attr('stroke', (d: any) => d3.color(colorMap[d.key.split('-')[0]])?.darker(1))
+    .attr('stroke-width', 0.8)
+    .attr('opacity', (d: any) => d.key.includes('unselected') ? 0.2 : 1)
+    .selectAll('rect')
+    .data((d: any) => d)
+    .enter().append('rect')
+    .attr('x', (d: any) => xScale(d.data.year.toString())! + (d.data.month - 1) * (xScale.bandwidth() / 12))
+    .attr('y', (d: any) => yScale(d[1]))
+    .attr('height', (d: any) => yScale(d[0]) - yScale(d[1]))
+    .attr('width', xScale.bandwidth() / 12) // Divide bandwidth by 12 to represent each month
+    .on('click', (event: any, d: any) => this.handleYearSelection(d.data.year));
+
+  // Append x-axis with years
+  this.svg.append('g')
+    .attr('class', 'x-axis')
+    .attr('transform', `translate(0,${this.contentHeight})`)
+    .call(d3.axisBottom(xScale));
+
+  // Append y-axis
+  this.svg.append('g')
+    .attr('class', 'y-axis')
+    .call(d3.axisLeft(yScale));
+
+  // Add legend logic as before
   
-    // Append x-axis with custom label colors
-    this.svg.append('g')
-      .attr('class', 'x-axis')
-      .attr('transform', `translate(0,${this.contentHeight})`)
-      .call(d3.axisBottom(xScale))
-      .selectAll('text')
-      .style('fill', (d: string) => this.hasExhibitionValue(+d) ? 'black' : 'gray')
-      .style('font-weight', (d: string) => this.hasExhibitionValue(+d) ? 'bold' : 'normal');
+  const legend = this.svg.append('g')
+  .attr('class', 'legend')
+  .attr('transform', `translate(${this.contentWidth + 20}, 20)`);
+
+
+  const size = 0.9 * window.innerWidth / 100;
+  const fontSize = 0.7 * window.innerWidth / 100;  // Adjust this multiplier as needed for desired text size
   
-    this.svg.append('g')
-      .attr('class', 'y-axis')
-      .call(d3.axisLeft(yScale).ticks(10));
+  legend.selectAll('rect')
+    .data(this.legendOrder)
+    .enter().append('rect')
+    .attr('x', 0)
+    .attr('y', (d: any, i: number) => i * (size + 4))  // Added spacing between rectangles
+    .attr('width', size)
+    .attr('height', size)
+    .attr('fill', (d: any) => colorMap[d as keyof typeof colorMap])
   
-    const legend = this.svg.append('g')
-      .attr('class', 'legend')
-      .attr('transform', `translate(${this.contentWidth + 20}, 20)`);
-    
+  legend.selectAll('text')
+    .data(this.legendOrder)
+    .enter().append('text')
+    .attr('x', size + 4)  // Adjusted position based on rectangle size
+    .attr('y', (d: any, i: number) => i * (size + 4) + size / 2)
+    .attr('dy', '.35em')
+    .style('font-size', `${fontSize}px`)
+    .text((d: any) => d);
   
-      const size = 0.9 * window.innerWidth / 100;
-      const fontSize = 0.7 * window.innerWidth / 100;  // Adjust this multiplier as needed for desired text size
-      
-      legend.selectAll('rect')
-        .data(this.legendOrder)
-        .enter().append('rect')
-        .attr('x', 0)
-        .attr('y', (d: any, i: number) => i * (size + 4))  // Added spacing between rectangles
-        .attr('width', size)
-        .attr('height', size)
-        .attr('fill', (d: any) => colorMap[d as keyof typeof colorMap])
-      
-      legend.selectAll('text')
-        .data(this.legendOrder)
-        .enter().append('text')
-        .attr('x', size + 4)  // Adjusted position based on rectangle size
-        .attr('y', (d: any, i: number) => i * (size + 4) + size / 2)
-        .attr('dy', '.35em')
-        .style('font-size', `${fontSize}px`)
-        .text((d: any) => d);
-      
-  }
+}
+
   
   private hasExhibitionValue(year: number): boolean {
     
@@ -520,39 +453,55 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
 
   
 
-  private getYearlyExhibitionData(selectedExhibitions: Exhibition[], unselectedExhibitions: Exhibition[]): YearData[] {
-    const yearData: { [year: number]: { [region: string]: { selected: number; unselected: number } } } = {};
-
+  private getMonthlyExhibitionData(selectedExhibitions: Exhibition[], unselectedExhibitions: Exhibition[]): any[] {
+    const monthData: { [month: string]: { [region: string]: { selected: number; unselected: number } } } = {};
+  
     const processExhibitions = (exhibitions: Exhibition[], isSelected: boolean) => {
       exhibitions.forEach(exhibition => {
-        
-        const startYear = new Date(exhibition.start_date).getFullYear();
-        const endYear = new Date(exhibition.end_date).getFullYear();
+        const startDate = new Date(exhibition.start_date);
+        const endDate = new Date(exhibition.end_date);
         const region = exhibition.europeanRegion || "Others"; // Default to "Others" if undefined
-
-        for (let year = startYear; year <= endYear; year++) {
-          if (!yearData[year]) {
-            yearData[year] = { "North Europe": { selected: 0, unselected: 0 }, "Eastern Europe": { selected: 0, unselected: 0 }, "Southern Europe": { selected: 0, unselected: 0 }, "Western Europe": { selected: 0, unselected: 0 }, "Others": { selected: 0, unselected: 0 }, "\\N": { selected: 0, unselected: 0 } };
+  
+        // Loop through each month between the start and end dates
+        const startMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+        const endMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+  
+        for (let d = startMonth; d <= endMonth; d.setMonth(d.getMonth() + 1)) {
+          const monthKey = `${d.getFullYear()}-${d.getMonth() + 1}`; // E.g., "2023-5" for May 2023
+  
+          if (!monthData[monthKey]) {
+            monthData[monthKey] = {
+              "North Europe": { selected: 0, unselected: 0 },
+              "Eastern Europe": { selected: 0, unselected: 0 },
+              "Southern Europe": { selected: 0, unselected: 0 },
+              "Western Europe": { selected: 0, unselected: 0 },
+              "Others": { selected: 0, unselected: 0 },
+              "\\N": { selected: 0, unselected: 0 }
+            };
           }
+  
           if (isSelected) {
-            yearData[year][region].selected++;
+            monthData[monthKey][region].selected++;
           } else {
-            yearData[year][region].unselected++;
+            monthData[monthKey][region].unselected++;
           }
         }
       });
     };
-
+  
     processExhibitions(selectedExhibitions, true);
     processExhibitions(unselectedExhibitions, false);
-
-    return Object.keys(yearData).map(year => {
-      const regions = yearData[parseInt(year)];
+  
+    return Object.keys(monthData).map(monthKey => {
+      const regions = monthData[monthKey];
+      const [year, month] = monthKey.split('-').map(Number);
       return {
-        year: parseInt(year),
+        year: year,
+        month: month,
         totalExhibitions: Object.values(regions).reduce((sum, value) => sum + value.selected + value.unselected, 0),
         regions
       };
-    }).sort((a, b) => a.year - b.year);
+    }).sort((a, b) => a.year === b.year ? a.month - b.month : a.year - b.year);
   }
+  
 }
