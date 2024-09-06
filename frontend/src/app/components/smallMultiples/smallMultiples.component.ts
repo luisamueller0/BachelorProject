@@ -199,6 +199,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
   // If an artist node was clicked, do nothing
   if (this.isNodeClick) {
     this.isNodeClick = false;
+    console.log('Hallo')
     return;
   }
 
@@ -266,6 +267,8 @@ private onClusterClick(clusterNode: ClusterNode): void {
     this.g.selectAll(`.cluster-${clusterNode.clusterId}`).style('opacity', '1');
   }
 }
+
+
 
 
   
@@ -399,7 +402,6 @@ this.isLoading = true;
 
   private handleNodeClick(artistNode: ArtistNode, event: MouseEvent): void {
     // Ensure defs and filter are only created once
-console.log('HALLO', this.singleInterCommunityEdges)
 
     let defs = this.svg.select('defs');
     if (defs.empty()) {
