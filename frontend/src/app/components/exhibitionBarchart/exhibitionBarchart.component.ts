@@ -17,6 +17,19 @@ interface YearData {
   };
 }
 
+interface MonthData {
+  year: number;
+  month: number;
+  totalExhibitions: number;
+  regions: {
+    [key: string]: {
+      selected: number;
+      unselected: number;
+    };
+  };
+}
+
+
 @Component({
   selector: 'app-exhibitionBarchart',
   templateUrl: './exhibitionBarchart.component.html',
@@ -45,8 +58,9 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   private exhibitionMap: Map<string, Exhibition> = new Map();
   private previouslySelectedYear: number | null = null;
 
+  private selectedMonths: { year: number, month: number }[] = [];
 
-  
+  private xScale: any;
 
   private margin = {
     top: 1.75,
@@ -404,101 +418,199 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   
   
   
-private drawBinnedChart(): void {
-  const monthData = this.getMonthlyExhibitionData(this.selectedExhibitions, this.nonSelectedExhibitions);
+  private drawBinnedChart(): void {
+    const monthData = this.getMonthlyExhibitionData(this.selectedExhibitions, this.nonSelectedExhibitions);
+  
+    // Dynamically calculate the region order based on total exhibitions
+    const sortedRegionKeys = this.getSortedRegionKeys(this.selectedExhibitions);
+  
+    // Create xScale based on unique years
+    const years = Array.from(new Set(monthData.map(d => d.year.toString())));
+    const xScale = d3.scaleBand()
+      .domain(years)
+      .range([0, this.contentWidth])
+      .padding(0.1);
+  
+    this.xScale = xScale;
+  
+    const yScale = d3.scaleLinear()
+      .domain([0, d3.max(monthData, d => d.totalExhibitions)!])
+      .nice()
+      .range([this.contentHeight, 15]);
+  
+    const colorMap: { [key: string]: string } = {
+      "North Europe": "#67D0C0",
+      "Eastern Europe": "#59A3EE",
+      "Southern Europe": "#AF73E8",
+      "Western Europe": "#F06ACD",
+      "Others": "#FFDA75",
+      "\\N": "#c9ada7"
+    };
+  
+    // Create stack layout
+    const stack = d3.stack()
+      .keys(sortedRegionKeys.flatMap(region => [`${region}-selected`, `${region}-unselected`]));
+  
+    const stackedData = stack(monthData.map(d => {
+      const data: any = { year: d.year, month: d.month };
+      sortedRegionKeys.forEach(region => {
+        data[`${region}-selected`] = d.regions[region].selected;
+        data[`${region}-unselected`] = d.regions[region].unselected;
+      });
+      return data;
+    }));
+  
+    // Create horizontal gridlines and filter out the top one
+    this.svg.append('g')
+      .attr('class', 'grid')
+      .call(d3.axisLeft(yScale)
+        .tickSize(-this.contentWidth)
+        .tickFormat('' as any)
+      )
+      .selectAll('.tick line')
+      .attr('stroke', 'lightgray')
+      .attr('stroke-dasharray', '3')
+      .attr('opacity', 0.6)
+      .attr('display', 'block');
+  
+    this.svg.selectAll('.domain').remove();
+  
+    // Group the data by year to draw multiple bars for each month under the same year
+    this.svg.append('g')
+      .selectAll('g')
+      .data(stackedData)
+      .enter().append('g')
+      .attr('fill', (d: any) => {
+        const region = d.key.split('-')[0];
+        return colorMap[region];
+      })
+      .attr('stroke', (d: any) => d3.color(colorMap[d.key.split('-')[0]])?.darker(1))
+      .attr('stroke-width', 0.8)
+      .attr('opacity', (d: any) => d.key.includes('unselected') ? 0.2 : 1)
+      .selectAll('rect')
+      .data((d: any) => d)
+      .enter().append('rect')
+      .attr('x', (d: any) => {
+        // Calculate the x position for the bar using both year and month
+        const year = d.data.year.toString();
+        const monthIndex = d.data.month - 1; // 0-based index for months
+        return xScale(year)! + monthIndex * (xScale.bandwidth() / 12);
+      })
+      .attr('y', (d: any) => yScale(d[1]))
+      .attr('height', (d: any) => yScale(d[0]) - yScale(d[1]))
+      .attr('width', xScale.bandwidth() / 12)  // Divide bandwidth by 12 to represent each month
+      .on('click', (event: any, d: any) => this.handleYearSelection(d.data.year));
+  
+    // Append x-axis with years
+    this.svg.append('g')
+      .attr('class', 'x-axis')
+      .attr('transform', `translate(0,${this.contentHeight})`)
+      .call(d3.axisBottom(xScale));
+  
+    // Append y-axis
+    this.svg.append('g')
+      .attr('class', 'y-axis')
+      .call(d3.axisLeft(yScale));
+  
+    // Add a brush to the chart after drawing the bars
+    this.addBrush();
+  }
+  
 
-  // Create xScale based on unique years
-  const years = Array.from(new Set(monthData.map(d => d.year.toString())));
-  const xScale = d3.scaleBand()
-    .domain(years)
-    .range([0, this.contentWidth])
-    .padding(0.1);
+private addBrush(): void {
+  const brush = d3.brushX()
+  .extent([[0, 15], [this.contentWidth, this.contentHeight]]) // Define the extent of the brush
 
-  const yScale = d3.scaleLinear()
-    .domain([0, d3.max(monthData, d => d.totalExhibitions)!])
-    .nice()
-    .range([this.contentHeight, 15]);
+    .on('end', this.brushed.bind(this));  // Call the brushed function when selection ends
 
-
-  const colorMap: { [key: string]: string } = {
-    "North Europe": "#67D0C0",
-    "Eastern Europe": "#59A3EE",
-    "Southern Europe": "#AF73E8",
-    "Western Europe": "#F06ACD",
-    "Others": "#FFDA75",
-    "\\N": "#c9ada7"
-  };
-
-  // Create stack layout
-  const stack = d3.stack()
-    .keys(this.regionKeys.flatMap(region => [`${region}-selected`, `${region}-unselected`]));
-
-  const stackedData = stack(monthData.map(d => {
-    const data: any = { year: d.year, month: d.month };
-    this.regionKeys.forEach(region => {
-      data[`${region}-selected`] = d.regions[region].selected;
-      data[`${region}-unselected`] = d.regions[region].unselected;
-    });
-    return data;
-  }));
-
-  // Get the maximum y-axis value to filter out the top gridline
-  const maxY = d3.max(yScale.domain());
-
-  // Create horizontal gridlines and filter out the top one
   this.svg.append('g')
-    .attr('class', 'grid')
-    .call(d3.axisLeft(yScale)
-      .tickSize(-this.contentWidth) // Create gridlines that span the width of the chart
-      .tickFormat('' as any) // Removes the labels, keeping only the lines
-    )
-    .selectAll('.tick line')
-    .attr('stroke', 'lightgray') // Set the gridline color to grey
-    .attr('stroke-dasharray', '3') // Dashed lines for the grid
-    .attr('opacity', 0.6)
-    .attr('display', 'block'); // Show the remaining gridlines
-
-
-     // Remove the axis domain (the axis border line)
-  this.svg.selectAll('.domain').remove();
-
-
-  // Group the data by year to draw multiple bars for each month under the same year
-  this.svg.append('g')
-    .selectAll('g')
-    .data(stackedData)
-    .enter().append('g')
-    .attr('fill', (d: any) => {
-      const region = d.key.split('-')[0];
-      return colorMap[region];
-    })
-    .attr('stroke', (d: any) => d3.color(colorMap[d.key.split('-')[0]])?.darker(1))
-    .attr('stroke-width', 0.8)
-    .attr('opacity', (d: any) => d.key.includes('unselected') ? 0.2 : 1)
-    .selectAll('rect')
-    .data((d: any) => d)
-    .enter().append('rect')
-    .attr('x', (d: any) => xScale(d.data.year.toString())! + (d.data.month - 1) * (xScale.bandwidth() / 12))
-    .attr('y', (d: any) => yScale(d[1]))
-    .attr('height', (d: any) => yScale(d[0]) - yScale(d[1]))
-    .attr('width', xScale.bandwidth() / 12) // Divide bandwidth by 12 to represent each month
-    .on('click', (event: any, d: any) => this.handleYearSelection(d.data.year));
-
-  // Append x-axis with years
-  this.svg.append('g')
-    .attr('class', 'x-axis')
-    .attr('transform', `translate(0,${this.contentHeight})`)
-    .call(d3.axisBottom(xScale));
-
-  // Append y-axis
-  this.svg.append('g')
-    .attr('class', 'y-axis')
-    .call(d3.axisLeft(yScale));
-
-
+    .attr('class', 'brush')
+    .call(brush);
 }
 
-  
+private brushed(event: any): void {
+  const selection = event.selection;
+  if (!selection) return; // Exit if no selection is made
+
+  const [x0, x1] = selection;
+
+  // Clear the previous selected months
+  this.selectedMonths = [];
+
+  // Select all the rectangles (bars) and check if they are within the brush selection
+  this.svg.selectAll('rect').each((d: any, i: number, nodes: any) => {
+    const bar = d3.select(nodes[i]);
+
+    // Only process if the element is a 'rect' and has valid data
+    if (bar.node().tagName === 'rect' && d && d.data) {
+      // Calculate the x position of the bar based on its data
+      const xPosition = parseFloat(bar.attr('x'));
+
+      // If the bar's x position is within the brush selection, add its corresponding month
+      if (xPosition >= x0 && xPosition <= x1 && d.data.year && d.data.month) {
+        console.log('Daten', d.data.year, d.data.month, d);
+        this.selectedMonths.push({ year: d.data.year, month: d.data.month }); // Add the month corresponding to the bar
+      }
+    } else {
+      console.log('Data not available or invalid for this element:', d);
+    }
+  });
+
+  // Handle selected exhibitions based on the selected months
+  if (this.selectedMonths.length > 0) {
+    this.filterExhibitionsByMonths(this.selectedMonths);
+  }
+}
+
+
+
+
+private filterExhibitionsByMonths(selectedMonths: { year: number, month: number }[]): void {
+  const exhibitionsBySelectedMonths: Exhibition[][] = [];
+
+  // Filter the exhibitions based on the selected months
+  const selectedExhibitionsByMonths = this.selectedExhibitions.filter(exhibition => {
+    const startDate = new Date(exhibition.start_date);
+    const endDate = new Date(exhibition.end_date);
+
+    return selectedMonths.some(month => {
+      const monthStart = new Date(month.year, month.month - 1, 1);
+      const monthEnd = new Date(month.year, month.month, 0);  // Last day of the month
+      return startDate <= monthEnd && endDate >= monthStart;
+    });
+  });
+
+  const selectedExhibitionIds = new Set(selectedExhibitionsByMonths.map(exhibition => exhibition.id));
+
+  const clusterExhibitionsByMonths = this.clusterExhibitions.filter(exhibition => {
+    const startDate = new Date(exhibition.start_date);
+    const endDate = new Date(exhibition.end_date);
+
+    return selectedMonths.some(month => {
+      const monthStart = new Date(month.year, month.month - 1, 1);
+      const monthEnd = new Date(month.year, month.month, 0);  // Last day of the month
+      return startDate <= monthEnd && endDate >= monthStart;
+    }) && !selectedExhibitionIds.has(exhibition.id);
+  });
+
+  exhibitionsBySelectedMonths.push(selectedExhibitionsByMonths, clusterExhibitionsByMonths);
+
+  // Pass the selected exhibitions to the selection service
+  this.selectionService.selectExhibitions(exhibitionsBySelectedMonths);
+}
+
+private getSortedRegionKeys(exhibitions: Exhibition[]): string[] {
+  const regionTotals: { [key: string]: number } = {};
+
+  exhibitions.forEach(exhibition => {
+    const region = exhibition.europeanRegion; // Default to "Others" if undefined
+    regionTotals[region] = (regionTotals[region] || 0) + 1;
+  });
+
+  // Sort regions by total exhibitions from largest to smallest
+  return Object.keys(regionTotals).sort((a, b) => regionTotals[b] - regionTotals[a]);
+}
+
   private hasExhibitionValue(year: number): boolean {
     
     return this.selectedExhibitions.some(exhibition => {
@@ -521,7 +633,7 @@ private drawBinnedChart(): void {
 
   
 
-  private getMonthlyExhibitionData(selectedExhibitions: Exhibition[], unselectedExhibitions: Exhibition[]): any[] {
+  private getMonthlyExhibitionData(selectedExhibitions: Exhibition[], unselectedExhibitions: Exhibition[]): MonthData[] {
     const monthData: { [month: string]: { [region: string]: { selected: number; unselected: number } } } = {};
   
     const processExhibitions = (exhibitions: Exhibition[], isSelected: boolean) => {
@@ -560,6 +672,7 @@ private drawBinnedChart(): void {
     processExhibitions(selectedExhibitions, true);
     processExhibitions(unselectedExhibitions, false);
   
+    // Transform the processed data into an array of MonthData
     return Object.keys(monthData).map(monthKey => {
       const regions = monthData[monthKey];
       const [year, month] = monthKey.split('-').map(Number);
@@ -571,5 +684,6 @@ private drawBinnedChart(): void {
       };
     }).sort((a, b) => a.year === b.year ? a.month - b.month : a.year - b.year);
   }
+  
   
 }
