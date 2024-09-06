@@ -49,10 +49,10 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   
 
   private margin = {
-    top: 1,
-    right: 10,
-    bottom: 2,
-    left: 2
+    top: 1.75,
+    right:  1.5,
+    bottom:  1.5,
+    left:  1.5
   };
 
   constructor(private selectionService: SelectionService,
@@ -307,10 +307,10 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     this.createSvg();
     this.drawBinnedChart();
   }
-
+  
   private createSvg(): void {
     d3.select(this.exhibitionContainer.nativeElement).select("figure.exhibition-svg-container").select("svg").remove();
-
+  
     const element = this.exhibitionContainer.nativeElement.querySelector('figure.exhibition-svg-container');
     const margin = {
       top: this.margin.top * window.innerHeight / 100,
@@ -320,17 +320,90 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     };
     const width = element.offsetWidth - margin.left - margin.right;
     const height = element.offsetHeight - margin.top - margin.bottom;
-
+  
     this.svg = d3.select(element).append('svg')
       .attr('width', element.offsetWidth)
       .attr('height', element.offsetHeight)
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
-
+  
     this.contentWidth = width;
     this.contentHeight = height;
+  
+    // Create title and legend container at the top
+    const titleContainer = this.svg.append('g')
+      .attr('class', 'title-container')
+      .attr('transform', `translate(0, 0)`); // Position at the top
+ 
+  
+    // Append legend next to the title
+    this.createLegend(titleContainer);
   }
-
+  
+  private createLegend(container: any): void {
+    const colorMap: { [key: string]: string } = {
+      "North Europe": "#67D0C0",
+      "Eastern Europe": "#59A3EE",
+      "Southern Europe": "#AF73E8",
+      "Western Europe": "#F06ACD",
+      "Others": "#FFDA75",
+      "\\N": "#c9ada7"
+    };
+  
+    const size = 0.9 * window.innerWidth / 100;
+    const fontSize = 0.7 * window.innerWidth / 100;  // Adjust this multiplier as needed for desired text size
+  
+    // Function to calculate dynamic spacing based on text length
+    const calculateSpacing = (text: string) => {
+      return text.length * (fontSize * 0.6) + 10; // Base spacing + dynamic based on text length
+    };
+  
+    // Calculate the total legend width dynamically based on item lengths
+    const legendWidth = this.legendOrder.reduce((acc, legendItem) => acc + size + calculateSpacing(legendItem), 0);
+    
+    // Get the container width (you can use contentWidth if it's set)
+    const containerWidth = this.contentWidth; 
+  
+    // Calculate the translation to center the legend
+    const translateX = (containerWidth - legendWidth) / 2;
+  
+    // Append legend container and center it
+    const legend = container.append('g')
+      .attr('class', 'legend')
+      .attr('transform', `translate(${translateX}, -10)`);  // Center horizontally
+  
+    // Create a legend group for each item and position them inline
+    let xPosition = 0;
+    this.legendOrder.forEach((legendItem, index) => {
+      const group = legend.append('g')
+        .attr('class', 'legend-item')
+        .attr('transform', `translate(${xPosition}, 0)`);
+  
+      // Append rectangle for the legend color
+      group.append('rect')
+        .attr('width', size)
+        .attr('height', size)
+        .attr('fill', colorMap[legendItem as keyof typeof colorMap])
+        .attr('y', 5); // Adjust vertical positioning if necessary
+  
+      // Append text next to the rectangle
+      group.append('text')
+        .attr('x', size + 4)
+        .attr('y', size / 2 + 5) // Adjust to vertically align with rectangle
+        .attr('dy', '.35em')
+        .style('font-size', `${fontSize}px`)
+        .text(legendItem);
+  
+      // Calculate the spacing based on the text length
+      const spacing = calculateSpacing(legendItem);
+      
+      // Update xPosition for the next legend item
+      xPosition += size + spacing;
+    });
+  }
+  
+  
+  
 private drawBinnedChart(): void {
   const monthData = this.getMonthlyExhibitionData(this.selectedExhibitions, this.nonSelectedExhibitions);
 
@@ -344,7 +417,7 @@ private drawBinnedChart(): void {
   const yScale = d3.scaleLinear()
     .domain([0, d3.max(monthData, d => d.totalExhibitions)!])
     .nice()
-    .range([this.contentHeight, 0]);
+    .range([this.contentHeight, 10]);
 
   const colorMap: { [key: string]: string } = {
     "North Europe": "#67D0C0",
@@ -400,34 +473,7 @@ private drawBinnedChart(): void {
     .attr('class', 'y-axis')
     .call(d3.axisLeft(yScale));
 
-  // Add legend logic as before
-  
-  const legend = this.svg.append('g')
-  .attr('class', 'legend')
-  .attr('transform', `translate(${this.contentWidth + 20}, 20)`);
 
-
-  const size = 0.9 * window.innerWidth / 100;
-  const fontSize = 0.7 * window.innerWidth / 100;  // Adjust this multiplier as needed for desired text size
-  
-  legend.selectAll('rect')
-    .data(this.legendOrder)
-    .enter().append('rect')
-    .attr('x', 0)
-    .attr('y', (d: any, i: number) => i * (size + 4))  // Added spacing between rectangles
-    .attr('width', size)
-    .attr('height', size)
-    .attr('fill', (d: any) => colorMap[d as keyof typeof colorMap])
-  
-  legend.selectAll('text')
-    .data(this.legendOrder)
-    .enter().append('text')
-    .attr('x', size + 4)  // Adjusted position based on rectangle size
-    .attr('y', (d: any, i: number) => i * (size + 4) + size / 2)
-    .attr('dy', '.35em')
-    .style('font-size', `${fontSize}px`)
-    .text((d: any) => d);
-  
 }
 
   
