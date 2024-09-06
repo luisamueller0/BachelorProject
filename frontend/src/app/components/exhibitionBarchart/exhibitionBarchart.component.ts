@@ -51,7 +51,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   private margin = {
     top: 1.75,
     right:  1.5,
-    bottom:  1.5,
+    bottom:  1.25,
     left:  1.5
   };
 
@@ -417,7 +417,8 @@ private drawBinnedChart(): void {
   const yScale = d3.scaleLinear()
     .domain([0, d3.max(monthData, d => d.totalExhibitions)!])
     .nice()
-    .range([this.contentHeight, 10]);
+    .range([this.contentHeight, 15]);
+
 
   const colorMap: { [key: string]: string } = {
     "North Europe": "#67D0C0",
@@ -440,6 +441,27 @@ private drawBinnedChart(): void {
     });
     return data;
   }));
+
+  // Get the maximum y-axis value to filter out the top gridline
+  const maxY = d3.max(yScale.domain());
+
+  // Create horizontal gridlines and filter out the top one
+  this.svg.append('g')
+    .attr('class', 'grid')
+    .call(d3.axisLeft(yScale)
+      .tickSize(-this.contentWidth) // Create gridlines that span the width of the chart
+      .tickFormat('' as any) // Removes the labels, keeping only the lines
+    )
+    .selectAll('.tick line')
+    .attr('stroke', 'lightgray') // Set the gridline color to grey
+    .attr('stroke-dasharray', '3') // Dashed lines for the grid
+    .attr('opacity', 0.6)
+    .attr('display', 'block'); // Show the remaining gridlines
+
+
+     // Remove the axis domain (the axis border line)
+  this.svg.selectAll('.domain').remove();
+
 
   // Group the data by year to draw multiple bars for each month under the same year
   this.svg.append('g')
