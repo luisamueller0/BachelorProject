@@ -422,8 +422,14 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     const monthData = this.getMonthlyExhibitionData(this.selectedExhibitions, this.nonSelectedExhibitions);
   
     // Dynamically calculate the region order based on total exhibitions
-    const sortedRegionKeys = this.getSortedRegionKeys(this.selectedExhibitions);
-  
+    // Check if a cluster is selected, and if so, use the cluster's exhibitions for sorting
+    
+    const sortedRegionKeys = (this.selectedCluster && this.selectedCluster.length > 0 && this.selectedArtists && this.selectedArtists.length === 1)
+    ? this.getSortedRegionKeys(this.clusterExhibitions) // Use cluster's exhibitions
+    : this.getSortedRegionKeys(this.selectedExhibitions); // Fall back to the artist's exhibitions
+
+ 
+
     // Create xScale based on unique years
     const years = Array.from(new Set(monthData.map(d => d.year.toString())));
     const xScale = d3.scaleBand()
@@ -602,14 +608,16 @@ private filterExhibitionsByMonths(selectedMonths: { year: number, month: number 
 private getSortedRegionKeys(exhibitions: Exhibition[]): string[] {
   const regionTotals: { [key: string]: number } = {};
 
+  // Accumulate the total number of exhibitions for each region
   exhibitions.forEach(exhibition => {
     const region = exhibition.europeanRegion; // Default to "Others" if undefined
     regionTotals[region] = (regionTotals[region] || 0) + 1;
   });
 
-  // Sort regions by total exhibitions from largest to smallest
+  // Sort regions by total exhibitions in descending order (largest to smallest)
   return Object.keys(regionTotals).sort((a, b) => regionTotals[b] - regionTotals[a]);
 }
+
 
   private hasExhibitionValue(year: number): boolean {
     
