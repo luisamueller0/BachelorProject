@@ -32,7 +32,9 @@ function formatDateString(dateString) {
 }
 
 const findAllExhibitions = async () => {
-    const query = `MATCH (n:Exhibition) WHERE n.forUse = true RETURN n`;
+    const query = `MATCH (n:Exhibition) WHERE n.forUse = true AND n.startdate >= '1905' AND n.startdate < '1916' RETURN n`;
+
+
     
     try {
         return await dbSemaphore.runExclusive(async () => {
