@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs'
 import { Artist } from '../models/artist';
-import relationship from '../models/exhibited_with'
+import exhibited_with from '../models/exhibited_with';
 
 @Injectable({
   providedIn: 'root'
@@ -17,7 +17,7 @@ export class DecisionService {
   private loadingBackendRange = new BehaviorSubject<boolean>(false);
   private loadingBackendK = new BehaviorSubject<boolean>(false);
   private clusters = new BehaviorSubject<Artist[][]|null>(null);
-
+  private interCommunityEdges = new BehaviorSubject<exhibited_with[]|null>(null);
 
   currentSunburst = this.sunburstSource.asObservable();
   currentOrder = this.orderSource.asObservable();
@@ -29,8 +29,12 @@ export class DecisionService {
   currentSearchedArtistId = this.searchedArtistId.asObservable();
   currentLoadingBackendRange = this.loadingBackendRange.asObservable();
   currentLoadingBackendK = this.loadingBackendK.asObservable();
+  currentInterCommunityEdges = this.interCommunityEdges.asObservable();
 
 
+  changeInterCommunityEdges(edges: exhibited_with[] | null) {
+    this.interCommunityEdges.next(edges);
+  }
   changeClusters(clusters: Artist[][] | null) {
     this.clusters.next(clusters);
   }

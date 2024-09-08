@@ -13,4 +13,5 @@ class exhibited_with {
       ;
     }
   }
+  
   export default exhibited_with;

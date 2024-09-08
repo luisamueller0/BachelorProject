@@ -3,20 +3,23 @@ import * as d3 from 'd3';
 import { Subscription } from 'rxjs';
 import { SelectionService } from '../../services/selection.service';
 import { DecisionService } from '../../services/decision.service';
-import { Artist } from '../../models/artist';
+import { Artist,  ClusterNode } from '../../models/artist';
 
+interface InterCommunityEdge extends d3.SimulationLinkDatum<ClusterNode> {
+  source: number | ClusterNode;
+  target: number | ClusterNode;
+  sharedExhibitionMinArtworks: number;
+}
 
 @Component({
-  selector: 'app-scatterplot',
-  templateUrl: './scatterplot.component.html',
-  styleUrls: ['./scatterplot.component.css']
+  selector: 'app-network',
+  templateUrl: './network.component.html',
+  styleUrls: ['./network.component.css']
 })
 
 
-
-
-export class ScatterplotComponent implements OnInit, OnDestroy {
-  @ViewChild('scatterplot', { static: true }) private scatterplotContainer!: ElementRef;
+export class NetworkComponent implements OnInit, OnDestroy {
+  @ViewChild('network', { static: true }) private networkContainer!: ElementRef;
   public isLoading: boolean = true;
 
   private svg: any;
@@ -62,7 +65,7 @@ export class ScatterplotComponent implements OnInit, OnDestroy {
   }
 
   private updateChart(): void {
-    if (!this.scatterplotContainer) return;
+    if (!this.networkContainer) return;
     this.visualizeData();
   }
 
@@ -75,8 +78,8 @@ export class ScatterplotComponent implements OnInit, OnDestroy {
 
   private createSvg(): void {
     // Remove any existing SVG elements
-    d3.select(this.scatterplotContainer.nativeElement).select("scatterplot-svg-container").remove();
-    const element = this.scatterplotContainer.nativeElement.querySelector('.scatterplot-svg-container');
+    d3.select(this.networkContainer.nativeElement).select("network-svg-container").remove();
+    const element = this.networkContainer.nativeElement.querySelector('.network-svg-container');
 
     
     let margin;
