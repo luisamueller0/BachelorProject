@@ -109,7 +109,7 @@ export class ScatterplotComponent implements OnInit, OnDestroy {
 
   private createScatterPlot(): void {
     // Compute the cluster data (meanBirthDate, totalExhibitedArtworks)
-    const clusterData = this.clusters.map(cluster => this.calculateClusterMetrics(cluster));
+    const clusterData = this.clusters.map((cluster, index) => this.calculateClusterMetrics(cluster, index));
 
     // Create scales based on data
     const { xScale, yScale } = this.createScatterPlotScales(clusterData);
@@ -133,7 +133,8 @@ export class ScatterplotComponent implements OnInit, OnDestroy {
 
     const yScale = d3.scaleLinear()
       .domain([0, d3.max(exhibitedArtworks) as number])
-      .range([this.contentHeight, 0]);
+      .range([this.contentHeight, 0])
+      .nice()
 
     return { xScale, yScale };
   }
@@ -153,7 +154,7 @@ export class ScatterplotComponent implements OnInit, OnDestroy {
       .call(yAxis);
   }
 
-  private drawScatterPlotPoints(clusterData: { meanBirthDate: Date, totalExhibitedArtworks: number }[], xScale: d3.ScaleTime<number, number>, yScale: d3.ScaleLinear<number, number>): void {
+  private drawScatterPlotPoints(clusterData: { meanBirthDate: Date, totalExhibitedArtworks: number, identifier: number }[], xScale: d3.ScaleTime<number, number>, yScale: d3.ScaleLinear<number, number>): void {
     this.g.selectAll('.point')
       .data(clusterData)
       .enter().append('circle')
@@ -161,12 +162,14 @@ export class ScatterplotComponent implements OnInit, OnDestroy {
       .attr('cx', (d: any) => xScale(d.meanBirthDate))
       .attr('cy', (d: any) => yScale(d.totalExhibitedArtworks))
       .attr('r', 5)
-      .attr('fill', 'black')
-      .on('click', (event: any, d: any) => console.log('Cluster clicked:', d));
+      .attr('fill', 'grey')
+      .attr('data-identifier', (d: any) => d.identifier) // Add the identifier as a data attribute
+
+      .on('click', (event: any, d: any) => console.log('Cluster clicked:', d, d.identifier));
   }
 
   // Place the calculateClusterMetrics function here:
-  private calculateClusterMetrics(artists: Artist[]): { meanBirthDate: Date, totalExhibitedArtworks: number } {
+  private calculateClusterMetrics(artists: Artist[], identifier: number): { meanBirthDate: Date, totalExhibitedArtworks: number, identifier: number } {
     let totalExhibitedArtworks = 0;
     let weightedSumBirthDate = 0;
     let totalWeight = 0;
@@ -189,8 +192,10 @@ export class ScatterplotComponent implements OnInit, OnDestroy {
 
     // Convert back to Date object
     const meanBirthDate = new Date(meanBirthDateTimestamp);
+    identifier = identifier+1;
 
-    return { meanBirthDate, totalExhibitedArtworks };
+  return { meanBirthDate, totalExhibitedArtworks, identifier};
+  
   }
 
   private normalizeDynamically(values: Map<number, number>): Map<number, number> {
