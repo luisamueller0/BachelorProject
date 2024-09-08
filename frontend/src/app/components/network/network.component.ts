@@ -78,7 +78,8 @@ export class NetworkComponent implements OnInit, OnDestroy {
 
   private createSvg(): void {
     // Remove any existing SVG elements
-    d3.select(this.networkContainer.nativeElement).select("network-svg-container").remove();
+
+    d3.select(this.networkContainer.nativeElement).select('.network-svg-container svg').remove();
     const element = this.networkContainer.nativeElement.querySelector('.network-svg-container');
 
     

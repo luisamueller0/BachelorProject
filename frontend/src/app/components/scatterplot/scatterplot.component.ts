@@ -75,7 +75,7 @@ export class ScatterplotComponent implements OnInit, OnDestroy {
 
   private createSvg(): void {
     // Remove any existing SVG elements
-    d3.select(this.scatterplotContainer.nativeElement).select("scatterplot-svg-container").remove();
+    d3.select(this.scatterplotContainer.nativeElement).select('.scatterplot-svg-container svg').remove();
     const element = this.scatterplotContainer.nativeElement.querySelector('.scatterplot-svg-container');
 
     
