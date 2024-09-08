@@ -4,6 +4,7 @@ import { Subscription } from 'rxjs';
 import { SelectionService } from '../../services/selection.service';
 import { DecisionService } from '../../services/decision.service';
 import { Artist,  ClusterNode } from '../../models/artist';
+import exhibited_with from '../../models/exhibited_with';
 
 interface InterCommunityEdge extends d3.SimulationLinkDatum<ClusterNode> {
   source: number | ClusterNode;
@@ -24,6 +25,7 @@ export class NetworkComponent implements OnInit, OnDestroy {
 
   private svg: any;
   private contentWidth: number = 0;
+  private interCommunityEdges: exhibited_with[] = [];
   private contentHeight: number = 0;
   private margin = {
     top: 1.5,
@@ -45,7 +47,11 @@ export class NetworkComponent implements OnInit, OnDestroy {
       this.decisionService.currentClusters.subscribe(clusters => {
         if (clusters) {
           this.clusters = clusters;
-          this.updateChart();
+          const interCommunityEdges = this.decisionService.getInterCommunityEdges();
+          if(interCommunityEdges){
+            this.interCommunityEdges = interCommunityEdges;
+            this.visualizeData();
+          }
         } else {
           this.isLoading = true;
         }
@@ -72,9 +78,70 @@ export class NetworkComponent implements OnInit, OnDestroy {
   private visualizeData(): void {
     this.isLoading = true;
     this.createSvg();
-    this.createScatterPlot();
+    this.visualizeClusterNetwork();
     this.isLoading = false;
   }
+
+  private visualizeClusterNetwork(): void {
+// Create simple node representation instead of ClusterNode
+const nodes = this.clusters.map((cluster, index) => ({
+  id: index,
+  size: cluster.length, // Size can still represent the number of artists in the cluster
+  x: Math.random() * this.contentWidth, // Initial x position
+  y: Math.random() * this.contentHeight // Initial y position
+}));
+
+// Convert exhibited_with edges into simple links
+const links = this.interCommunityEdges.map(edge => ({
+  source: edge.startId,
+  target: edge.endId,
+  sharedExhibitionMinArtworks: edge.sharedExhibitionMinArtworks,
+}));
+
+
+
+// Add links (edges)
+const link = this.g.selectAll('line')
+  .data(links)
+  .enter()
+  .append('line')
+  .attr('stroke-width', (d:any) => Math.sqrt(d.sharedExhibitionMinArtworks)/5) // Edge thickness based on shared exhibitions
+  .attr('stroke', 'lightgray')
+
+// Add nodes (circles) with basic node structure
+const node = this.g.selectAll('circle')
+  .data(nodes)
+  .enter()
+  .append('circle')
+  .attr('r', (d: any) => d.size*2) // Node size proportional to cluster size
+  .attr('fill', '#69b3a2')
+  .on('click', (event:any, d:any) => {
+    console.log('Node clicked:', d.id);
+  });
+
+
+// Set up the simulation with basic nodes
+const simulation = d3.forceSimulation(nodes)
+  .force('link', d3.forceLink(links).id((d: any) => d.id).distance(d => 200 / d.sharedExhibitionMinArtworks)) // Distance proportional to shared exhibitions
+  .force('charge', d3.forceManyBody().strength(-200)) // Repel nodes
+  .force('center', d3.forceCenter(this.contentWidth / 2, this.contentHeight / 2)) // Center the layout
+  .force('collision', d3.forceCollide().radius((d: any) => d.size * 10)) // Prevent overlap
+  .on('tick', () => {
+    // Update link positions
+    link
+      .attr('x1', (d: any) => d.source.x)
+      .attr('y1', (d: any) => d.source.y)
+      .attr('x2', (d: any) => d.target.x)
+      .attr('y2', (d: any) => d.target.y);
+  
+    // Update node positions
+    node
+      .attr('cx', (d: any) => d.x)
+      .attr('cy', (d: any) => d.y);
+  });
+
+  }
+  
 
   private createSvg(): void {
     // Remove any existing SVG elements
@@ -109,7 +176,7 @@ export class NetworkComponent implements OnInit, OnDestroy {
 
     // Add zoom functionality
     const zoom = d3.zoom()
-      .scaleExtent([1, 10])
+      .scaleExtent([0.3, 10])
       .on("zoom", (event) => {
         this.g.attr("transform", event.transform);
       });
@@ -117,115 +184,6 @@ export class NetworkComponent implements OnInit, OnDestroy {
     this.svg.call(zoom);
   }
 
-  private createScatterPlot(): void {
-    // Compute the cluster data (meanBirthDate, totalExhibitedArtworks)
-    const clusterData = this.clusters.map((cluster, index) => this.calculateClusterMetrics(cluster, index));
-
-    // Create scales based on data
-    const { xScale, yScale } = this.createScatterPlotScales(clusterData);
-
-    // Add Axes
-    this.createXAxis(xScale);
-    this.createYAxis(yScale);
-
-    // Create the scatterplot points
-    this.drawScatterPlotPoints(clusterData, xScale, yScale);
-  }
-
-  private createScatterPlotScales(clusterData: { meanBirthDate: Date, totalExhibitedArtworks: number }[]) {
-    const birthDates = clusterData.map(d => d.meanBirthDate);
-    const exhibitedArtworks = clusterData.map(d => d.totalExhibitedArtworks);
-
-    const xScale = d3.scaleTime()
-      .domain(d3.extent(birthDates) as [Date, Date])
-      .range([0, this.contentWidth])
-      .nice()
-
-    const yScale = d3.scaleLinear()
-      .domain([0, d3.max(exhibitedArtworks) as number])
-      .range([this.contentHeight, 0])
-      .nice()
-
-    return { xScale, yScale };
-  }
-
-  private createXAxis(xScale: d3.ScaleTime<number, number>): void {
-    const xAxis = d3.axisBottom(xScale);
-
-    this.g.append('g')
-      .attr('transform', `translate(0, ${this.contentHeight})`)
-      .call(xAxis);
-  }
-
-  private createYAxis(yScale: d3.ScaleLinear<number, number>): void {
-    const yAxis = d3.axisLeft(yScale);
-
-    this.g.append('g')
-      .call(yAxis);
-  }
-
-  private drawScatterPlotPoints(clusterData: { meanBirthDate: Date, totalExhibitedArtworks: number, identifier: number }[], xScale: d3.ScaleTime<number, number>, yScale: d3.ScaleLinear<number, number>): void {
-    this.g.selectAll('.point')
-      .data(clusterData)
-      .enter().append('circle')
-      .attr('class', 'point')
-      .attr('cx', (d: any) => xScale(d.meanBirthDate))
-      .attr('cy', (d: any) => yScale(d.totalExhibitedArtworks))
-      .attr('r', 5)
-      .attr('fill', 'grey')
-      .attr('data-identifier', (d: any) => d.identifier) // Add the identifier as a data attribute
-
-      .on('click', (event: any, d: any) => console.log('Cluster clicked:', d, d.identifier));
-  }
-
-  // Place the calculateClusterMetrics function here:
-  private calculateClusterMetrics(artists: Artist[], identifier: number): { meanBirthDate: Date, totalExhibitedArtworks: number, identifier: number } {
-    let totalExhibitedArtworks = 0;
-    let weightedSumBirthDate = 0;
-    let totalWeight = 0;
-
-    artists.forEach(artist => {
-      const birthDate = new Date(artist.birthyear, 0, 1).getTime(); // Convert birthyear to Date object for January 1st of that year
-
-      // Sum total exhibited artworks
-      totalExhibitedArtworks += artist.total_exhibited_artworks;
-
-      // Calculate weighted sum of birth dates based on total exhibited artworks as weight
-      weightedSumBirthDate += birthDate * artist.total_exhibited_artworks;
-
-      // Total weight is the sum of all artworks exhibited
-      totalWeight += artist.total_exhibited_artworks;
-    });
-
-    // If total weight is zero, default to a date (e.g., 1910)
-    const meanBirthDateTimestamp = totalWeight ? weightedSumBirthDate / totalWeight : new Date(1910, 0, 1).getTime();
-
-    // Convert back to Date object
-    const meanBirthDate = new Date(meanBirthDateTimestamp);
-    identifier = identifier+1;
-
-  return { meanBirthDate, totalExhibitedArtworks, identifier};
-  
-  }
-
-  private normalizeDynamically(values: Map<number, number>): Map<number, number> {
-    const maxValue = Math.max(...Array.from(values.values()));
-    const minValue = Math.min(...Array.from(values.values()));
-
-    if (maxValue - minValue === 0) {
-      // Avoid division by zero
-      return new Map(values);
-    }
-
-    // Define thresholds or criteria for choosing normalization method
-    if (maxValue > 1000) {
-      return this.normalizeLogarithmically(values);
-    } else if (maxValue / minValue > 10) {
-      return this.normalizeSqrt(values);
-    } else {
-      return this.normalizeLinear(values);
-    }
-  }
 
   private normalizeLinear(values: Map<number, number>): Map<number, number> {
     const maxValue = Math.max(...values.values());

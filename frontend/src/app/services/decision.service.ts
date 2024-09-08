@@ -70,6 +70,9 @@ export class DecisionService {
   changeK(k: number) {
     this.kSource.next(k);
   }
+  getInterCommunityEdges():exhibited_with[]|null{
+    return this.interCommunityEdges.getValue();
+  }
 
   getDecisionSunburst(): string {
     return this.sunburstSource.getValue();
