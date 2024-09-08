@@ -290,6 +290,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
       this.isLoading = true;
       this.artistService.clusterAmountArtists(range, k).subscribe((data) => {
       const clusters = data[0];
+      this.decisionService.changeClusters(clusters);
       this.selectionService.selectAllClusters(clusters);
       const intraCommunityEdges = data[1] as exhibited_with[][];
       const interCommunityEdges = data[2] as exhibited_with[];
@@ -855,6 +856,8 @@ private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks
       .subscribe(data => {
     
         this.clusters = data[0];
+        this.decisionService.changeClusters(data[0]);
+
        /*  this.clusters.forEach((cluster, clusterIndex) => {
           //console.log('Cluster ', clusterIndex, ':')
           cluster.forEach(artist => {

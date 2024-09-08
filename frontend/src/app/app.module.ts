@@ -14,6 +14,7 @@ import { SmallMultiplesComponent } from './components/smallMultiples/smallMultip
 import { ExhibitionBarchartComponent } from './components/exhibitionBarchart/exhibitionBarchart.component';
 import { GanttChartComponent } from './components/ganttChart/ganttChart.component';
 import { ArtistGanttChartComponent } from './components/artistGanttChart/artistGanttChart.component';
+import { ScatterplotComponent } from './components/scatterplot/scatterplot.component';
 @NgModule({
   declarations: [
     AppComponent,
@@ -23,7 +24,8 @@ import { ArtistGanttChartComponent } from './components/artistGanttChart/artistG
     SmallMultiplesComponent,
     ExhibitionBarchartComponent,
     GanttChartComponent,
-    ArtistGanttChartComponent
+    ArtistGanttChartComponent,
+    ScatterplotComponent
   ],
   imports: [
     BrowserModule,

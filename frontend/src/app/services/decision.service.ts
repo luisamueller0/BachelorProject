@@ -16,6 +16,7 @@ export class DecisionService {
   private searchedArtistId = new BehaviorSubject<string| null>(null);
   private loadingBackendRange = new BehaviorSubject<boolean>(false);
   private loadingBackendK = new BehaviorSubject<boolean>(false);
+  private clusters = new BehaviorSubject<Artist[][]|null>(null);
 
 
   currentSunburst = this.sunburstSource.asObservable();
@@ -24,11 +25,15 @@ export class DecisionService {
   currentThickness = this.thicknessSource.asObservable();
   currentRange = this.rangeSource.asObservable();
   currentK = this.kSource.asObservable();
+  currentClusters = this.clusters.asObservable();
   currentSearchedArtistId = this.searchedArtistId.asObservable();
   currentLoadingBackendRange = this.loadingBackendRange.asObservable();
   currentLoadingBackendK = this.loadingBackendK.asObservable();
 
 
+  changeClusters(clusters: Artist[][] | null) {
+    this.clusters.next(clusters);
+  }
   changeLoadingBackendRange(loading: boolean) {
     this.loadingBackendRange.next(loading);
   }

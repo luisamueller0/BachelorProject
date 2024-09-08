@@ -167,7 +167,8 @@ app-map,
 app-focusOnCluster,
 app-smallMultiples,
 app-exhibitionBarchart,
-app-plot
+app-plot,
+app-scatterplot
 {
   width: 100%;
   height: 100%;
