@@ -532,6 +532,15 @@ const interClusterRelationships = Array.from(interClusterRelationshipsMap.values
     )
 );
 
+// Sorting by source.id, then target.id
+interClusterRelationships.sort((a, b) => {
+    if (a.startId !== b.startId) {
+        return a.startId - b.startId;
+    }
+    return a.endId - b.endId;
+});
+
+
 console.log('cluster finished')
 return [
     clusteredArtists,
