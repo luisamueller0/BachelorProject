@@ -213,14 +213,7 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
   
 
     
-      // Draw a manual horizontal line where the x-axis should be
-this.svg.append("line")
-.attr("x1", 0)  // Start at the leftmost edge (after the left margin)
-.attr("y1", this.contentHeight)  // Position at the bottom of the chart (y-axis height)
-.attr("x2", this.contentWidth+barWidth)  // End at the rightmost edge (before the right margin)
-.attr("y2", this.contentHeight)  // Keep it horizontal by maintaining the same y-coordinate
-.attr("stroke", "black")  // Set the color of the line
-.attr("stroke-width", 1);  // Set the thickness of the line
+
 
 
     let currentXPosition = 0;
@@ -247,51 +240,25 @@ this.svg.append("line")
       .nice();
   
  
-// Draw x-axis with individual technique labels
-const xAxis = this.svg.append("g")
-  .attr("transform", `translate(${barWidth/2},${this.contentHeight})`)
-  .call(d3.axisBottom(xScale)
-    .tickSizeOuter(0)  // This removes the outer ticks
-    .tickFormat((d: string) => d));
-
-    
-// Adjust label alignment and rotation
-xAxis.selectAll("text")
-  .attr("transform", "translate(-10,0)rotate(-45)") // Adjust rotation and position
-  .style("text-anchor", "end")
-      .style("font-weight", '700')
-      .style("font-size", "0.6vw")
-      .style("opacity", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? '1' : '0.4') : '1')
-
-      .style("color", 'black')
-      .style("font-weight", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? 'bold' : '700') : '700');
 
 
-// Adjust tick lines
-xAxis.selectAll('.tick line')
-   
-      .attr("stroke", "black") // Set the tick line color to black
-  .attr('stroke-width', 1) // Thickness of the ticks
-  .attr('y2', 4); // Length of the ticks
+   // Create horizontal gridlines and filter out the top one
+   this.svg.append('g')
+   .attr('class', 'grid')
+   .call(d3.axisLeft(yScale)
+     .tickSize(-this.contentWidth)
+     .tickFormat('' as any)
+   )
+   .selectAll('.tick line')
+   .attr('stroke', 'lightgray')
+   .attr('stroke-dasharray', '3')
+   .attr('opacity', 0.6)
+   .attr('display', 'block');
 
-
-// Adjust opacity based on data
-xAxis.style("opacity", (d: string) => !this.hasTechniqueValue(d, combinedData) ? 1 : 0.3);
-
-
-
-    // Draw y-axis
-    const yAxis = this.svg.append("g")
-      .call(d3.axisLeft(yScale));
+ this.svg.selectAll('.domain').remove();
   
-      // Optionally, style the ticks as well
-yAxis.selectAll(".tick line")  // Select all the tick lines in the y-axis
-.attr("stroke", "black");  // Set the tick line color to black
-    // Style y-axis labels
-    yAxis.selectAll("text")
-    .style('color', 'black')
-      .style("font-size", "0.6vw"); // Adjust the size as needed
-  
+
+
     // Stack data for the bars
     const stack = d3.stack()
       .keys(['nonselectedArtists', 'selectedArtists']);
@@ -321,6 +288,55 @@ yAxis.selectAll(".tick line")  // Select all the tick lines in the y-axis
       })
 
       .attr("fill", 'grey');
+
+    
+
+
+      
+    // Draw y-axis
+    const yAxis = this.svg.append("g")
+    .call(d3.axisLeft(yScale));
+
+    yAxis.selectAll("text")
+    .style('color', 'black')
+      .style("font-size", "0.6vw"); // Adjust the size as needed
+
+
+      
+// Draw x-axis with individual technique labels
+const xAxis = this.svg.append("g")
+.attr("transform", `translate(${barWidth/2},${this.contentHeight})`)
+.call(d3.axisBottom(xScale)
+  .tickSizeOuter(0)  // This removes the outer ticks
+  .tickFormat((d: string) => d));
+
+  
+// Adjust label alignment and rotation
+xAxis.selectAll("text")
+.attr("transform", "translate(-10,0)rotate(-45)") // Adjust rotation and position
+.style("text-anchor", "end")
+    .style("font-weight", '700')
+    .style("font-size", "0.6vw")
+    .style("opacity", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? '1' : '0.4') : '1')
+
+    .style("color", 'black')
+    .style("font-weight", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? 'bold' : '700') : '700');
+
+
+
+
+
+// Adjust opacity based on data
+xAxis.style("opacity", (d: string) => !this.hasTechniqueValue(d, combinedData) ? 1 : 0.3);
+      // Draw a manual horizontal line where the x-axis should be
+      this.svg.append("line")
+      .attr("x1", 0)  // Start at the leftmost edge (after the left margin)
+      .attr("y1", this.contentHeight)  // Position at the bottom of the chart (y-axis height)
+      .attr("x2", this.contentWidth+barWidth)  // End at the rightmost edge (before the right margin)
+      .attr("y2", this.contentHeight)  // Keep it horizontal by maintaining the same y-coordinate
+      .attr("stroke", "black")  // Set the color of the line
+      .attr("stroke-width", 1);  // Set the thickness of the line
+  
   }
   
   
