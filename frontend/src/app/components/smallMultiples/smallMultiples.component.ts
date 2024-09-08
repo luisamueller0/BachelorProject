@@ -119,10 +119,7 @@ export class SmallMultiplesComponent implements OnInit, OnChanges, OnDestroy {
     }));
     this.subscriptions.add(this.decisionService.currentSearchedArtistId.subscribe((id:string|null) => this.highlightArtistNode(id)));
 
-    this.subscriptions.add(this.decisionService.currentSunburst.subscribe(sunburst => {
-      this.visualizeData();  // Redraw the matrix with the filtered row
-    }));
-    
+
 
     window.addEventListener('resize', this.onResize.bind(this));
   }
@@ -986,16 +983,8 @@ private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks
 
   private drawMatrix(isSwitched: boolean): void {
     const k = this.decisionService.getK();
-  
-    // Get the current sunburst decision
-    const currentSunburst = this.decisionService.getDecisionSunburst();
-  
-    // Filter the rows based on the current sunburst decision
-    const availableRows = ['nationality', 'birthcountry', 'deathcountry', 'mostexhibited'];
-    const filteredRows = currentSunburst ? availableRows.filter(row => row === currentSunburst) : availableRows;
-  
-    const xData = isSwitched ? availableRows : d3.range(1, k + 1).map(String);
-    const yData = isSwitched ? d3.range(1, k + 1).map(String) : filteredRows;
+    const xData = isSwitched ? ['nationality', 'birthcountry', 'deathcountry', 'mostexhibited'] : d3.range(1, k + 1).map(String);
+    const yData = isSwitched ? d3.range(1, k + 1).map(String) : ['nationality', 'birthcountry', 'deathcountry', 'mostexhibited'];
   
     const cellWidth = this.contentWidth / xData.length;
     const cellHeight = this.contentHeight / yData.length;
@@ -1015,12 +1004,11 @@ private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks
     if (isSwitched) {
       this.drawHorizontalSeparators(yScale, yData); // Draw horizontal lines
       this.drawAxes(xScale, yScale, isSwitched, true, false); // Draw x-axis only
-    } else {
+  } else {
       this.drawVerticalSeparators(xScale, xData); // Draw vertical lines
       this.drawAxes(xScale, yScale, isSwitched, false, true); // Draw y-axis only
-    }
   }
-  
+  }
   
   private drawAxes(xScale: d3.ScaleBand<string>, yScale: d3.ScaleBand<string>, isSwitched: boolean, drawX: boolean, drawY: boolean): void {
     const axisColor = "#2a0052";  // Change this to your desired color for the axis lines
@@ -1086,9 +1074,10 @@ private drawCells(xScale: d3.ScaleBand<string>, yScale: d3.ScaleBand<string>, xD
     .append("g")
     .attr("class", "cell")
     .attr("transform", (d: any) => `translate(${xScale(isSwitched ? d.x : String(d.x))!-5},${yScale(isSwitched ? String(d.y) : d.y)!-5})`);
-
+  
   cells.each((d: any, i: number, nodes: any) => {
     this.drawClusterInCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight, isSwitched);
+    //this.addButtonToCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight, isSwitched); // Add the button
   });
 }
 
