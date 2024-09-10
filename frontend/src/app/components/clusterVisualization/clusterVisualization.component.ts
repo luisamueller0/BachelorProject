@@ -155,7 +155,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       });
     }
 
-     private updatePosition(type: string, id:number, countryData:any,degreeMap: Map<number, number>, metricMap: Map<number, number>, cluster: ClusterNode, centerX: number, centerY: number): { x: number, y: number } {
+     private updatePosition(type: string, id:number, countryData:any,degreeMap: Map<number, number>, metricMap: Map<number, number>, cluster: ClusterNode): { x: number, y: number } {
       const degree = degreeMap.get(id) || 0;
      console.log('help id',id)
      console.log('help',degreeMap)
@@ -165,8 +165,8 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
 
   
       const angle = countryData.middleAngle;
-      const x = centerX + radial * Math.sin(angle);
-      const y = centerY - radial * Math.cos(angle);
+      const x = 0 + radial * Math.sin(angle);
+      const y = 0 - radial * Math.cos(angle);
   
       return {
         x: x,
@@ -196,9 +196,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
                   countryCentroids[country],
                   this.degreesMap[clusterIndex],
                   metricMap,
-                  this.clusterNodes[clusterIndex],
-                  0,
-                  0
+                  this.clusterNodes[clusterIndex]
               );
               return newPos.x; // Correctly calculate the new x position
           })
@@ -210,9 +208,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
                   countryCentroids[country],
                   this.degreesMap[clusterIndex],
                   metricMap,
-                  this.clusterNodes[clusterIndex],
-                 0,
-                  0
+                  this.clusterNodes[clusterIndex]
               );
               return newPos.y; // Correctly calculate the new y position
           })
