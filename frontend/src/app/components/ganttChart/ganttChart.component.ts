@@ -337,13 +337,19 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
         yOffset += extraSpace;
       });
     
-      this.svg.append('line')
+    /*   this.svg.append('line')
         .attr('x1', 0)
         .attr('x2', this.contentWidth)
         .attr('y1', yOffset)
         .attr('y2', yOffset)
         .attr('stroke', 'gray')
-        .attr('stroke-width', 1);
+        .attr('stroke-width', 1); */
+        this.svg.selectAll('.tick line')
+        .filter((d:any, i:any, nodes:any) => i !== 0 && i !== nodes.length - 1) // Exclude first and last tick
+        .attr('stroke', 'lightgray')
+        .attr('opacity', 0.6)
+        .attr('stroke-dasharray', '3');
+        
     
       const legendHeight = 0.5 * window.innerWidth / 100;
       const legendWidth = this.contentWidth / 4 * 3;
