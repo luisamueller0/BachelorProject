@@ -183,57 +183,60 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       const metricMap = this.calculateNormalizedMaps(size)[clusterIndex];
   
       // Update artist node positions, sizes, and colors
-      this.g.selectAll(".artist-node")
-          .filter((d: any) => d.artist.cluster === clusterIndex)
-          .transition()
-          .duration(5000)
-          .attr('cx', (d: any) => {
-            console.log('help artist',d.artist)
-              const country = this.getArtistCountry(d.artist);
-              const newPos = this.updatePosition(
-                  this.decisionService.getDecisionSunburst(),
-                  d.artist.id,
-                  countryCentroids[country],
-                  this.degreesMap[clusterIndex],
-                  metricMap,
-                  this.clusterNodes[clusterIndex]
-              );
-              return newPos.x; // Correctly calculate the new x position
-          })
-          .attr('cy', (d: any) => {
-              const country = this.getArtistCountry(d.artist);
-              const newPos = this.updatePosition(
-                  this.decisionService.getDecisionSunburst(),
-                  d.artist.id,
-                  countryCentroids[country],
-                  this.degreesMap[clusterIndex],
-                  metricMap,
-                  this.clusterNodes[clusterIndex]
-              );
-              return newPos.y; // Correctly calculate the new y position
-          })
-          .attr('r', (d: any) => {
-              const nodeRadius = metricMap.get(d.id) || 0;
-              return this.calculateRadiusForNode(
-                  nodeRadius,
-                  this.clusterNodes[clusterIndex].innerRadius,
-                  this.clusterNodes[clusterIndex].artists.length
-              );
-          })
-          .style('fill', (d: any) => {
-              const country = this.getArtistCountry(d.artist);
-              return this.artistService.getCountryColor(country, 1); // Update node color
-          });
+      artistNodes.forEach((artistNode: any) => {
+          const country = this.getArtistCountry(artistNode.artist);
+          const newPos = this.updatePosition(
+              this.decisionService.getDecisionSunburst(),
+              artistNode.artist.id,
+              countryCentroids[country],
+              this.degreesMap[clusterIndex],
+              metricMap,
+              this.clusterNodes[clusterIndex]
+          );
+          artistNode.x = newPos.x;
+          artistNode.y = newPos.y;
+          artistNode.radius = this.calculateRadiusForNode(
+              metricMap.get(artistNode.id) || 0,
+              this.clusterNodes[clusterIndex].innerRadius,
+              this.clusterNodes[clusterIndex].artists.length
+          );
+      });
   
-      // Update edges to reflect updated positions of the nodes
-      d3.selectAll(`.artist-edge-${clusterIndex}`)
-          .transition()
-          .duration(5000)
-          .attr('x1', (d: any) => d.source.x) // Recalculate source x position
-          .attr('y1', (d: any) => d.source.y) // Recalculate source y position
-          .attr('x2', (d: any) => d.target.x) // Recalculate target x position
-          .attr('y2', (d: any) => d.target.y); // Recalculate target y position
+      // Reheat the simulation and apply updated positions
+      const simulation = this.simulations[clusterIndex];
+      if (simulation) {
+          simulation.nodes(artistNodes); // Update nodes with new positions
+  
+          simulation
+              .alpha(1) // Reheat the simulation
+              .restart(); // Restart the simulation
+  
+          // Run the tick handler to update node and edge positions
+          simulation.on("tick", () => {
+              this.g.selectAll(".artist-node")
+                  .filter((d: any) => d.artist.cluster === clusterIndex)
+                  .transition() // Apply transition for movement
+                  .duration(2000) // Set duration for the transition
+                  .attr('cx', (d: any) => d.x)
+                  .attr('cy', (d: any) => d.y)
+                  .attr('r', (d: any) => d.radius)
+                  .style('fill', (d: any) => {
+                      const country = this.getArtistCountry(d.artist);
+                      return this.artistService.getCountryColor(country, 1); // Update node color
+                  });
+  
+              // Update edges with transitions to reflect node positions
+              d3.selectAll(`.artist-edge-${clusterIndex}`)
+                  .transition() // Apply transition for edges
+                  .duration(2000) // Set duration for the transition
+                  .attr('x1', (d: any) => d.source.x)
+                  .attr('y1', (d: any) => d.source.y)
+                  .attr('x2', (d: any) => d.target.x)
+                  .attr('y2', (d: any) => d.target.y);
+          });
+      }
   }
+  
   
   // Helper function to get the country based on the current decision
   private getArtistCountry(artist: Artist): string {
@@ -1734,9 +1737,13 @@ console.log(this.clusterNodes)
           artistNodes.forEach(node => {
             this.constrainAngularMovement(node, countryCentroids[node.countryData.country]);
         });
-            circles
+     /*    circles.transition()
+        .duration(2000) */
+        circles
                 .attr('cx', (d: any) => d.x)
                 .attr('cy', (d: any) => d.y);
+          /*   edges.transition()
+            .duration(2000) */
             edges
                 .attr("x1", (d: any) => d.source.x)
                 .attr("y1", (d: any) => d.source.y)
