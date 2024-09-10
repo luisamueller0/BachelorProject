@@ -115,7 +115,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       this.createChart();
   
       this.subscriptions.add(this.decisionService.currentSize.subscribe(size => {
-        this.updateNodeSize(size);
+        this.updateNetworkOnSunburstChange(this.decisionService.getDecisionSunburst());
       }));
       
   
@@ -131,6 +131,8 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
   
       window.addEventListener('resize', this.onResize.bind(this));
     }
+  
+
   
 
     private updateNetworkOnSunburstChange(newCategory: string): void {
@@ -207,35 +209,44 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       if (simulation) {
           simulation.nodes(artistNodes); // Update nodes with new positions
   
+          // Speed up the initial movement by reheating the simulation
           simulation
-              .alpha(1) // Reheat the simulation
-              .restart(); // Restart the simulation
+              .alpha(1) // Set alpha to 1 to quickly reheat the simulation
+              .alphaDecay(0.1) // Slightly slower decay to allow the simulation to "cool down" more slowly
+              .restart();
   
-          // Run the tick handler to update node and edge positions
-          simulation.on("tick", () => {
-              this.g.selectAll(".artist-node")
-                  .filter((d: any) => d.artist.cluster === clusterIndex)
-                  .transition() // Apply transition for movement
-                  .duration(2000) // Set duration for the transition
-                  .attr('cx', (d: any) => d.x)
-                  .attr('cy', (d: any) => d.y)
-                  .attr('r', (d: any) => d.radius)
-                  .style('fill', (d: any) => {
-                      const country = this.getArtistCountry(d.artist);
-                      return this.artistService.getCountryColor(country, 1); // Update node color
-                  });
+          // Allow the simulation to run for a few ticks manually
+          for (let i = 0; i < 100; i++) {
+              simulation.tick();
+          }
   
-              // Update edges with transitions to reflect node positions
-              d3.selectAll(`.artist-edge-${clusterIndex}`)
-                  .transition() // Apply transition for edges
-                  .duration(2000) // Set duration for the transition
-                  .attr('x1', (d: any) => d.source.x)
-                  .attr('y1', (d: any) => d.source.y)
-                  .attr('x2', (d: any) => d.target.x)
-                  .attr('y2', (d: any) => d.target.y);
-          });
+          // Stop the simulation after the initial force layout stabilizes
+          simulation.stop();
+  
+          // Apply a smooth transition after the simulation finishes
+          this.g.selectAll(".artist-node")
+              .filter((d: any) => d.artist.cluster === clusterIndex)
+              .transition() // Apply transition after simulation
+              .duration(2000) // Set duration for the transition
+              .attr('cx', (d: any) => d.x)
+              .attr('cy', (d: any) => d.y)
+              .attr('r', (d: any) => d.radius)
+              .style('fill', (d: any) => {
+                  const country = this.getArtistCountry(d.artist);
+                  return this.artistService.getCountryColor(country, 1); // Update node color
+              });
+  
+          // Apply transitions to the edges after simulation as well
+          d3.selectAll(`.artist-edge-${clusterIndex}`)
+              .transition() // Apply transition for edges
+              .duration(2000) // Set duration for the transition
+              .attr('x1', (d: any) => d.source.x)
+              .attr('y1', (d: any) => d.source.y)
+              .attr('x2', (d: any) => d.target.x)
+              .attr('y2', (d: any) => d.target.y);
       }
   }
+  
   
   
   // Helper function to get the country based on the current decision
