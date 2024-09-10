@@ -70,6 +70,9 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     private totalExhibitedArtworksMap: { [clusterId: number]: Map<number, number> } = {};
     private differentTechniquesMap: { [clusterId: number]: Map<number, number> } = {};
   
+
+    private cellHeight: number = 0;
+    private cellWidth: number = 0;
     
   
     private regionOrder: string[] = ["North Europe", "Eastern Europe", "Southern Europe", "Western Europe", "Others","\\N"];
@@ -85,6 +88,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     private countryIndexMap = new Map<string, number>();
   
     private clusterCountryCentroids: { [clusterId: number]: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } } = {};
+    private simulations: { [clusterId: number]: d3.Simulation<ArtistNode, undefined> }  = {};
     private simulationsN: { [clusterId: number]: d3.Simulation<ArtistNode, undefined> }  = {};
     private simulationsB: { [clusterId: number]: d3.Simulation<ArtistNode, undefined> }  = {};
     private simulationsD: { [clusterId: number]: d3.Simulation<ArtistNode, undefined> }  = {};
@@ -145,11 +149,123 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         // If artistNodes are available, proceed with updating the positions
         if (artistNodes && countryCentroids) {
           // Update the positions of artist nodes and edges
-          console.log('update', artistNodes, countryCentroids)
+          this.updateArtistPositionsAndEdges(clusterIndex, artistNodes, countryCentroids);
           //this.updateArtistPositionsAndEdges(clusterIndex, artistNodes, countryCentroids);
         }
       });
     }
+
+    private updateCountries(clusterIndex: number, countryCentroids: { [country: string]: any }): void {
+      // Select the correct cluster group
+      const clusterGroup = d3.select(`.cluster-${clusterIndex}`); // Corrected the selector
+    
+      const tooltip = d3.select("div#tooltip");
+    
+      const showTooltip = (event: any, d: any) => {
+        const countryCode = d.country;
+        const fullCountryName = this.artistService.countryMap[countryCode];
+    
+        tooltip.style("display", "block")
+          .style("left", `${event.pageX + 5}px`)
+          .style("top", `${event.pageY + 5}px`)
+          .style("color", "black")
+          .html(`${fullCountryName}<br/>`);
+      };
+    
+      const hideTooltip = () => {
+        tooltip.style("display", "none");
+      };
+    
+      const arcGenerator = d3.arc<any>()
+        .innerRadius(this.clusterNodes[clusterIndex].innerRadius)
+        .outerRadius(this.clusterNodes[clusterIndex].outerRadius); // Assuming you have radius values for each cluster
+    
+      const paths = clusterGroup.selectAll("path")
+        .data(Object.values(countryCentroids)) // Corrected to use countryCentroids data
+        .join("path") // Using join instead of enter to prevent re-adding elements
+        .attr("d", arcGenerator)
+        .attr("fill", (d: any) => d.color)
+        .style('stroke', 'none')
+        .on("mouseover", showTooltip)
+        .on("mousemove", showTooltip)
+        .on('mouseout', hideTooltip);
+    
+      const textsize = 0.5 * Math.min(this.cellHeight, this.cellWidth) / 10;
+    
+      clusterGroup.selectAll("text")
+        .data(Object.values(countryCentroids)) // Same as above, using the countryCentroids data
+        .join("text")
+        .attr("transform", (d: any) => `translate(${arcGenerator.centroid(d)})`)
+        .attr("text-anchor", "middle")
+        .text((d: any) => d.country)
+        .style("font-size", `${textsize}px`)
+        .style("font-weight", "bold")
+        .style("fill", "white");
+    }
+    
+    private updateArtistPositionsAndEdges(clusterIndex: number, artistNodes: any[], countryCentroids: { [country: string]: any }): void {
+      // First update the country centroids if necessary
+      this.updateCountries(clusterIndex, countryCentroids);
+    
+      this.g.selectAll(".artist-node")
+        .filter((d: any) => d.artist.cluster === clusterIndex)
+        .transition()
+        .duration(5000) // Set the duration for the transition
+        .attr('cx', (d: any) => {
+          const newPos = this.calculateNewPositionForTransition(d.artist, countryCentroids);
+          return newPos.x;
+        })
+        .attr('cy', (d: any) => {
+          const newPos = this.calculateNewPositionForTransition(d.artist, countryCentroids);
+          return newPos.y;
+        });
+    
+      // Update edge positions with transitions
+      d3.selectAll(`.artist-edge-${clusterIndex}`)
+        .transition()
+        .duration(5000)
+        .attr('x1', (d: any) => d.source.x)
+        .attr('y1', (d: any) => d.source.y)
+        .attr('x2', (d: any) => d.target.x)
+        .attr('y2', (d: any) => d.target.y);
+    
+      // Restart the simulation for the specific cluster
+      const simulation = this.simulations[clusterIndex];
+      if (simulation) {
+        simulation.alpha(1).restart(); // Reset alpha to 1 and restart the simulation
+      }
+    }
+    
+    private calculateNewPositionForTransition(artist: Artist, countryCentroids: any): { x: number, y: number } {
+      let countryData: any;
+    
+      // Determine which country centroid to use based on the current category
+      switch (this.decisionService.getDecisionSunburst()) {
+        case 'nationality':
+          countryData = countryCentroids[artist.nationality];
+          break;
+        case 'birthcountry':
+          countryData = countryCentroids[artist.birthcountry];
+          break;
+        case 'deathcountry':
+          countryData = countryCentroids[artist.deathcountry];
+          break;
+        case 'mostexhibited':
+          countryData = countryCentroids[artist.most_exhibited_in];
+          break;
+      }
+    
+      const angle = countryData.middleAngle;
+      const radialScale = this.setupRadialScale(this.clusterNodes[artist.cluster].innerRadius); // Assuming clusterNodes is available
+      const radial = radialScale(1); // Adjust this scale as needed
+    
+      const x = radial * Math.sin(angle);
+      const y = -radial * Math.cos(angle);
+    
+      return { x, y };
+    }
+    
+ 
     
     
     ngOnChanges(): void {
@@ -737,7 +853,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       
   
             const sharedExhibitionMinArtworksValues: number[] = [];
-            this.g.selectAll(`.artist-edge-${clusterId}-${category}`).each((d: any) => {
+            this.g.selectAll(`.artist-edge-${clusterId}`).each((d: any) => {
                 sharedExhibitionMinArtworksValues.push(d.sharedExhibitionMinArtworks);
             });
   
@@ -975,33 +1091,49 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       });
     }
     private createCountryCentroids(artists: Artist[], category: string, clusterNode: ClusterNode): { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } {
+    
       const countryMap = new Map<string, Artist[]>();
-    
-      // Populate the countryMap with artists grouped by their country based on the given category
-      artists.forEach(artist => {
-        let country;
-        switch (category) {
-          case 'nationality':
-            country = artist.nationality;
+    let sortedArtists: Artist[] = [];
+  
+    // Populate the country map based on the value parameter
+    switch (category) {
+        case 'nationality':
+            sortedArtists = this.prepareData(clusterNode.artists, category);
+            sortedArtists.forEach(artist => {
+                if (!countryMap.has(artist.nationality)) {
+                    countryMap.set(artist.nationality, []);
+                }
+                countryMap.get(artist.nationality)!.push(artist);
+            });
             break;
-          case 'birthcountry':
-            country = artist.birthcountry;
+        case 'birthcountry':
+            sortedArtists = this.prepareData(clusterNode.artists, category);
+            sortedArtists.forEach(artist => {
+                if (!countryMap.has(artist.birthcountry)) {
+                    countryMap.set(artist.birthcountry, []);
+                }
+                countryMap.get(artist.birthcountry)!.push(artist);
+            });
             break;
-          case 'deathcountry':
-            country = artist.deathcountry;
+        case 'deathcountry':
+            sortedArtists = this.prepareData(clusterNode.artists, category);
+            sortedArtists.forEach(artist => {
+                if (!countryMap.has(artist.deathcountry)) {
+                    countryMap.set(artist.deathcountry, []);
+                }
+                countryMap.get(artist.deathcountry)!.push(artist);
+            });
             break;
-          case 'mostexhibited':
-            country = artist.most_exhibited_in;
+        case 'mostexhibited':
+            sortedArtists = this.prepareData(clusterNode.artists, category);
+            sortedArtists.forEach(artist => {
+                if (!countryMap.has(artist.most_exhibited_in)) {
+                    countryMap.set(artist.most_exhibited_in, []);
+                }
+                countryMap.get(artist.most_exhibited_in)!.push(artist);
+            });
             break;
-          default:
-            country = artist.nationality;
-        }
-        if (!countryMap.has(country)) {
-          countryMap.set(country, []);
-        }
-        countryMap.get(country)!.push(artist);
-      });
-    
+    }
       const countries = Array.from(countryMap.keys());
       const totalArtists = artists.length;
       const minimumAngle = Math.PI / 18;
@@ -1268,6 +1400,8 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
   
     
   private createClusterGroup(clusterNode: ClusterNode, value: string, cellWidth: number, cellHeight: number): SVGGElement {
+    this.cellWidth=cellWidth
+    this.cellHeight=cellHeight
     const arcGenerator = d3.arc<any>()
         .innerRadius(clusterNode.innerRadius)
         .outerRadius(clusterNode.outerRadius);
@@ -1472,7 +1606,7 @@ console.log(this.clusterNodes)
         .data(formattedRelationships)
         .enter()
         .append("line")
-        .attr("class", `artist-edge artist-edge-${cluster.clusterId}-${value}`)
+        .attr("class", `artist-edge artist-edge-${cluster.clusterId}`)
         .style('stroke', (d: any) => {
             if (d.sharedExhibitionMinArtworks < threshold &&this.intraCommunityEdges[cluster.clusterId].length > 2) {
                 return 'white';
@@ -1551,6 +1685,7 @@ console.log(this.clusterNodes)
     this.artistNodes[cluster.clusterId] = artistNodes;
 
     console.log('artistnodes', this.artistNodes)
+    this.simulations[cluster.clusterId] = simulation;
   
     switch (value) {
         case 'nationality':
