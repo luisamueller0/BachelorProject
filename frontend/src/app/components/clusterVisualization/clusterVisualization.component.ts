@@ -511,6 +511,8 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       d3.select("figure#network").select("svg").remove();
         this.isLoading = true;
         this.artistService.clusterAmountArtists(range, k).subscribe((data) => {
+          this.decisionService.changeInterCommunityEdges(data[2])
+          this.decisionService.changeClusters(data[0]);
         const clusters = data[0];
         this.selectionService.selectAllClusters(clusters);
         const intraCommunityEdges = data[1] as exhibited_with[][];
@@ -940,7 +942,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
             const edgeColorScale = this.createEdgeColorScale(artistColor, minArtworks, maxArtworks);
   
             // Update edges connected to the selected node with the scaled color
-            this.g.selectAll(`.artist-edge-${clusterId}-${category}`)
+            this.g.selectAll(`.artist-edge-${clusterId}`)
                 .style('stroke', (d: any) => {
                     if (d.source.id === artistNode.id || d.target.id === artistNode.id) {
                         return edgeColorScale(d.sharedExhibitionMinArtworks);
@@ -1077,6 +1079,8 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         .subscribe(data => {
       
           this.clusters = data[0];
+          this.decisionService.changeInterCommunityEdges(data[2])
+          this.decisionService.changeClusters(data[0]);
          /*  this.clusters.forEach((cluster, clusterIndex) => {
             //console.log('Cluster ', clusterIndex, ':')
             cluster.forEach(artist => {
