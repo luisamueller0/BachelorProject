@@ -170,7 +170,8 @@ app-exhibitionBarchart,
 app-plot,
 app-scatterplot,
 app-network,
-app-clusterVisualization
+app-clusterVisualization,
+app-oldMap
 {
   width: 100%;
   height: 100%;
