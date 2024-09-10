@@ -122,10 +122,8 @@ const node = this.g.selectAll('circle')
 
 // Set up the simulation with basic nodes
 const simulation = d3.forceSimulation(nodes)
-  .force('link', d3.forceLink(links).id((d: any) => d.id).distance(d => 100/d.sharedExhibitionMinArtworks)) // Distance proportional to shared exhibitions
-  .force('charge', d3.forceManyBody().strength(-400)) // Repel nodes
-  .force('center', d3.forceCenter(this.contentWidth / 2, this.contentHeight / 2)) // Center the layout
-  .force('collision', d3.forceCollide().radius((d: any) => d.size * 4)) // Prevent overlap
+  .force('link', d3.forceLink(links).id((d: any) => d.id).distance(d => 200/d.sharedExhibitionMinArtworks)) // Distance proportional to shared exhibitions
+  .force('collision', d3.forceCollide().radius((d: any) => d.size * 8)) // Prevent overlap
   .on('tick', () => {
     // Update link positions
     link

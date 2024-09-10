@@ -21,7 +21,7 @@
     </div>
   </div>
   <div class="dropdown-group">
-    <label for="dropdown" class="dropdown-label">Select sunburst categories:</label>
+    <label for="dropdown" class="dropdown-label">Select country category:</label>
     <select class="dropdown" (change)="onSunburstChange($event)">
       <option *ngFor="let option of SunburstOptions" [value]="option">{{ option }}</option>
     </select>
