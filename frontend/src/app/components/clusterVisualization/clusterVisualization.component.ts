@@ -207,7 +207,18 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       // Reheat the simulation and apply updated positions
       const simulation = this.simulations[clusterIndex];
       if (simulation) {
-          simulation.nodes(artistNodes); // Update nodes with new positions
+          // Recalculate collision sizes based on new node sizes
+          const sizes: any = {};
+          artistNodes.forEach((artistNode: any) => {
+              sizes[artistNode.id] = artistNode.radius;
+          });
+  
+          // Update the simulation with the new collision force based on updated node sizes
+          simulation
+              .force("collision", d3.forceCollide((d: any) => {
+                  return this.calculateCollisionRadius(sizes[d.id] || 0);
+              }))
+              .nodes(artistNodes); // Update nodes with new positions
   
           // Speed up the initial movement by reheating the simulation
           simulation
@@ -247,6 +258,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       }
   }
   
+
   
   
   // Helper function to get the country based on the current decision
