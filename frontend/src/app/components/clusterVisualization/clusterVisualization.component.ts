@@ -155,6 +155,108 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       });
     }
 
+     private updatePosition(type: string, id:number, countryData:any,degreeMap: Map<number, number>, metricMap: Map<number, number>, cluster: ClusterNode, centerX: number, centerY: number): { x: number, y: number } {
+      const degree = degreeMap.get(id) || 0;
+     console.log('help id',id)
+     console.log('help',degreeMap)
+     
+      const radialScale = this.setupRadialScale(cluster.innerRadius);
+      const radial = radialScale(degree);
+
+  
+      const angle = countryData.middleAngle;
+      const x = centerX + radial * Math.sin(angle);
+      const y = centerY - radial * Math.cos(angle);
+  
+      return {
+        x: x,
+        y: y};
+    }
+  
+    
+    private updateArtistPositionsAndEdges(clusterIndex: number, artistNodes: any[], countryCentroids: { [country: string]: any }): void {
+      // Update the country centroids if necessary
+      this.updateCountries(clusterIndex, countryCentroids);
+  
+      // Calculate metrics for sizing nodes
+      const size = this.decisionService.getDecisionSize();
+      const metricMap = this.calculateNormalizedMaps(size)[clusterIndex];
+  
+      // Update artist node positions, sizes, and colors
+      this.g.selectAll(".artist-node")
+          .filter((d: any) => d.artist.cluster === clusterIndex)
+          .transition()
+          .duration(5000)
+          .attr('cx', (d: any) => {
+            console.log('help artist',d.artist)
+              const country = this.getArtistCountry(d.artist);
+              const newPos = this.updatePosition(
+                  this.decisionService.getDecisionSunburst(),
+                  d.artist.id,
+                  countryCentroids[country],
+                  this.degreesMap[clusterIndex],
+                  metricMap,
+                  this.clusterNodes[clusterIndex],
+                  0,
+                  0
+              );
+              return newPos.x; // Correctly calculate the new x position
+          })
+          .attr('cy', (d: any) => {
+              const country = this.getArtistCountry(d.artist);
+              const newPos = this.updatePosition(
+                  this.decisionService.getDecisionSunburst(),
+                  d.artist.id,
+                  countryCentroids[country],
+                  this.degreesMap[clusterIndex],
+                  metricMap,
+                  this.clusterNodes[clusterIndex],
+                 0,
+                  0
+              );
+              return newPos.y; // Correctly calculate the new y position
+          })
+          .attr('r', (d: any) => {
+              const nodeRadius = metricMap.get(d.id) || 0;
+              return this.calculateRadiusForNode(
+                  nodeRadius,
+                  this.clusterNodes[clusterIndex].innerRadius,
+                  this.clusterNodes[clusterIndex].artists.length
+              );
+          })
+          .style('fill', (d: any) => {
+              const country = this.getArtistCountry(d.artist);
+              return this.artistService.getCountryColor(country, 1); // Update node color
+          });
+  
+      // Update edges to reflect updated positions of the nodes
+      d3.selectAll(`.artist-edge-${clusterIndex}`)
+          .transition()
+          .duration(5000)
+          .attr('x1', (d: any) => d.source.x) // Recalculate source x position
+          .attr('y1', (d: any) => d.source.y) // Recalculate source y position
+          .attr('x2', (d: any) => d.target.x) // Recalculate target x position
+          .attr('y2', (d: any) => d.target.y); // Recalculate target y position
+  }
+  
+  // Helper function to get the country based on the current decision
+  private getArtistCountry(artist: Artist): string {
+      switch (this.decisionService.getDecisionSunburst()) {
+          case 'nationality':
+              return artist.nationality;
+          case 'birthcountry':
+              return artist.birthcountry;
+          case 'deathcountry':
+              return artist.deathcountry;
+          case 'mostexhibited':
+              return artist.most_exhibited_in;
+          default:
+              return artist.nationality;
+      }
+  }
+  
+    
+
     private updateCountries(clusterIndex: number, countryCentroids: { [country: string]: any }): void {
       // Select the correct cluster group
       const clusterGroup = d3.select(`.cluster-${clusterIndex}`); // Corrected the selector
@@ -202,40 +304,6 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         .style("font-weight", "bold")
         .style("fill", "white");
     }
-    
-    private updateArtistPositionsAndEdges(clusterIndex: number, artistNodes: any[], countryCentroids: { [country: string]: any }): void {
-      // First update the country centroids if necessary
-      this.updateCountries(clusterIndex, countryCentroids);
-    
-      this.g.selectAll(".artist-node")
-        .filter((d: any) => d.artist.cluster === clusterIndex)
-        .transition()
-        .duration(5000) // Set the duration for the transition
-        .attr('cx', (d: any) => {
-          const newPos = this.calculateNewPositionForTransition(d.artist, countryCentroids);
-          return newPos.x;
-        })
-        .attr('cy', (d: any) => {
-          const newPos = this.calculateNewPositionForTransition(d.artist, countryCentroids);
-          return newPos.y;
-        });
-    
-      // Update edge positions with transitions
-      d3.selectAll(`.artist-edge-${clusterIndex}`)
-        .transition()
-        .duration(5000)
-        .attr('x1', (d: any) => d.source.x)
-        .attr('y1', (d: any) => d.source.y)
-        .attr('x2', (d: any) => d.target.x)
-        .attr('y2', (d: any) => d.target.y);
-    
-      // Restart the simulation for the specific cluster
-      const simulation = this.simulations[clusterIndex];
-      if (simulation) {
-        simulation.alpha(1).restart(); // Reset alpha to 1 and restart the simulation
-      }
-    }
-    
     private calculateNewPositionForTransition(artist: Artist, countryCentroids: any): { x: number, y: number } {
       let countryData: any;
     
@@ -1991,6 +2059,7 @@ console.log(this.clusterNodes)
       const radial = radialScale(degree);
       const nodeRadius = metricMap.get(artist.id) || 0;
       const angle = countryData.middleAngle;
+  
       const x = centerX + radial * Math.sin(angle);
       const y = centerY - radial * Math.cos(angle);
   
