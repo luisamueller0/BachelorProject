@@ -52,7 +52,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     private clusterNodes: ClusterNode[] = [];
     public allArtists: Artist[] = [];
     private artistClusterMap: Map<number, ClusterNode> = new Map<number, ClusterNode>();
-    private artistNodes: { [clusterId: number]: { [category: string]: ArtistNode[] } } = {};
+    private artistNodes: { [clusterId: number]: ArtistNode[] } = {};
     private selectedClusterNode: ClusterNode | null = null;
     private allCountries: string[] = [];
     private g: any; // Group for zooming
@@ -121,13 +121,37 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       this.subscriptions.add(this.decisionService.currentSearchedArtistId.subscribe((id:string|null) => this.highlightArtistNode(id)));
   
       this.subscriptions.add(this.decisionService.currentSunburst.subscribe(sunburst => {
-        this.visualizeData();  // Redraw the matrix with the filtered row
+        this.updateNetworkOnSunburstChange(sunburst) // Redraw the matrix with the filtered row
       }));
       
   
       window.addEventListener('resize', this.onResize.bind(this));
     }
   
+
+    private updateNetworkOnSunburstChange(newCategory: string): void {
+      // Loop through all clusters
+      this.clusters.forEach((cluster, clusterIndex) => {
+        const clusterNode = this.clusterNodes[clusterIndex];
+       
+        // Get the stored artist nodes and country centroids for the current cluster
+        const artistNodes = this.artistNodes[clusterIndex];
+        console.log(artistNodes)
+        console.log(this.countryCentroids)
+        const countryCentroids = this.countryCentroids[newCategory][clusterIndex];
+        
+    
+        
+        // If artistNodes are available, proceed with updating the positions
+        if (artistNodes && countryCentroids) {
+          // Update the positions of artist nodes and edges
+          console.log('update', artistNodes, countryCentroids)
+          //this.updateArtistPositionsAndEdges(clusterIndex, artistNodes, countryCentroids);
+        }
+      });
+    }
+    
+    
     ngOnChanges(): void {
       this.visualizeData();
     }
@@ -923,9 +947,100 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       this.isLoading = true;
       this.createSvg();
       this.drawClusters();
+      this.saveCountryCentroidsOnInitialization();
       this.isLoading = false;
     }
   
+
+    private saveCountryCentroidsOnInitialization(): void {
+      const categories = ['nationality', 'birthcountry', 'deathcountry', 'mostexhibited'];
+    
+      // Iterate through each category and cluster
+      categories.forEach((category) => {
+        this.clusters.forEach((cluster, clusterIndex) => {
+          const clusterNode = this.clusterNodes[clusterIndex]; // Get ClusterNode for this cluster
+          if (clusterNode) {
+            // Generate country centroids for this category and cluster
+            const countryCentroids = this.createCountryCentroids(clusterNode.artists, category, clusterNode);
+    
+            // Ensure the category is initialized in countryCentroids object
+            if (!this.countryCentroids[category]) {
+              this.countryCentroids[category] = {};
+            }
+    
+            // Store the centroids for this cluster in the respective category
+            this.countryCentroids[category][clusterIndex] = countryCentroids;
+          }
+        });
+      });
+    }
+    private createCountryCentroids(artists: Artist[], category: string, clusterNode: ClusterNode): { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } {
+      const countryMap = new Map<string, Artist[]>();
+    
+      // Populate the countryMap with artists grouped by their country based on the given category
+      artists.forEach(artist => {
+        let country;
+        switch (category) {
+          case 'nationality':
+            country = artist.nationality;
+            break;
+          case 'birthcountry':
+            country = artist.birthcountry;
+            break;
+          case 'deathcountry':
+            country = artist.deathcountry;
+            break;
+          case 'mostexhibited':
+            country = artist.most_exhibited_in;
+            break;
+          default:
+            country = artist.nationality;
+        }
+        if (!countryMap.has(country)) {
+          countryMap.set(country, []);
+        }
+        countryMap.get(country)!.push(artist);
+      });
+    
+      const countries = Array.from(countryMap.keys());
+      const totalArtists = artists.length;
+      const minimumAngle = Math.PI / 18;
+    
+      let totalAngleAvailable = 2 * Math.PI;
+      const dynamicAngles = new Map<string, number>();
+    
+      countryMap.forEach((artists, country) => {
+        dynamicAngles.set(country, minimumAngle);
+        totalAngleAvailable -= minimumAngle;
+      });
+    
+      countryMap.forEach((artists, country) => {
+        const proportion = artists.length / totalArtists;
+        const extraAngle = proportion * totalAngleAvailable;
+        const currentAngle = dynamicAngles.get(country) || 0;
+        dynamicAngles.set(country, currentAngle + extraAngle);
+      });
+    
+      let currentAngle = 0;
+      const data: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } = {};
+      countries.forEach((country) => {
+        const angle = dynamicAngles.get(country) as number;
+        const startAngle = currentAngle;
+        const endAngle = currentAngle + angle;
+        const middleAngle = (startAngle + endAngle) / 2;
+        currentAngle = endAngle;
+        data[country] = {
+          country,
+          startAngle,
+          endAngle,
+          middleAngle,
+          color: this.artistService.getCountryColor(country, 1)
+        };
+      });
+    
+      return data;
+    }
+    
     private createSvg(): void {
       // Remove any existing SVG elements
       d3.select(this.chartContainer.nativeElement).select(".matrix-svg-container").select("svg").remove();
@@ -1300,6 +1415,9 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     this.countryCentroids[value] = {};
   }
   this.countryCentroids[value][clusterNode.clusterId] = countryCentroids;
+  this.clusterNodes [clusterNode.clusterId] =  clusterNode;
+console.log(this.clusterNodes)
+
   
   this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
   
@@ -1429,10 +1547,10 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         });
   
     // Store the artistNodes and the simulation
-    if (!this.artistNodes[cluster.clusterId]) {
-      this.artistNodes[cluster.clusterId] = {};
-    }
-    this.artistNodes[cluster.clusterId][value] = artistNodes;
+  
+    this.artistNodes[cluster.clusterId] = artistNodes;
+
+    console.log('artistnodes', this.artistNodes)
   
     switch (value) {
         case 'nationality':
