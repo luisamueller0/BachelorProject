@@ -49,6 +49,7 @@
 
 .sidebar-left app-decisions,
 .sidebar-left app-map,
+.sidebar-left app-oldMap,
 .sidebar-left app-barchart {
   height: 33.33%;
   width: 100%;
