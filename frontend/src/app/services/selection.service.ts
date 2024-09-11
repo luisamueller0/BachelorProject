@@ -49,6 +49,7 @@ export class SelectionService {
     this.selectedExhibitions.next(exhibitions);
   }
   selectArtists(artists:Artist[]|null) {
+    console.log('selected artists', artists?.length)
     this.selectedArtists.next(artists);
   }
   selectAllClusters(clusters:Artist[][]|null){

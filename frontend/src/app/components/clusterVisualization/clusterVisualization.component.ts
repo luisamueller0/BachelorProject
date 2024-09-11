@@ -80,6 +80,9 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     private selectedNode: [SVGCircleElement, string] | null = null;
     private selectedCluster: any = null;
     private isNodeClick: boolean = false;
+
+    private selectedNodes: Array<[SVGCircleElement, string]> = []; // To store multiple selected nodes
+
   
     private simulation: d3.Simulation<ArtistNode, undefined>[] = [];
   
@@ -175,6 +178,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         y: y};
     }
   
+    
     
     private updateArtistPositionsAndEdges(clusterIndex: number, artistNodes: any[], countryCentroids: { [country: string]: any }): void {
       // Update the country centroids if necessary
@@ -668,6 +672,23 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       this.isNodeClick = true;
   
       const circle = d3.selectAll(".artist-node").filter((d: any) => d.id === artistNode.id).node() as SVGCircleElement;
+
+     // Check if Ctrl or Cmd key is pressed for multi-selection
+     const isCtrlPressed = event.ctrlKey || event.metaKey;
+
+     // If Ctrl/Cmd is not pressed, reset previously selected nodes
+     if (isCtrlPressed) {
+        console.log('clicked', this.selectedNodes)
+        this.selectMultipleNodes(artistNode, circle);
+  
+        // Dynamically adjust the shadow based on the radius of the selected node
+        const radius = parseFloat(d3.select(circle).attr('r')); // Get the radius of the node
+        filter.select('feDropShadow')
+            .attr('stdDeviation', Math.max(0.5, radius / 3)); // Adjust stdDeviation relative to the node size
+
+        // Apply the filter to the selected node
+        d3.select(circle).style("filter", "url(#shadow)");
+     } else {
   
       if (this.selectedNode && this.selectedNode[0] === circle) {
           this.resetNodeSelection();
@@ -693,16 +714,161 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
           // Apply the filter to the selected node
           d3.select(circle).style("filter", "url(#shadow)");
       }
-  
-      // Highlight the corresponding y-axis label
-      this.highlightYAxisLabel(artistNode);
-  
-      // Reduce opacity of all clusters
-      //this.g.selectAll('.cluster').style('opacity', '0.2');
-      // Set opacity of the selected cluster to 1
-   
-  
     }
+    }
+    private selectMultipleNodes(artistNode: ArtistNode, circle: SVGCircleElement) {
+
+         // Check if the node is already in the selection
+    const nodeIndex = this.selectedNodes.findIndex(node => node[0] === circle);
+
+    // If the node is already selected, remove it
+    if (nodeIndex !== -1) {
+        console.log('Node is already selected, removing:', artistNode.id);
+
+        // Get the selected node info
+        const [selectedCircle, originalColor] = this.selectedNodes[nodeIndex];
+
+        // Restore the original style of the node
+        d3.select(selectedCircle)
+            .style("fill", originalColor)
+            .style("filter", "none")
+            .style("stroke", "none");
+
+        // Remove the node from the selectedNodes array
+        this.selectedNodes.splice(nodeIndex, 1);
+        return; // Exit the function since we've handled the removal
+    }
+    
+   // Otherwise, add the node to the selection
+   this.selectedNodes.push([circle, circle.style.fill]);
+
+    
+    
+      const originalColor = d3.color(circle.style.fill) as d3.RGBColor;
+    
+    
+      const selectedNodeId = artistNode.id;
+      const connectedNodeIds: Set<number> = new Set<number>();
+    
+      // Identify connected nodes
+      this.g.selectAll(".artist-edge").each((d: any) => {
+          if (d.source.id === selectedNodeId) {
+              connectedNodeIds.add(d.target.id);
+          } else if (d.target.id === selectedNodeId) {
+              connectedNodeIds.add(d.source.id);
+          }
+      });
+    
+      
+          const clusterId = this.artistClusterMap.get(artistNode.id)?.clusterId;
+    const category = this.decisionService.getDecisionSunburst();
+          if (clusterId !== undefined) {
+              const clusterNode = this.clusters[clusterId];
+              const artistColor = this.getArtistColorBasedOnCategory(artistNode.artist, category);
+        
+              const sharedExhibitionMinArtworksValues: number[] = [];
+              this.g.selectAll(`.artist-edge-${clusterId}`).each((d: any) => {
+                  sharedExhibitionMinArtworksValues.push(d.sharedExhibitionMinArtworks);
+              });
+    
+              const minArtworks = d3.min(sharedExhibitionMinArtworksValues) ?? 0;
+              const maxArtworks = d3.max(sharedExhibitionMinArtworksValues) ?? 1;
+              const edgeColorScale = this.createEdgeColorScale(artistColor, minArtworks, maxArtworks);
+    
+              // Update edges connected to the selected node with the scaled color
+              this.g.selectAll(`.artist-edge-${clusterId}`)
+                  .style('stroke', (d: any) => {
+                      if (d.source.id === artistNode.id || d.target.id === artistNode.id) {
+                          return edgeColorScale(d.sharedExhibitionMinArtworks);
+                      } else {
+                          return this.edgeColorScale(d.sharedExhibitionMinArtworks);
+                      }
+                  })
+                  .style('opacity', (d: any) => {
+                      return (d.source.id === artistNode.id || d.target.id === artistNode.id) ? '1' : '0';
+                  });
+    
+              // Reduce opacity for nodes not connected to the selected node
+              this.g.selectAll(`.artist-node-${clusterId}-${category}`)
+                  .filter((d: any) => d.id !== artistNode.id && !connectedNodeIds.has(d.id))
+                  .style('opacity', '0.2');
+          }
+  
+    
+      const clusterNode = this.artistClusterMap.get(artistNode.id);
+      if (clusterNode) {
+          this.focusHandler(clusterNode);
+          this.selectionService.selectFocusedCluster(clusterNode.artists);
+      }
+          
+         // Extract the artist information from each selected node
+        const selectedArtists = this.selectedNodes.map(([node, color]) => {
+          const artistNodeData = d3.select(node).datum() as ArtistNode; // Get the bound data for each node
+          return artistNodeData.artist; // Return the artist object
+       });
+
+      // Pass the array of selected artists to the selectionService
+      this.selectionService.selectArtists(selectedArtists);
+
+      const artist = artistNode.artist;
+      const countries: string[] = [];
+
+// Loop through selectedArtists and populate countries array based on the selected category
+switch (category) {
+    case 'nationality':
+        selectedArtists.forEach(artist => {
+            if (artist.nationality && !countries.includes(artist.nationality)) {
+                countries.push(artist.nationality);
+            }
+        });
+        break;
+
+    case 'birthcountry':
+        selectedArtists.forEach(artist => {
+            if (artist.birthcountry && !countries.includes(artist.birthcountry)) {
+                countries.push(artist.birthcountry);
+            }
+        });
+        break;
+
+    case 'deathcountry':
+        selectedArtists.forEach(artist => {
+            if (artist.deathcountry && !countries.includes(artist.deathcountry)) {
+                countries.push(artist.deathcountry);
+            }
+        });
+        break;
+
+    case 'mostexhibited':
+        selectedArtists.forEach(artist => {
+            if (artist.most_exhibited_in && !countries.includes(artist.most_exhibited_in)) {
+                countries.push(artist.most_exhibited_in);
+            }
+        });
+        break;
+
+    default:
+        console.warn('Unknown category:', category);
+        break;
+    }
+
+      // Pass the populated countries array to the selectionService
+      this.selectionService.selectCountries(countries);
+
+    
+      // Copy artist's name to clipboard
+      navigator.clipboard.writeText(`${artist.firstname} ${artist.lastname}`);
+    
+      const clusterNode2 = this.artistClusterMap.get(artistNode.id);
+      if (clusterNode2) {
+          const selectedClusterArtists = clusterNode2.artists;
+          const selectedClusterEdges = this.intraCommunityEdges[clusterNode2.clusterId];
+          this.selectionService.selectCluster(selectedClusterArtists);
+          this.selectionService.selectClusterEdges(selectedClusterEdges);
+      }
+     
+      }
+      
     private highlightInterClusterConnections(artistId: number, clusterId: number): void {
       const connectedNodeIds = new Set<number>();
       const unconnectedNodeIds = new Set<number>();
@@ -863,6 +1029,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     this.g.selectAll(".artist-node")
     .style('opacity', 1);
     this.g.selectAll(".artist-edge")
+
     .style('opacity', 1);
     this.g.selectAll(`path`)
     .style('opacity', 1);

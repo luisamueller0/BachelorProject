@@ -166,9 +166,18 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
 
 
   }
+// Helper method to combine the techniques of multiple selected artists
+private accumulateTechniqueDistribution(artists: Artist[]): Map<string, number> {
+  const accumulatedDistribution = new Map<string, number>();
+  artists.forEach((artist) => {
+    artist.techniques.forEach((technique) => {
+      accumulatedDistribution.set(technique, (accumulatedDistribution.get(technique) || 0) + 1);
+    });
+  });
+  return accumulatedDistribution;
+}
 
   private drawBars(): void {
-
     if (!this.allArtists.length) return;
   
     const selectedArtists = this.selectedArtists || [];
@@ -185,11 +194,19 @@ export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
       }
     }
   
-    const nonselectedTechniqueDistribution = this.calculateTechniqueDistribution(this.nonselectedArtists);
-    const selectedTechniqueDistribution = this.calculateTechniqueDistribution(selectedArtists);
+    // Combine techniques of selected artists if there are multiple selected artists
+    let selectedTechniqueDistribution: Map<string, number>;
+    if (selectedArtists.length > 1 && selectedArtists.length < this.selectedCluster!.length) {
+      selectedTechniqueDistribution = this.accumulateTechniqueDistribution(selectedArtists);
+    } else {
+      selectedTechniqueDistribution = this.calculateTechniqueDistribution(selectedArtists);
+    }
   
+    const nonselectedTechniqueDistribution = this.calculateTechniqueDistribution(this.nonselectedArtists);
     const combinedData = this.prepareStackedData(nonselectedTechniqueDistribution, selectedTechniqueDistribution);
   
+  
+
     // Filter techniques order to include only those present in the data
     const presentTechniques = this.techniquesOrder.filter(technique =>
       combinedData.some(data => data.technique === technique && (data.nonselectedArtists > 0 || data.selectedArtists > 0))
