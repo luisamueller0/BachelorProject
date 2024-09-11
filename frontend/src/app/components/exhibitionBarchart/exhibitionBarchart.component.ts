@@ -255,67 +255,78 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     }
     
   
-
-  private retrieveWantedExhibitions(): void {
-    this.exhibitions = [];
-  this.selectedExhibitions = [];
-  this.nonSelectedExhibitions = [];
-  this.clusterExhibitions = [];
-
-
-    const allExhibitionIds = new Set(
-      this.allArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()))
-    );
-
-    this.exhibitionMap.forEach((exhibition, id) => {
-      if (allExhibitionIds.has(id)) {
-        this.exhibitions.push(exhibition);
-      }
-    });
-
-    if (this.selectedArtists && this.selectedArtists.length > 0) {
-      const selectedExhibitionIds = new Set(
-        this.selectedArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()))
+    private retrieveWantedExhibitions(): void {
+      this.exhibitions = [];
+      this.selectedExhibitions = [];
+      this.nonSelectedExhibitions = [];
+      this.clusterExhibitions = [];
+    
+      // Collect all exhibitions for all artists
+      const allExhibitionIds = new Set<string>(
+        this.allArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()))
       );
-      if(this.selectedArtists.length ===1){
-        if(this.selectedCluster){
-          const clusterArtists = this.selectedCluster;
-             // Collect all exhibitions of the artists in the same cluster
-        const clusterExhibitionIds = new Set(
-          clusterArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()))
-        );
-        this.exhibitionMap.forEach((exhibition, id) => {
-          if (clusterExhibitionIds.has(id)) {
-            this.clusterExhibitions.push(exhibition);
-          }
-        });
-  
-      }
-      this.clusterExhibitions.forEach(exhibition => {
-        if (selectedExhibitionIds.has(exhibition.id.toString())) {
-          this.selectedExhibitions.push(exhibition);
-        } else {
-          this.nonSelectedExhibitions.push(exhibition);
+    
+      // Add all exhibitions to the exhibitions array
+      this.exhibitionMap.forEach((exhibition, id) => {
+        if (allExhibitionIds.has(id)) {
+          this.exhibitions.push(exhibition);
         }
       });
-      
-    } else{
-      this.exhibitions.forEach(exhibition => {
-        if (selectedExhibitionIds.has(exhibition.id.toString())) {
-          this.selectedExhibitions.push(exhibition);
-        } 
-      });
-      this.nonSelectedExhibitions = [];
-
-      
+    
+      if (this.selectedArtists && this.selectedArtists.length > 0) {
+        const selectedExhibitionIds = new Set<string>();
+    
+        // Gather exhibitions for all selected artists, ensuring no duplicates
+        this.selectedArtists.forEach(artist => {
+          artist.participated_in_exhibition.forEach(id => {
+            selectedExhibitionIds.add(id.toString()); // Accumulate unique exhibition IDs
+          });
+        });
+    
+        // Cluster exhibitions are always included, regardless of the number of selected artists
+        if (this.selectedCluster) {
+          const clusterArtists = this.selectedCluster;
+    
+          // Collect all exhibitions of the artists in the same cluster
+          const clusterExhibitionIds = new Set<string>(
+            clusterArtists.flatMap(artist => artist.participated_in_exhibition.map(id => id.toString()))
+          );
+    
+          // Populate cluster exhibitions, ensuring no duplicates with selectedExhibitions
+          this.exhibitionMap.forEach((exhibition, id) => {
+            if (clusterExhibitionIds.has(id)) {
+              this.clusterExhibitions.push(exhibition);
+            }
+          });
+        }
+    
+        // Divide exhibitions into selected and non-selected, ensuring no duplicates
+        this.clusterExhibitions.forEach(exhibition => {
+          if (selectedExhibitionIds.has(exhibition.id.toString())) {
+            // Only add to selected if it's not already in selectedExhibitionIds
+            this.selectedExhibitions.push(exhibition);
+          } else {
+            // Non-selected if it's in the cluster but not in selected artists' exhibitions
+            this.nonSelectedExhibitions.push(exhibition);
+          }
+        });
+    
+        // Now populate selected exhibitions, ensuring uniqueness
+        this.exhibitionMap.forEach((exhibition, id) => {
+          if (selectedExhibitionIds.has(id) && !this.selectedExhibitions.some(e => e.id === exhibition.id)) {
+            this.selectedExhibitions.push(exhibition);
+          }
+        });
+      } else {
+        // If no specific artists are selected, show all exhibitions
+        this.selectedExhibitions = this.exhibitions;
+        this.nonSelectedExhibitions = [];
+      }
     }
-  }
-      else {
-      this.selectedExhibitions = this.exhibitions;
-      this.nonSelectedExhibitions = [];
-    }
-  
-  }
+    
+    
+    
+    
 
   private createChart(): void {
     this.createSvg();

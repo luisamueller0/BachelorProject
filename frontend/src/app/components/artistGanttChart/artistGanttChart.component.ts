@@ -136,238 +136,248 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       .attr('class', 'legend-group');
   }
 
-private drawTimeline(artists: Artist[]): void {
-  if (!artists) {
-    return;
-  }
-
-  const allArtists = this.allArtists || [];
-  const maxBarHeight = 0.8 * window.innerHeight / 100;
-
-  // Map of all artists by ID for easy lookup
-  const allArtistsMap = new Map<number, Artist>();
-  allArtists.forEach(artist => allArtistsMap.set(artist.id, artist));
-
-  const selectedArtist = this.selectedArtists && this.selectedArtists.length === 1 ? this.selectedArtists[0] : null;
-  const selectedCluster = selectedArtist ? selectedArtist.cluster + 1 : null;
-
-  const timelineData = selectedCluster
-    ? allArtists.filter(artist => artist.cluster + 1 === selectedCluster).map(artist => ({
-        name: artist.firstname + ' ' + artist.lastname,
-        start: artist.birthyear !== -1 ? new Date(artist.birthyear, 0).getTime() : null,
-        end: artist.deathyear !== -1 ? new Date(artist.deathyear, 0).getTime() : null,
-        duration: artist.birthyear !== -1 && artist.deathyear !== -1 ? new Date(artist.deathyear, 0).getTime() - new Date(artist.birthyear, 0).getTime() : null,
-        birthCountry: artist.birthcountry,
-        deathCountry: artist.deathcountry,
-        birthyear: artist.birthyear,
-        deathyear: artist.deathyear,
-        birthplace: artist.birthplace,
-        deathplace: artist.deathplace,
-        clusterIndex: artist.cluster + 1,
-        id: artist.id
-      }))
-    : artists.filter(artist => artist.birthyear !== -1 || artist.deathyear !== -1).map(artist => ({
-        name: artist.firstname + ' ' + artist.lastname,
-        start: artist.birthyear !== -1 ? new Date(artist.birthyear, 0).getTime() : null,
-        end: artist.deathyear !== -1 ? new Date(artist.deathyear, 0).getTime() : null,
-        duration: artist.birthyear !== -1 && artist.deathyear !== -1 ? new Date(artist.deathyear, 0).getTime() - new Date(artist.birthyear, 0).getTime() : null,
-        birthCountry: artist.birthcountry,
-        deathCountry: artist.deathcountry,
-        birthyear: artist.birthyear,
-        deathyear: artist.deathyear,
-        birthplace: artist.birthplace,
-        deathplace: artist.deathplace,
-        clusterIndex: artist.cluster + 1,
-        id: artist.id
-      }));
-
-  const groupedByCluster = d3.group(timelineData, d => d.clusterIndex);
-  const sortedClusters = Array.from(groupedByCluster.entries())
-    .sort((a, b) => d3.ascending(a[0], b[0]))  // Sort by cluster index (ascending)
-    .map(([clusterIndex]) => clusterIndex);
-
-  const xScale = d3.scaleTime()
-  .domain([
-    d3.min(timelineData, d => d.start || d.end)! - (1 * 365 * 24 * 60 * 60 * 10000), // Add padding to the start of the scale
-    d3.max(timelineData, d => d.end || d.start)! + (1 * 365 * 24 * 60 * 60 * 10000)  // Add padding to the end of the scale
-  ])    .range([0, this.contentWidth])
-    .nice();
-
-  const yScale = d3.scaleBand()
-    .domain(timelineData.map((d, i) => i.toString()))
-    .range([0, this.contentHeight])
-    .padding(0.1)
-    .round(true);
-
-  const barHeight = 0.8 * window.innerHeight / 100;
-
-  const colorScale = d3.scaleSequential(d3.interpolatePlasma)
-    .domain([0, 1]);
-
-  let yOffset = 0;
-  const extraSpace = 0.5 * window.innerWidth / 100;
-  const halfExtraSpace = extraSpace / 2;
-  sortedClusters.forEach(cluster => {
-    const clusterArtists = groupedByCluster.get(cluster)!;
-    yOffset += (clusterArtists.length * barHeight) + extraSpace;
-  });
-
-  const xAxis = d3.axisTop(xScale).tickSize(-yOffset);
-
-  this.svg.append('g')
-    .call(xAxis)
-    .attr('transform', `translate(0,0)`)
-    .selectAll("text")
-    .style("text-anchor", "end")
-    .attr("dx", "-.8em")
-    .attr("dy", ".15em")
-    .attr("transform", "rotate(65)")
-    .style("font-size", "0.6vw");
-
-    this.svg.selectAll('.tick line')
-    .filter((d:any, i:any, nodes:any) => i !== 0 && i !== nodes.length - 1) // Exclude first and last tick
-    .attr('stroke', 'lightgray')
-    .attr('opacity', 0.6)
-    .attr('stroke-dasharray', '3');
-    
-  yOffset = 0;
-  const defs = this.svg.append('defs');
-
-  sortedClusters.forEach((cluster, index) => {
-    let clusterArtists = groupedByCluster.get(cluster)!.sort((a, b) => d3.ascending(a.birthyear, b.birthyear));
-
-    yOffset += halfExtraSpace;
-
-    this.svg.append('text')
-      .attr('class', 'label')
-      .attr('x', -10)
-      .attr('y', yOffset + (clusterArtists.length * barHeight / 2))
-      .attr('dy', '.35em')
-      .attr('text-anchor', 'end')
-      .attr('fill', '#2a0052')
-      .style('font-size', '0.7vw')
-      .text(cluster);
-
-    clusterArtists.forEach((artist, index) => {
-      const gradientId = `gradient-${artist.id}`;
-      const birthColor = this.artistService.getCountryColor(artist.birthCountry);
-      const deathColor = this.artistService.getCountryColor(artist.deathCountry);
-
-      const gradient = defs.append('linearGradient')
-        .attr('id', gradientId)
-        .attr('x1', '0%')
-        .attr('y1', '0%')
-        .attr('x2', '100%')
-        .attr('y2', '0%');
-
-      gradient.append('stop')
-        .attr('offset', '0%')
-        .attr('stop-color', birthColor);
-
-      gradient.append('stop')
-        .attr('offset', '100%')
-        .attr('stop-color', deathColor);
-
-      const tooltip = d3.select("div#tooltip");
-
-      const showTooltip = (event: any, d: any) => {
-        const birthyear = artist.birthyear !== -1 ? artist.birthyear : 'unknown';
-        const deathyear = artist.deathyear !== -1 ? artist.deathyear : 'unknown';
-        const age = artist.birthyear !== -1 && artist.deathyear !== -1 ? artist.deathyear - artist.birthyear : 'unknown';
-
-        const tooltipNode = tooltip.node() as HTMLElement;
-        const tooltipWidth = tooltipNode.offsetWidth;
-
-        tooltip.style("display", "block")
-          .style("left", `${event.pageX - 2- tooltipWidth}px`)
-          .style("top", `${event.pageY + 2}px`)
-          .style("color", "black")
-          .html(`${artist.name}<br/>Born: ${birthyear} in ${artist.birthplace} (${artist.birthCountry})<br/>Died: ${deathyear} in ${artist.deathplace} (${artist.deathCountry})<br/>Age: ${age}`);
-        };
-
-      const hideTooltip = () => {
-        tooltip.style("display", "none");
-      };
-
-      const click = (event: any, d: any) => {
-        this.decisionService.changeSearchedArtistId(artist.id.toString());
-      };
-
-      const opacity = selectedArtist && selectedCluster === artist.clusterIndex ? (selectedArtist.id === artist.id ? 1 : 0.3) : 1;
-      const strokeWidth = selectedArtist && selectedCluster === artist.clusterIndex ? (selectedArtist.id === artist.id ? 0.1 : 0) : 0.2;
-
-      if (artist.start && artist.end) {
-        const barWidth = xScale(artist.end) - xScale(artist.start);
-
-        // Add the rectangle (bar)
-        this.svg.append('rect')
-          .attr('class', 'bar')
-          .attr('x', xScale(artist.start))
-          .attr('y', yOffset)
-          .attr('width', barWidth === 0 ? 1 : barWidth)
-          .attr('height', barHeight)
-          .attr('fill', `url(#${gradientId})`)
-          .attr('opacity', opacity)
-          .attr('stroke', 'black')
-          .attr('stroke-width', strokeWidth)
-          .on("mouseover", showTooltip)
-          .on("mousemove", showTooltip)
-          .on("mouseout", hideTooltip)
-          .on("click", click);
-
-       // Update the birth country text on the left of the rectangle
-this.svg.append('text')
-.attr('x', xScale(artist.start) - 1)  // Position it just to the left of the bar
-.attr('y', yOffset + barHeight / 2)
-.attr('dy', '.35em')
-.attr('text-anchor', 'end')
-.attr('fill', birthColor)
-.style('font-size', '0.38vw')
-.attr('opacity', opacity) // Match text opacity to bar opacity
-.text(artist.birthCountry);
-
-// Update the death country text on the right of the rectangle
-this.svg.append('text')
-.attr('x', xScale(artist.end) + 1)  // Position it just to the right of the bar
-.attr('y', yOffset + barHeight / 2)
-.attr('dy', '.35em')
-.attr('text-anchor', 'start')
-.attr('fill', deathColor)
-.style('font-size', '0.38vw')
-.attr('opacity', opacity) // Match text opacity to bar opacity
-.text(artist.deathCountry);
-      } else if (artist.start || artist.end) {
-        const date = artist.start ? artist.start : artist.end!;
-
-        this.svg.append('circle')
-          .attr('class', 'bar')
-          .attr('cx', xScale(date))
-          .attr('cy', yOffset + barHeight / 2)
-          .attr('r', barHeight / 2)
-          .attr('fill', birthColor)
-          .attr('opacity', opacity)
-          .attr('stroke', 'black')
-          .attr('stroke-width', strokeWidth)
-          .on("mouseover", showTooltip)
-          .on("mousemove", showTooltip)
-          .on("mouseout", hideTooltip)
-          .on("click", click);
-      }
-
-      yOffset += barHeight;
+  private drawTimeline(artists: Artist[]): void {
+    if (!artists) {
+      return;
+    }
+  
+    const allArtists = this.allArtists || [];
+    const maxBarHeight = 0.8 * window.innerHeight / 100;
+  
+    // Map of all artists by ID for easy lookup
+    const allArtistsMap = new Map<number, Artist>();
+    allArtists.forEach(artist => allArtistsMap.set(artist.id, artist));
+  
+    // Determine the selected cluster (artists are from the same cluster)
+    const selectedArtist = this.selectedArtists && this.selectedArtists.length > 0 ? this.selectedArtists[0] : null;
+    const selectedCluster = selectedArtist ? selectedArtist.cluster + 1 : null;
+  
+    // Filter and map artists for timeline data, including the full cluster if available
+    const timelineData = selectedCluster
+      ? allArtists.filter(artist => artist.cluster + 1 === selectedCluster).map(artist => ({
+          name: artist.firstname + ' ' + artist.lastname,
+          start: artist.birthyear !== -1 ? new Date(artist.birthyear, 0).getTime() : null,
+          end: artist.deathyear !== -1 ? new Date(artist.deathyear, 0).getTime() : null,
+          duration: artist.birthyear !== -1 && artist.deathyear !== -1 ? new Date(artist.deathyear, 0).getTime() - new Date(artist.birthyear, 0).getTime() : null,
+          birthCountry: artist.birthcountry,
+          deathCountry: artist.deathcountry,
+          birthyear: artist.birthyear,
+          deathyear: artist.deathyear,
+          birthplace: artist.birthplace,
+          deathplace: artist.deathplace,
+          clusterIndex: artist.cluster + 1,
+          id: artist.id
+        }))
+      : artists.filter(artist => artist.birthyear !== -1 || artist.deathyear !== -1).map(artist => ({
+          name: artist.firstname + ' ' + artist.lastname,
+          start: artist.birthyear !== -1 ? new Date(artist.birthyear, 0).getTime() : null,
+          end: artist.deathyear !== -1 ? new Date(artist.deathyear, 0).getTime() : null,
+          duration: artist.birthyear !== -1 && artist.deathyear !== -1 ? new Date(artist.deathyear, 0).getTime() - new Date(artist.birthyear, 0).getTime() : null,
+          birthCountry: artist.birthcountry,
+          deathCountry: artist.deathcountry,
+          birthyear: artist.birthyear,
+          deathyear: artist.deathyear,
+          birthplace: artist.birthplace,
+          deathplace: artist.deathplace,
+          clusterIndex: artist.cluster + 1,
+          id: artist.id
+        }));
+  
+    const groupedByCluster = d3.group(timelineData, d => d.clusterIndex);
+    const sortedClusters = Array.from(groupedByCluster.entries())
+      .sort((a, b) => d3.ascending(a[0], b[0]))  // Sort by cluster index (ascending)
+      .map(([clusterIndex]) => clusterIndex);
+  
+    const xScale = d3.scaleTime()
+      .domain([
+        d3.min(timelineData, d => d.start || d.end)! - (1 * 365 * 24 * 60 * 60 * 1000), // Add padding to the start of the scale
+        d3.max(timelineData, d => d.end || d.start)! + (1 * 365 * 24 * 60 * 60 * 1000)  // Add padding to the end of the scale
+      ])
+      .range([0, this.contentWidth])
+      .nice();
+  
+    const yScale = d3.scaleBand()
+      .domain(timelineData.map((d, i) => i.toString()))
+      .range([0, this.contentHeight])
+      .padding(0.1)
+      .round(true);
+  
+    const barHeight = 0.8 * window.innerHeight / 100;
+  
+    const colorScale = d3.scaleSequential(d3.interpolatePlasma)
+      .domain([0, 1]);
+  
+    let yOffset = 0;
+    const extraSpace = 0.5 * window.innerWidth / 100;
+    const halfExtraSpace = extraSpace / 2;
+  
+    sortedClusters.forEach(cluster => {
+      const clusterArtists = groupedByCluster.get(cluster)!;
+      yOffset += (clusterArtists.length * barHeight) + extraSpace;
     });
+  
+    const xAxis = d3.axisTop(xScale).tickSize(-yOffset);
+  
+    this.svg.append('g')
+      .call(xAxis)
+      .attr('transform', `translate(0,0)`)
+      .selectAll("text")
+      .style("text-anchor", "end")
+      .attr("dx", "-.8em")
+      .attr("dy", ".15em")
+      .attr("transform", "rotate(65)")
+      .style("font-size", "0.6vw");
+  
+    this.svg.selectAll('.tick line')
+      .filter((d: any, i: any, nodes: any) => i !== 0 && i !== nodes.length - 1) // Exclude first and last tick
+      .attr('stroke', 'lightgray')
+      .attr('opacity', 0.6)
+      .attr('stroke-dasharray', '3');
+  
+    yOffset = 0;
+    const defs = this.svg.append('defs');
+  
+    sortedClusters.forEach((cluster, index) => {
+      let clusterArtists = groupedByCluster.get(cluster)!.sort((a, b) => d3.ascending(a.birthyear, b.birthyear));
+  
+      yOffset += halfExtraSpace;
+  
+      this.svg.append('text')
+        .attr('class', 'label')
+        .attr('x', -10)
+        .attr('y', yOffset + (clusterArtists.length * barHeight / 2))
+        .attr('dy', '.35em')
+        .attr('text-anchor', 'end')
+        .attr('fill', '#2a0052')
+        .style('font-size', '0.7vw')
+        .text(cluster);
+  
+      clusterArtists.forEach((artist, index) => {
+        const gradientId = `gradient-${artist.id}`;
+        const birthColor = this.artistService.getCountryColor(artist.birthCountry);
+        const deathColor = this.artistService.getCountryColor(artist.deathCountry);
+  
+        const gradient = defs.append('linearGradient')
+          .attr('id', gradientId)
+          .attr('x1', '0%')
+          .attr('y1', '0%')
+          .attr('x2', '100%')
+          .attr('y2', '0%');
+  
+        gradient.append('stop')
+          .attr('offset', '0%')
+          .attr('stop-color', birthColor);
+  
+        gradient.append('stop')
+          .attr('offset', '100%')
+          .attr('stop-color', deathColor);
+  
+        const tooltip = d3.select("div#tooltip");
+  
+        const showTooltip = (event: any, d: any) => {
+          const birthyear = artist.birthyear !== -1 ? artist.birthyear : 'unknown';
+          const deathyear = artist.deathyear !== -1 ? artist.deathyear : 'unknown';
+          const age = artist.birthyear !== -1 && artist.deathyear !== -1 ? artist.deathyear - artist.birthyear : 'unknown';
+  
+          const tooltipNode = tooltip.node() as HTMLElement;
+          const tooltipWidth = tooltipNode.offsetWidth;
+  
+          tooltip.style("display", "block")
+            .style("left", `${event.pageX - 2- tooltipWidth}px`)
+            .style("top", `${event.pageY + 2}px`)
+            .style("color", "black")
+            .html(`${artist.name}<br/>Born: ${birthyear} in ${artist.birthplace} (${artist.birthCountry})<br/>Died: ${deathyear} in ${artist.deathplace} (${artist.deathCountry})<br/>Age: ${age}`);
+        };
+  
+        const hideTooltip = () => {
+          tooltip.style("display", "none");
+        };
+  
+        const click = (event: any, d: any) => {
+          this.decisionService.changeSearchedArtistId(artist.id.toString());
+        };
+  
+        // Adjust opacity and stroke width based on whether the artist is selected
+        const opacity = this.selectedArtists && this.selectedArtists.length > 0
+          ? this.selectedArtists.some(selArtist => selArtist.id === artist.id) ? 1 : 0.3
+          : 1;
+        const strokeWidth = this.selectedArtists && this.selectedArtists.length > 0
+          ? this.selectedArtists.some(selArtist => selArtist.id === artist.id) ? 0.1 : 0.2
+          : 0.2;
+  
+        if (artist.start && artist.end) {
+          const barWidth = xScale(artist.end) - xScale(artist.start);
+  
+          // Add the rectangle (bar)
+          this.svg.append('rect')
+            .attr('class', 'bar')
+            .attr('x', xScale(artist.start))
+            .attr('y', yOffset)
+            .attr('width', barWidth === 0 ? 1 : barWidth)
+            .attr('height', barHeight)
+            .attr('fill', `url(#${gradientId})`)
+            .attr('opacity', opacity)
+            .attr('stroke', 'black')
+            .attr('stroke-width', strokeWidth)
+            .on("mouseover", showTooltip)
+            .on("mousemove", showTooltip)
+            .on("mouseout", hideTooltip)
+            .on("click", click);
+  
+          // Add birth and death country labels
+          this.svg.append('text')
+            .attr('x', xScale(artist.start) - 1)
+            .attr('y', yOffset + barHeight / 2)
+            .attr('dy', '.35em')
+            .attr('text-anchor', 'end')
+            .attr('fill', birthColor)
+            .style('font-size', '0.38vw')
+            .attr('opacity', opacity)
+            .text(artist.birthCountry);
+  
+          this.svg.append('text')
+            .attr('x', xScale(artist.end) + 1)
+            .attr('y', yOffset + barHeight / 2)
+            .attr('dy', '.35em')
+            .attr('text-anchor', 'start')
+            .attr('fill', deathColor)
+            .style('font-size', '0.38vw')
+            .attr('opacity', opacity)
+            .text(artist.deathCountry);
+        } else if (artist.start || artist.end) {
+          const date = artist.start ? artist.start : artist.end!;
+  
+          this.svg.append('circle')
+            .attr('class', 'bar')
+            .attr('cx', xScale(date))
+            .attr('cy', yOffset + barHeight / 2)
+            .attr('r', barHeight / 2)
+            .attr('fill', birthColor)
+            .attr('opacity', opacity)
+            .attr('stroke', 'black')
+            .attr('stroke-width', strokeWidth)
+            .on("mouseover", showTooltip)
+            .on("mousemove", showTooltip)
+            .on("mouseout", hideTooltip)
+            .on("click", click);
+        }
+  
+        yOffset += barHeight;
+      });
+  
+      yOffset += halfExtraSpace;
+    });
+  
+    this.svg.append('line')
+      .attr('x1', 0)
+      .attr('x2', this.contentWidth)
+      .attr('y1', yOffset)
+      .attr('y2', yOffset)
+      .attr('stroke', 'gray')
+      .attr('stroke-width', 1);
+  }
+  
 
-    yOffset += halfExtraSpace;
-  });
-
-  this.svg.append('line')
-    .attr('x1', 0)
-    .attr('x2', this.contentWidth)
-    .attr('y1', yOffset)
-    .attr('y2', yOffset)
-    .attr('stroke', 'gray')
-    .attr('stroke-width', 1);
-}
 
   
   

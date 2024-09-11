@@ -336,6 +336,16 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
     
         yOffset += extraSpace;
       });
+
+
+      this.svg.append('line')
+      .attr('x1', 0)
+      .attr('x2', this.contentWidth)
+      .attr('y1', yOffset)
+      .attr('y2', yOffset)
+      .attr('stroke', 'gray')
+      .attr('stroke-width', 1);
+  
     
     /*   this.svg.append('line')
         .attr('x1', 0)
@@ -344,6 +354,7 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
         .attr('y2', yOffset)
         .attr('stroke', 'gray')
         .attr('stroke-width', 1); */
+
         this.svg.selectAll('.tick line')
         .filter((d:any, i:any, nodes:any) => i !== 0 && i !== nodes.length - 1) // Exclude first and last tick
         .attr('stroke', 'lightgray')
