@@ -681,6 +681,7 @@ const category = this.decisionService.getDecisionSunburst();
       if (isCtrlPressed) {
         console.log('clicked', this.selectedNodes);
         this.selectMultipleNodes(artistNode, circle);
+        this.svg.select('')
     
         // Dynamically adjust the shadow based on the radius of the selected node
         const radius = parseFloat(d3.select(circle).attr('r')); // Get the radius of the node
@@ -755,6 +756,13 @@ const category = this.decisionService.getDecisionSunburst();
   }
     
     private selectMultipleNodes(artistNode: ArtistNode, circle: SVGCircleElement) {
+      const clusterIndex = this.artistClusterMap.get(artistNode.id)?.clusterId;
+
+      // Make the button visible by selecting it based on its class
+      if (clusterIndex !== undefined) {
+        this.svg.select(`.ai-button-${clusterIndex}`)
+          .style('visibility', 'visible');
+      }
 
          // Check if the node is already in the selection
     const nodeIndex = this.selectedNodes.findIndex(node => node[0] === circle);
@@ -1609,10 +1617,11 @@ const category = this.decisionService.getDecisionSunburst();
   
     cells.each((d: any, i: number, nodes: any) => {
       this.drawClusterInCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight);
+      this.addButtonToCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight);
     });
   }
   
-  private addButtonToCell(cell: any, x: string | number, y: string | number, cellWidth: number, cellHeight: number, isSwitched: boolean): void {
+  private addButtonToCell(cell: any, x: string | number, y: string | number, cellWidth: number, cellHeight: number): void {
     const buttonSize = 15 * cellWidth / 100;  // Size of the button
   
     //const buttonSize = Math.min(cellWidth, cellHeight) * 0.2;  // Size of the button is 20% of the smaller cell dimension
@@ -1624,7 +1633,22 @@ const category = this.decisionService.getDecisionSunburst();
     const positionX = cellWidth - buttonSize - marginRight;
     const positionY = marginTop;
   
-    const clusterIndex = isSwitched ? Number(y) - 1 : Number(x) - 1; // Determine cluster index based on the current cell
+    const clusterIndex =  Number(x) - 1; // Determine cluster index based on the current cell
+
+    const tooltip = d3.select("div#tooltip");
+  
+    const showTooltip = (event: any) => {
+    
+      tooltip.style("display", "block")
+          .style("left", `${event.pageX + 5}px`)
+          .style("top", `${event.pageY + 5}px`)
+          .style("color", "black")
+          .html(`Get suggestion of reasoning of connections between those artists on click by an ai.<br/>`);
+    };
+    
+    const hideTooltip = () => {
+      tooltip.style("display", "none");
+    };
   
     // Append a button element within a foreignObject
     const button = cell.append("foreignObject")
@@ -1634,6 +1658,7 @@ const category = this.decisionService.getDecisionSunburst();
       .attr("height", buttonSize + marginTop)  // Ensure foreignObject is tall enough
       .append("xhtml:div")  // Use div instead of button for better control
       .attr("data-cluster-index", clusterIndex) // Store the cluster index as a data attribute
+      .attr("class", `ai-button-${clusterIndex}`)  // Add your custom class here
       .style("width", `${buttonSize}px`)
       .style("height", `${buttonSize}px`)
       .style("background-color", "#f5e0ff")
@@ -1650,25 +1675,30 @@ const category = this.decisionService.getDecisionSunburst();
         const target = event.currentTarget as HTMLElement;
         const clusterIndex = target.getAttribute('data-cluster-index');
         this.handleButtonClick(clusterIndex); // Call the handler with the cluster index
+    
       })
       .on("mouseover", (event: MouseEvent) => {
         const target = event.currentTarget as HTMLElement;
       //  target.style.borderColor = "#7e24c7";  // Change background color on hover
+        showTooltip(event);
         target.style.backgroundColor = "#e0baf2"
       })
       .on("mouseout", (event: MouseEvent) => {
         const target = event.currentTarget as HTMLElement;
        // target.style.borderColor = "#f5e0ff";  // Reset background color on mouse out
+        hideTooltip();
         target.style.backgroundColor = "#f5e0ff"
-  
       })
+      .style("visibility", "hidden")
+
+      
     }
   
    
       
   
   // Handler function for button click
-  private handleButtonClick(clusterIndex: string | null): void {
+/*   private handleButtonClick(clusterIndex: string | null): void {
     if (clusterIndex === null) return;
   
     // Convert the cluster index back to a number
@@ -1695,12 +1725,106 @@ const category = this.decisionService.getDecisionSunburst();
     
   
     // You can now use this information as needed, e.g., displaying it in a tooltip, modal, etc.
+  } */
+  
+  
+  
+  
+  private handleButtonClick(clusterIndex: string | null): void {
+    if (clusterIndex === null) return;
+  
+    // Convert the cluster index back to a number
+    const index = Number(clusterIndex);
+  
+    // Retrieve the corresponding cluster and network information
+       // Extract the artist information from each selected node
+    if(this.selectedNodes){
+    const selectedArtists = this.selectedNodes.map(([node, color]) => {
+    const artistNodeData = d3.select(node).datum() as ArtistNode; // Get the bound data for each node
+    return artistNodeData.artist; // Return the artist object
+    });
+    const artistNames = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname}`);
+  
+    console.log(`Button clicked for cluster ${index}. With selected Artists:`, artistNames);
+    const category = this.decisionService.getDecisionSunburst();
+    let prompt = '';
+
+    if(this.selectedNodes.length > 1){
+
+      switch (category) {
+        
+        case 'nationality':
+          prompt = `In a 5 sentences, explain how the national identity of the following artists: ${artistNames.join(", ")} shaped their connections and careers over time. What were the key cultural or artistic links they shared?`;
+          //prompt = "What do all of the following artists have in common: " + artistNames.join(", ") + ". In 5 sentences.";
+          break;
+  
+        case 'birthcountry':
+          prompt = `Briefly summarize in 5 sentences how early life experiences of the following artists: ${artistNames.join(", ")} influenced their careers. What key connections or influences can be attributed to their early environments?`;
+          //prompt = "What do all of the following artists have in common considering their early years: " + artistNames.join(", ") + ". In 5 sentences.";
+          break;
+  
+        case 'deathcountry':
+          prompt = `Provide a short summary in 5 sentences of how the later life experiences of the following artists: ${artistNames.join(", ")} influenced their work. What key artistic themes or connections emerged in their final years?`;
+          //prompt = "What do all of the following artists have in common considering their late years before their death: " + artistNames.join(", ") + ". In 5 sentences.";
+          break;
+  
+        case 'mostexhibited':
+          prompt = `In a 5 sentences, summarize how exhibition history influenced the artistic evolution of the following artists: ${artistNames.join(", ")}. What were the most important shared experiences that shaped their careers?`;
+          //prompt = "What do all of the following artists have in common considering their exhibition activity: " + artistNames.join(", ") + ". In 5 sentences.";
+          break;
+  
+        default:
+            console.warn('Unknown category:', category);
+            break;
+        }
+
+    }
+    //Only one node selected
+    // Only one artist selected
+    else if (this.selectedNodes.length === 1) {
+      const selectedArtist = selectedArtists[0];
+      const nationality = selectedArtist.nationality;
+      const birthcountry = selectedArtist.birthcountry;
+      const deathcountry = selectedArtist.deathcountry;
+      const mostexhibited = selectedArtist.most_exhibited_in;
+
+      switch (category) {
+          case 'nationality':
+            prompt = `Explain in 5 sentences how the national background of ${artistNames.join(", ")} from ${nationality} influenced their artistic style and career. Focus on the most important aspects.`;
+              break;
+
+          case 'birthcountry':
+              prompt = `Summarize in 5 sentences how early life experiences in ${birthcountry} shaped the career of ${artistNames.join(", ")}. What were the key influences from their birth country?`;
+              break;
+
+          case 'deathcountry':
+            prompt = `In 5 sentences, describe how ${artistNames.join(", ")}'s time in ${deathcountry} influenced their later works. Highlight the most important changes or connections.`;
+              break;
+
+          case 'mostexhibited':
+            prompt = `Provide a short summary of 5 sentences of how exhibiting mainly in ${mostexhibited} influenced the career of ${artistNames.join(", ")}. Focus on the key effects on their style and legacy.`;
+              break;
+
+          default:
+              console.warn('Unknown category:', category);
+              break;
+          }
+      }
+
+    // Call AI service to generate response
+    if (prompt) {
+        this.generativeAIService.generateAIResponse(prompt).subscribe(
+            response => {
+                this.aiResponse = response.content;  // Store the response
+                console.log("AI Response:", this.aiResponse);
+            },
+            error => {
+                console.error("Error generating AI response:", error);
+            }
+        );
+      }
   }
-  
-  
-  
-  
-  
+}
     
     private drawClusterInCell(cell: any, x: string | number, y: string | number, cellWidth: number, cellHeight: number): void {
       const clusterIndex = Number(x) - 1;
