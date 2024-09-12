@@ -142,7 +142,7 @@ public isLoadingRange: boolean = false;
       this.numberOfArtists = this.artists.length;
 
       // Step 2: Update kOptions based on the fetched artists
-      const newCeil = Math.ceil(this.artists.length / 10);
+      const newCeil = Math.ceil(this.artists.length / 8);
       if (newCeil < 1 && this.artists.length > 0) {
         this.kOptions = { ...this.kOptions, ceil: 1 }; // Set ceil to 1 if calculation results in less than 1
       } else {
