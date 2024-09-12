@@ -56,9 +56,15 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     private artistClusterMap: Map<number, ClusterNode> = new Map<number, ClusterNode>();
     private artistNodes: { [clusterId: number]: ArtistNode[] } = {};
     private selectedClusterNode: ClusterNode | null = null;
-    private allCountries: string[] = [];
     private g: any; // Group for zooming
     private paddingRatio: number = 0.05; // 5% padding
+    private allCountriesByCategory: { [key: string]: string[] } = {
+      nationality: [],
+      birthcountry: [],
+      deathcountry: [],
+      mostexhibited: []
+    };
+    
   
   
     private subscriptions: Subscription = new Subscription();
@@ -129,14 +135,63 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       }));
       this.subscriptions.add(this.decisionService.currentSearchedArtistId.subscribe((id:string|null) => this.highlightArtistNode(id)));
   
-      this.subscriptions.add(this.decisionService.currentSunburst.subscribe(sunburst => {
-        this.updateNetworkOnSunburstChange(sunburst) // Redraw the matrix with the filtered row
+      this.subscriptions.add(this.decisionService.currentSunburst.subscribe(category => {
+        this.updateNetworkOnSunburstChange(category) // Redraw the matrix with the filtered row
+        this.updateMap(category);
       }));
       
   
       window.addEventListener('resize', this.onResize.bind(this));
     }
   
+    private updateMap(category:string): void {
+
+      const countries: string[] = [];
+   
+      // Loop through selectedArtists and populate countries array based on the selected category
+      switch (category) {
+          case 'nationality':
+              this.allArtists.forEach(artist => {
+                  if (artist.nationality && !countries.includes(artist.nationality)) {
+                      countries.push(artist.nationality);
+                  }
+              });
+              break;
+      
+          case 'birthcountry':
+              this.allArtists.forEach(artist => {
+                  if (artist.birthcountry && !countries.includes(artist.birthcountry)) {
+                      countries.push(artist.birthcountry);
+                  }
+              });
+              break;
+      
+          case 'deathcountry':
+              this.allArtists.forEach(artist => {
+                  if (artist.deathcountry && !countries.includes(artist.deathcountry)) {
+                      countries.push(artist.deathcountry);
+                  }
+              });
+              break;
+      
+          case 'mostexhibited':
+              this.allArtists.forEach(artist => {
+                  if (artist.most_exhibited_in && !countries.includes(artist.most_exhibited_in)) {
+                      countries.push(artist.most_exhibited_in);
+                  }
+              });
+              break;
+      
+          default:
+              console.warn('Unknown category:', category);
+              break;
+          }
+      
+         // Pass the populated countries array to the selectionService
+         this.selectionService.selectCountries(countries);
+      
+
+    };
 
   
       // Method to close the notification
@@ -435,7 +490,8 @@ const category = this.decisionService.getDecisionSunburst();
     this.selectionService.selectClusterEdges([]);
     this.selectionService.selectFocusArtist(null);
     // Ensure no countries are selected when resetting node selection
-    this.selectionService.selectCountries(this.allCountries);
+    const category = this.decisionService.getDecisionSunburst();  
+    this.selectionService.selectCountries(this.allCountriesByCategory[category]);
   }
   
   
@@ -459,7 +515,8 @@ const category = this.decisionService.getDecisionSunburst();
       this.selectionService.selectArtists(null);
       this.selectionService.selectCluster(this.allArtists);
       this.selectionService.selectClusterEdges([]);
-      this.selectionService.selectCountries(this.allCountries);
+      const category = this.decisionService.getDecisionSunburst();  
+      this.selectionService.selectCountries(this.allCountriesByCategory[category]);
       this.selectionService.selectExhibitions(null);
       this.selectionService.selectFocusedCluster(null);
   
@@ -584,20 +641,8 @@ const category = this.decisionService.getDecisionSunburst();
       this.biggestClusterId = biggestClusterId;
       this.selectionService.selectFocusCluster([[biggestCluster], [biggestClusterEdges]]); */
   
-      
-      const allCountriesSet = new Set<string>();
-  
-      this.allArtists.forEach(artist => {
-        if (artist.nationality) allCountriesSet.add(artist.nationality);
-        if (artist.birthcountry) allCountriesSet.add(artist.birthcountry);
-        if (artist.deathcountry) allCountriesSet.add(artist.deathcountry);
-        if (artist.most_exhibited_in) allCountriesSet.add(artist.most_exhibited_in);
-      });
-  
-      this.allCountries = Array.from(allCountriesSet);
-  
-      this.selectionService.selectCountries(this.allCountries);
-            
+      const category = this.decisionService.getDecisionSunburst();  
+      this.selectionService.selectCountries(this.allCountriesByCategory[category]);
       
    
   
@@ -1111,7 +1156,8 @@ const category = this.decisionService.getDecisionSunburst();
     this.selectionService.selectFocusArtist(null);        // Clear the focused artist
   
     // Ensure that no specific countries are selected when resetting node selection
-    this.selectionService.selectCountries(this.allCountries);
+    const category = this.decisionService.getDecisionSunburst();  
+    this.selectionService.selectCountries(this.allCountriesByCategory[category]);
   
     // Restore full opacity to all clusters
     this.g.selectAll('.cluster').style('opacity', '1');
@@ -1378,20 +1424,6 @@ const category = this.decisionService.getDecisionSunburst();
           this.selectedCluster = allArtists;
           this.allArtists = allArtists;
           this.selectionService.selectAllArtists(allArtists);
-          
-              
-      const allCountriesSet = new Set<string>();
-  
-      this.allArtists.forEach(artist => {
-        if (artist.nationality) allCountriesSet.add(artist.nationality);
-        if (artist.birthcountry) allCountriesSet.add(artist.birthcountry);
-        if (artist.deathcountry) allCountriesSet.add(artist.deathcountry);
-        if (artist.most_exhibited_in) allCountriesSet.add(artist.most_exhibited_in);
-      });
-  
-      this.allCountries = Array.from(allCountriesSet);
-  
-          this.selectionService.selectCountries(this.allCountries);
   
           // Calculate degrees for each cluster
           this.calculateNodeDegreesForClusters();
@@ -1410,6 +1442,8 @@ const category = this.decisionService.getDecisionSunburst();
       this.createSvg();
       this.drawClusters();
       this.saveCountryCentroidsOnInitialization();
+      const category = this.decisionService.getDecisionSunburst();  
+      this.selectionService.selectCountries(this.allCountriesByCategory[category]);
       this.isLoading = false;
     }
   
@@ -1419,6 +1453,8 @@ const category = this.decisionService.getDecisionSunburst();
     
       // Iterate through each category and cluster
       categories.forEach((category) => {
+        const allCountriesSet = new Set<string>(); // Use a Set to avoid duplicates
+    
         this.clusters.forEach((cluster, clusterIndex) => {
           const clusterNode = this.clusterNodes[clusterIndex]; // Get ClusterNode for this cluster
           if (clusterNode) {
@@ -1430,12 +1466,34 @@ const category = this.decisionService.getDecisionSunburst();
               this.countryCentroids[category] = {};
             }
     
+            // Add countries from each artist to the Set
+            clusterNode.artists.forEach(artist => {
+              switch (category) {
+                case 'nationality':
+                  if (artist.nationality) allCountriesSet.add(artist.nationality);
+                  break;
+                case 'birthcountry':
+                  if (artist.birthcountry) allCountriesSet.add(artist.birthcountry);
+                  break;
+                case 'deathcountry':
+                  if (artist.deathcountry) allCountriesSet.add(artist.deathcountry);
+                  break;
+                case 'mostexhibited':
+                  if (artist.most_exhibited_in) allCountriesSet.add(artist.most_exhibited_in);
+                  break;
+              }
+            });
+    
             // Store the centroids for this cluster in the respective category
             this.countryCentroids[category][clusterIndex] = countryCentroids;
           }
         });
+    
+        // Convert the Set to an array and store it in allCountriesByCategory
+        this.allCountriesByCategory[category] = Array.from(allCountriesSet);
       });
     }
+    
     private createCountryCentroids(artists: Artist[], category: string, clusterNode: ClusterNode): { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } {
     
       const countryMap = new Map<string, Artist[]>();
