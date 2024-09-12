@@ -18,6 +18,7 @@ import { ScatterplotComponent } from './components/scatterplot/scatterplot.compo
 import { NetworkComponent } from './components/network/network.component';
 import { ClusterVisualizationComponent } from './components/clusterVisualization/clusterVisualization.component';
 import { OldMapComponent } from './components/oldMap/oldMap.component';
+import { NotificationComponent } from './components/notification/notification.component';
 @NgModule({
   declarations: [
     AppComponent,
@@ -31,7 +32,8 @@ import { OldMapComponent } from './components/oldMap/oldMap.component';
     ScatterplotComponent,
     NetworkComponent,
     ClusterVisualizationComponent, 
-    OldMapComponent
+    OldMapComponent,
+    NotificationComponent
   ],
   imports: [
     BrowserModule,

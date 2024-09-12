@@ -7,6 +7,7 @@ import { ArtistService } from '../../services/artist.service';
 import { Artist, ArtistNode, ClusterNode } from '../../models/artist';
 import exhibited_with from '../../models/exhibited_with';
 import { GenerativeAIService } from '../../services/generativeAI.service';
+import { NotificationComponent } from '../notification/notification.component';
 
 interface InterCommunityEdge extends d3.SimulationLinkDatum<ClusterNode> {
   source: number | ClusterNode;
@@ -21,6 +22,8 @@ interface InterCommunityEdge extends d3.SimulationLinkDatum<ClusterNode> {
 export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestroy {
 
     @ViewChild('matrix', { static: true }) private chartContainer!: ElementRef;
+    aiResponse: string = ''; // Store the AI response
+
     public isLoading: boolean = true;
     private firstK: number = -1;
     private isIniatialized: boolean = false;
@@ -42,7 +45,6 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       left: 0.5
     };
   
-    aiResponse: string = '';  // To store the AI response
   
     private innerRadius: number = 0;
     private clusters: Artist[][] = [];
@@ -137,6 +139,10 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
   
 
   
+      // Method to close the notification
+  closeNotification(): void {
+    this.aiResponse = ''; // Clear the message when close is clicked
+  }
 
     private updateNetworkOnSunburstChange(newCategory: string): void {
       // Loop through all clusters
@@ -1816,6 +1822,8 @@ const category = this.decisionService.getDecisionSunburst();
         this.generativeAIService.generateAIResponse(prompt).subscribe(
             response => {
                 this.aiResponse = response.content;  // Store the response
+
+
                 console.log("AI Response:", this.aiResponse);
             },
             error => {
