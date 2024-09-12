@@ -525,9 +525,14 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
       .call(d3.axisBottom(xScale));
   
     // Append y-axis
+    // Append y-axis
     this.svg.append('g')
-      .attr('class', 'y-axis')
-      .call(d3.axisLeft(yScale));
+    .attr('class', 'y-axis')
+    .call(d3.axisLeft(yScale)
+      .ticks(Math.min(10, d3.max(monthData, d => d.totalExhibitions)!)) // Limit to 10 ticks, adjust as needed
+      .tickFormat(d3.format('d')) // Ensure only integers are displayed
+    );
+
   
     // Add a brush to the chart after drawing the bars
     this.addBrush();

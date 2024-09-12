@@ -437,11 +437,7 @@ const category = this.decisionService.getDecisionSunburst();
     
   private onClusterClick(clusterNode: ClusterNode): void {
     // If an artist node was clicked, do nothing
-    if (this.isNodeClick) {
-      this.isNodeClick = false;
-      console.log('Hallo')
-      return;
-    }
+   
   
     const type = this.decisionService.getDecisionSunburst();
     const selectedArtists = clusterNode.artists;
@@ -643,6 +639,8 @@ const category = this.decisionService.getDecisionSunburst();
   
   
     private handleNodeClick(artistNode: ArtistNode, event: MouseEvent): void {
+      event.stopPropagation(); // Stop the click event from propagating to the cluster
+
       // Ensure defs and filter are only created once
       let defs = this.svg.select('defs');
       if (defs.empty()) {
