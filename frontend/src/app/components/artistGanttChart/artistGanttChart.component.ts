@@ -188,14 +188,20 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       .sort((a, b) => d3.ascending(a[0], b[0]))  // Sort by cluster index (ascending)
       .map(([clusterIndex]) => clusterIndex);
   
-    const xScale = d3.scaleTime()
-      .domain([
-        d3.min(timelineData, d => d.start || d.end)! - (1 * 365 * 24 * 60 * 60 * 1000), // Add padding to the start of the scale
-        d3.max(timelineData, d => d.end || d.start)! + (1 * 365 * 24 * 60 * 60 * 1000)  // Add padding to the end of the scale
-      ])
-      .range([0, this.contentWidth])
-      .nice();
-  
+      const paddingPercentage = 0.05; // 5% padding on both ends
+
+      const minDate = d3.min(timelineData, d => d.start ? new Date(d.start) : new Date(d.end!))!;
+      const maxDate = d3.max(timelineData, d => d.end ? new Date(d.end) : new Date(d.start!))!;
+      
+      // Add padding to the domain of the xScale
+      const paddedMinDate = new Date(minDate.getTime() - (maxDate.getTime() - minDate.getTime()) * paddingPercentage);
+      const paddedMaxDate = new Date(maxDate.getTime() + (maxDate.getTime() - minDate.getTime()) * paddingPercentage);
+      
+      const xScale = d3.scaleTime()
+        .domain([paddedMinDate, paddedMaxDate]) // Use padded domain
+        .range([0, this.contentWidth])
+        .nice();
+      
     const yScale = d3.scaleBand()
       .domain(timelineData.map((d, i) => i.toString()))
       .range([0, this.contentHeight])
