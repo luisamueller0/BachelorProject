@@ -62,6 +62,9 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
 
   private xScale: any;
 
+  private brushSelection: [number, number] | null = null;
+
+
   private margin = {
     top: 1.75,
     right:  1.5,
@@ -132,10 +135,22 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     } else {
       this.retrieveWantedExhibitions();
       this.createChart();
-      this.clickOnSelectedYear();
+  
+      // Reapply brush selection after changing the selected artists
+      if (this.brushSelection) {
+        this.svg.select('.brush')
+          .call(d3.brushX().move, this.brushSelection);  // Reapply the brush selection
+  
+        // Simulate the brushed behavior to re-select exhibitions
+        this.brushed({ selection: this.brushSelection });
+      }
+  
+      //this.clickOnSelectedYear();
       this.isLoading = false;
     }
   }
+  
+  
   private clickOnSelectedYear(): void {
     if (this.previouslySelectedYear !== null) {
       this.handleYearSelectionWithoutClick(this.previouslySelectedYear);
@@ -331,7 +346,18 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   private createChart(): void {
     this.createSvg();
     this.drawBinnedChart();
+  
+    // Reapply the brush selection if it exists
+    if (this.brushSelection) {
+      this.svg.select('.brush')
+        .call(d3.brushX().move, this.brushSelection);  // Reapply the brush selection
+  
+      // Simulate the brushed behavior to re-select exhibitions
+      this.brushed({ selection: this.brushSelection });
+    }
   }
+  
+  
   
   private createSvg(): void {
     d3.select(this.exhibitionContainer.nativeElement).select("figure.exhibition-svg-container").select("svg").remove();
@@ -554,6 +580,8 @@ private brushed(event: any): void {
   const selection = event.selection;
   if (!selection) return; // Exit if no selection is made
 
+  this.brushSelection = selection; // Store the brush selection
+
   const [x0, x1] = selection;
 
   // Clear the previous selected months
@@ -570,11 +598,8 @@ private brushed(event: any): void {
 
       // If the bar's x position is within the brush selection, add its corresponding month
       if (xPosition >= x0 && xPosition <= x1 && d.data.year && d.data.month) {
-        console.log('Daten', d.data.year, d.data.month, d);
         this.selectedMonths.push({ year: d.data.year, month: d.data.month }); // Add the month corresponding to the bar
       }
-    } else {
-      console.log('Data not available or invalid for this element:', d);
     }
   });
 
