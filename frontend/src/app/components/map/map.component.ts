@@ -19,24 +19,27 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
   private subscription: Subscription = new Subscription();
   private countryBorders: any;
 
-
-  private europeanCountries: string[] = [
+  private modernEuropeanCountries: string[] = [
     "Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia",
     "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Iceland",
     "Ireland", "Italy", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Malta", "Moldova", "Monaco",
     "Montenegro", "Netherlands", "Macedonia", "Norway", "Poland", "Portugal", "Romania", "Russia",
     "San Marino", "Republic of Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Ukraine", "England", "Kosovo"
   ];
- 
 
-  private countryMap : { [key: string]: string } = this.artistService.countryMap;
-   
+  private oldEuropeanCountries: string[] = [
+    'Luxembourg', 'Spain', 'United Kingdom of Great Britain and Ireland', 'Iceland', 'Belgium', 'Portugal',
+    'Netherlands', 'France', 'Switzerland', 'Romania', 'Serbia', 'Montenegro', 'Bosnia-Herzegovina', 'Italy',
+    'Austria Hungary', 'Bulgaria', 'Greece', 'Malta', 'Sweden–Norway', 'Denmark', 'Germany', 'Russian Empire', 'Ottoman Empire'
+  ];
+
+  private countryMap: { [key: string]: string } = this.artistService.countryMap;
+  
+  public isModernMap: boolean = true; // Flag to toggle between modern and old maps
 
   @ViewChild('mapContainer', { static: true }) private mapContainer!: ElementRef;
 
-  constructor(private http: HttpClient, private selectionService: SelectionService,
-    private artistService: ArtistService
-  ) { 
+  constructor(private http: HttpClient, private selectionService: SelectionService, private artistService: ArtistService) {
     this.handleCountryClick = this.handleCountryClick.bind(this);
   }
 
@@ -87,65 +90,65 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private drawMap(): void {
+    const geoJsonUrl = this.isModernMap 
+      ? 'https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson' 
+      : 'https://raw.githubusercontent.com/aourednik/historical-basemaps/master/geojson/world_1900.geojson';
+  
+    const countriesList = this.isModernMap ? this.modernEuropeanCountries : this.oldEuropeanCountries;
+  
     this.subscription.add(
-      this.http.get('https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson')
-      .subscribe((data: any) => {
+      this.http.get(geoJsonUrl).subscribe((data: any) => {
         const filteredData = {
           ...data,
           features: data.features.filter((feature: any) =>
-            this.europeanCountries.includes(feature.properties.name)
+            countriesList.includes(feature.properties.name || feature.properties.NAME)
           )
         };
-
+  
         const projection = d3.geoMercator()
-        
-          .center([20, 36])
-          .scale(900)
-          .translate([this.width / 2 +400, this.height /2 +600]);
-
+        .center([20, 36])
+        .scale(900)
+        .translate([this.width / 2 +400, this.height /2 +600]);
+  
         const path = d3.geoPath().projection(projection);
-        
-
+  
         this.countryBorders = this.g.selectAll('path')
-        .data(filteredData.features)
-        .enter()
-        .append('path')
-        .attr('d', path)
-        .attr('fill', (d: any) => this.artistService.getCountryColor(this.artistService.getCountrycode(d.properties.name),1))
-        .attr('stroke', 'black')
-        .on('click', (event: MouseEvent, d: any) => this.handleCountryClick(d.properties.name, event))
-        .on('mouseover', (event: MouseEvent, d: any) => {
-          const element = d3.select(event.currentTarget as SVGPathElement);
-          const [x, y] = d3.pointer(event, window.document.body);
-          d3.select('#tooltip')
-            .style('display', 'block')
-            .style('left', `${x + 10}px`)
-            .style('top', `${y + 10}px`)
-            .html(`${d.properties.name} (${this.getKeyByValue(d.properties.name)})`);
-        })
-        .on('mouseout', () => {
-          d3.select('#tooltip').style('display', 'none');
-        });
-
-
+          .data(filteredData.features)
+          .enter()
+          .append('path')
+          .attr('d', path)
+          .attr('fill', (d: any) => this.artistService.getCountryColor(this.artistService.getCountrycode(d.properties.name), 1))
+          .attr('stroke', 'black')
+          .on('click', (event: MouseEvent, d: any) => this.handleCountryClick(d.properties.name, event))
+          .on('mouseover', (event: MouseEvent, d: any) => {
+            const [x, y] = d3.pointer(event, window.document.body);
+            d3.select('#tooltip')
+              .style('display', 'block')
+              .style('left', `${x + 10}px`)
+              .style('top', `${y + 10}px`)
+              .html(`${d.properties.name} (${this.getKeyByValue(d.properties.name)})`);
+          })
+          .on('mouseout', () => {
+            d3.select('#tooltip').style('display', 'none');
+          });
+  
+        // Ensure selected countries are updated after the map is fully rendered
+        const selectedCountries = this.selectionService.getSelectedCountries();
+        this.updateCountryColors(selectedCountries);
       })
-  );
-}
+    );
+  
+  }
+  
 
-private handleCountryClick(country: string, event: MouseEvent): void {
- 
+  private handleCountryClick(country: string, event: MouseEvent): void {
+    const countryOnMap = event.currentTarget as SVGPathElement;
+    // Handle country click event logic
+  }
 
-  const countryOnMap = event.currentTarget as SVGPathElement;
- 
-  //this.selectionService.selectMapCountry(this.getKeyByValue(country));
-}
-
-private getKeyByValue(value: string): string |undefined {
-  return Object.keys(this.countryMap).find(key => this.countryMap[key] === value);
-}
-
-
-
+  private getKeyByValue(value: string): string | undefined {
+    return Object.keys(this.countryMap).find(key => this.countryMap[key] === value);
+  }
 
   private updateCountryColors(selectedCountries: string[]): void {
     if (!this.countryBorders) return;
@@ -153,18 +156,11 @@ private getKeyByValue(value: string): string |undefined {
     this.countryBorders
       .attr('fill', (d: any) => {
         const countryCode = Object.keys(this.countryMap).find(key => this.countryMap[key] === d.properties.name);
-        const base = this.artistService.getCountryColor(countryCode,1);
+        const base = this.artistService.getCountryColor(countryCode, 1);
         const unselected = 'white';
-        return (countryCode && selectedCountries.includes(countryCode)) ? base: unselected;
+        return (countryCode && selectedCountries.includes(countryCode)) ? base : unselected;
       });
   }
-
-  
-
-
-
-
-
 
   private createLegend(): void {
     const legendData = [
@@ -274,12 +270,23 @@ private getKeyByValue(value: string): string |undefined {
     // Apply the calculated font size to all text elements
     textElements.style('font-size', `${newFontSize}px`);
   }
+
+  public toggleMap(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.isModernMap = !this.isModernMap;  // Update the flag based on checkbox state
   
-@HostListener('window:resize')
-onResize(): void {
-this.setWidthHeight();
-this.svg
-    .attr('width', this.width)
-    .attr('height', this.height);
-}
+    this.svg.selectAll('*').remove(); // Clear the current map
+    this.createSvg(); // Recreate the SVG
+    this.drawMap(); // Redraw the map
+    this.createLegend();
+  }
+  
+
+  @HostListener('window:resize')
+  onResize(): void {
+    this.setWidthHeight();
+    this.svg
+      .attr('width', this.width)
+      .attr('height', this.height);
+  }
 }

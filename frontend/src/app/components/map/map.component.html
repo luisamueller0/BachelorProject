@@ -1,2 +1,12 @@
-<figure #mapContainer id="map" class="svg-container" style="width: 100%; height: 100%;"></figure>
+<div class="toggle-container">
+<label class="switch">
+    <input type="checkbox" (change)="toggleMap($event)" [checked]="!isModernMap">
+    <span class="slider round"></span>
+</label>
+<span class="map-label">
+    {{ isModernMap ? 'Modern Map' : 'Map of 1900' }}
+</span>
+</div>
+
+<figure #mapContainer id="map" class="svg-container"></figure>
 <div id="tooltip" class="tooltip" style="display: none;"></div>

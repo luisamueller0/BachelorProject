@@ -170,6 +170,30 @@ public europeanRegions = {
   "\\N" :["\\N"]
 };
 
+/* public europeanRegions = {
+
+  "North Europe": ["DK", "EE", "FI", "IE", "LV", "LT", "NO", "SE", "GB"], // Denmark, Estonia, Finland, Ireland, Latvia, Lithuania, Norway, Sweden, United Kingdom
+  "Eastern Europe": ["BY", "BG", "UA", "RU", "MD", "RO"], // Belarus, Bulgaria, Ukraine, Russia, Moldova, Romania
+  "Southern Europe": ["BA", "HR", "GI", "GR", "IT", "ME", "PT", "RS", "ES", "XK", "MT", "MK"], // Bosnia and Herzegovina, Croatia, Gibraltar, Greece, Italy, Montenegro, Portugal, Serbia, Spain, Kosovo, Malta, North Macedonia
+  "Western Europe": ["BE", "FR", "LU", "NL"], // Belgium, France, Luxembourg, Netherlands
+  "Central Europe": ["DE", "PL", "CZ", "HU", "SK", "AT", "LI", "CH", "SI"], // Germany, Poland, Czech Republic, Hungary, Slovakia, Austria, Liechtenstein, Switzerland, Slovenia
+  "Others": ["ID", "US", "AU", "CA", "GE", "DZ", "MX", "AZ", "AR", "UY", "CU", "TN", "EG", "TR", "VI", "DO", "JP", 
+             "MQ", "IN", "MU", "CL", "ZA", "NZ", "KH", "VE", "GT", "SV", "PY", "LK", "EC", "BR", "SG", "BL", "PE", 
+             "TH", "PF", "AM", "IL", "MC", "CN", "UZ", "KZ", "MA", "BO", "VN", "NA", "JO", "IR", "JM", "SA", "CD", 
+             "CW", "SY", "GY"], // Indonesia, United States, Australia, Canada, Georgia, Algeria, Mexico, Azerbaijan, Argentina, Uruguay, Cuba, Tunisia, Egypt, Turkey, Virgin Islands, Dominican Republic, Japan, Martinique, India, Mauritius, Chile, South Africa, New Zealand, Cambodia, Venezuela, Guatemala, El Salvador, Paraguay, Sri Lanka, Ecuador, Brazil, Singapore, Saint Barthélemy, Peru, Thailand, French Polynesia, Armenia, Israel, Monaco, China, Uzbekistan, Kazakhstan, Morocco, Bolivia, Vietnam, Namibia, Jordan, Iran, Jamaica, Saudi Arabia, Democratic Republic of the Congo, Curaçao, Syria, Guyana
+  "\\N" : ["\\N"]
+}; */
+
+/* private europeanRegions = {
+
+  "North Europe": ['Iceland', 'Sweden–Norway', 'Denmark'], // Iceland, Sweden, Norway, Denmark
+  "Eastern Europe": ['Romania', 'Serbia', 'Montenegro', 'Bosnia-Herzegovina', 'Bulgaria', 'Russian Empire'], // Romania, Serbia, Montenegro, Bosnia-Herzegovina, Bulgaria, Russian Empire (modern Russia)
+  "Southern Europe": ['Spain', 'Portugal', 'Italy', 'Greece', 'Malta'], // Spain, Portugal, Italy, Greece, Malta
+  "Western Europe": ['Luxembourg', 'Belgium', 'Netherlands', 'France', 'Switzerland', 'United Kingdom of Great Britain and Ireland'], // Luxembourg, Belgium, Netherlands, France, Switzerland, United Kingdom
+  "Central Europe": ['Austria Hungary', 'Germany'], // Austria-Hungary, Germany
+};
+ */
+
 
 public getRegionColorScale(region: string): (t: number) => string {
   switch (region) {

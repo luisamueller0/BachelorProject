@@ -98,7 +98,9 @@ export class SelectionService {
 
 
 
-
+getSelectedCountries(){
+  return this.selectedCountries.value;
+}
   getNode(){
     return this.selectedNode.value;
   }
