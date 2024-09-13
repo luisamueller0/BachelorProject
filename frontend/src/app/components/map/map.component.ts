@@ -107,8 +107,8 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
   
         const projection = d3.geoMercator()
         .center([20, 36])
-        .scale(900)
-        .translate([this.width / 2 +400, this.height /2 +600]);
+        .scale(880)
+        .translate([this.width / 2 +390, this.height /2 +570]);
   
         const path = d3.geoPath().projection(projection);
   
