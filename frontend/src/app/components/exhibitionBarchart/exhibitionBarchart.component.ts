@@ -579,10 +579,16 @@ private addBrush(): void {
 
 private brushed(event: any): void {
   const selection = event.selection;
-  if (!selection) return; // Exit if no selection is made
+  
+  // If there's no selection (i.e., the user clears the brush), reset the exhibitions
+  if (!selection) {
+    this.brushSelection = null;  // Clear the stored selection
+    this.selectedMonths = [];  // Clear selected months
+    this.selectionService.selectExhibitions(null);  // Reset exhibitions selection
+    return;  // Exit the function
+  }
 
-  this.brushSelection = selection; // Store the brush selection
-
+  this.brushSelection = selection;  // Store the brush selection
   const [x0, x1] = selection;
 
   // Clear the previous selected months
