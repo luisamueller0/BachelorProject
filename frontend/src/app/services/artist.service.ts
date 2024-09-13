@@ -207,6 +207,8 @@ public getRegionColorScale(region: string): (t: number) => string {
       return this.getColorScale(this.pinkColorPalette);
     case "Others":
       return this.getYellowOrangeColor;
+    case "Central Europe":
+      return this.getColorScale(this.greenColorPalette);
     case "\\N":
       return this.getColorScale(this.capuccinoColorPalette); 
     default:
@@ -293,6 +295,11 @@ public pinkColorPalette: string[] = [
   "#FFE0FA"   // Very light pink
 ];
 
+public greenColorPalette:string[]=
+[
+  "#a2ca94",
+  "#86b478"
+]
 
  // Divergent color scale from yellow to orange
  public getYellowOrangeColor(t: number): string {
@@ -459,5 +466,105 @@ public getCountrycode(fullName: string): string | undefined {
   */
 
 
+// Old country map with unique codes
+public oldCountryMap: { [key: string]: string } = {
+  "LU": "Luxembourg",
+  "ES": "Spain",
+  "UK": "United Kingdom of Great Britain and Ireland", // Use "UK" for United Kingdom of Great Britain and Ireland
+  "IS": "Iceland",
+  "BE": "Belgium",
+  "PT": "Portugal",
+  "NL": "Netherlands",
+  "FR": "France",
+  "CH": "Switzerland",
+  "RO": "Romania",
+  "SR": "Serbia", // Use "SR" for Serbia (to avoid conflict with modern RS - Republic of Serbia)
+  "MO": "Montenegro", // Use "MO" for Montenegro
+  "BH": "Bosnia-Herzegovina", // Use "BH" for Bosnia-Herzegovina
+  "IT": "Italy",
+  "AH": "Austria Hungary", // Use "AH" for Austria-Hungary
+  "BU": "Bulgaria", // Use "BU" for Bulgaria to avoid conflict with modern BG
+  "GR": "Greece",
+  "MT": "Malta",
+  "SN": "Sweden–Norway", // Use "SN" for Sweden–Norway union
+  "DN": "Denmark", // Use "DN" for Denmark in old map
+  "GE": "Germany", // No conflict with modern Germany
+  "RE": "Russian Empire", // Use "RE" for Russian Empire
+  "OT": "Ottoman Empire" // Use "OT" for Ottoman Empire
+};
+
+// Old European regions
+public oldEuropeanRegions = {
+  "North Europe": ["IS", "SN", "DN"], // Sweden-Norway, Denmark, Iceland
+  "Eastern Europe": ["RO", "SR", "MO", "BH", "BU", "RE"], // Romania, Serbia, Montenegro, Bosnia-Herzegovina, Bulgaria, Russian Empire
+  "Southern Europe": ["ES", "PT", "IT", "GR", "MT", "OT"], // Spain, Portugal, Italy, Greece, Malta
+  "Western Europe": ["LU", "BE", "NL", "FR", "CH", "UK"], // Luxembourg, Belgium, Netherlands, France, Switzerland, United Kingdom of Great Britain and Ireland
+  "Central Europe": ["AH", "GE"], // Austria-Hungary, Germany
+  "Others": [],// Ottoman Empire,
+  "\\N" :["\\N"]
+};
+
+
+
+
+public getOldCountrycode(fullName: string): string | undefined {
+  for (const [code, name] of Object.entries(this.oldCountryMap)) {
+    if (name.toLowerCase() === fullName.toLowerCase()) {
+      return code;
+    }
+  }
+  return undefined; // Return undefined if the country name is not found
+}
+
+public getOldCountryColor(countryName: string | undefined, opacity: number = 1): string {
+  // Explicitly handle the case where the region or country is \N
+  if (countryName === "\\N") {
+      let capuccinoColor = d3.color(this.capuccinoColorPalette[0]);
+      if (capuccinoColor) {
+          capuccinoColor.opacity = opacity;
+          return capuccinoColor.toString();
+      }
+      return d3.interpolateGreys(0.5); // Fallback
+  }
+
+  // If countryName is undefined, return a default color
+  if (countryName === undefined) {
+      return d3.interpolateGreys(0.5); // Default color for undefined countries
+  }
+
+  // Iterate through the regions and find the matching country
+  for (const [region, countries] of Object.entries(this.oldEuropeanRegions)) {
+      const countryArray = countries as string[];  // Cast countries to string[]
+      const index = countryArray.indexOf(countryName);
+      if (index !== -1) {
+          const colorScale = this.getRegionColorScale(region);
+          const t = index / (countryArray.length - 1); // Calculate interpolation factor
+          let color = d3.color(colorScale(t));
+          if (color) {
+              color.opacity = opacity;
+              return color.toString();
+          }
+      }
+  }
+
+  // Fallback color if no match is found
+  let defaultColor = d3.color("#C3C3C3");
+  if (defaultColor) {
+      defaultColor.opacity = opacity;
+      return defaultColor.toString();
+  }
+  return d3.interpolateGreys(0.5); // Fallback
+}
+
+  
+  /*
+  getArtistById(id: string): Observable<any> {
+    return this.http.get<any>(`${this.dataUrl}/${id}`);
+  }
+  */
+
+
 
 }
+
+

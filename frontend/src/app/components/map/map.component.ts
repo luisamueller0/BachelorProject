@@ -111,13 +111,20 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
         .translate([this.width / 2 +390, this.height /2 +570]);
   
         const path = d3.geoPath().projection(projection);
-  
         this.countryBorders = this.g.selectAll('path')
           .data(filteredData.features)
           .enter()
           .append('path')
           .attr('d', path)
-          .attr('fill', (d: any) => this.artistService.getCountryColor(this.artistService.getCountrycode(d.properties.name), 1))
+          .attr('fill', (d: any) => {
+             console.log('try', d.properties.NAME)
+             if(!this.isModernMap){
+                console.log('old', this.artistService.getOldCountrycode(d.properties.NAME))
+                console.log('old', this.artistService.getOldCountryColor(this.artistService.getOldCountrycode(d.properties.NAME), 1))
+              }
+           return  this.isModernMap ? this.artistService.getCountryColor(this.artistService.getCountrycode(d.properties.name), 1):
+          this.artistService.getOldCountryColor(this.artistService.getOldCountrycode(d.properties.NAME), 1)})
+
           .attr('stroke', 'black')
           .on('click', (event: MouseEvent, d: any) => this.handleCountryClick(d.properties.name, event))
           .on('mouseover', (event: MouseEvent, d: any) => {
@@ -134,6 +141,7 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
   
         // Ensure selected countries are updated after the map is fully rendered
         const selectedCountries = this.selectionService.getSelectedCountries();
+        if(this.isModernMap)
         this.updateCountryColors(selectedCountries);
       })
     );
