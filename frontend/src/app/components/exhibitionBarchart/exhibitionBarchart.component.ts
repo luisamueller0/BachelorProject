@@ -568,6 +568,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
 private addBrush(): void {
   const brush = d3.brushX()
   .extent([[0, 15], [this.contentWidth, this.contentHeight]]) // Define the extent of the brush
+  .on('brush', this.brushed.bind(this))  // Call the brushed function while dragging
 
     .on('end', this.brushed.bind(this));  // Call the brushed function when selection ends
 
