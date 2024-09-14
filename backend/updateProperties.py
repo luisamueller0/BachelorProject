@@ -10,7 +10,7 @@ driver = GraphDatabase.driver(uri, auth=(username, password))
 
 # Correct mapping of full country names to their ISO codes or historical abbreviations
 country_code_mapping = {
-    "United Kingdom of Great Britain and Ireland": "UK",  # Modern UK code is GB
+    "United Kingdom of Great Britain and Ireland": "UK",
     "Netherlands": "NL",
     "Russian Empire": "RE",
     "Switzerland": "CH",
@@ -22,26 +22,25 @@ country_code_mapping = {
     "\\N": "\\N",
     "Belgium": "BE",
     "Greece": "GR",
-    "Sweden–Norway": "SN",  # Historical union, unique abbreviation
+    "Sweden–Norway": "SN",
     "Ukraine": "UA",
     "United States": "US",
     "Spain": "ES",
-    "Sweden-Norway": "SN",  # Duplicate entry for historical union
     "Denmark": "DK",
-    "New South Wales (UK)": "NSW",  # Historical region
-    "Persia": "IR",  # Now Iran, use IR
+    "New South Wales (UK)": "NSW",
+    "Persia": "IR",
     "Mexico": "MX",
-    "Ottoman Empire": "OT",  # Historical empire, unique abbreviation
-    "Netherlands Indies": "NEI",  # Historical colony, unique abbreviation
+    "Ottoman Empire": "OT",
+    "Netherlands Indies": "NEI",
     "Monaco": "MC",
-    "Dutch Guiana": "SR",  # Now Suriname, use SR
+    "Dutch Guiana": "SR",
     "Portugal": "PT",
     "United Kingdom": "GB",
     "Canada": "CA",
-    "Queensland (UK)": "QLD",  # Historical region
-    "German Empire": "GE",  # Historical empire, unique abbreviation
+    "Queensland (UK)": "QLD",
+    "German Empire": "GE",
     "Argentina": "AR",
-    "Kingdom of Brazil": "BR",  # Now Brazil, use BR
+    "Kingdom of Brazil": "BR",
     "Austria-Hungary": "AH",
     "Luxembourg": "LU",
     "Sweden": "SE",
@@ -49,32 +48,32 @@ country_code_mapping = {
     "Romania": "RO",
     "Bosnia-Herzegovina": "BA",
     "Algeria": "DZ",
-    "Victoria (UK)": "VIC",  # Historical region
+    "Victoria (UK)": "VIC",
     "Norway": "NO",
-    "Manchu Empire": "ME",  # Historical empire, unique abbreviation
+    "Manchu Empire": "ME",
     "Serbia": "RS",
-    "M?ori": "M?ori",  # Unique case, may require clarification
+    "M?ori": "M?ori",
     "Unknown": "Unknown",
     "Tunisia": "TN",
     "Morocco": "MA",
-    "South Australia (UK)": "SA",  # Historical region
+    "South Australia (UK)": "SA",
     "Ecuador": "EC",
     "Peru": "PE",
     "Bolivia": "BO",
-    "Cape Colony": "CC",  # Historical colony
+    "Cape Colony": "CC",
     "Bulgaria": "BG",
-    "French Indochina": "FI",  # Historical region, unique abbreviation
-    "Transvaal": "TV",  # Historical region
+    "French Indochina": "FI",
+    "Transvaal": "TV",
     "Namibia": "NA",
-    "Imperial Japan": "IJ",  # Historical empire, unique abbreviation
+    "Imperial Japan": "IJ",
     "India": "IN",
-    "Netherlands Antilles": "AN",  # ISO code for former territories
+    "Netherlands Antilles": "AN",
     "Estonia": "EE",
     "Russia": "RU",
-    "Western Australia (UK)": "WA",  # Historical region
+    "Western Australia (UK)": "WA",
     "New Zealand": "NZ",
     "Egypt": "EG",
-    "Bunyoro": "BU",  # Historical kingdom
+    "Bunyoro": "BU",
     "Croatia": "HR",
     "Australia": "AU",
     "Ireland": "IE",
@@ -82,34 +81,33 @@ country_code_mapping = {
     "El Salvador": "SV",
     "Paraguay": "PY",
     "Indonesia": "ID",
-    "British Raj": "BRJ",  # Historical region, unique abbreviation
+    "British Raj": "BRJ",
     "Poland": "PL",
-    "Kingdom of Hawaii": "KH",  # Historical kingdom
+    "Kingdom of Hawaii": "KH",
     "Malta": "MT",
     "Japan": "JP",
-
-      # Additional birth countries from the uploaded file
+    # Additional birth countries from the uploaded file
     "Costa Rica": "CR",
     "Isle of Man": "IM",
     "Mauritius": "MU",
     "Dominican Republic": "DO",
     "Afghanistan": "AF",
     "Guatemala": "GT",
-    "Ceylon": "CEY",  # Historical name for Sri Lanka
+    "Ceylon": "CEY",
     "Antigua and Barbuda": "AG",
     "Venezuela": "VE",
     "Singapore": "SG",
     "Hong Kong": "HK",
-    "Rattanakosin Kingdom": "RAT"  # Historical name for Thailand
+    "Rattanakosin Kingdom": "RAT"
 }
 
-def update_old_death_country_to_short(driver, full_name_to_code):
+def update_host_old_country_to_short(driver, full_name_to_code):
     with driver.session() as session:
         for full_name, short_code in full_name_to_code.items():
             session.run(
                 """
-                MATCH (a:Artist {oldBirthCountry: $full_name})
-                SET a.oldBirthCountry = $short_code
+                MATCH (h:Host {oldCountry: $full_name})
+                SET h.oldCountry = $short_code
                 """, {
                     "full_name": full_name,
                     "short_code": short_code
@@ -119,9 +117,9 @@ def update_old_death_country_to_short(driver, full_name_to_code):
 
 if __name__ == "__main__":
     try:
-        # Step 1: Update oldDeathCountry to short versions
-        update_old_death_country_to_short(driver, country_code_mapping)
-        print("Finished updating oldDeathCountry to short versions.")
+        # Step 1: Update oldCountry for Host nodes to short versions
+        update_host_old_country_to_short(driver, country_code_mapping)
+        print("Finished updating oldCountry for Host nodes to short versions.")
         
     finally:
         # Close the driver when finished
