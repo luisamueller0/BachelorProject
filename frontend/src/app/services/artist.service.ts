@@ -468,6 +468,103 @@ public getCountrycode(fullName: string): string | undefined {
 
 // Old country map with unique codes
 public oldCountryMap: { [key: string]: string } = {
+
+    "United Kingdom of Great Britain and Ireland": "UK",
+    "Netherlands": "NL",
+    "Russian Empire": "RE",
+    "Switzerland": "CH",
+    "France": "FR",
+    "United States of America": "US",
+    "Italy": "IT",
+    "Austria Hungary": "AH",
+    "Germany": "GE",
+    "\\N": "\\N",
+    "Belgium": "BE",
+    "Greece": "GR",
+    "Sweden–Norway": "SN", 
+    "Ukraine": "UA",
+    "United States": "US",
+    "Spain": "ES",
+    "Denmark": "DK",
+    "New South Wales (UK)": "NSW", 
+    "Persia": "IR",  
+    "Mexico": "MX",
+    "Ottoman Empire": "OT",  
+    "Netherlands Indies": "NEI", 
+    "Monaco": "MC",
+    "Dutch Guiana": "SR", 
+    "Portugal": "PT",
+    "Canada": "CA",
+    "Queensland (UK)": "QLD", 
+    "German Empire": "GE", 
+    "Argentina": "AR",
+    "Kingdom of Brazil": "BR",
+    "Austria-Hungary": "AH",
+    "Luxembourg": "LU",
+    "Sweden": "SE",
+    "Chile": "CL",
+    "Romania": "RO",
+    "Bosnia-Herzegovina": "BH",
+    "Algeria": "DZ",
+    "Victoria (UK)": "VIC",  
+    "Norway": "NO",
+    "Manchu Empire": "ME",  
+    "Serbia": "SR",  
+    "M?ori": "M?ori", 
+    "Unknown": "Unknown",
+    "Tunisia": "TN",
+    "Morocco": "MA",
+    "South Australia (UK)": "SA", 
+    "Ecuador": "EC",
+    "Peru": "PE",
+    "Bolivia": "BO",
+    "Cape Colony": "CC",  
+    "Bulgaria": "BU", 
+    "French Indochina": "FI",  
+    "Transvaal": "TV",  
+    "Namibia": "NA",
+    "Imperial Japan": "IJ",
+    "India": "IN",
+    "Netherlands Antilles": "AN", 
+    "Estonia": "EE",
+    "Russia": "RU",
+    "Western Australia (UK)": "WA", 
+    "New Zealand": "NZ",
+    "Egypt": "EG",
+    "Bunyoro": "BUO",  
+    "Croatia": "HR",
+    "Australia": "AU",
+    "Ireland": "IE",
+    "Uruguay": "UY",
+    "El Salvador": "SV",
+    "Paraguay": "PY",
+    "Indonesia": "ID",
+    "British Raj": "BRJ",
+    "Poland": "PL",
+    "Kingdom of Hawaii": "KH", 
+    "Malta": "MT",
+    "Japan": "JP",
+    
+    "Iceland": "IS",
+    "Montenegro": "MO",
+    "Costa Rica": "CR",
+    "Isle of Man": "IM",
+    "Mauritius": "MU",
+    "Dominican Republic": "DO",
+    "Afghanistan": "AF",
+    "Guatemala": "GT",
+    "Ceylon": "CEY", 
+    "Antigua and Barbuda": "AG",
+    "Venezuela": "VE",
+    "Singapore": "SG",
+    "Hong Kong": "HK",
+    "Rattanakosin Kingdom": "RAT" ,
+    "Gibraltar": "GI"
+
+
+};
+
+/* public oldCountryMap: { [key: string]: string } = {
   "LU": "Luxembourg",
   "ES": "Spain",
   "UK": "United Kingdom of Great Britain and Ireland", // Use "UK" for United Kingdom of Great Britain and Ireland
@@ -487,15 +584,15 @@ public oldCountryMap: { [key: string]: string } = {
   "GR": "Greece",
   "MT": "Malta",
   "SN": "Sweden–Norway", // Use "SN" for Sweden–Norway union
-  "DN": "Denmark", // Use "DN" for Denmark in old map
+  "DK": "Denmark", // Use "DN" for Denmark in old map
   "GE": "Germany", // No conflict with modern Germany
   "RE": "Russian Empire", // Use "RE" for Russian Empire
   "OT": "Ottoman Empire" // Use "OT" for Ottoman Empire
-};
+}; */
 
 // Old European regions
 public oldEuropeanRegions = {
-  "North Europe": ["IS", "SN", "DN"], // Sweden-Norway, Denmark, Iceland
+  "North Europe": ["IS", "SN", "DK"], // Sweden-Norway, Denmark, Iceland
   "Eastern Europe": ["RO", "SR", "MO", "BH", "BU", "RE"], // Romania, Serbia, Montenegro, Bosnia-Herzegovina, Bulgaria, Russian Empire
   "Southern Europe": ["ES", "PT", "IT", "GR", "MT", "OT"], // Spain, Portugal, Italy, Greece, Malta
   "Western Europe": ["LU", "BE", "NL", "FR", "CH", "UK"], // Luxembourg, Belgium, Netherlands, France, Switzerland, United Kingdom of Great Britain and Ireland
