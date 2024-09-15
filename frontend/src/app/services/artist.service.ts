@@ -262,9 +262,9 @@ public blueColorPalette: string[] = [
 
 //13
 public purpleColorPalette: string[] = [
- /* "#471377",
+  "#471377",
   "#6019A6",
-  "#6D1DBD", */
+  "#6D1DBD", 
   "#7A21D4",
   "#8725EB",
   "#9338F1",
