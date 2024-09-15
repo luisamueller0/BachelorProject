@@ -23,6 +23,7 @@ export class SelectionService {
   private selectedYear = new BehaviorSubject<number|null>(null);
   private allClusters = new BehaviorSubject<Artist[][]|null>(null);
   private focusedCluster = new BehaviorSubject<Artist[]|null>(null);
+  private selectModern = new BehaviorSubject<boolean>(true);
 
   currentArtists = this.selectedArtists.asObservable();
   currentCluster = this.selectedCluster.asObservable();
@@ -35,8 +36,12 @@ export class SelectionService {
   currentExhibitions = this.selectedExhibitions.asObservable(); //first array selected, second array not selected
   currentSelectedYear = this.selectedYear.asObservable();
   currentFocusedCluster = this.focusedCluster.asObservable();
+  currentSelectModern = this.selectModern.asObservable();
 
 
+switchSelectModern(modern:boolean){
+  this.selectModern.next(modern);
+}
   selectFocusedCluster(cluster:Artist[]|null){
     //console.log('focused', cluster)
     this.focusedCluster.next(cluster);
@@ -84,6 +89,9 @@ export class SelectionService {
     this.selectedClusterEdges.next(edges);
   }
 
+  getSelectModern(){
+    return this.selectModern.value;
+  }
   getFocusedCluster(){
     return this.focusedCluster.value;
   }

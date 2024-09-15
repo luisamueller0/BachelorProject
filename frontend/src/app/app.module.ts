@@ -17,7 +17,6 @@ import { ArtistGanttChartComponent } from './components/artistGanttChart/artistG
 import { ScatterplotComponent } from './components/scatterplot/scatterplot.component';
 import { NetworkComponent } from './components/network/network.component';
 import { ClusterVisualizationComponent } from './components/clusterVisualization/clusterVisualization.component';
-import { OldMapComponent } from './components/oldMap/oldMap.component';
 import { NotificationComponent } from './components/notification/notification.component';
 @NgModule({
   declarations: [
@@ -31,8 +30,7 @@ import { NotificationComponent } from './components/notification/notification.co
     ArtistGanttChartComponent,
     ScatterplotComponent,
     NetworkComponent,
-    ClusterVisualizationComponent, 
-    OldMapComponent,
+    ClusterVisualizationComponent,
     NotificationComponent
   ],
   imports: [
