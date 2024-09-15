@@ -31,6 +31,12 @@ interface ArtistData {
   avg_end_date: string;
   avg_duration: number;
   participated_in_exhibition:number[];
+  oldBirthCountry: string;
+  oldDeathCountry: string;
+  mostExhibitedInOldCountry: string;
+  europeanRegionOldBirth: string;
+  europeanRegionOldDeath: string;
+  europeanRegionMostExhibitedInOldCountry: string;
   }
 
   interface ArtistNode extends d3.SimulationNodeDatum{
@@ -92,6 +98,13 @@ interface ArtistData {
     avg_end_date: Date;
     avg_duration: number;
     participated_in_exhibition:number[];
+    oldBirthCountry: string;
+    oldDeathCountry: string;
+    mostExhibitedInOldCountry: string;
+    europeanRegionOldBirth: string;
+    europeanRegionOldDeath: string;
+    europeanRegionMostExhibitedInOldCountry: string;
+    
   
     constructor(data: ArtistData) {
       this.id = Number(data.id);
@@ -124,6 +137,12 @@ interface ArtistData {
       this.avg_end_date = new Date (data.avg_end_date);
       this.avg_duration = data.avg_duration;
       this.participated_in_exhibition = data.participated_in_exhibition;
+      this.oldBirthCountry = data.oldBirthCountry;
+      this.oldDeathCountry = data.oldDeathCountry;
+      this.mostExhibitedInOldCountry = data.mostExhibitedInOldCountry;
+      this.europeanRegionOldBirth= data.europeanRegionOldBirth;
+      this.europeanRegionOldDeath = data.europeanRegionOldDeath;
+      this.europeanRegionMostExhibitedInOldCountry= data.europeanRegionMostExhibitedInOldCountry;
     }
   
   

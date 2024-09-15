@@ -10,85 +10,122 @@ driver = GraphDatabase.driver(uri, auth=(username, password))
 
 # Mapping for places to old countries
 place_to_old_country = {
-    "Cologne": "Germany",
-    "Vienna": "Austria Hungary",
-    "Prague": "Austria Hungary",
-    "Venice": "Italy",
-    "Moscow": "Russian Empire",
-    "Saint Petersburg": "Russian Empire",
-    "Munich": "Germany",
-    "Dusseldorf": "Germany",
-    "Ostend": "Belgium",
-    "Brussels": "Belgium",
-    "Florence": "Italy",
-    "Christiania": "Sweden–Norway",
-    "Zurich": "Switzerland",
-    "Hague, The": "Netherlands",
-    "Milan": "Italy",
-    "Rome": "Italy",
-    "Tokyo": "Imperial Japan",
-    "Domburg": "Netherlands",
-    "Geneva": "Switzerland",
-    "Naples": "Italy",
-    "Ekaterinoslav": "Russian Empire",
-    "Gothenburg": "Sweden–Norway",
-    "-": None,
-    "Antwerp": "Belgium",
-    "Ekaterinodar": "Russian Empire",
-    "Ghent": "Belgium",
-    "Helsingfors": "Russian Empire",
-    "Cracow": "Austria Hungary",
-    "Valašské Meziříčí": "Austria Hungary",
-    "Brandenburg an der Havel": "Germany",
-    "Copenhagen": "Denmark",
-    "Breslau": "Germany",
-    "Nikolaev": "Russian Empire"
+    "Warsaw": "RE",  # Russian Empire
+    "Rotterdam": "NL",
+    "Breslau": "DE",  # Germany
+    "Wartha (Niederschlesien, Region)": "DE",  # Germany
+    "Golluschütz (Westpreussen)": "DE",  # Germany
+    "Hamburg": "DE",
+    "Sýňovská Nowá Wes": "AH",  # Austria Hungary
+    "Șandra": "AH",  # Austria Hungary
+    "Danzig": "DE",  # Germany
+    "Feodosiya": "RE",  # Russian Empire
+    "Clifton (Ontario)": "CA",
+    "London, Ontario": "CA",
+    "Elbing": "DE",  # Germany
+    "Yendrikhovtsy": "RE",  # Russian Empire
+    "Gleiwitz": "DE",  # Germany
+    "Lviv": "AH",  # Austria Hungary
+    "Cracow": "AH",  # Austria Hungary
+    "Deva, Romania": "AH",  # Austria Hungary
+    "Versailles": "FR",
+    "Krapivna": "RE",  # Russian Empire
+    "Yevpatoria": "RE",  # Russian Empire
+    "Słupsk": "DE",  # Germany
+    "Grottkau": "DE",  # Germany
+    "Fichtwerder (bei Landsberg an der Warthe)": "DE",  # Germany
+    "Bremen": "DE",
+    "Szczebrzeszyn": "AH",  # Austria Hungary
+    "Ząbkowice Śląskie": "DE",  # Germany
+    "Stargard in Pommern": "DE",  # Germany
+    "Peleș": "AH",  # Austria Hungary
+    "Preußisch Holland": "DE",  # Germany
+    "Luborzyca bei Miechów": "AH",  # Austria Hungary
+    "Korelivschyna": "RE",  # Russian Empire
+    "Ekaterinoslav": "RE",  # Russian Empire
+    "Reteag": "AH",  # Austria Hungary
+    "Baja": "AH",  # Austria Hungary
+    "Chişinău": "RE",  # Russian Empire
+    "Kukhi (near Kutaisi)": "RE",  # Russian Empire
+    "Lublin": "RE",  # Russian Empire
+    "Milan": "IT",
+    "Ponjemon": "RE",  # Russian Empire
+    "Wszeliwy": "AH",  # Austria Hungary
+    "Howick, Ontario": "CA",
+    "Charlottetown": "CA",
+    "Bukowicz": "AH",  # Austria Hungary
+    "Saint John, New Brunswick": "CA",
+    "\\N": "\\N",  # Unknown
+    "Kałusz": "AH",  # Austria Hungary
+    "Barszczowice": "AH",  # Austria Hungary
+    "Alexandria": "EG",
+    "Jarosław": "AH",  # Austria Hungary
+    "Asunción": "PY",
+    "Guaira de la Melena, Cuba": "CU",
+    "Lipiny (Świętochłowice)": "DE",  # Germany
+    "Picton (Canada)": "CA",
+    "Londesborough": "GB",
+    "Samborsko": "AH",  # Austria Hungary
+    "Freiburg im Breisgau": "DE",
+    "Reinbek": "DE",
+    "Dunedin": "NZ",
+    "Lębork": "DE",  # Germany
+    "Brody, Żary County": "DE",  # Germany
+    "Kowary": "DE",  # Germany
+    "Birnbaum": "DE",  # Germany
+    "Victoria, British Columbia": "CA",
+    "Tournai": "BE",
+    "Tyszowce": "AH",  # Austria Hungary
+    "Wólka Zerzeńska": "AH",  # Austria Hungary
+    "Havana": "CU",
+    "Stettin": "DE",  # Germany
+    "Niigata": "IJ"  # Imperial Japan
 }
 
-def get_all_hosts(driver):
+def get_all_artists(driver):
     with driver.session() as session:
         result = session.run(
             """
-            MATCH (h:Host)
-            WHERE h.place IS NOT NULL AND h.oldCountry IS NULL
-            RETURN h.id AS host_id, h.place AS place
+            MATCH (n:Artist)
+            WHERE n.oldBirthCountry IS NULL
+            RETURN n.id AS artist_id, n.birthplace AS birthplace
             """
         )
-        return [{"host_id": record["host_id"], "place": record["place"]} for record in result]
+        return [{"artist_id": record["artist_id"], "birthplace": record["birthplace"]} for record in result]
 
-def update_host_with_old_country(driver, host_id, old_country):
+def update_artist_with_old_birth_country(driver, artist_id, old_birth_country):
     with driver.session() as session:
         session.run(
             """
-            MATCH (h:Host {id: $host_id})
-            SET h.oldCountry = $old_country
+            MATCH (n:Artist {id: $artist_id})
+            SET n.oldBirthCountry = $old_birth_country
             """, {
-                "host_id": host_id,
-                "old_country": old_country
+                "artist_id": artist_id,
+                "old_birth_country": old_birth_country
             }
         )
 
 if __name__ == "__main__":
     try:
-        # Step 1: Retrieve all hosts with a defined place
-        all_hosts = get_all_hosts(driver)
+        # Step 1: Retrieve all artists with a defined birthplace but missing oldBirthCountry
+        all_artists = get_all_artists(driver)
         
-        for host in all_hosts:
-            host_id = host['host_id']
-            place = host['place']
+        for artist in all_artists:
+            artist_id = artist['artist_id']
+            birthplace = artist['birthplace']
 
             # Step 2: Find the old country using the place_to_old_country mapping
-            old_country = place_to_old_country.get(place)
+            old_birth_country = place_to_old_country.get(birthplace)
 
-            # Step 3: Update the host with the determined old country
-            if old_country:  # Only update if an old country is found
-                update_host_with_old_country(driver, host_id, old_country)
-                print(f"Finished processing host with ID {host_id}")
+            # Step 3: Update the artist with the determined old country
+            if old_birth_country:  # Only update if an old country is found
+                update_artist_with_old_birth_country(driver, artist_id, old_birth_country)
+                print(f"Finished processing artist with ID {artist_id}")
             else:
-                print(f"No old country found for host with ID {host_id}")
+                print(f"No old country found for artist with ID {artist_id}")
             
     except Exception as e:
-        print(f"Error processing host ID {host_id}: {e}")
+        print(f"Error processing artist ID {artist_id}: {e}")
 
     finally:
         # Close the driver when finished

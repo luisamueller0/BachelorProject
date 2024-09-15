@@ -40,6 +40,12 @@ class Artist {
         this.avg_end_date = data.avg_end_date;
         this.avg_duration = data.avg_duration;
         this.participated_in_exhibition = data.participated_in_exhibition;
+        this.oldBirthCountry = data.oldBirthCountry;
+        this.oldDeathCountry = data.oldDeathCountry;
+        this.mostExhibitedInOldCountry = data.mostExhibitedInOldCountry;
+        this.europeanRegionOldBirth = data.europeanRegionOldBirthCountry;
+        this.europeanRegionOldDeath = data.europeanRegionOldDeathCountry;
+        this.europeanRegionMostExhibitedInOldCountry = data.europeanRegionOldMostExhibitedInCountry;
     }
 
 

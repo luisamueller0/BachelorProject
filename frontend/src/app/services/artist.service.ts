@@ -509,7 +509,7 @@ public oldCountryMap: { [key: string]: string } = {
     "Victoria (UK)": "VIC",  
     "Norway": "NO",
     "Manchu Empire": "ME",  
-    "Serbia": "SR",  
+    "Serbia": "RS",  
     "M?ori": "M?ori", 
     "Unknown": "Unknown",
     "Tunisia": "TN",
@@ -591,7 +591,7 @@ public oldCountryMap: { [key: string]: string } = {
 }; */
 
 // Old European regions
-public oldEuropeanRegions = {
+/* public oldEuropeanRegions = {
   "North Europe": ["IS", "SN", "DK"], // Sweden-Norway, Denmark, Iceland
   "Eastern Europe": ["RO", "SR", "MO", "BH", "BU", "RE"], // Romania, Serbia, Montenegro, Bosnia-Herzegovina, Bulgaria, Russian Empire
   "Southern Europe": ["ES", "PT", "IT", "GR", "MT", "OT"], // Spain, Portugal, Italy, Greece, Malta
@@ -599,7 +599,25 @@ public oldEuropeanRegions = {
   "Central Europe": ["AH", "GE"], // Austria-Hungary, Germany
   "Others": [],// Ottoman Empire,
   "\\N" :["\\N"]
+}; */
+
+public oldEuropeanRegions = {
+    "North Europe": ["IS", "SN", "DK","UK"],
+    "Eastern Europe": ["RO", "SR", "MO", "BH", "BU", "RE"],
+    "Southern Europe": ["ES", "PT", "IT", "GR", "MT", "OT","RS"],
+    "Western Europe": ["LU", "BE", "NL", "FR","BG"],
+    "Central Europe": ["AH", "DE", "CH"],
+    "Others": [
+        "AF", "AG", "AN", "AR", "AU", "BA", "BO", "BR", "BRJ", "CA", "CC", "CEY", "CL", "CR", "CU", "CZ", "DO",
+        "DZ", "EC", "EG", "HK", "ID", "IE", "IJ", "IN", "JP", "KH", "KH", "LU", "MX", "NEI", "NL", "NZ", "PE", "PY",
+        "QLD", "RAT", "SA", "SE", "SG", "SR", "SV", "TN", "TV", "UY", "VIC", "WA", "ZA","US", "NSW", "GT", "JM", "MA", 
+        "MC", "MU", "MY", "PH", "PR", "TH", "TR", "VN", "CD", "CW", "SY", "GY",
+        "M?ori","ME","FI","VE","GI", "NA"
+    ],
+    "\\N": ["\\N"]
+
 };
+
 
 
 
