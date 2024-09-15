@@ -34,6 +34,8 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
   ];
 
   private countryMap: { [key: string]: string } = this.artistService.countryMap;
+
+  private oldCountryMap: { [key: string]: string } = this.artistService.oldCountryMap;
   
   public isModernMap: boolean = true; // Flag to toggle between modern and old maps
 
@@ -128,12 +130,23 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
           .attr('stroke', 'black')
           .on('click', (event: MouseEvent, d: any) => this.handleCountryClick(d.properties.name, event))
           .on('mouseover', (event: MouseEvent, d: any) => {
+            
             const [x, y] = d3.pointer(event, window.document.body);
-            d3.select('#tooltip')
+
+            if(this.isModernMap){
+              d3.select('#tooltip')
               .style('display', 'block')
               .style('left', `${x + 10}px`)
               .style('top', `${y + 10}px`)
               .html(`${d.properties.name} (${this.getKeyByValue(d.properties.name)})`);
+            }else{
+              d3.select('#tooltip')
+              .style('display', 'block')
+              .style('left', `${x + 10}px`)
+              .style('top', `${y + 10}px`)
+              .html(`${d.properties.NAME} (${this.getOldKeyByValue(d.properties.NAME)})`);
+            }
+     
           })
           .on('mouseout', () => {
             d3.select('#tooltip').style('display', 'none');
@@ -157,6 +170,12 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
   private getKeyByValue(value: string): string | undefined {
     return Object.keys(this.countryMap).find(key => this.countryMap[key] === value);
   }
+
+
+  private getOldKeyByValue(value: string): string | undefined {
+    return Object.keys(this.oldCountryMap).find(key => this.oldCountryMap[key] === value);
+  }
+ 
 
   private updateCountryColors(selectedCountries: string[]): void {
     if (!this.countryBorders) return;

@@ -1389,6 +1389,7 @@ const category = this.decisionService.getDecisionSunburst();
         .subscribe(data => {
       
           this.clusters = data[0];
+          console.log('hallo', this.clusters[0][0])
           this.decisionService.changeInterCommunityEdges(data[2])
           this.decisionService.changeClusters(data[0]);
          /*  this.clusters.forEach((cluster, clusterIndex) => {

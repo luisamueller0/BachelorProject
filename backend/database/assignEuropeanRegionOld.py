@@ -38,8 +38,8 @@ def update_artist_with_european_region(driver, artist_id, birth_region, death_re
 def determine_region(country_code):
     oldEuropeanRegions = {
         "North Europe": ["IS", "SN", "DK","UK"],
-        "Eastern Europe": ["RO", "SR", "MO", "BH", "BU", "RE"],
-        "Southern Europe": ["ES", "PT", "IT", "GR", "MT", "OT","RS"],
+        "Eastern Europe": ["RO", "SR", "BU", "RE"],
+        "Southern Europe": ["ES", "PT", "IT", "GR", "MT", "OT","RS", "MO", "BH"],
         "Western Europe": ["LU", "BE", "NL", "FR","BG"],
         "Central Europe": ["AH", "DE", "CH"],
         "Others": [
@@ -50,7 +50,7 @@ def determine_region(country_code):
             "M?ori","ME","FI","VE","GI", "NA"
         ],
         "\\N": ["\\N"]
-    }
+    } 
 
     for region, countries in oldEuropeanRegions.items():
         if country_code in countries:
