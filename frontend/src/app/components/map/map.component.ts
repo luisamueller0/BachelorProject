@@ -52,8 +52,14 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
       .subscribe(() => this.onResize());
 
     this.selectionService.currentCountries.subscribe(selectedCountries => {
+    
       this.updateCountryColors(selectedCountries);
     });
+    this.selectionService.currentOldCountries.subscribe(selectedCountries => {
+      if(!this.isModernMap && selectedCountries.length>0)
+      this.updateOldCountryColors(selectedCountries);
+    });
+   
   }
 
   ngAfterViewInit(): void {
