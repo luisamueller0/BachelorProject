@@ -262,9 +262,9 @@ public blueColorPalette: string[] = [
 
 //13
 public purpleColorPalette: string[] = [
- "#471377",
+ /* "#471377",
   "#6019A6",
-  "#6D1DBD",
+  "#6D1DBD", */
   "#7A21D4",
   "#8725EB",
   "#9338F1",
@@ -297,8 +297,9 @@ public pinkColorPalette: string[] = [
 
 public greenColorPalette:string[]=
 [
-  "#a2ca94",
-  "#86b478"
+  "#bfe29e",
+  "#a6db77",
+  "#8ad44e"
 ]
 
  // Divergent color scale from yellow to orange
@@ -554,7 +555,8 @@ public oldCountryMap: { [key: string]: string } = {
   "SG": "Singapore",
   "HK": "Hong Kong",
   "RAT": "Rattanakosin Kingdom",
-  "GI": "Gibraltar"
+  "GI": "Gibraltar",
+  "PF": "French Polynesia"
 };
 
 
@@ -606,7 +608,7 @@ public oldEuropeanRegions = {
         "DZ", "EC", "EG", "HK", "ID", "IE", "IJ", "IN", "JP", "KH", "KH", "LU", "MX", "NEI", "NL", "NZ", "PE", "PY",
         "QLD", "RAT", "SA", "SE", "SG", "SR", "SV", "TN", "TV", "UY", "VIC", "WA", "ZA","US", "NSW", "GT", "JM", "MA", 
         "MC", "MU", "MY", "PH", "PR", "TH", "TR", "VN", "CD", "CW", "SY", "GY",
-        "M?ori","ME","FI","VE","GI", "NA"
+        "M?ori","ME","FI","VE","GI", "NA","PF"
     ],
     "\\N": ["\\N"]
 

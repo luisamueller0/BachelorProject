@@ -301,6 +301,7 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
   public toggleMap(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.isModernMap = !this.isModernMap;  // Update the flag based on checkbox state
+    this.selectionService.switchSelectModern(this.isModernMap);
   
     this.svg.selectAll('*').remove(); // Clear the current map
     this.createSvg(); // Recreate the SVG

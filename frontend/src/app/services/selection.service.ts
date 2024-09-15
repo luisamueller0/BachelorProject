@@ -24,6 +24,7 @@ export class SelectionService {
   private allClusters = new BehaviorSubject<Artist[][]|null>(null);
   private focusedCluster = new BehaviorSubject<Artist[]|null>(null);
   private selectModern = new BehaviorSubject<boolean>(true);
+  private selectedOldCountries = new BehaviorSubject<string[]>([]);
 
   currentArtists = this.selectedArtists.asObservable();
   currentCluster = this.selectedCluster.asObservable();
@@ -37,7 +38,7 @@ export class SelectionService {
   currentSelectedYear = this.selectedYear.asObservable();
   currentFocusedCluster = this.focusedCluster.asObservable();
   currentSelectModern = this.selectModern.asObservable();
-
+currentOldCountries = this.selectedOldCountries.asObservable();
 
 switchSelectModern(modern:boolean){
   this.selectModern.next(modern);
@@ -79,6 +80,9 @@ switchSelectModern(modern:boolean){
   selectCountries(countries:string[]){
     this.selectedCountries.next(countries);
   }
+  selectOldCountries(countries:string[]){
+    this.selectedOldCountries.next(countries);
+  }
   
 
   selectNode(node:Artist|null){
@@ -87,6 +91,10 @@ switchSelectModern(modern:boolean){
   selectClusterEdges(edges:exhibited_with[]){
     //console.log('selected cluster edges', edges.length)
     this.selectedClusterEdges.next(edges);
+  }
+
+  getOldCountries(){
+    return this.selectedOldCountries.value;
   }
 
   getSelectModern(){

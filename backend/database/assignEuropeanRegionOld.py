@@ -47,7 +47,7 @@ def determine_region(country_code):
             "DZ", "EC", "EG", "HK", "ID", "IE", "IJ", "IN", "JP", "KH", "KH", "LU", "MX", "NEI", "NL", "NZ", "PE", "PY",
             "QLD", "RAT", "SA", "SE", "SG", "SR", "SV", "TN", "TV", "UY", "VIC", "WA", "ZA","US", "NSW", "GT", "JM", "MA", 
             "MC", "MU", "MY", "PH", "PR", "TH", "TR", "VN", "CD", "CW", "SY", "GY",
-            "M?ori","ME","FI","VE","GI", "NA"
+            "M?ori","ME","FI","VE","GI", "NA", "PF"
         ],
         "\\N": ["\\N"]
     } 
