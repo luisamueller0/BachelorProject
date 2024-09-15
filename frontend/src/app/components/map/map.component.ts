@@ -153,9 +153,16 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
           });
   
         // Ensure selected countries are updated after the map is fully rendered
-        const selectedCountries = this.selectionService.getSelectedCountries();
-        if(this.isModernMap)
+        if(this.isModernMap){
+          const selectedCountries = this.selectionService.getSelectedCountries();
         this.updateCountryColors(selectedCountries);
+        }
+        else{
+          const selectedOldCountries = this.selectionService.getOldCountries();
+          console.log('selectedOldCountries', selectedOldCountries)
+          this.updateOldCountryColors(selectedOldCountries);
+        
+        }
       })
     );
   
@@ -184,6 +191,17 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
       .attr('fill', (d: any) => {
         const countryCode = Object.keys(this.countryMap).find(key => this.countryMap[key] === d.properties.name);
         const base = this.artistService.getCountryColor(countryCode, 1);
+        const unselected = 'white';
+        return (countryCode && selectedCountries.includes(countryCode)) ? base : unselected;
+      });
+  }
+  private updateOldCountryColors(selectedCountries: string[]): void {
+    if (!this.countryBorders) return;
+
+    this.countryBorders
+      .attr('fill', (d: any) => {
+        const countryCode = Object.keys(this.oldCountryMap).find(key => this.oldCountryMap[key] === d.properties.NAME);
+        const base = this.artistService.getOldCountryColor(countryCode, 1);
         const unselected = 'white';
         return (countryCode && selectedCountries.includes(countryCode)) ? base : unselected;
       });
