@@ -14,6 +14,9 @@ class Exhibition {
         this.duration = data.duration;
         this.exhibited_artists = data.exhibited_artists;
         this.europeanRegion = data.europeanRegion;
+        this.took_place_in_old_country = data.tookPlaceInOldCountry;
+        this.europeanRegion = data.oldEuropeanRegion;
+
     }
 }
 

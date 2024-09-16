@@ -64,6 +64,8 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
 
   private brushSelection: [number, number] | null = null;
 
+  private modernMap: boolean = true;
+
 
   private margin = {
     top: 1.75,
@@ -102,6 +104,13 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     this.subscriptions.add(
       this.selectionService.currentFocusedCluster.subscribe((cluster: Artist[] | null) => {
         this.selectedCluster = cluster;
+        this.tryInitialize();
+      })
+    );
+
+    this.subscriptions.add(
+      this.selectionService.currentSelectModern.subscribe((modernMap: boolean) => {
+        this.modernMap = modernMap;
         this.tryInitialize();
       })
     );
