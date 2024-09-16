@@ -1520,6 +1520,7 @@ const category = this.decisionService.getDecisionSunburst();
   
   private getArtistColorBasedOnCategory(artist: Artist, category: string): string {
     let countryCode: string;
+    let originalColor;
 
     if(this.modernMap){
     switch (category) {
@@ -1539,6 +1540,7 @@ const category = this.decisionService.getDecisionSunburst();
             countryCode = artist.nationality;
             break;
     }
+    originalColor = this.artistService.getCountryColor(countryCode, 1)
   }
   else{
     switch (category) {
@@ -1556,8 +1558,10 @@ const category = this.decisionService.getDecisionSunburst();
           countryCode = artist.oldBirthCountry;
           break;
   }
+  originalColor = this.artistService.getOldCountryColor(countryCode, 1)
+
   }
-    const originalColor = this.artistService.getCountryColor(countryCode, 1)
+
     return originalColor;  // Corrected: call toString()
   }
   
