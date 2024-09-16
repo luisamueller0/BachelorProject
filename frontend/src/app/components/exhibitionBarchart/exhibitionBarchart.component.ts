@@ -40,6 +40,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   @ViewChild('tooltip', { static: true }) private tooltip!: ElementRef;
   private subscriptions: Subscription = new Subscription();
   private legendOrder: string[] = ["North Europe", "Eastern Europe", "Southern Europe", "Western Europe", "Others", "\\N"];
+  private oldLegendOrder: string[] = ["North Europe", "Eastern Europe", "Central Europe","Southern Europe", "Western Europe", "Others", "\\N"];
 
   allExhibitions: Exhibition[] = [];
   exhibitions: Exhibition[] = [];
@@ -111,7 +112,19 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     this.subscriptions.add(
       this.selectionService.currentSelectModern.subscribe((modernMap: boolean) => {
         this.modernMap = modernMap;
-        this.tryInitialize();
+        this.createChart();
+  
+        // Reapply brush selection after changing the selected artists
+        if (this.brushSelection) {
+          this.svg.select('.brush')
+            .call(d3.brushX().move, this.brushSelection);  // Reapply the brush selection
+    
+          // Simulate the brushed behavior to re-select exhibitions
+          this.brushed({ selection: this.brushSelection });
+        }
+    
+        //this.clickOnSelectedYear();
+        this.isLoading = false;
       })
     );
 
@@ -410,6 +423,17 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
       "\\N": "#c9ada7"
     };
   
+
+    const oldColorMap: { [key: string]: string } = {
+      "North Europe": "#67D0C0",
+      "Eastern Europe": "#59A3EE",
+      "Central Europe": "#a6db77",
+      "Southern Europe": "#AF73E8",
+      "Western Europe": "#F06ACD",
+      "Others": "#FFDA75",
+      "\\N": "#c9ada7"
+    };
+
     const size = 0.9 * window.innerWidth / 100;
     const fontSize = 0.7 * window.innerWidth / 100;  // Adjust this multiplier as needed for desired text size
   
@@ -419,7 +443,9 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     };
   
     // Calculate the total legend width dynamically based on item lengths
-    const legendWidth = this.legendOrder.reduce((acc, legendItem) => acc + size + calculateSpacing(legendItem), 0);
+    const legendWidth = this.modernMap?
+     this.legendOrder.reduce((acc, legendItem) => acc + size + calculateSpacing(legendItem), 0)
+     : this.oldLegendOrder.reduce((acc, legendItem) => acc + size + calculateSpacing(legendItem), 0);
     
     // Get the container width (you can use contentWidth if it's set)
     const containerWidth = this.contentWidth; 
@@ -434,6 +460,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   
     // Create a legend group for each item and position them inline
     let xPosition = 0;
+    if(this.modernMap){
     this.legendOrder.forEach((legendItem, index) => {
       const group = legend.append('g')
         .attr('class', 'legend-item')
@@ -460,6 +487,35 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
       // Update xPosition for the next legend item
       xPosition += size + spacing;
     });
+  }else{
+    this.oldLegendOrder.forEach((legendItem, index) => {
+      const group = legend.append('g')
+        .attr('class', 'legend-item')
+        .attr('transform', `translate(${xPosition}, 0)`);
+  
+      // Append rectangle for the legend color
+      group.append('rect')
+        .attr('width', size)
+        .attr('height', size)
+        .attr('fill', oldColorMap[legendItem as keyof typeof oldColorMap])
+        .attr('y', 5); // Adjust vertical positioning if necessary
+  
+      // Append text next to the rectangle
+      group.append('text')
+        .attr('x', size + 4)
+        .attr('y', size / 2 + 5) // Adjust to vertically align with rectangle
+        .attr('dy', '.35em')
+        .style('font-size', `${fontSize}px`)
+        .text(legendItem);
+  
+      // Calculate the spacing based on the text length
+      const spacing = calculateSpacing(legendItem);
+      
+      // Update xPosition for the next legend item
+      xPosition += size + spacing;
+    });
+
+  }
   }
   
   
@@ -469,10 +525,17 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   
     // Dynamically calculate the region order based on total exhibitions
     // Check if a cluster is selected, and if so, use the cluster's exhibitions for sorting
-    
-    const sortedRegionKeys = (this.selectedCluster && this.selectedCluster.length > 0 && this.selectedArtists && this.selectedArtists.length === 1)
+    let sortedRegionKeys:string[];
+    if(this.modernMap){
+    sortedRegionKeys = (this.selectedCluster && this.selectedCluster.length > 0 && this.selectedArtists && this.selectedArtists.length === 1)
     ? this.getSortedRegionKeys(this.clusterExhibitions) // Use cluster's exhibitions
     : this.getSortedRegionKeys(this.selectedExhibitions); // Fall back to the artist's exhibitions
+    }else{
+     sortedRegionKeys = (this.selectedCluster && this.selectedCluster.length > 0 && this.selectedArtists && this.selectedArtists.length === 1)
+      ? this.getOldSortedRegionKeys(this.clusterExhibitions) // Use cluster's exhibitions
+      : this.getOldSortedRegionKeys(this.selectedExhibitions); // Fall back to the artist's exhibitions
+
+    }
 
  
 
@@ -493,6 +556,16 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     const colorMap: { [key: string]: string } = {
       "North Europe": "#67D0C0",
       "Eastern Europe": "#59A3EE",
+      "Southern Europe": "#AF73E8",
+      "Western Europe": "#F06ACD",
+      "Others": "#FFDA75",
+      "\\N": "#c9ada7"
+    };
+
+    const oldColorMap: { [key: string]: string } = {
+      "North Europe": "#67D0C0",
+      "Eastern Europe": "#59A3EE",
+      "Central Europe": "#a6db77",
       "Southern Europe": "#AF73E8",
       "Western Europe": "#F06ACD",
       "Others": "#FFDA75",
@@ -528,16 +601,21 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     this.svg.selectAll('.domain').remove();
   
     // Group the data by year to draw multiple bars for each month under the same year
+
     this.svg.append('g')
       .selectAll('g')
       .data(stackedData)
       .enter().append('g')
       .attr('fill', (d: any) => {
         const region = d.key.split('-')[0];
-        return colorMap[region];
+        return this.modernMap ? colorMap[region]: oldColorMap[region];
       })
-      .attr('stroke', (d: any) => d3.color(colorMap[d.key.split('-')[0]])?.darker(1))
-      .attr('stroke-width', 0.8)
+      .attr('stroke', (d: any) => {
+        const region = d.key.split('-')[0];
+        // Use the correct color map based on the value of modernMap
+        const color = this.modernMap ? colorMap[region] : oldColorMap[region];
+        return d3.color(color)?.darker(1);
+      })      .attr('stroke-width', 0.8)
       .attr('opacity', (d: any) => d.key.includes('unselected') ? 0.2 : 1)
       .selectAll('rect')
       .data((d: any) => d)
@@ -675,6 +753,19 @@ private getSortedRegionKeys(exhibitions: Exhibition[]): string[] {
   return Object.keys(regionTotals).sort((a, b) => regionTotals[b] - regionTotals[a]);
 }
 
+private getOldSortedRegionKeys(exhibitions: Exhibition[]): string[] {
+  const regionTotals: { [key: string]: number } = {};
+
+  // Accumulate the total number of exhibitions for each region
+  exhibitions.forEach(exhibition => {
+    const region = exhibition.oldEuropeanRegion; // Default to "Others" if undefined
+    regionTotals[region] = (regionTotals[region] || 0) + 1;
+  });
+
+  // Sort regions by total exhibitions in descending order (largest to smallest)
+  return Object.keys(regionTotals).sort((a, b) => regionTotals[b] - regionTotals[a]);
+}
+
 
   private hasExhibitionValue(year: number): boolean {
     
@@ -703,28 +794,42 @@ private getSortedRegionKeys(exhibitions: Exhibition[]): string[] {
   
     const processExhibitions = (exhibitions: Exhibition[], isSelected: boolean) => {
       exhibitions.forEach(exhibition => {
+        const region :string= this.modernMap 
+          ? (exhibition.europeanRegion || "Others") 
+          : (exhibition.oldEuropeanRegion || "Others"); // Use oldEuropeanRegion if modernMap is false
+          
         const startDate = new Date(exhibition.start_date);
         const endDate = new Date(exhibition.end_date);
-        const region = exhibition.europeanRegion || "Others"; // Default to "Others" if undefined
-  
+
         // Loop through each month between the start and end dates
         const startMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
         const endMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
-  
+
         for (let d = startMonth; d <= endMonth; d.setMonth(d.getMonth() + 1)) {
           const monthKey = `${d.getFullYear()}-${d.getMonth() + 1}`; // E.g., "2023-5" for May 2023
-  
+
           if (!monthData[monthKey]) {
-            monthData[monthKey] = {
-              "North Europe": { selected: 0, unselected: 0 },
-              "Eastern Europe": { selected: 0, unselected: 0 },
-              "Southern Europe": { selected: 0, unselected: 0 },
-              "Western Europe": { selected: 0, unselected: 0 },
-              "Others": { selected: 0, unselected: 0 },
-              "\\N": { selected: 0, unselected: 0 }
-            };
+            // Initialize regions
+            monthData[monthKey] = this.modernMap
+              ? {
+                  "North Europe": { selected: 0, unselected: 0 },
+                  "Eastern Europe": { selected: 0, unselected: 0 },
+                  "Southern Europe": { selected: 0, unselected: 0 },
+                  "Western Europe": { selected: 0, unselected: 0 },
+                  "Others": { selected: 0, unselected: 0 },
+                  "\\N": { selected: 0, unselected: 0 }
+                }
+              : {
+                  "North Europe": { selected: 0, unselected: 0 },
+                  "Eastern Europe": { selected: 0, unselected: 0 },
+                  "Central Europe": { selected: 0, unselected: 0 },
+                  "Southern Europe": { selected: 0, unselected: 0 },
+                  "Western Europe": { selected: 0, unselected: 0 },
+                  "Others": { selected: 0, unselected: 0 },
+                  "\\N": { selected: 0, unselected: 0 }
+                };
           }
-  
+
           if (isSelected) {
             monthData[monthKey][region].selected++;
           } else {
@@ -733,10 +838,10 @@ private getSortedRegionKeys(exhibitions: Exhibition[]): string[] {
         }
       });
     };
-  
+
     processExhibitions(selectedExhibitions, true);
     processExhibitions(unselectedExhibitions, false);
-  
+
     // Transform the processed data into an array of MonthData
     return Object.keys(monthData).map(monthKey => {
       const regions = monthData[monthKey];
@@ -749,6 +854,7 @@ private getSortedRegionKeys(exhibitions: Exhibition[]): string[] {
       };
     }).sort((a, b) => a.year === b.year ? a.month - b.month : a.year - b.year);
   }
+
   
   
 }
