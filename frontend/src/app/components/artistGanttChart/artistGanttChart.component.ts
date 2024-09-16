@@ -201,6 +201,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
         .domain([paddedMinDate, paddedMaxDate]) // Use padded domain
         .range([0, this.contentWidth])
         .nice();
+
       
     const yScale = d3.scaleBand()
       .domain(timelineData.map((d, i) => i.toString()))
@@ -239,6 +240,27 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       .attr('stroke', 'lightgray')
       .attr('opacity', 0.6)
       .attr('stroke-dasharray', '3');
+
+
+      let height=0;
+        sortedClusters.forEach((cluster) => {
+          const clusterArtists = groupedByCluster.get(cluster)!;
+          height += halfExtraSpace;
+          height += clusterArtists.length * barHeight;
+          height += halfExtraSpace;
+        });
+
+        const year1905 = new Date(1905, 0); // January 1, 1905
+        const x1905 = xScale(year1905);
+    
+        // Append a vertical line to the SVG
+        this.svg.append('line')
+            .attr('x1', x1905)
+            .attr('x2', x1905)
+            .attr('y1', 0)
+            .attr('y2', height)
+            .attr('stroke', 'lightgray') // Set the color of the line
+            .attr('stroke-width', 2)
   
     yOffset = 0;
     const defs = this.svg.append('defs');
