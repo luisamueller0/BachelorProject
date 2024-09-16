@@ -3,6 +3,10 @@
     height: calc(100% - 0.95vw); /* Adjusting for the height of the heading */
     position: relative;
   }
+
+  .loading-container{
+    height: calc(100% - 0.95vw); /* Adjusting for the height of the heading */
+  }
   
   .exhibition-svg-container {
     width: 100%;

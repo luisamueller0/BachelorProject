@@ -27,6 +27,7 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
     private contentHeight: number = 0;
     private legendGroup: any;
     public year:number|null = null;
+    private modernMap:boolean = true;
 
     // Margins in vw and vh
     private margin = {
@@ -71,6 +72,11 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
       );
       this.subscriptions.add(this.selectionService.currentSelectedYear.subscribe((year) => {
         this.year = year;
+      }));
+
+      this.subscriptions.add(this.selectionService.currentSelectModern.subscribe((modernMap) => {
+        this.modernMap = modernMap;
+        this.tryInitialize();
       }));
     
       window.addEventListener('resize', this.onResize.bind(this));
@@ -179,7 +185,8 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
         amountParticipants: exhibition.exhibited_artists,
         country: exhibition.took_place_in_country,
         city: exhibition.city,
-        normalizedParticipants: 0
+        normalizedParticipants: 0,
+        oldCountry: exhibition.took_place_in_old_country
       }));
     
       const normalizedParticipants = this.normalizeLogarithmically(timelineData.map(d => d.amountParticipants));
@@ -195,7 +202,7 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
         d.normalizedParticipants = normalizedParticipants[i];
       });
     
-      const groupedByCountry = d3.group(timelineData, d => d.country);
+      const groupedByCountry = this.modernMap?d3.group(timelineData, d => d.country):d3.group(timelineData, d => d.oldCountry);
       const sortedCountries = Array.from(groupedByCountry.entries())
         .sort(([, a], [, b]) => d3.descending(a.length, b.length))
         .map(([country]) => country);
@@ -243,7 +250,7 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
         const exhibitions = groupedByCountry.get(country)!;
         exhibitions.sort((a, b) => d3.ascending(a.start, b.start));
     
-        const countryColor = this.artistService.getCountryColor(country, 0.1);
+        const countryColor = this.modernMap?this.artistService.getCountryColor(country, 0.1):this.artistService.getOldCountryColor(country, 0.1);
     
         this.svg.append('rect')
           .attr('x', 0)
@@ -258,7 +265,7 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
           .attr('y', yOffset + (exhibitions.length * barHeight / 2))
           .attr('dy', '.35em')
           .attr('text-anchor', 'end')
-          .attr('fill', this.artistService.getCountryColor(country))
+          .attr('fill', this.modernMap?this.artistService.getCountryColor(country):this.artistService.getOldCountryColor(country))
           .style('font-size', '0.5vw')
           .text(country);
     
@@ -280,11 +287,19 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
     
             const duration = Math.floor(exhibition.duration / (1000 * 60 * 60 * 24)) + 1;
     
+            if(this.modernMap){
             tooltip.style("display", "block")
               .style("left", `${event.pageX - 2 - tooltipWidth}px`)
               .style("top", `${event.pageY - 2 - tooltipHeight}px`)
               .style("color", "black")
               .html(`Name: ${exhibition.name}<br/> Duration: ${duration} <br/>in ${exhibition.city} (${exhibition.country}) with ${exhibition.amountParticipants} participants`);
+            }else{
+              tooltip.style("display", "block")
+              .style("left", `${event.pageX - 2 - tooltipWidth}px`)
+              .style("top", `${event.pageY - 2 - tooltipHeight}px`)
+              .style("color", "black")
+              .html(`Name: ${exhibition.name}<br/> Duration: ${duration} <br/>in ${exhibition.city} (${exhibition.oldCountry}) with ${exhibition.amountParticipants} participants`);
+            }
           };
     //              .html(`Name: ${exhibition.name}<br/>Start: ${removeTimeFromDateString(exhibition.startDate.toString())} <br/>End: ${removeTimeFromDateString(exhibition.endDate.toString())} <br/> Duration: ${duration} <br/>in ${exhibition.city} (${exhibition.country}) with ${exhibition.amountParticipants} participants`);
 
