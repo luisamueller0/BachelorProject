@@ -11,6 +11,8 @@ interface ExhibitionData {
   exhibited_artists:number;
   europeanRegion: string;
   city: string;
+  took_place_in_old_country: string;
+  oldEuropeanRegion:string;
 
   }
 
@@ -27,6 +29,8 @@ interface ExhibitionData {
     exhibited_artists:number;
     europeanRegion:string;
     city: string;
+    took_place_in_old_country: string;
+    oldEuropeanRegion:string;
     constructor(data: ExhibitionData) {
       this.id = data.id;
       this.start_date = new Date(data.start_date);
@@ -38,6 +42,8 @@ interface ExhibitionData {
       this.exhibited_artists = data.exhibited_artists;
       this.europeanRegion = data.europeanRegion;
       this.city = data.city;
+      this.took_place_in_old_country =data.took_place_in_old_country;
+      this.oldEuropeanRegion= data.oldEuropeanRegion;
     }
 
   
