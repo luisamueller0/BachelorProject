@@ -481,17 +481,16 @@ public oldCountryMap: { [key: string]: string } = {
   "\\N": "\\N",
   "BE": "Belgium",
   "GR": "Greece",
+  "VI": "Virgin Islands",
   "SN": "Sweden–Norway",
   "UA": "Ukraine",
   "ES": "Spain",
   "DK": "Denmark",
   "NSW": "New South Wales (UK)",
-  "IR": "Persia",
   "MX": "Mexico",
   "OT": "Ottoman Empire",
   "NEI": "Netherlands Indies",
   "MC": "Monaco",
-  "SR": "Dutch Guiana",
   "PT": "Portugal",
   "CA": "Canada",
   "QLD": "Queensland (UK)",
@@ -505,7 +504,6 @@ public oldCountryMap: { [key: string]: string } = {
   "DZ": "Algeria",
   "VIC": "Victoria (UK)",
   "NO": "Norway",
-  "ME": "Manchu Empire",
   "RS": "Serbia",
   "M?ori": "M?ori",
   "Unknown": "Unknown",
@@ -517,7 +515,7 @@ public oldCountryMap: { [key: string]: string } = {
   "BO": "Bolivia",
   "CC": "Cape Colony",
   "BU": "Bulgaria",
-  "FI": "French Indochina",
+  "FRI": "French Indochina",
   "TV": "Transvaal",
   "NA": "Namibia",
   "IJ": "Imperial Japan",
@@ -526,7 +524,7 @@ public oldCountryMap: { [key: string]: string } = {
   "EE": "Estonia",
   "RU": "Russia",
   "WA": "Western Australia (UK)",
-  "NZ": "New Zealand",
+
   "EG": "Egypt",
   "BUO": "Bunyoro",
   "HR": "Croatia",
@@ -556,8 +554,18 @@ public oldCountryMap: { [key: string]: string } = {
   "HK": "Hong Kong",
   "RAT": "Rattanakosin Kingdom",
   "GI": "Gibraltar",
-  "PF": "French Polynesia"
+  "PF": "French Polynesia",
+  "PER" : "Persia",
+  "MCH":"Manchu Empire", 
+  "NZ": "New Zealand",
+  "JUK":"British Colony Jamaica",
+  "CBE":"Belgian Colony Congo",
+  "CES":"Spanish Colony Cuba",
+  "MFR": "French Colony Martinique",
+  "BFR":"French Colony Saint-Barthélemy"
 };
+
+
 
 
 /* public oldCountryMap: { [key: string]: string } = {
@@ -599,16 +607,16 @@ public oldCountryMap: { [key: string]: string } = {
 
 public oldEuropeanRegions = {
   "North Europe": ["IS", "SN", "DK","UK"],
-  "Eastern Europe": ["RO", "SR", "BU", "RE"],
+  "Eastern Europe": ["RO", "BU", "RE", "BG"],
   "Southern Europe": ["ES", "PT", "IT", "GR", "MT", "OT","RS", "MO", "BH"],
-  "Western Europe": ["LU", "BE", "NL", "FR","BG"],
+  "Western Europe": ["LU", "BE", "NL", "FR"],
   "Central Europe": ["AH", "DE", "CH"],
   "Others": [
         "AF", "AG", "AN", "AR", "AU", "BA", "BO", "BR", "BRJ", "CA", "CC", "CEY", "CL", "CR", "CU", "CZ", "DO",
         "DZ", "EC", "EG", "HK", "ID", "IE", "IJ", "IN", "JP", "KH", "KH", "LU", "MX", "NEI", "NL", "NZ", "PE", "PY",
-        "QLD", "RAT", "SA", "SE", "SG", "SR", "SV", "TN", "TV", "UY", "VIC", "WA", "ZA","US", "NSW", "GT", "JM", "MA", 
+        "QLD", "RAT", "SA", "SE", "SG", "SV", "TN", "TV", "UY", "VIC", "WA", "ZA","US", "NSW", "GT", "JM", "MA", 
         "MC", "MU", "MY", "PH", "PR", "TH", "TR", "VN", "CD", "CW", "SY", "GY",
-        "M?ori","ME","FI","VE","GI", "NA","PF"
+        "M?ori","ME","FRI","VE","GI", "NA","PF","PER", "MCH","NZ", "JUK", "CBE", "VI", "MFR", "BFR"
     ],
     "\\N": ["\\N"]
 

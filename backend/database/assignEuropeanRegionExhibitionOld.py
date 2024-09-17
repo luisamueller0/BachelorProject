@@ -43,7 +43,7 @@ def determine_old_region(country_code):
             "DZ", "EC", "EG", "HK", "ID", "IE", "IJ", "IN", "JP", "KH", "LU", "MX", "NEI", "NL", "NZ", "PE", "PY",
             "QLD", "RAT", "SA", "SE", "SG", "SR", "SV", "TN", "TV", "UY", "VIC", "WA", "ZA", "US", "NSW", "GT", "JM", "MA",
             "MC", "MU", "MY", "PH", "PR", "TH", "TR", "VN", "CD", "CW", "SY", "GY",
-            "M?ori", "ME", "FI", "VE", "GI", "NA", "PF"
+            "M?ori", "ME", "FI", "VE", "GI", "NA", "PF", "PER", "MCH", "NZ", "JUK", "CBE", "CES", "VI", "MFR", "BFR", "FRI"
         ],
         "\\N": ["\\N"]
     }
