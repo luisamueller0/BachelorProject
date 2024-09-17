@@ -514,7 +514,7 @@ public oldCountryMap: { [key: string]: string } = {
   "PE": "Peru",
   "BO": "Bolivia",
   "CC": "Cape Colony",
-  "BU": "Bulgaria",
+  "BG": "Bulgaria",
   "FRI": "French Indochina",
   "TV": "Transvaal",
   "NA": "Namibia",
@@ -607,7 +607,7 @@ public oldCountryMap: { [key: string]: string } = {
 
 public oldEuropeanRegions = {
   "North Europe": ["IS", "SN", "DK","UK"],
-  "Eastern Europe": ["RO", "BU", "RE", "BG"],
+  "Eastern Europe": ["RO",  "RE", "BG"],
   "Southern Europe": ["ES", "PT", "IT", "GR", "MT", "OT","RS", "MO", "BH"],
   "Western Europe": ["LU", "BE", "NL", "FR"],
   "Central Europe": ["AH", "DE", "CH"],
