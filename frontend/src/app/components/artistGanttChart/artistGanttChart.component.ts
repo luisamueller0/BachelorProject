@@ -23,6 +23,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
   private contentWidth: number = 0;
   private contentHeight: number = 0;
   private legendGroup: any;
+  private modernMap: boolean = true;
 
   // Margins in vw and vh
   private margin = {
@@ -50,6 +51,12 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
     this.subscriptions.add(
       this.selectionService.currentArtists.subscribe((artists: Artist[] | null) => {
         this.selectedArtists = artists;
+        this.tryInitialize();
+      })
+    );
+    this.subscriptions.add(
+      this.selectionService.currentSelectModern.subscribe((modern:boolean) => {
+        this.modernMap=modern;
         this.tryInitialize();
       })
     );
@@ -161,6 +168,8 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
           duration: artist.birthyear !== -1 && artist.deathyear !== -1 ? new Date(artist.deathyear, 0).getTime() - new Date(artist.birthyear, 0).getTime() : null,
           birthCountry: artist.birthcountry,
           deathCountry: artist.deathcountry,
+          oldBirthCountry: artist.oldBirthCountry,
+          oldDeathCountry: artist.oldDeathCountry,
           birthyear: artist.birthyear,
           deathyear: artist.deathyear,
           birthplace: artist.birthplace,
@@ -175,6 +184,8 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
           duration: artist.birthyear !== -1 && artist.deathyear !== -1 ? new Date(artist.deathyear, 0).getTime() - new Date(artist.birthyear, 0).getTime() : null,
           birthCountry: artist.birthcountry,
           deathCountry: artist.deathcountry,
+          oldBirthCountry: artist.oldBirthCountry,
+          oldDeathCountry: artist.oldDeathCountry,
           birthyear: artist.birthyear,
           deathyear: artist.deathyear,
           birthplace: artist.birthplace,
@@ -282,8 +293,8 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
   
       clusterArtists.forEach((artist, index) => {
         const gradientId = `gradient-${artist.id}`;
-        const birthColor = this.artistService.getCountryColor(artist.birthCountry);
-        const deathColor = this.artistService.getCountryColor(artist.deathCountry);
+        const birthColor = this.modernMap?this.artistService.getCountryColor(artist.birthCountry): this.artistService.getOldCountryColor(artist.oldBirthCountry);
+        const deathColor = this.modernMap?this.artistService.getCountryColor(artist.deathCountry): this.artistService.getOldCountryColor(artist.oldDeathCountry);
   
         const gradient = defs.append('linearGradient')
           .attr('id', gradientId)
@@ -310,12 +321,21 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
           const tooltipNode = tooltip.node() as HTMLElement;
           const tooltipWidth = tooltipNode.offsetWidth;
   
+          if(this.modernMap){
           tooltip.style("display", "block")
             .style("left", `${event.pageX - 2- tooltipWidth}px`)
             .style("top", `${event.pageY + 2}px`)
             .style("color", "black")
             .html(`${artist.name}<br/>Born: ${birthyear} in ${artist.birthplace} (${artist.birthCountry})<br/>Died: ${deathyear} in ${artist.deathplace} (${artist.deathCountry})<br/>Age: ${age}`);
-        };
+        }
+      else{    tooltip.style("display", "block")
+        .style("left", `${event.pageX - 2- tooltipWidth}px`)
+        .style("top", `${event.pageY + 2}px`)
+        .style("color", "black")
+        .html(`${artist.name}<br/>Born: ${birthyear} in ${artist.birthplace} (${artist.oldBirthCountry})<br/>Died: ${deathyear} in ${artist.deathplace} (${artist.deathCountry})<br/>Age: ${age}`);
+    };
+
+      }
   
         const hideTooltip = () => {
           tooltip.style("display", "none");
@@ -361,7 +381,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
             .attr('fill', birthColor)
             .style('font-size', '0.38vw')
             .attr('opacity', opacity)
-            .text(artist.birthCountry);
+            .text(this.modernMap?artist.birthCountry:artist.oldBirthCountry);
   
           this.svg.append('text')
             .attr('x', xScale(artist.end) + 1)
@@ -371,7 +391,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
             .attr('fill', deathColor)
             .style('font-size', '0.38vw')
             .attr('opacity', opacity)
-            .text(artist.deathCountry);
+            .text(this.modernMap?artist.deathCountry:artist.oldDeathCountry);
         } else if (artist.start || artist.end) {
           const date = artist.start ? artist.start : artist.end!;
   

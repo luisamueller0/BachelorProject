@@ -30,7 +30,7 @@ country_mapping = {
     "AT": "AH", "HU": "AH", "SK": "AH", "SI": "AH", "CZ": "AH", "HR": "AH",
     "DE": "DE",
     "CH": "CH",
-    "BA": "BH"
+    "BA": "BA"
 }
 
 def get_all_artists(driver):
@@ -38,43 +38,65 @@ def get_all_artists(driver):
         result = session.run(
             """
             MATCH (a:Artist)
-            RETURN a.id AS artist_id, a.mostExhibitedInCountry AS mostExhibitedInCountry
+            RETURN a.id AS artist_id, a.birthCountry AS birthcountry, a.deathCountry AS deathcountry
             """
         )
         return [{
             "artist_id": record["artist_id"], 
-            "mostExhibitedInCountry": record["mostExhibitedInCountry"]
+            "birthcountry": record["birthcountry"],
+            "deathcountry": record["deathcountry"]
         } for record in result]
 
-def update_artist_with_old_exhibition_country(driver, artist_id, most_exhibited_in_old_country):
+def update_artist_with_old_birth_country(driver, artist_id, old_birth_country):
     with driver.session() as session:
         session.run(
             """
             MATCH (a:Artist {id: $artist_id})
-            SET a.mostExhibitedInOldCountry = $most_exhibited_in_old_country,
-                a.changedM= true
+            SET a.oldBirthCountry = $old_birth_country,
+                a.changedB = true
             """, {
                 "artist_id": artist_id,
-                "most_exhibited_in_old_country": most_exhibited_in_old_country
+                "old_birth_country": old_birth_country
+            } 
+        )
+
+def update_artist_with_old_death_country(driver, artist_id, old_death_country):
+    with driver.session() as session:
+        session.run(
+            """
+            MATCH (a:Artist {id: $artist_id})
+            SET a.oldDeathCountry = $old_death_country,
+                a.changedD = true
+            """, {
+                "artist_id": artist_id,
+                "old_death_country": old_death_country
             }
         )
 
 if __name__ == "__main__":
     try:
-        # Retrieve all artists
+        # Step 1: Retrieve all artists
         all_artists = get_all_artists(driver)
         
         for artist in all_artists:
             artist_id = artist['artist_id']
             try:
-                # Use the mapping to find old most exhibited country
-                most_exhibited_in_old_country = country_mapping.get(artist['mostExhibitedInCountry'])
+                # Use the mapping to find old birth and death countries
+                old_birth_country = country_mapping.get(artist['birthcountry'])
+                old_death_country = country_mapping.get(artist['deathcountry'])
                 
-                # Update the artist's old most exhibited country if a mapping was found
-                if most_exhibited_in_old_country:
-                    update_artist_with_old_exhibition_country(driver, artist_id, most_exhibited_in_old_country)
-                    print(f"Updated most exhibited country for artist with ID {artist_id}")
-                else:
+                # Update the artist's old birth country if a mapping was found
+                if old_birth_country:
+                    update_artist_with_old_birth_country(driver, artist_id, old_birth_country)
+                    print(f"Updated birth country for artist with ID {artist_id}")
+                
+                # Update the artist's old death country if a mapping was found
+                if old_death_country:
+                    update_artist_with_old_death_country(driver, artist_id, old_death_country)
+                    print(f"Updated death country for artist with ID {artist_id}")
+                
+                # If no mapping was found, skip
+                if not old_birth_country and not old_death_country:
                     print(f"No mapping found for artist ID {artist_id}, skipping update.")
             
             except Exception as e:
