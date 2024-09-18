@@ -129,7 +129,7 @@ public isLoadingRange: boolean = false;
     this.decisionService.changeDecisionSunburst(event.target.value);
   }
   
-
+ 
   onSizeChange(event: any) {
     this.decisionService.changeDecisionSize(event.target.value);
   }
