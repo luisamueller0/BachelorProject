@@ -479,7 +479,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         .text((d: any) => d.country)
         .style("font-size", `${textsize}px`)
         .style("font-weight", "bold")
-        .style("fill", "white");
+        .style("fill", "white")
     }
     private calculateNewPositionForTransition(artist: Artist, countryCentroids: any): { x: number, y: number } {
       let countryData: any;
@@ -2108,6 +2108,8 @@ const category = this.decisionService.getDecisionSunburst();
       .style("visibility", "hidden")
 
       
+
+      
     }
   
    
@@ -2168,8 +2170,26 @@ const category = this.decisionService.getDecisionSunburst();
     if(this.selectedNodes.length > 1){
 
       switch (category) {
+
+          case 'nationality':
+              prompt = `In around 5 sentences, discuss the connections, similarities, and differences among the following artists: ${artistNames.join(", ")} based on their national identities. How did their national backgrounds shape their artistic relationships and collaborations?`;
+              break;
+      
+          case 'birthcountry':
+              prompt = `In around 5 sentences, compare and contrast how the early environments of these artists: ${artistNames.join(", ")} influenced their artistic connections. What similarities or differences emerged in their work due to their birth countries?`;
+              break;
+      
+          case 'deathcountry':
+              prompt = `Briefly, in around 5 sentences, analyze how the final stages of life in their respective death countries impacted the connections and artistic evolution of these artists: ${artistNames.join(", ")}. What common or differing themes are observed?`;
+              break;
+      
+          case 'mostexhibited':
+              prompt = `In around 5 sentences, examine the influence of exhibition history on the connections among these artists: ${artistNames.join(", ")}. How did their most exhibited locations shape the common threads and distinctions in their careers?`;
+              break;
+      
+          
         
-        case 'nationality':
+     /*    case 'nationality':
           prompt = `In a 5 sentences, explain how the national identity of the following artists: ${artistNames.join(", ")} shaped their connections and careers over time. What were the key cultural or artistic links they shared?`;
           //prompt = "What do all of the following artists have in common: " + artistNames.join(", ") + ". In 5 sentences.";
           break;
@@ -2187,7 +2207,7 @@ const category = this.decisionService.getDecisionSunburst();
         case 'mostexhibited':
           prompt = `In a 5 sentences, summarize how exhibition history influenced the artistic evolution of the following artists: ${artistNames.join(", ")}. What were the most important shared experiences that shaped their careers?`;
           //prompt = "What do all of the following artists have in common considering their exhibition activity: " + artistNames.join(", ") + ". In 5 sentences.";
-          break;
+          break; */
   
         default:
             console.warn('Unknown category:', category);
@@ -2205,7 +2225,22 @@ const category = this.decisionService.getDecisionSunburst();
       const mostexhibited = selectedArtist.most_exhibited_in;
 
       switch (category) {
-          case 'nationality':
+        case 'nationality':
+          prompt = `In around 5 sentences, explain how ${artistNames.join(", ")}'s national background (${nationality}) influenced their connections with other artists. What similarities or differences arose from this influence?`;
+          break;
+
+      case 'birthcountry':
+          prompt = `Briefly, in around 5 sentences, discuss how the early environment in ${birthcountry} shaped ${artistNames.join(", ")}'s artistic connections. What common threads or unique differences were evident in their interactions with others?`;
+          break;
+
+      case 'deathcountry':
+          prompt = `In around 5 sentences, analyze how ${artistNames.join(", ")}'s later years in ${deathcountry} influenced their connections with other artists. What key similarities or contrasts emerged in their final works?`;
+          break;
+
+      case 'mostexhibited':
+          prompt = `Provide a short summary of around 5 sentences on how exhibiting mainly in ${mostexhibited} influenced ${artistNames.join(", ")}'s artistic connections. What common influences or distinctions were evident in their work?`;
+          break;
+       /*    case 'nationality':
             prompt = `Explain in 5 sentences how the national background of ${artistNames.join(", ")} from ${nationality} influenced their artistic style and career. Focus on the most important aspects.`;
               break;
 
@@ -2220,7 +2255,7 @@ const category = this.decisionService.getDecisionSunburst();
           case 'mostexhibited':
             prompt = `Provide a short summary of 5 sentences of how exhibiting mainly in ${mostexhibited} influenced the career of ${artistNames.join(", ")}. Focus on the key effects on their style and legacy.`;
               break;
-
+ */
           default:
               console.warn('Unknown category:', category);
               break;
