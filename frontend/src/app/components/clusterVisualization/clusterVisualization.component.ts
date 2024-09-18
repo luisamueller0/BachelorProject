@@ -14,6 +14,8 @@ interface InterCommunityEdge extends d3.SimulationLinkDatum<ClusterNode> {
   target: number | ClusterNode;
   sharedExhibitionMinArtworks: number;
 }
+
+
 @Component({
   selector: 'app-clusterVisualization',
   templateUrl: './clusterVisualization.component.html',
@@ -117,6 +119,13 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
 
   
   
+
+    private currentSelection: {
+  type: 'artist' | 'cluster' | 'none';
+  artistNode?: ArtistNode;
+  clusterNode?: ClusterNode;
+} = { type: 'none' };
+
   
   
   
@@ -161,96 +170,96 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       window.addEventListener('resize', this.onResize.bind(this));
     }
   
-    private updateMap(category:string): void {
-
+    private updateMap(category: string): void {
       const countries: string[] = [];
-
-      if(this.modernMap){
-   
-      // Loop through selectedArtists and populate countries array based on the selected category
-      switch (category) {
-          case 'nationality':
-              this.allArtists.forEach(artist => {
-                  if (artist.nationality && !countries.includes(artist.nationality)) {
-                      countries.push(artist.nationality);
-                  }
-              });
-              break;
-      
-          case 'birthcountry':
-              this.allArtists.forEach(artist => {
-                  if (artist.birthcountry && !countries.includes(artist.birthcountry)) {
-                      countries.push(artist.birthcountry);
-                  }
-              });
-              break;
-      
-          case 'deathcountry':
-              this.allArtists.forEach(artist => {
-                  if (artist.deathcountry && !countries.includes(artist.deathcountry)) {
-                      countries.push(artist.deathcountry);
-                  }
-              });
-              break;
-      
-          case 'mostexhibited':
-              this.allArtists.forEach(artist => {
-                  if (artist.most_exhibited_in && !countries.includes(artist.most_exhibited_in)) {
-                      countries.push(artist.most_exhibited_in);
-                  }
-              });
-              break;
-      
-          default:
-              console.warn('Unknown category:', category);
-              break;
+  
+      let artistsToProcess;
+      if(this.selectedNode){
+        artistsToProcess = [this.selectedNode[1]];
+      } else if(this.selectedNodes && this.selectedNodes.length > 0 ){
+        artistsToProcess=this.selectedNodes.map(([node, _]) => (d3.select(node).datum() as ArtistNode).artist)
+      }else if(this.selectedClusterNode){
+        artistsToProcess = this.selectedClusterNode.artists;
+      }else{
+        artistsToProcess = this.allArtists;
+      }
+  
+  
+      if (this.modernMap) {
+          // Process artists based on modernMap
+          switch (category) {
+              case 'nationality':
+                  artistsToProcess.forEach((artist:Artist) => {
+                      if (artist.nationality && !countries.includes(artist.nationality)) {
+                          countries.push(artist.nationality);
+                      }
+                  });
+                  break;
+  
+              case 'birthcountry':
+                  artistsToProcess.forEach((artist:Artist) => {
+                      if (artist.birthcountry && !countries.includes(artist.birthcountry)) {
+                          countries.push(artist.birthcountry);
+                      }
+                  });
+                  break;
+  
+              case 'deathcountry':
+                  artistsToProcess.forEach((artist:Artist) => {
+                      if (artist.deathcountry && !countries.includes(artist.deathcountry)) {
+                          countries.push(artist.deathcountry);
+                      }
+                  });
+                  break;
+  
+              case 'mostexhibited':
+                  artistsToProcess.forEach((artist:Artist) => {
+                      if (artist.most_exhibited_in && !countries.includes(artist.most_exhibited_in)) {
+                          countries.push(artist.most_exhibited_in);
+                      }
+                  });
+                  break;
+  
+              default:
+                  console.warn('Unknown category:', category);
+                  break;
           }
           this.selectionService.selectCountries(countries);
-
-        }else{
-
-          
-      // Loop through selectedArtists and populate countries array based on the selected category
-      switch (category) {
-       
-        case 'birthcountry':
-            this.allArtists.forEach(artist => {
-                if (artist.oldBirthCountry && !countries.includes(artist.oldBirthCountry)) {
-                    countries.push(artist.oldBirthCountry);
-                }
-            });
-            break;
-    
-        case 'deathcountry':
-            this.allArtists.forEach(artist => {
-                if (artist.oldDeathCountry && !countries.includes(artist.oldDeathCountry)) {
-                    countries.push(artist.oldDeathCountry);
-                }
-            });
-            break;
-    
-        case 'mostexhibited':
-            this.allArtists.forEach(artist => {
-                if (artist.mostExhibitedInOldCountry && !countries.includes(artist.mostExhibitedInOldCountry)) {
-                    countries.push(artist.mostExhibitedInOldCountry);
-                }
-            });
-            break;
-    
-        default:
-            console.warn('Unknown category:', category);
-            break;
-        }
-        this.selectionService.selectOldCountries(countries);
-
-
-
-        }
-         // Pass the populated countries array to the selectionService
-      
-
-    };
-
+      } else {
+          // Process artists based on old map categories
+          switch (category) {
+              case 'birthcountry':
+                  artistsToProcess.forEach((artist:Artist) => {
+                      if (artist.oldBirthCountry && !countries.includes(artist.oldBirthCountry)) {
+                          countries.push(artist.oldBirthCountry);
+                      }
+                  });
+                  break;
+  
+              case 'deathcountry':
+                  artistsToProcess.forEach((artist:Artist) => {
+                      if (artist.oldDeathCountry && !countries.includes(artist.oldDeathCountry)) {
+                          countries.push(artist.oldDeathCountry);
+                      }
+                  });
+                  break;
+  
+              case 'mostexhibited':
+                  artistsToProcess.forEach((artist:Artist) => {
+                      if (artist.mostExhibitedInOldCountry && !countries.includes(artist.mostExhibitedInOldCountry)) {
+                          countries.push(artist.mostExhibitedInOldCountry);
+                      }
+                  });
+                  break;
+  
+              default:
+                  console.warn('Unknown category:', category);
+                  break;
+          }
+          this.selectionService.selectOldCountries(countries);
+      }
+  }
+  
   
       // Method to close the notification
   closeNotification(): void {
@@ -590,106 +599,111 @@ const category = this.decisionService.getDecisionSunburst();
   }
   
   
-    
-    
-  private onClusterClick(clusterNode: ClusterNode): void {
-    // If an artist node was clicked, do nothing
-   
-  
-    const type = this.decisionService.getDecisionSunburst();
+  private updateClusterSelection(clusterNode: ClusterNode | null): void {
+    // Deselect the current cluster if clusterNode is null
+    if (!clusterNode) {
+        this.selectedClusterNode = null;
+        this.selectionService.selectArtists(null);
+        this.selectionService.selectCluster(this.allArtists);
+        this.selectionService.selectClusterEdges([]);
+        this.selectionService.selectExhibitions(null);
+        this.selectionService.selectFocusedCluster(null);
+
+        const category = this.decisionService.getDecisionSunburst();
+        if (this.modernMap) {
+            this.selectionService.selectCountries(this.allCountriesByCategory[category]);
+        } else {
+            this.selectionService.selectOldCountries(this.allOldCountriesByCategory[category]);
+        }
+
+        // Restore opacity of all clusters
+        this.g.selectAll('.cluster').style('opacity', '1');
+
+        this.g.selectAll('path').style('opacity', '1');
+        return;
+    }
+
+    // If a clusterNode is provided, select it
+    this.selectedClusterNode = clusterNode;
+
     const selectedArtists = clusterNode.artists;
     const selectedEdges = this.intraCommunityEdges[clusterNode.clusterId];
-  
-    // If the same cluster is clicked again, deselect it
-    if (this.selectedClusterNode && this.selectedClusterNode.clusterId === clusterNode.clusterId) {
-      // Reset the selected cluster node's border
-      this.g.selectAll(`.cluster-${this.selectedClusterNode.clusterId} path`).style('stroke', 'none');
-  
-      // Clear the selection
-      this.selectedClusterNode = null;
-      this.selectionService.selectArtists(null);
-      this.selectionService.selectCluster(this.allArtists);
-      this.selectionService.selectClusterEdges([]);
-      const category = this.decisionService.getDecisionSunburst();  
-      this.selectionService.selectCountries(this.allCountriesByCategory[category]);
-      this.selectionService.selectExhibitions(null);
-      this.selectionService.selectFocusedCluster(null);
-  
-      // Reset node selection as well
-      this.resetNode();
-  
-      // Restore opacity of all clusters
-      this.g.selectAll('.cluster').style('opacity', '1');
-    } else {
-      // Reset the previous cluster node's border if there is one
-  
-      const size = 0.5 * clusterNode.innerRadius / 100;
-  
-      // Set the new cluster node as selected and change its border
-      this.selectedClusterNode = clusterNode;
-      // Copy the list of artist names to the clipboard
-      const artistNames = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname}`).join('\n');
-      navigator.clipboard.writeText(artistNames);
-  
-      // Select the new cluster node
-      this.selectionService.selectArtists(selectedArtists);
-      this.selectionService.selectCluster(selectedArtists);
-      this.selectionService.selectClusterEdges(selectedEdges);
-      const countries: string[] = [];
-      if(this.modernMap){
-      selectedArtists.forEach(artist => {
-        switch (type) {
-          case 'nationality':
-            if (!countries.includes(artist.nationality)) countries.push(artist.nationality);
-            break;
-          case 'birthcountry':
-            if (!countries.includes(artist.birthcountry)) countries.push(artist.birthcountry);
-            break;
-          case 'deathcountry':
-            if (!countries.includes(artist.deathcountry)) countries.push(artist.deathcountry);
-            break;
-          case 'mostexhibited':
-            if (!countries.includes(artist.most_exhibited_in)) countries.push(artist.most_exhibited_in);
-            break;
-        }
-      });
-    
-      this.selectionService.selectCountries(countries);
-    }
-      else{
+    this.selectionService.selectArtists(selectedArtists);
+    this.selectionService.selectCluster(selectedArtists);
+    this.selectionService.selectClusterEdges(selectedEdges);
+    this.selectionService.selectFocusedCluster(selectedArtists);
+
+    const countries: string[] = [];
+    const category = this.decisionService.getDecisionSunburst();
+
+    if (this.modernMap) {
         selectedArtists.forEach(artist => {
-          switch (type) {
-           
-            case 'birthcountry':
-              if (!countries.includes(artist.oldBirthCountry)) countries.push(artist.oldBirthCountry);
-              break;
-            case 'deathcountry':
-              if (!countries.includes(artist.oldDeathCountry)) countries.push(artist.oldDeathCountry);
-              break;
-            case 'mostexhibited':
-              if (!countries.includes(artist.mostExhibitedInOldCountry)) countries.push(artist.mostExhibitedInOldCountry);
-              break;
-          }
+            switch (category) {
+                case 'nationality':
+                    if (!countries.includes(artist.nationality)) countries.push(artist.nationality);
+                    break;
+                case 'birthcountry':
+                    if (!countries.includes(artist.birthcountry)) countries.push(artist.birthcountry);
+                    break;
+                case 'deathcountry':
+                    if (!countries.includes(artist.deathcountry)) countries.push(artist.deathcountry);
+                    break;
+                case 'mostexhibited':
+                    if (!countries.includes(artist.most_exhibited_in)) countries.push(artist.most_exhibited_in);
+                    break;
+            }
+        });
+        this.selectionService.selectCountries(countries);
+    } else {
+        selectedArtists.forEach(artist => {
+            switch (category) {
+                case 'birthcountry':
+                    if (!countries.includes(artist.oldBirthCountry)) countries.push(artist.oldBirthCountry);
+                    break;
+                case 'deathcountry':
+                    if (!countries.includes(artist.oldDeathCountry)) countries.push(artist.oldDeathCountry);
+                    break;
+                case 'mostexhibited':
+                    if (!countries.includes(artist.mostExhibitedInOldCountry)) countries.push(artist.mostExhibitedInOldCountry);
+                    break;
+            }
         });
         this.selectionService.selectOldCountries(countries);
-
-      }
-      this.selectionService.selectFocusedCluster(selectedArtists);
-  
-      // Reduce opacity of all clusters
-      this.g.selectAll('.cluster').style('opacity', '0.2');
-      // Set opacity of selected cluster to 1
-      this.g.selectAll(`.cluster-${clusterNode.clusterId}`).style('opacity', '1');
     }
+
+    // Reduce opacity of all clusters
+    this.g.selectAll('.cluster').style('opacity', '0.2');
+    // Set opacity of selected cluster to 1
+    this.g.selectAll(`.cluster-${clusterNode.clusterId}`).style('opacity', '1');
+}
+
+    
+private onClusterClick(clusterNode: ClusterNode): void {
+  // Check if a node was selected prior to this cluster click
+  if (this.selectedNode) {
+      // Reset node selection if any node was selected before clicking on the cluster
+      this.resetNodeSelection();
+      this.updateClusterSelection(null);
+      this.selectedNode = null; // Clear the selectedNode to ensure it's reset
   }
+
+  // If the same cluster is clicked again, deselect it
+  if (this.selectedClusterNode && this.selectedClusterNode.clusterId === clusterNode.clusterId) {
+      this.updateClusterSelection(null);
+  } else {
+    this.updateClusterSelection(null);
+      // Copy the list of artist names to the clipboard
+      const artistNames = clusterNode.artists.map(artist => `${artist.firstname} ${artist.lastname}`).join('\n');
+      navigator.clipboard.writeText(artistNames);
+
+      // Update the cluster selection
+      this.updateClusterSelection(clusterNode);
+  }
+}
+
+
   
-  
-  
-  
-    
-  
-  
-    
+
     private   updateCluster(k: number) {
       if(this.firstK === -1){
         this.firstK = this.firstK + 1;
@@ -839,7 +853,7 @@ const category = this.decisionService.getDecisionSunburst();
           .attr('in', 'SourceGraphic');
       }
     
-      this.isNodeClick = true;
+     this.currentSelection= { type: 'artist', artistNode };
     
       const circle = d3.selectAll(".artist-node")
         .filter((d: any) => d.id === artistNode.id)
@@ -850,37 +864,75 @@ const category = this.decisionService.getDecisionSunburst();
     
       // If Ctrl/Cmd is not pressed, reset previously selected nodes
       if (isCtrlPressed) {
-        console.log('clicked', this.selectedNodes);
-        this.selectMultipleNodes(artistNode, circle);
-        this.svg.select('')
-    
-        // Dynamically adjust the shadow based on the radius of the selected node
-        const radius = parseFloat(d3.select(circle).attr('r')); // Get the radius of the node
-        filter.select('feDropShadow')
-          .attr('stdDeviation', Math.max(0.5, radius / 3)); // Adjust stdDeviation relative to the node size
-    
-        // Apply the filter to the selected node
-        d3.select(circle).style("filter", "url(#shadow)");
+        this.handleMultiNodeSelection(artistNode, circle,filter);
       } else {
-        // If a node without Ctrl is clicked, focus is only on that node
-        if (this.selectedNodes.length !== 0) {
-          this.resetNodeSelection();
-          this.selectedNodes = [];
-        }
-    
-        //If the same circle got selected
-        if (this.selectedNode && this.selectedNode[0] === circle) {
-          // reset Node
+        this.handleSingleNodeSelection(artistNode, circle,filter);
+      }
+    }
 
-          this.resetNodeSelection();
-          this.g.selectAll('.cluster').style('opacity', '0.2');
-          
-          const clusterNode = this.artistClusterMap.get(artistNode.id);
-          if (clusterNode) {
-            this.g.selectAll(`.cluster-${clusterNode.clusterId}`).style('opacity', '1');
-          }
-          
-        //If a different node is selected
+    private handleMultiNodeSelection(artistNode: ArtistNode, circle: SVGCircleElement, filter:any) {
+      console.log('clicked', this.selectedNodes);
+      
+      this.selectMultipleNodes(artistNode, circle);
+      this.applyStyleToNode(circle,artistNode, filter);
+      this.svg.select('')
+  
+      // Dynamically adjust the shadow based on the radius of the selected node
+      const radius = parseFloat(d3.select(circle).attr('r')); // Get the radius of the node
+      filter.select('feDropShadow')
+        .attr('stdDeviation', Math.max(0.5, radius / 3)); // Adjust stdDeviation relative to the node size
+  
+      // Apply the filter to the selected node
+      d3.select(circle).style("filter", "url(#shadow)");
+    }
+    
+
+    private applyStyleToNode(circle: SVGCircleElement, artistNode: ArtistNode, filter: any) {
+
+      const artist:Artist = artistNode.artist;
+
+      // Dynamically adjust the shadow based on the radius of the selected node
+      const radius = parseFloat(d3.select(circle).attr('r')); // Get the radius of the node
+      filter.select('feDropShadow')
+        .attr('stdDeviation', Math.max(0.5, radius / 3)); // Adjust stdDeviation relative to the node size
+      // Apply the filter to the selected node
+      d3.select(circle).style("filter", "url(#shadow)");
+
+
+      const width = 0.07 * this.innerRadius / 100;
+      circle.style.filter = 'url(#shadow)';
+      circle.style.strokeWidth= `${width}vw`;
+      circle.style.stroke =  'black';
+    };
+
+
+
+    private handleSingleNodeSelection(artistNode: ArtistNode, circle: SVGCircleElement, filter:any) {
+      // If a node without Ctrl is clicked, focus is only on that node
+        if (this.selectedNodes.length !== 0) {
+        this.resetNodeSelection();
+        this.selectedNodes = [];
+      }
+  
+      //If the same circle got selected
+      if (this.selectedNode && this.selectedNode[0] === circle) {
+
+        const clusterNode = this.artistClusterMap.get(artistNode.id);
+
+         // If the node belongs to a cluster, update the selection
+         if (clusterNode) {
+           this.selectedClusterNode = clusterNode;
+             this.updateClusterSelection(clusterNode);
+         } else {
+             // If no cluster was found, clear the selected artists
+             this.updateClusterSelection(null);
+         }
+
+
+        this.resetNodeSelection();
+
+        
+      //If a different node is selected
         } else {
           this.resetNodeSelection(); // Reset any previously selected node
     
@@ -888,44 +940,12 @@ const category = this.decisionService.getDecisionSunburst();
           if (clusterNode) {
             this.highlightInterClusterConnections(artistNode.id, clusterNode?.clusterId);
           }
-    
+
+          this.applyStyleToNode(circle,artistNode, filter);
           this.selectNode(artistNode, circle);
     
-          // Dynamically adjust the shadow based on the radius of the selected node
-          const radius = parseFloat(d3.select(circle).attr('r')); // Get the radius of the node
-          filter.select('feDropShadow')
-            .attr('stdDeviation', Math.max(0.5, radius / 3)); // Adjust stdDeviation relative to the node size
-    
-          // Apply the filter to the selected node
-          d3.select(circle).style("filter", "url(#shadow)");
         }
       }
-    }
-
-
-    private resetNodeStyle(): void {
-      // Check if there's a previously selected node
-      if (this.selectedNode) {
-          const previousNode = this.selectedNode[0];
-          const previousArtist = this.selectedNode[1];
-const category = this.decisionService.getDecisionSunburst();
-  const color = this.getArtistColorBasedOnCategory(previousArtist, category);
-  
-          // Reset node visual style (remove filters, reset fill color, etc.)
-          d3.select(previousNode)
-              .style("fill", color)
-              .style("filter", "none");
-  
-          // Reset stroke and border styles
-          d3.select(previousNode)
-              .style("stroke-width", "0px")
-              .style("stroke", "none");
-  
-          // Clear the selectedNode variable as no node is selected now
-          this.selectedNode = null;
-      }
-  }
-    
     private selectMultipleNodes(artistNode: ArtistNode, circle: SVGCircleElement) {
       const clusterIndex = this.artistClusterMap.get(artistNode.id)?.clusterId;
 
@@ -1193,202 +1213,53 @@ if(this.modernMap){
       this.g.selectAll(`.cluster-${clusterId} path`).style('opacity', '1');
   }
   
-  
-  
-  private resetNodeSelection() {
-   
-    // Check if there's a previously selected node
-    if (this.selectedNode) {
-      // Retrieve the DOM element of the previously selected node and its original color
-      const previousNode = this.selectedNode[0];
-     
+  private resetStyleOfNode(circle: SVGCircleElement, artist: Artist) {
+         
       // Reset the stroke width and stroke color of the previously selected node
-      d3.select(previousNode)
+      d3.select(circle)
         .style("stroke-width", "0px") // Remove any border/stroke
         .style("stroke", "none");     // Ensure no stroke color is applied
-  
-const previousArtist = this.selectedNode[1];
-const category = this.decisionService.getDecisionSunburst();
-  const color = this.getArtistColorBasedOnCategory(previousArtist, category);
+        
+      const category = this.decisionService.getDecisionSunburst();
+      const color = this.getArtistColorBasedOnCategory(artist, category);
       // Reset the fill color and remove any filters applied to the node
-      d3.select(previousNode)
+      d3.select(circle)
         .style("fill", color)  // Restore the original color
         .style("filter", "none");      // Remove any shadow or other filter effects
-  
-      // Retrieve the bound data (ArtistNode) from the DOM element using D3's datum function
-      const previousArtistNodeData = d3.select(previousNode).datum() as ArtistNode;
-      const previousArtistNodeId = previousArtistNodeData.id;
-  
-      // Get the cluster information for the previously selected node using its ID
-      const clusterNode = this.artistClusterMap.get(previousArtistNodeId);
-  
-     
-  
-      // If the node belongs to a cluster, select the artists within that cluster, if circle was deselected
-      if (clusterNode) {
-        this.g.selectAll('.cluster').style('opacity', '0.2');
-        // Gather and select the countries related to the artists in the cluster
-        const countries: string[] = [];
-        const category = this.decisionService.getDecisionSunburst();
-        const selectedArtists = clusterNode.artists;
-        // Loop through selectedArtists and populate countries array based on the selected category
-        if(this.modernMap){
-        switch (category) {
-            case 'nationality':
-                selectedArtists.forEach(artist => {
-                    if (artist.nationality && !countries.includes(artist.nationality)) {
-                        countries.push(artist.nationality);
-                    }
-                });
-                break;
+  }
 
-            case 'birthcountry':
-                selectedArtists.forEach(artist => {
-                    if (artist.birthcountry && !countries.includes(artist.birthcountry)) {
-                        countries.push(artist.birthcountry);
-                    }
-                });
-                break;
-
-            case 'deathcountry':
-                selectedArtists.forEach(artist => {
-                    if (artist.deathcountry && !countries.includes(artist.deathcountry)) {
-                        countries.push(artist.deathcountry);
-                    }
-                });
-                break;
-
-            case 'mostexhibited':
-                selectedArtists.forEach(artist => {
-                    if (artist.most_exhibited_in && !countries.includes(artist.most_exhibited_in)) {
-                        countries.push(artist.most_exhibited_in);
-                    }
-                });
-                break;
-
-            default:
-                console.warn('Unknown category:', category);
-                break;
-            }
-
-            this.selectionService.selectCountries(countries);
-
-          
-          }else{
-              switch (category) {
-            
-                case 'birthcountry':
-                    selectedArtists.forEach(artist => {
-                        if (artist.oldBirthCountry && !countries.includes(artist.oldBirthCountry)) {
-                            countries.push(artist.oldBirthCountry);
-                        }
-                    });
-                    break;
-    
-                case 'deathcountry':
-                    selectedArtists.forEach(artist => {
-                        if (artist.oldDeathCountry && !countries.includes(artist.oldDeathCountry)) {
-                            countries.push(artist.oldDeathCountry);
-                        }
-                    });
-                    break;
-    
-                case 'mostexhibited':
-                    selectedArtists.forEach(artist => {
-                        if (artist.mostExhibitedInOldCountry && !countries.includes(artist.mostExhibitedInOldCountry)) {
-                            countries.push(artist.mostExhibitedInOldCountry);
-                        }
-                    });
-                    break;
-    
-                default:
-                    console.warn('Unknown category:', category);
-                    break;
-
-            }
-            this.selectionService.selectOldCountries(countries);
-
-          }
-
-        // Pass the populated countries array to the selectionService
-        this.g.selectAll(`.cluster-${clusterNode.clusterId}`).style('opacity', '1');
-        this.selectionService.selectArtists(clusterNode.artists);
-      } else {
-        // If no cluster was found, clear the selected artists
-        this.selectionService.selectArtists(null);
-      }
+  private resetNodeSelection(): void {
+    // Check if there's a previously selected node
+    if (this.selectedNode) {
+        const previousNode = this.selectedNode[0];
+        const previousArtist = this.selectedNode[1];
+        this.resetStyleOfNode(previousNode, previousArtist);
     } else {
       // If no node was selected previously, clear the selected artists
-      this.selectionService.selectArtists(null);
-    }
-  
+      this.updateClusterSelection(null);
+  }
     // Reset styles for all artist nodes and edges across categories
     const threshold = 0.4; // Threshold for deciding which edges are visible
-  
+
     // Reset the stroke color and opacity for all artist edges
     this.g.selectAll(".artist-edge")
-      .style('stroke', (d: any) => 
-        d.sharedExhibitionMinArtworks >= threshold ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none'
-      ) 
-      .style('opacity', 1); 
-  
+        .style('stroke', (d: any) =>
+            d.sharedExhibitionMinArtworks >= threshold ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none'
+        )
+        .style('opacity', 1);
 
     this.g.selectAll(".artist-node")
-      .style('opacity', '1')   
-      .style('filter', 'none')
-  
-    this.g.selectAll(".artist-node")
-      .style("stroke-width", "0px") 
-      .style("stroke", "none");  
+        .style('opacity', '1')
+        .style('filter', 'none')
+        .style("stroke-width", "0px")
+        .style("stroke", "none");
 
     // Clear the selectedNode variable as no node is selected now
     this.selectedNode = null;
-  
-    // Reset the selection to include all artists and clear any selected cluster or edges
-    this.selectionService.selectCluster(this.allArtists); // Select all artists
-    this.selectionService.selectClusterEdges([]);         // Clear selected edges
-    this.selectionService.selectFocusArtist(null);        // Clear the focused artist
-  
-    // Ensure that no specific countries are selected when resetting node selection
-    const category = this.decisionService.getDecisionSunburst();  
-    if(this.modernMap){
-      this.selectionService.selectCountries(this.allCountriesByCategory[category]);
+}
 
-    }
-  else{
-    this.selectionService.selectOldCountries(this.allOldCountriesByCategory[category]);
+  
 
-  }
-    // Restore full opacity to all clusters
-    this.g.selectAll('.cluster').style('opacity', '1');
-    this.g.selectAll(".artist-node")
-    .style('opacity', 1);
-    this.g.selectAll(".artist-edge")
-
-    .style('opacity', 1);
-    this.g.selectAll(`path`)
-    .style('opacity', 1);
-  }
-  
-  
-  
-  
-  private highlightYAxisLabel(artistNode: ArtistNode): void {
-      const clusterNode = this.artistClusterMap.get(artistNode.id);
-      if (clusterNode) {
-          const clusterId = clusterNode.clusterId;
-  
-          // Remove previous highlights
-          d3.selectAll('.y-axis-label').classed('highlighted', false);
-  
-          // Highlight the corresponding y-axis label
-          d3.select(`.y-axis-label-${clusterId}`).classed('highlighted', true);
-      }
-  }
-  
-  
-  
-    
   
   private selectNode(artistNode: ArtistNode, circle: SVGCircleElement) {
     // Reset previously selected node and restore all edges and nodes to default styles
@@ -1517,7 +1388,6 @@ const category = this.decisionService.getDecisionSunburst();
       }
     
   
-  
   private getArtistColorBasedOnCategory(artist: Artist, category: string): string {
     let countryCode: string;
     let originalColor;
@@ -1583,12 +1453,7 @@ const category = this.decisionService.getDecisionSunburst();
             .range([lighterColor?.toString() || baseColor, baseColor]);
     }
   }
-  
-  
-  
-  
-    
-    private focusHandler(clusterNode:ClusterNode){
+   private focusHandler(clusterNode:ClusterNode){
      
       const selectedArtists = clusterNode.artists;
       const selectedEdges = this.intraCommunityEdges[clusterNode.clusterId];
@@ -1607,6 +1472,12 @@ const category = this.decisionService.getDecisionSunburst();
         
       
     }
+
+
+
+
+
+
     private createChart(): void {
       
       // Fetch data from backend

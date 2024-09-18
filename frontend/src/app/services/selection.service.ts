@@ -78,10 +78,11 @@ switchSelectModern(modern:boolean){
 
 
   selectCountries(countries:string[]){
+    console.log('HALLO:', countries);
     this.selectedCountries.next(countries);
   }
   selectOldCountries(countries: string[]) {
-    console.log('selectOldCountries called with:', countries);
+    console.log('HALLO OLD:', countries);
     this.selectedOldCountries.next(countries);
   }
   
