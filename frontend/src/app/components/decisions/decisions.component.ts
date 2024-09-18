@@ -98,7 +98,7 @@ public isLoadingRange: boolean = false;
   rangeChanged = false; // Track if the range was changed
   kChanged = false; // Track if the K value was changed
 
-  selectedSunburst: string = '';
+  selectedSunburst: string = 'birthcountry';
   SunburstOptions: string[] = ['nationality', 'birthcountry', 'deathcountry', 'mostexhibited'];
   selectedSize: string = '';
   SizeOptions: string[] = [

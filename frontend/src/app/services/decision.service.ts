@@ -7,7 +7,7 @@ import exhibited_with from '../models/exhibited_with';
   providedIn: 'root'
 })
 export class DecisionService {
-  private sunburstSource = new BehaviorSubject<string>('nationality');
+  private sunburstSource = new BehaviorSubject<string>('birthcountry');
   private orderSource = new BehaviorSubject<string>('');
   private sizeSource = new BehaviorSubject<string>('Amount of Exhibitions');
   private thicknessSource = new BehaviorSubject<string>('');
