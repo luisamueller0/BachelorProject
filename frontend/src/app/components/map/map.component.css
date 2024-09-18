@@ -6,6 +6,12 @@
     align-items: center;
     position:relative;
   }
+
+  /* Greyed out slider when disabled */
+.slider.disabled {
+  background-color: grey;
+  cursor: not-allowed;
+}
   
 
   /* Style for the toggle container */

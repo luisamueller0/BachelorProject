@@ -5,6 +5,7 @@ import { Subscription, fromEvent } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 import { SelectionService } from '../../services/selection.service';
 import { ArtistService } from '../../services/artist.service';
+import { DecisionService } from '../../services/decision.service';
 
 @Component({
   selector: 'app-map',
@@ -38,10 +39,15 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
   private oldCountryMap: { [key: string]: string } = this.artistService.oldCountryMap;
   
   public isModernMap: boolean = true; // Flag to toggle between modern and old maps
+  public isNationalityMode: boolean = false; // Flag to indicate if the sunburst is set to nationality
+
 
   @ViewChild('mapContainer', { static: true }) private mapContainer!: ElementRef;
 
-  constructor(private http: HttpClient, private selectionService: SelectionService, private artistService: ArtistService) {
+  constructor(private http: HttpClient,
+     private selectionService: SelectionService, 
+    private artistService: ArtistService,
+  private decisionService:DecisionService) {
     this.handleCountryClick = this.handleCountryClick.bind(this);
   }
 
@@ -59,7 +65,23 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
       if(!this.isModernMap && selectedCountries.length>0)
       this.updateOldCountryColors(selectedCountries);
     });
-   
+    this.decisionService.currentSunburst.subscribe(value => {
+      this.isNationalityMode = value === 'nationality';
+      
+      // Automatically switch to modern map if nationality is selected while old map is active
+      if (value === 'nationality') {
+        if (!this.isModernMap) {
+          this.isModernMap = true; // Switch to modern map
+          this.selectionService.switchSelectModern(true); // Update the selection service
+
+          // Redraw the map to reflect the change
+          this.svg.selectAll('*').remove(); // Clear the current map
+          this.createSvg(); // Recreate the SVG
+          this.drawMap(); // Redraw the map
+          this.createLegend();
+        }
+      }
+    });
   }
 
   ngAfterViewInit(): void {
@@ -323,6 +345,8 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   public toggleMap(event: Event): void {
+    if (this.isNationalityMode) return; // Prevent toggling if nationality mode is active
+
     const input = event.target as HTMLInputElement;
     this.isModernMap = !this.isModernMap;  // Update the flag based on checkbox state
     this.selectionService.switchSelectModern(this.isModernMap);
@@ -332,8 +356,24 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
     this.drawMap(); // Redraw the map
     this.createLegend();
   }
+ 
+  public showToggleTooltip(event: MouseEvent): void {
+    if (!this.isNationalityMode) return; // Show tooltip only if the button is disabled
+    
+    const [x, y] = d3.pointer(event, window.document.body);
   
-
+    // Show the tooltip with the message
+    d3.select('#tooltip')
+      .style('display', 'block')
+      .style('left', `${x + 10}px`)
+      .style('top', `${y + 10}px`)
+      .html('Map of 1900 not available for nationality');
+  }
+  
+  public hideTooltip(): void {
+    d3.select('#tooltip').style('display', 'none');
+  }
+  
   @HostListener('window:resize')
   onResize(): void {
     this.setWidthHeight();
