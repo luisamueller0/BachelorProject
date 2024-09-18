@@ -216,6 +216,27 @@ public getRegionColorScale(region: string): (t: number) => string {
   }
 }
 
+public getOldRegionColorScale(region: string): (t: number) => string {
+  switch (region) {
+    case "North Europe":
+      return this.getColorScale(this.cyanOldColorPalette);
+    case "Eastern Europe":
+      return this.getColorScale(this.blueOldColorPalette);
+    case "Southern Europe":
+      return this.getColorScale(this.purpleOldColorPalette);
+    case "Western Europe":
+      return this.getColorScale(this.pinkOldColorPalette);
+    case "Others":
+      return this.getYellowOrangeColor;
+    case "Central Europe":
+      return this.getColorScale(this.greenColorPalette);
+    case "\\N":
+      return this.getColorScale(this.capuccinoColorPalette); 
+    default:
+      return this.getColorScale(this.capuccinoColorPalette); // Default color scale if region is not found
+  }
+}
+
 // Function to create a color scale from a given color palette
 public getColorScale(palette: string[]): (t: number) => string {
   return (t: number) => {
@@ -656,7 +677,7 @@ public getOldCountryColor(countryName: string | undefined, opacity: number = 1):
       const countryArray = countries as string[];  // Cast countries to string[]
       const index = countryArray.indexOf(countryName);
       if (index !== -1) {
-          const colorScale = this.getRegionColorScale(region);
+          const colorScale = this.getOldRegionColorScale(region);
           const t = index / (countryArray.length - 1); // Calculate interpolation factor
           let color = d3.color(colorScale(t));
           if (color) {
@@ -674,6 +695,58 @@ public getOldCountryColor(countryName: string | undefined, opacity: number = 1):
   }
   return d3.interpolateGreys(0.5); // Fallback
 }
+
+
+//4
+public cyanOldColorPalette: string[] = [
+  "#359d97",
+  "#41a9a3",
+  "#4db6af",
+  "#59c2bb",
+
+];
+
+
+//3
+public blueOldColorPalette: string[] = [
+
+  "#2f92d3",
+  "#3fa0db",
+  "#50aee3"
+];
+
+
+
+//9
+public purpleOldColorPalette: string[] = [
+  "#7A21D4",
+  "#8725EB",
+  "#9338F1",
+  "#9D4EF3",
+  "#A764F6",
+  "#B27AF8",
+  "#BD90FA",
+  "#C7A6FC",
+  "#D2BCFE",
+
+];
+
+
+
+//4
+public pinkOldColorPalette: string[] = [
+  "#F262CC",
+  "#F474D3",
+  "#F686DA",
+  "#F898E1"
+];
+
+
+
+
+
+
+
 
   
   /*
