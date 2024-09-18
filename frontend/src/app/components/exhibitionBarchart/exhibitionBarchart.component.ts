@@ -249,7 +249,6 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
         // Deselect the year if it's the same as the previously selected year
         this.previouslySelectedYear = null;
         this.selectedYear = null;
-        this.selectionService.selectYear(null);
         this.selectionService.selectExhibitions([[], []]);
         this.resetBarOpacity();
       } else {
@@ -286,7 +285,6 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
           exhibitionsByYear = [exhibitions, []];
         }
     
-        this.selectionService.selectYear(year);
         this.selectionService.selectExhibitions(exhibitionsByYear);
       }
     }
@@ -666,12 +664,15 @@ private addBrush(): void {
 
 private brushed(event: any): void {
   const selection = event.selection;
-  
+
   // If there's no selection (i.e., the user clears the brush), reset the exhibitions
   if (!selection) {
     this.brushSelection = null;  // Clear the stored selection
     this.selectedMonths = [];  // Clear selected months
     this.selectionService.selectExhibitions(null);  // Reset exhibitions selection
+
+    // Reset the selected date range in the selection service
+    this.selectionService.selectDateRange(null, null, null, null);
     return;  // Exit the function
   }
 
@@ -680,6 +681,17 @@ private brushed(event: any): void {
 
   // Clear the previous selected months
   this.selectedMonths = [];
+
+  let startMonth: string | null = null;
+  let startYear: number | null = null;
+  let endMonth: string | null = null;
+  let endYear: number | null = null;
+
+  // Array to map month numbers to month names
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
 
   // Select all the rectangles (bars) and check if they are within the brush selection
   this.svg.selectAll('rect').each((d: any, i: number, nodes: any) => {
@@ -693,15 +705,31 @@ private brushed(event: any): void {
       // If the bar's x position is within the brush selection, add its corresponding month
       if (xPosition >= x0 && xPosition <= x1 && d.data.year && d.data.month) {
         this.selectedMonths.push({ year: d.data.year, month: d.data.month }); // Add the month corresponding to the bar
+
+        // Set startMonth and startYear for the first selected month
+        if (startMonth === null && startYear === null) {
+          startMonth = monthNames[d.data.month - 1]; // Convert month number to month name
+          startYear = d.data.year;
+        }
+
+        // Continuously update endMonth and endYear until the last selected month
+        endMonth = monthNames[d.data.month - 1]; // Convert month number to month name
+        endYear = d.data.year;
       }
     }
   });
+
+  // Update the selection service with the selected date range
+  if (startMonth !== null && startYear !== null && endMonth !== null && endYear !== null) {
+    this.selectionService.selectDateRange(startYear, startMonth, endYear, endMonth);
+  }
 
   // Handle selected exhibitions based on the selected months
   if (this.selectedMonths.length > 0) {
     this.filterExhibitionsByMonths(this.selectedMonths);
   }
 }
+
 
 
 

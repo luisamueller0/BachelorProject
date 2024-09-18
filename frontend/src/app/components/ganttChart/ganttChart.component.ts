@@ -29,6 +29,11 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
     public year:number|null = null;
     private modernMap:boolean = true;
 
+    public startYear: number | null = null;
+    public startMonth: string | null = null;
+    public endYear: number | null = null;
+    public endMonth: string | null = null;
+
     // Margins in vw and vh
     private margin = {
       top: 6.5,
@@ -70,8 +75,18 @@ export class GanttChartComponent implements OnInit, OnChanges, OnDestroy {
           }
         })
       );
-      this.subscriptions.add(this.selectionService.currentSelectedYear.subscribe((year) => {
-        this.year = year;
+      this.subscriptions.add(this.selectionService.currentSelectedDateRange.subscribe((dateRange) => {
+        if (dateRange) {
+          this.startYear = dateRange.startYear;
+          this.startMonth = dateRange.startMonth;
+          this.endYear = dateRange.endYear;
+          this.endMonth = dateRange.endMonth;
+        } else {
+          this.startYear = null;
+          this.startMonth = null;
+          this.endYear = null;
+          this.endMonth = null;
+        }
       }));
 
       this.subscriptions.add(this.selectionService.currentSelectModern.subscribe((modernMap) => {

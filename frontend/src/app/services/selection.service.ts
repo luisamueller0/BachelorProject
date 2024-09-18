@@ -20,7 +20,7 @@ export class SelectionService {
   private selectedClusterEdges = new BehaviorSubject<exhibited_with[]>([]);
   private selectedFocusArtist = new BehaviorSubject<Artist|null>(null);
   private selectedExhibitions = new BehaviorSubject<Exhibition[][]|null>(null);
-  private selectedYear = new BehaviorSubject<number|null>(null);
+  private dateRangeSource = new BehaviorSubject<{ startYear: number | null, startMonth: string | null, endYear: number | null, endMonth: string | null } | null>(null);
   private allClusters = new BehaviorSubject<Artist[][]|null>(null);
   private focusedCluster = new BehaviorSubject<Artist[]|null>(null);
   private selectModern = new BehaviorSubject<boolean>(true);
@@ -35,7 +35,7 @@ export class SelectionService {
   currentNode = this.selectedNode.asObservable();
   currentClusterEdges= this.selectedClusterEdges.asObservable();
   currentExhibitions = this.selectedExhibitions.asObservable(); //first array selected, second array not selected
-  currentSelectedYear = this.selectedYear.asObservable();
+  currentSelectedDateRange = this.dateRangeSource.asObservable();
   currentFocusedCluster = this.focusedCluster.asObservable();
   currentSelectModern = this.selectModern.asObservable();
 currentOldCountries = this.selectedOldCountries.asObservable();
@@ -47,9 +47,9 @@ switchSelectModern(modern:boolean){
     //console.log('focused', cluster)
     this.focusedCluster.next(cluster);
   }
- selectYear(year:number|null){
-    this.selectedYear.next(year);
- }
+  selectDateRange(startYear: number | null, startMonth: string | null, endYear: number | null, endMonth: string | null): void {
+    this.dateRangeSource.next({ startYear, startMonth, endYear, endMonth });
+  }
   selectExhibitions(exhibitions:Exhibition[][]|null){
     //console.log(exhibitions)
     this.selectedExhibitions.next(exhibitions);
@@ -121,9 +121,9 @@ getSelectedCountries(){
   getNode(){
     return this.selectedNode.value;
   }
-  getSelectedYear(){
-    return this.selectedYear.value;
-  }
+ getSelectedDateRange(){
+   return this.dateRangeSource.value;
+ }
   getCurrentArtists(){
     return this.selectedArtists.value;
   }
