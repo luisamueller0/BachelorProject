@@ -99,14 +99,21 @@ public isLoadingRange: boolean = false;
   kChanged = false; // Track if the K value was changed
 
   selectedSunburst: string = 'birthcountry';
-  SunburstOptions: string[] = ['nationality', 'birthcountry', 'deathcountry', 'mostexhibited'];
-  selectedSize: string = '';
-  SizeOptions: string[] = [
-    'Amount of Exhibitions',
-   
-    'Amount of different techniques',
-    'Amount of exhibited Artworks',
+  SunburstOptions: { label: string, value: string }[] = [
+    { label: 'Nationality', value: 'nationality' },
+    { label: 'Country of Birth', value: 'birthcountry' },
+    { label: 'Country of Death', value: 'deathcountry' },
+    { label: 'Most Exhibited Country', value: 'mostexhibited' } // Alternatively: 'Country of Most Exhibitions'
   ];
+    selectedSize: string = '';
+ 
+
+  SizeOptions: { label: string, value: string }[] = [
+    { label: 'Amount of Exhibitions', value: 'Amount of Exhibitions' },
+    { label: 'Variety of Used Techniques', value: 'Amount of different techniques' },
+    { label: 'Amount of Exhibited Artworks', value: 'Amount of exhibited Artworks' }
+  ];
+  
   // 'default: Importance (Degree)',
 
   selectedOrder: string = '';
@@ -121,6 +128,7 @@ public isLoadingRange: boolean = false;
   onSunburstChange(event: any) {
     this.decisionService.changeDecisionSunburst(event.target.value);
   }
+  
 
   onSizeChange(event: any) {
     this.decisionService.changeDecisionSize(event.target.value);
