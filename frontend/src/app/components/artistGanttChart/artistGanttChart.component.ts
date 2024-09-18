@@ -332,7 +332,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
         .style("left", `${event.pageX - 2- tooltipWidth}px`)
         .style("top", `${event.pageY + 2}px`)
         .style("color", "black")
-        .html(`${artist.name}<br/>Born: ${birthyear} in ${artist.birthplace} (${artist.oldBirthCountry})<br/>Died: ${deathyear} in ${artist.deathplace} (${artist.deathCountry})<br/>Age: ${age}`);
+        .html(`${artist.name}<br/>Born: ${birthyear} in ${artist.birthplace} (${artist.oldBirthCountry})<br/>Died: ${deathyear} in ${artist.deathplace} (${artist.oldDeathCountry})<br/>Age: ${age}`);
     };
 
       }
