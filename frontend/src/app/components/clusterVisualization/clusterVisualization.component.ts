@@ -2645,6 +2645,31 @@ console.log(this.clusterNodes)
       });
     }
 
+    // Sort artists by country name within each region
+  regionMap.forEach((regionArtists, region) => {
+    regionArtists.sort((a, b) => {
+      // Determine the country name to sort by based on the value
+      let countryA = '';
+      let countryB = '';
+     if(value ==='nationality'){
+      countryA = a.nationality || ''; // Adjust the property name as necessary
+      countryB = b.nationality || '';
+     }
+      else if (value === 'birthcountry') {
+        countryA = a.birthcountry || ''; // Adjust the property name as necessary
+        countryB = b.birthcountry || '';
+      } else if (value === 'deathcountry') {
+        countryA = a.deathcountry || ''; // Adjust the property name as necessary
+        countryB = b.deathcountry || '';
+      } else if (value === 'mostexhibited') {
+        countryA = a.mostExhibitedInCountry || ''; // Adjust the property name as necessary
+        countryB = b.mostExhibitedInCountry || '';
+      }
+
+      return countryA.localeCompare(countryB);
+    });
+  });
+
     const sortedArtists = Array.from(regionMap.entries())
       .filter(([region, artists]) => artists.length > 0)
       .flatMap(([region, artists]) => artists);
@@ -2652,41 +2677,65 @@ console.log(this.clusterNodes)
     return sortedArtists;
   }
   
-    private prepareOldData(artists: Artist[], value: string): Artist[] {
-      const regionMap = new Map<string, any[]>();
-      this.regionOldOrder.forEach(region => {
-        regionMap.set(region, []);
+  private prepareOldData(artists: Artist[], value: string): Artist[] {
+    const regionMap = new Map<string, Artist[]>();
+    this.regionOldOrder.forEach(region => {
+      regionMap.set(region, []);
+    });
+  
+    // Group artists based on the specified value
+    if (value === 'birthcountry') {
+      artists.forEach(artist => {
+        let regionArtists = regionMap.get(artist.europeanRegionOldBirth);
+        if (regionArtists) {
+          regionArtists.push(artist);
+        }
       });
-  
-     if (value === 'birthcountry') {
-        artists.forEach(artist => {
-          let regionArtists = regionMap.get(artist.europeanRegionOldBirth);
-          if (regionArtists) {
-            regionArtists.push(artist);
-          }
-        });
-      } else if (value === 'deathcountry') {
-        artists.forEach(artist => {
-          let regionArtists = regionMap.get(artist.europeanRegionOldDeath);
-          if (regionArtists) {
-            regionArtists.push(artist);
-          }
-        });
-      } else if (value === 'mostexhibited') {
-        artists.forEach(artist => {
-          let regionArtists = regionMap.get(artist.europeanRegionMostExhibitedInOldCountry);
-          if (regionArtists) {
-            regionArtists.push(artist);
-          }
-        });
-      }
-  
-      const sortedArtists = Array.from(regionMap.entries())
-        .filter(([region, artists]) => artists.length > 0)
-        .flatMap(([region, artists]) => artists);
-  
-      return sortedArtists;
+    } else if (value === 'deathcountry') {
+      artists.forEach(artist => {
+        let regionArtists = regionMap.get(artist.europeanRegionOldDeath);
+        if (regionArtists) {
+          regionArtists.push(artist);
+        }
+      });
+    } else if (value === 'mostexhibited') {
+      artists.forEach(artist => {
+        let regionArtists = regionMap.get(artist.europeanRegionMostExhibitedInOldCountry);
+        if (regionArtists) {
+          regionArtists.push(artist);
+        }
+      });
     }
+  
+    // Sort artists by country name within each region
+    regionMap.forEach((regionArtists, region) => {
+      regionArtists.sort((a, b) => {
+        // Determine the country name to sort by based on the value
+        let countryA = '';
+        let countryB = '';
+  
+        if (value === 'birthcountry') {
+          countryA = a.oldBirthCountry || ''; // Adjust the property name as necessary
+          countryB = b.oldBirthCountry || '';
+        } else if (value === 'deathcountry') {
+          countryA = a.oldDeathCountry || ''; // Adjust the property name as necessary
+          countryB = b.oldDeathCountry || '';
+        } else if (value === 'mostexhibited') {
+          countryA = a.mostExhibitedInOldCountry || ''; // Adjust the property name as necessary
+          countryB = b.mostExhibitedInOldCountry || '';
+        }
+  
+        return countryA.localeCompare(countryB);
+      });
+    });
+  
+    // Flatten the sorted map into a single array
+    const sortedArtists = Array.from(regionMap.entries())
+      .filter(([region, artists]) => artists.length > 0)
+      .flatMap(([region, artists]) => artists);
+  
+    return sortedArtists;
+  }
   
     private createSunburstProperties(clusterSize: number, maxSize: number, cellSize: number): [number, number] {
       const paddedCellSize = cellSize * (1 - this.paddingRatio); // Reduce cell size by padding ratio
