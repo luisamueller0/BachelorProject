@@ -166,6 +166,14 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
         // Simulate the brushed behavior to re-select exhibitions
         this.brushed({ selection: this.brushSelection });
       }
+       // Create title and legend container at the top
+    const titleContainer = this.svg.append('g')
+    .attr('class', 'title-container')
+    .attr('transform', `translate(0, 0)`); // Position at the top
+
+
+  // Append legend next to the title
+  this.createLegend(titleContainer);
   
       //this.clickOnSelectedYear();
       this.isLoading = false;
@@ -401,14 +409,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     this.contentWidth = width;
     this.contentHeight = height;
   
-    // Create title and legend container at the top
-    const titleContainer = this.svg.append('g')
-      .attr('class', 'title-container')
-      .attr('transform', `translate(0, 0)`); // Position at the top
- 
-  
-    // Append legend next to the title
-    this.createLegend(titleContainer);
+   
   }
   
   private createLegend(container: any): void {
