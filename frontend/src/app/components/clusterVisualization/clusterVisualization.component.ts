@@ -2049,6 +2049,14 @@ const category = this.decisionService.getDecisionSunburst();
           case 'birthcountry':
               prompt = `In around 5 sentences, compare and contrast how the early environments of these artists: ${artistNames.join(", ")} influenced their artistic connections. What similarities or differences emerged in their work due to their birth countries?`;
               break;
+
+             /*  case 'nationality':
+                prompt = `In 40 words, discuss the connections, similarities, and differences among the following artists: ${artistNames.join(", ")} based on their national identities. How did their national backgrounds shape their artistic relationships and collaborations?`;
+                break;
+        
+            case 'birthcountry':
+                prompt = `In 40 words, describe the similarities of these artists: ${artistNames.join(", ")} during their early life.`;
+                break; */
       
           case 'deathcountry':
               prompt = `Briefly, in around 5 sentences, analyze how the final stages of life in their respective death countries impacted the connections and artistic evolution of these artists: ${artistNames.join(", ")}. What common or differing themes are observed?`;
