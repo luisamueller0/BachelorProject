@@ -6,7 +6,25 @@ import generativeAI from './src/routes/generativeAI';
 require('dotenv').config()
 
 const app = express()
-app.use(cors({ origin: 'http://localhost:4200' }));
+// List of allowed origins
+const allowedOrigins = ['http://localhost:4200', 'https://artvis-cluster.web.app'];
+
+// CORS middleware configuration
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g., mobile apps, curl requests)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      // If the origin is in the allowed list, allow the request
+      console.log('Origin allowed:', origin);
+      callback(null, true);
+    } else {
+      // If the origin is not in the allowed list, block the request
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+}));
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use('/artist/', artist)
