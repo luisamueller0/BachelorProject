@@ -112,6 +112,17 @@
   flex: 1;
 }
 
+.cluster-center {
+  height: 67.67%; /* Was 40%, now takes up space previously occupied by the network and scatterplot */
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid #e5aeff;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
 .center-section {
   display: flex;
   flex-direction: column;
@@ -123,16 +134,6 @@
   box-sizing: border-box;
 }
 
-.cluster-center {
-  height: 40%;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border: 1px solid #e5aeff;
-  box-sizing: border-box;
-  overflow:hidden;
-}
 
 .network-scatterplot-section {
   display: flex;
