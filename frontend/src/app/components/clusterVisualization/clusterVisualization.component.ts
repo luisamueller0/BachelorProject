@@ -102,9 +102,9 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     private selectedNodes: Array<[SVGCircleElement, string]> = []; // To store multiple selected nodes
 
   
-    private simulation: d3.Simulation<ArtistNode, undefined>[] = [];
+    private clusterSimulation: d3.Simulation<ClusterNode, undefined>|null = null;
+    
   
-    private clusterSimulation: d3.Simulation<ClusterNode, undefined> | null = d3.forceSimulation<ClusterNode>();
   
     private countryIndexMap = new Map<string, number>();
   
@@ -1488,22 +1488,11 @@ const category = this.decisionService.getDecisionSunburst();
           console.log('hallo', this.clusters[0][0])
           this.decisionService.changeInterCommunityEdges(data[2])
           this.decisionService.changeClusters(data[0]);
-         /*  this.clusters.forEach((cluster, clusterIndex) => {
-            //console.log('Cluster ', clusterIndex, ':')
-            cluster.forEach(artist => {
-              //console.log(artist.firstname, artist.lastname, clusterIndex)
-            });
-          }); */
   
           this.singleInterCommunityEdges = data[3] as exhibited_with[][];
           
           this.selectionService.selectAllClusters(this.clusters);
-          this.clusters.forEach((cluster, clusterIndex) => {
-            cluster.forEach(artist => {
-              //console.log('exhibited:' ,artist.total_exhibitions, 'artworks:', artist.total_exhibited_artworks, 'techniques:')
-            });
-          })
-  
+      
           this.intraCommunityEdges = data[1] as exhibited_with[][];
           const interCommunityEdgesRaw = data[2] as exhibited_with[];
           //console.log('edges',data[3])
@@ -1865,14 +1854,100 @@ const category = this.decisionService.getDecisionSunburst();
         .range([0, this.contentHeight])
         .padding(0.1);
     
-      this.drawCells(xScale, yScale, xData, yData, cellWidth, cellHeight);
+
+        
+this.clusters.forEach((cluster, i, nodes) => {
+
+        this.drawCluster(i, cellWidth, cellHeight);
+});
+     // this.drawCells(xScale, yScale, xData, yData, cellWidth, cellHeight);
     
-      this.drawVerticalSeparators(xScale, xData); // Draw vertical lines
+      //this.drawVerticalSeparators(xScale, xData); // Draw vertical lines
       
+
+       // Now, apply the force simulation on the nodes
+  //this.applyForceSimulation();
+    }
+
+    
+
+
+    private applyForceSimulation(): void {
+      const nodes = this.clusterNodes;
+    
+      // Correct xScale to be a D3 scale, mapping clusterIds to x positions
+      const xScale = d3.scaleBand()
+        .domain(nodes.map(d => d.clusterId.toString()))  // Cluster IDs as domain
+        .range([0, this.contentWidth])  // Full width of the SVG
+        .padding(0.1);
+    
+      // Select the cluster groups for updating positions
+      const clusterSelection = d3.selectAll('.cluster');
+    
+      // Define the force simulation with corrected properties
+      const simulation = d3.forceSimulation(nodes)
+        .force('charge', d3.forceManyBody().strength(5))
+        .force('x', d3.forceX().x((d: any) => {
+          // Ensure that xScale returns a number, provide a fallback value if undefined
+          return xScale(d.clusterId.toString()) ?? this.contentWidth / 2;  // Default to center if undefined
+        }))
+        .force('y', d3.forceY().y(() => {
+          return this.contentHeight / 2;  // Center the nodes vertically
+        }))
+        .force('collision', d3.forceCollide().radius((d: any) => {
+          return d.outerRadius;  // Use outerRadius for the collision force
+        }))
+        .on("tick", () => {
+          // Update the cluster group positions during the simulation tick
+          clusterSelection
+            .attr('transform', (d: any) => `translate(${d.x}, ${d.y})`);
+        });
+    
+      // Store the simulation in case you want to reference it later
+      this.clusterSimulation = simulation;
     }
     
     
+    private ticked(nodes: ClusterNode[]): void {
+      // Update the position of each cluster node during the simulation
+      d3.selectAll('.cluster')
+        .attr('transform', (d: any) => `translate(${d.x}, ${d.y})`);
+    }
+    
+        
+    
+
+    private drawCluster( x: number, cellWidth: number, cellHeight: number): void {
+      const clusterIndex = x;
+      const cluster = this.clusters[clusterIndex];
+      if (!cluster) return;
   
+      const cellSize = Math.min(cellWidth, cellHeight);
+      const paddedCellSize = cellSize * (1 - this.paddingRatio); // Reduce cell size by padding ratio
+      const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, this.clusters[0].length, paddedCellSize);
+      this.innerRadius = innerRadius; 
+      const clusterNode: ClusterNode = {
+          clusterId: clusterIndex,
+          artists: cluster,
+          outerRadius: outerRadius,
+          innerRadius: innerRadius,
+          x: 0,
+          y: 0,
+          meanAvgDate: new Date(),
+          meanBirthDate: new Date(),
+          totalExhibitedArtworks: 0
+      };
+  
+      const category = this.decisionService.getDecisionSunburst();
+      const clusterGroup = this.createClusterGroup(clusterNode, category, cellWidth, cellHeight);
+  
+    // Append the clusterGroup to this.svg
+this.svg.append(() => clusterGroup);  // Add the cluster to the main SVG
+
+//d3.select(clusterGroup).datum(clusterNode);
+  
+  }
+
 
     
     private drawVerticalSeparators(xScale: d3.ScaleBand<string>, xData: string[]): void {
@@ -1977,6 +2052,8 @@ const category = this.decisionService.getDecisionSunburst();
         target.style.backgroundColor = "#f5e0ff"
       })
       .style("visibility", "hidden")
+      .style('cursor', 'pointer');  // Add this line to change the cursor
+
 
       
 
@@ -2277,6 +2354,7 @@ const category = this.decisionService.getDecisionSunburst();
     const clusterGroup = d3.create("svg:g")
     .attr("class", `cluster cluster-${clusterNode.clusterId} cluster-${value}`)
     .on('click', () => this.onClusterClick(clusterNode))
+    .style('cursor', 'pointer')  // Add this line to change the cursor
     .attr("transform", `translate(${cellWidth / 2}, ${cellHeight / 2})`);
   
   const tooltip = d3.select("div#tooltip");
@@ -2430,7 +2508,9 @@ console.log(this.clusterNodes)
         .on('mouseout', function () {
             d3.select('#tooltip').style('display', 'none');
         })
-        .on('click', (event: MouseEvent, d: any) => this.handleNodeClick(d, event));
+        .on('click', (event: MouseEvent, d: any) => this.handleNodeClick(d, event))
+                    .style('cursor', 'pointer');  // Add this line to change the cursor
+
   
     const sizes = this.getNodeSize(clusterGroup);
     const padding = cluster.innerRadius / 100 * 0.05;

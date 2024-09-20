@@ -370,7 +370,9 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
             .on("mouseover", showTooltip)
             .on("mousemove", showTooltip)
             .on("mouseout", hideTooltip)
-            .on("click", click);
+            .on("click", click)
+            .style('cursor', 'pointer');  // Add this line to change the cursor
+
   
           // Add birth and death country labels
           this.svg.append('text')
@@ -407,7 +409,9 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
             .on("mouseover", showTooltip)
             .on("mousemove", showTooltip)
             .on("mouseout", hideTooltip)
-            .on("click", click);
+            .on("click", click)
+            .style('cursor', 'pointer');  // Add this line to change the cursor
+
         }
   
         yOffset += barHeight;

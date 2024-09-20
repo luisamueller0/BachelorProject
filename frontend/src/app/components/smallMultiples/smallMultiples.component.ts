@@ -1141,6 +1141,8 @@ private addButtonToCell(cell: any, x: string | number, y: string | number, cellW
       target.style.backgroundColor = "#f5e0ff"
 
     })
+    .style('cursor', 'pointer');  // Add this line to change the cursor
+
   }
 
  
