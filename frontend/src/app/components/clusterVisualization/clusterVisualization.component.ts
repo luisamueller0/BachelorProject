@@ -102,7 +102,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     private selectedNodes: Array<[SVGCircleElement, string]> = []; // To store multiple selected nodes
 
   
-    private clusterSimulation: d3.Simulation<ClusterNode, undefined>|null = null;
+    private clusterSimulation: d3.Simulation<ClusterNode, undefined> | null = d3.forceSimulation<ClusterNode>();
     
   
   
@@ -1866,54 +1866,61 @@ this.clusters.forEach((cluster, i, nodes) => {
       
 
        // Now, apply the force simulation on the nodes
-  //this.applyForceSimulation();
+  this.applyForceSimulation();
     }
 
     
 
+  
+  
+  
+    private ticked(): void {
 
+      // Update the cluster positions
+      this.g.selectAll(".cluster")
+      .data(this.clusterNodes)  // Use the clusterNodes data
+      .attr("transform", (d: ClusterNode) => {
+        if (typeof d.x !== 'undefined' && typeof d.y !== 'undefined') {
+          return `translate(${d.x}, ${d.y})`;  // Update cluster position using x and y
+        }
+        return "";
+      });
+  
+      // Update positions of artist nodes within clusters
+      this.g.selectAll(".artist-node")
+        .attr("cx", (d: ArtistNode) => d.x)
+        .attr("cy", (d: ArtistNode) => d.y);
+    
+      // Update positions of artist edges within clusters
+      this.g.selectAll(".artist-edge")
+        .attr("x1", (d: any) => d.source.x)
+        .attr("y1", (d: any) => d.source.y)
+        .attr("x2", (d: any) => d.target.x)
+        .attr("y2", (d: any) => d.target.y);
+    }
+    
     private applyForceSimulation(): void {
       const nodes = this.clusterNodes;
     
-      // Correct xScale to be a D3 scale, mapping clusterIds to x positions
-      const xScale = d3.scaleBand()
-        .domain(nodes.map(d => d.clusterId.toString()))  // Cluster IDs as domain
-        .range([0, this.contentWidth])  // Full width of the SVG
-        .padding(0.1);
-    
-      // Select the cluster groups for updating positions
-      const clusterSelection = d3.selectAll('.cluster');
-    
-      // Define the force simulation with corrected properties
-      const simulation = d3.forceSimulation(nodes)
-        .force('charge', d3.forceManyBody().strength(5))
-        .force('x', d3.forceX().x((d: any) => {
-          // Ensure that xScale returns a number, provide a fallback value if undefined
-          return xScale(d.clusterId.toString()) ?? this.contentWidth / 2;  // Default to center if undefined
+      // Set up the force simulation with the nodes
+      this.clusterSimulation = d3.forceSimulation<ClusterNode>(nodes)
+      .force('charge', d3.forceManyBody().strength(5))
+        .force("collision", d3.forceCollide<ClusterNode>().radius(d => d.outerRadius))
+        .force("x", d3.forceX((d: ClusterNode) => (d.clusterId % 2 === 0 ? 20 : -20)).strength(0.7)) // Increase strength and offset
+        .force('y', d3.forceY().y(function(d) {
+          return 0;
         }))
-        .force('y', d3.forceY().y(() => {
-          return this.contentHeight / 2;  // Center the nodes vertically
-        }))
-        .force('collision', d3.forceCollide().radius((d: any) => {
-          return d.outerRadius;  // Use outerRadius for the collision force
-        }))
-        .on("tick", () => {
-          // Update the cluster group positions during the simulation tick
-          clusterSelection
-            .attr('transform', (d: any) => `translate(${d.x}, ${d.y})`);
-        });
-    
-      // Store the simulation in case you want to reference it later
-      this.clusterSimulation = simulation;
+        .on("tick", () => this.ticked()); // Re-enable the tick function
+  this.g.selectAll(".cluster").attr("transform", (d: ClusterNode) => { return `translate(${50}, ${50})`; });
+  console.log(typeof this.g.selectAll(".cluster"))
+      console.log("Cluster simulation setup with links:", this.clusterSimulation);
     }
     
-    
-    private ticked(nodes: ClusterNode[]): void {
-      // Update the position of each cluster node during the simulation
-      d3.selectAll('.cluster')
-        .attr('transform', (d: any) => `translate(${d.x}, ${d.y})`);
-    }
-    
+
+/*   .force('x', d3.forceX().x(function(d) {
+    return xScale(d.value);
+  }))
+ */
         
     
 
@@ -1942,7 +1949,7 @@ this.clusters.forEach((cluster, i, nodes) => {
       const clusterGroup = this.createClusterGroup(clusterNode, category, cellWidth, cellHeight);
   
     // Append the clusterGroup to this.svg
-this.svg.append(() => clusterGroup);  // Add the cluster to the main SVG
+this.g.append(() => clusterGroup);  // Add the cluster to the main SVG
 
 //d3.select(clusterGroup).datum(clusterNode);
   
