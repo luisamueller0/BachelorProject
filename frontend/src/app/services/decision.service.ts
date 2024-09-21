@@ -7,6 +7,7 @@ import exhibited_with from '../models/exhibited_with';
   providedIn: 'root'
 })
 export class DecisionService {
+  private rankingSource = new BehaviorSubject<string>('artworks');
   private sunburstSource = new BehaviorSubject<string>('birthcountry');
   private orderSource = new BehaviorSubject<string>('');
   private sizeSource = new BehaviorSubject<string>('Amount of Exhibitions');
@@ -19,6 +20,7 @@ export class DecisionService {
   private clusters = new BehaviorSubject<Artist[][]|null>(null);
   private interCommunityEdges = new BehaviorSubject<exhibited_with[]|null>(null);
 
+  currentRanking = this.rankingSource.asObservable();
   currentSunburst = this.sunburstSource.asObservable();
   currentOrder = this.orderSource.asObservable();
   currentSize = this.sizeSource.asObservable();
@@ -45,6 +47,9 @@ export class DecisionService {
     this.loadingBackendK.next(loading);
   }
 
+  changeDecisionRanking(ranking: string) {
+    this.rankingSource.next(ranking);
+  }
   changeDecisionSunburst(sunburst: string) {
     this.sunburstSource.next(sunburst);
   }

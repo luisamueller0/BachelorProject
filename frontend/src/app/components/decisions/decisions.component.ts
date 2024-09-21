@@ -98,6 +98,13 @@ public isLoadingRange: boolean = false;
   rangeChanged = false; // Track if the range was changed
   kChanged = false; // Track if the K value was changed
 
+  selectRanking: string ='artworks';
+  RankingOptions: { label: string, value: string }[] = [
+    { label: 'Amount of Exhibitions', value: 'exhibitions' },
+    { label: 'Variety of Used Techniques', value: 'techniques' },
+    { label: 'Exhibited Artworks', value: 'artworks' }
+
+  ];
   selectedSunburst: string = 'birthcountry';
   SunburstOptions: { label: string, value: string }[] = [
     { label: 'Nationality', value: 'nationality' },
@@ -127,6 +134,9 @@ public isLoadingRange: boolean = false;
 
   onSunburstChange(event: any) {
     this.decisionService.changeDecisionSunburst(event.target.value);
+  }
+  onRankingChange(event: any) {
+    this.decisionService.changeDecisionRanking(event.target.value);
   }
   
  
