@@ -1843,6 +1843,9 @@ const category = this.decisionService.getDecisionSunburst();
     
       const cellWidth = this.contentWidth / xData.length;
       const cellHeight = this.contentHeight / yData.length;
+
+      this.cellWidth = cellWidth;
+      this.cellHeight = cellHeight;
     
       const xScale = d3.scaleBand()
         .domain(xData)
@@ -1900,15 +1903,24 @@ this.clusters.forEach((cluster, i, nodes) => {
     }
     
     private applyForceSimulation(): void {
-      const nodes = this.clusterNodes;
-    
+      const nodes = this.clusterNodes;      
+      const height = this.contentHeight;
+
+  // Define the xScale based on totalExhibitedArtworks
+  const xScale = d3.scaleLinear()
+  .domain([d3.max(nodes, d => d.totalExhibitedArtworks) || 0,d3.min(nodes, d => d.totalExhibitedArtworks) || 0])
+  .range([this.cellWidth, this.contentWidth-this.cellWidth]);  // Full width of the SVG
+
       // Set up the force simulation with the nodes
       this.clusterSimulation = d3.forceSimulation<ClusterNode>(nodes)
       .force('charge', d3.forceManyBody().strength(5))
         .force("collision", d3.forceCollide<ClusterNode>().radius(d => d.outerRadius))
-        .force("x", d3.forceX((d: ClusterNode) => (d.clusterId % 2 === 0 ? 20 : -20)).strength(0.7)) // Increase strength and offset
+        .force('x', d3.forceX().x((d: any) => {
+          // Use the xScale to map totalExhibitedArtworks to the x position
+          return xScale(d.totalExhibitedArtworks);
+      }))       
         .force('y', d3.forceY().y(function(d) {
-          return 0;
+          return height / 2;
         }))
         .on("tick", () => this.ticked()); // Re-enable the tick function
   this.g.selectAll(".cluster").attr("transform", (d: ClusterNode) => { return `translate(${50}, ${50})`; });
@@ -1933,6 +1945,8 @@ this.clusters.forEach((cluster, i, nodes) => {
       const paddedCellSize = cellSize * (1 - this.paddingRatio); // Reduce cell size by padding ratio
       const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, this.clusters[0].length, paddedCellSize);
       this.innerRadius = innerRadius; 
+      const totalExhibitedArtworks = cluster.reduce((total, artist) => total + artist.total_exhibited_artworks, 0);
+
       const clusterNode: ClusterNode = {
           clusterId: clusterIndex,
           artists: cluster,
@@ -1942,7 +1956,7 @@ this.clusters.forEach((cluster, i, nodes) => {
           y: 0,
           meanAvgDate: new Date(),
           meanBirthDate: new Date(),
-          totalExhibitedArtworks: 0
+          totalExhibitedArtworks: totalExhibitedArtworks
       };
   
       const category = this.decisionService.getDecisionSunburst();
@@ -2251,6 +2265,9 @@ this.g.append(() => clusterGroup);  // Add the cluster to the main SVG
       const paddedCellSize = cellSize * (1 - this.paddingRatio); // Reduce cell size by padding ratio
       const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, this.clusters[0].length, paddedCellSize);
       this.innerRadius = innerRadius; 
+         // Calculate totalExhibitedArtworks for the cluster
+
+
       const clusterNode: ClusterNode = {
           clusterId: clusterIndex,
           artists: cluster,
