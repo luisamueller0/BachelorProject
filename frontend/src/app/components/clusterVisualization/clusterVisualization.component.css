@@ -36,3 +36,63 @@ button:hover {
 button:active {
   background-color: #bbb;
 }
+
+
+
+.header-container {
+  display: flex;
+  justify-content: space-between; /* Title on the left, button container on the right */
+  align-items: center;            /* Vertically center the items */
+  padding: 0 10px;
+}
+
+.title {
+  margin: 0;
+  padding: 0;
+  font-size: 0.75vw;  /* Matches the size you've set */
+  font-weight: 600;
+  margin-top: 0.1vw;
+  margin-bottom: 0.1vw;
+}
+
+.ai-suggestion-container {
+  display: flex;
+  align-items: center; /* Center button and label */
+  gap: 0.3vw;         /* Adjust spacing between label and button */
+}
+
+.ai-title {
+  font-size: 0.75vw;   /* Same size as h1 */
+  font-weight: 600;
+  visibility: visible;  /* Hidden by default */
+}
+
+.ai-button {
+  width: 1vw;     /* Match the height of the title */
+  height: 1vw;    /* Match the height of the title */
+  background-color: #f5e0ff;
+  border-radius: 50%;
+  display: flex;                /* Ensure flexbox is being used */
+  align-items: center;          /* Center vertically */
+  justify-content: center;      /* Center horizontally */
+  font-size: 1vw;             /* Adjust font size to fit within the button */
+  font-weight: 900;
+  color: #7e24c7;
+  visibility: hidden;           /* Default hidden */
+  visibility: hidden;            /* Default hidden */
+  padding: 0;                    /* Remove any padding */
+  margin: 0;                     /* Remove any margin */
+  box-sizing: border-box;        /* Ensure consistent sizing */
+  line-height: 1;                /* Set line-height to avoid vertical misalignment */       /* Ensure line-height doesn’t affect centering */
+}
+
+
+.ai-button:hover {
+  background-color: #e0baf2;
+}
+
+/* Make label visible when button is hovered */
+.ai-button:hover + .ai-title, 
+.ai-title:hover {
+  visibility: visible;
+}

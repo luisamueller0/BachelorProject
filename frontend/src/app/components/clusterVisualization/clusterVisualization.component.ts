@@ -99,7 +99,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     private selectedCluster: any = null;
     private isNodeClick: boolean = false;
 
-    private selectedNodes: Array<[SVGCircleElement, string]> = []; // To store multiple selected nodes
+    public selectedNodes: Array<[SVGCircleElement, string]> = []; // To store multiple selected nodes
 
   
     private clusterSimulation: d3.Simulation<ClusterNode, undefined> | null = d3.forceSimulation<ClusterNode>();
@@ -1909,7 +1909,7 @@ this.clusters.forEach((cluster, i, nodes) => {
   // Define the xScale based on totalExhibitedArtworks
   const xScale = d3.scaleLinear()
   .domain([d3.max(nodes, d => d.totalExhibitedArtworks) || 0,d3.min(nodes, d => d.totalExhibitedArtworks) || 0])
-  .range([this.cellWidth, this.contentWidth-this.cellWidth]);  // Full width of the SVG
+  .range([this.cellWidth/2, this.contentWidth-this.cellWidth/2]);  // Full width of the SVG
 
       // Set up the force simulation with the nodes
       this.clusterSimulation = d3.forceSimulation<ClusterNode>(nodes)
@@ -2000,11 +2000,11 @@ this.g.append(() => clusterGroup);  // Add the cluster to the main SVG
   
     cells.each((d: any, i: number, nodes: any) => {
       this.drawClusterInCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight);
-      this.addButtonToCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight);
+     // this.addButtonToCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight);
     });
   }
   
-  private addButtonToCell(cell: any, x: string | number, y: string | number, cellWidth: number, cellHeight: number): void {
+/*   private addButtonToCell(cell: any, x: string | number, y: string | number, cellWidth: number, cellHeight: number): void {
     const buttonSize = 15 * cellWidth / 100;  // Size of the button
   
     //const buttonSize = Math.min(cellWidth, cellHeight) * 0.2;  // Size of the button is 20% of the smaller cell dimension
@@ -2080,7 +2080,7 @@ this.g.append(() => clusterGroup);  // Add the cluster to the main SVG
 
       
     }
-  
+   */
    
       
   
@@ -2116,12 +2116,22 @@ this.g.append(() => clusterGroup);  // Add the cluster to the main SVG
   
   
   
-  
-  private handleButtonClick(clusterIndex: string | null): void {
-    if (clusterIndex === null) return;
+    showTooltip(event: MouseEvent): void {
+      const tooltip = d3.select("div#tooltip");
+      tooltip.style("display", "block")
+          .style("left", `${event.pageX + 5}px`)
+          .style("top", `${event.pageY + 5}px`)
+          .style("color", "black")
+          .html(`Get suggestion of reasoning of connections between those artists on click by an AI.<br/>`);
+    }
+    
+    hideTooltip(): void {
+      const tooltip = d3.select("div#tooltip");
+      tooltip.style("display", "none");
+    }
+handleButtonClick(): void {
   
     // Convert the cluster index back to a number
-    const index = Number(clusterIndex);
   
     // Retrieve the corresponding cluster and network information
        // Extract the artist information from each selected node
@@ -2132,7 +2142,6 @@ this.g.append(() => clusterGroup);  // Add the cluster to the main SVG
     });
     const artistNames = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname}`);
   
-    console.log(`Button clicked for cluster ${index}. With selected Artists:`, artistNames);
     const category = this.decisionService.getDecisionSunburst();
     let prompt = '';
 
