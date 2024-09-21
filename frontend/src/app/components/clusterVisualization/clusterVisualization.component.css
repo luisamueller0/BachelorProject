@@ -42,9 +42,7 @@ button:active {
 .header-container {
   display: flex;
   justify-content: space-between; /* Title on the left, button container on the right */
-  align-items: center;            /* Vertically center the items */
-  padding: 0 10px;
-}
+  align-items: center;            /* Vertically center the items */}
 
 .title {
   margin: 0;
@@ -59,6 +57,7 @@ button:active {
   display: flex;
   align-items: center; /* Center button and label */
   gap: 0.3vw;         /* Adjust spacing between label and button */
+  padding-right: 0.2vw;
 }
 
 .ai-title {

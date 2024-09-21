@@ -15,6 +15,7 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end; /* Align the close button to the right */
+    opacity:0.96;
   }
   
   .close-btn {
@@ -26,6 +27,7 @@
     font-weight: bold;
     color:#e5aeff;
     cursor: pointer;
+    opacity:0.96;
   }
   
   .msg {
@@ -35,9 +37,11 @@
     text-align: center; /* Center-align the message */
     flex-grow: 1; /* Makes sure the message fills the remaining space */
     padding-bottom: 2%;
+    opacity:0.96;
   }
   
   .close-btn:hover {
     color: #7e24c7;
+    opacity:0.96;
   }
   
