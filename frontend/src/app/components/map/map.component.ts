@@ -175,9 +175,22 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
               .html(`${d.properties.NAME} (${this.getOldKeyByValue(d.properties.NAME)})`);
             }
      
+            if(this.isModernMap){
+              const country = this.getKeyByValue(d.properties.name);
+              this.selectionService.hoverOnCountry(country||null);
+            }else{
+              const country = this.getOldKeyByValue(d.properties.NAME);
+              this.selectionService.hoverOnOldCountry(country||null)
+            }
           })
           .on('mouseout', () => {
             d3.select('#tooltip').style('display', 'none');
+
+            if(this.isModernMap){
+              this.selectionService.hoverOnCountry(null);
+            }else{
+              this.selectionService.hoverOnOldCountry(null)
+            }
           });
   
         // Ensure selected countries are updated after the map is fully rendered

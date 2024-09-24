@@ -1,7 +1,7 @@
 // selection.service.ts
 
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, count } from 'rxjs';
 import { Artist } from '../models/artist'; // Import the appropriate model
 import exhibited_with from '../models/exhibited_with';
 import { Exhibition } from '../models/exhibition';
@@ -25,6 +25,8 @@ export class SelectionService {
   private focusedCluster = new BehaviorSubject<Artist[]|null>(null);
   private selectModern = new BehaviorSubject<boolean>(true);
   private selectedOldCountries = new BehaviorSubject<string[]>([]);
+  private hoveredCountry = new BehaviorSubject<string|null>(null);
+  private hoveredOldCountry = new BehaviorSubject<string|null>(null);
 
   currentArtists = this.selectedArtists.asObservable();
   currentCluster = this.selectedCluster.asObservable();
@@ -39,7 +41,16 @@ export class SelectionService {
   currentFocusedCluster = this.focusedCluster.asObservable();
   currentSelectModern = this.selectModern.asObservable();
 currentOldCountries = this.selectedOldCountries.asObservable();
+currentHoveredCountry = this.hoveredCountry.asObservable();
+currentHoveredOldCountry = this.hoveredOldCountry.asObservable();
 
+
+hoverOnCountry(country:string|null){
+  this.hoveredCountry.next(country);
+}
+hoverOnOldCountry(country:string|null){
+  this.hoveredOldCountry.next(country);
+}
 switchSelectModern(modern:boolean){
   this.selectModern.next(modern);
 }
@@ -113,6 +124,15 @@ switchSelectModern(modern:boolean){
   getClusterEdges(){
     return this.selectedClusterEdges.value;
   }
+
+getHoveredCountry(){
+
+  return this.hoveredCountry.value;
+
+}
+getHoveredOldCountry(){
+  return this.hoveredOldCountry.value;
+}
 
 
 

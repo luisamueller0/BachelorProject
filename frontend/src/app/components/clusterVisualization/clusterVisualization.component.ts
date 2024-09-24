@@ -165,10 +165,84 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         this.updateMap(category);
 
       }));
+
+      this.subscriptions.add(this.selectionService.currentHoveredCountry.subscribe(country => {
+        this.hoverOnCountry(country);
+      }));
       
   
       window.addEventListener('resize', this.onResize.bind(this));
     }
+  
+
+    private hoverOnCountry(country: string | null) {
+      const self = this;
+      const category = this.decisionService.getDecisionSunburst();
+      if (country) {
+          // Select all path elements
+          this.svg.selectAll('path')
+              // Filter paths to include only those with the matching country
+              .filter(function(d: any) {
+                  return d.country === country; // Check if the path's country matches the provided country
+              })
+              .style("opacity", 1); // Set opacity to 1 for the matching paths
+          
+              this.svg.selectAll('.artist-node')
+              .filter(function(d: any) {
+                return self.getArtistCountryBasedOnCategory(d.artist, category) === country; // Check if the path's country matches the provided country
+            }).style("opacity",1)
+
+            this.svg.selectAll('.artist-edge')
+            .style('opacity', 1)
+
+  
+          // Optionally, reduce opacity for paths that don't match the specified country
+          this.svg.selectAll('path')
+              .filter(function(d: any) {
+                  return d.country !== country;
+              })
+              .style("opacity", 0.2); // Set opacity to 0.2 for non-matching paths
+
+              this.svg.selectAll('.artist-node')
+              .filter(function(d: any) {
+                return self.getArtistCountryBasedOnCategory(d.artist, category) !== country; // Check if the path's country matches the provided country
+            }).style("opacity",0.4)
+
+
+              // Get all artist IDs with opacity 1
+        const artistIdsWithOpacity1 = new Set<number>();
+        this.svg.selectAll('.artist-node')
+            .filter(function(d: any) {
+                return self.getArtistCountryBasedOnCategory(d.artist, category) === country;
+            })
+            .each(function(d: any) {
+                artistIdsWithOpacity1.add(d.artist.id);
+            });
+
+
+            console.log(artistIdsWithOpacity1)
+
+        // Set edges to opacity 1 if either the source or target artist is in the set
+        this.svg.selectAll('.artist-edge')
+            .filter(function(d: any) {
+              console.log(d)
+                return artistIdsWithOpacity1.has(d.source.id) || artistIdsWithOpacity1.has(d.target.id);
+            })
+            .style("opacity", 1);
+
+        // Set all other edges to opacity 0.4
+        this.svg.selectAll('.artist-edge')
+            .filter(function(d: any) {
+                return !artistIdsWithOpacity1.has(d.source.id) && !artistIdsWithOpacity1.has(d.target.id);
+            })
+            .style("opacity", 0.1);
+      } else {
+     // If no country is provided, reset all paths, nodes, and edges to full opacity
+     this.svg.selectAll('path').style("opacity", 1);
+     this.svg.selectAll('.artist-node').style('opacity', 1);
+     this.svg.selectAll('.artist-edge').style('opacity', 1);
+      }
+  }
   
     private updateMap(category: string): void {
       const countries: string[] = [];
@@ -1434,7 +1508,50 @@ const category = this.decisionService.getDecisionSunburst();
 
     return originalColor;  // Corrected: call toString()
   }
+  private getArtistCountryBasedOnCategory(artist: Artist, category: string): string {
+    let countryCode: string;
   
+
+    if(this.modernMap){
+    switch (category) {
+        case 'nationality':
+            countryCode = artist.nationality;
+            break;
+        case 'birthcountry':
+            countryCode = artist.birthcountry;
+            break;
+        case 'deathcountry':
+            countryCode = artist.deathcountry;
+            break;
+        case 'mostexhibited':
+            countryCode = artist.most_exhibited_in;
+            break;
+        default:
+            countryCode = artist.nationality;
+            break;
+    }
+  }
+  else{
+    switch (category) {
+     
+      case 'birthcountry':
+          countryCode = artist.oldBirthCountry;
+          break;
+      case 'deathcountry':
+          countryCode = artist.oldBirthCountry;
+          break;
+      case 'mostexhibited':
+          countryCode = artist.mostExhibitedInOldCountry;
+          break;
+      default:
+          countryCode = artist.oldBirthCountry;
+          break;
+  }
+
+  }
+
+    return countryCode;  // Corrected: call toString()
+  }
   private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks: number): d3.ScaleLinear<string, number> {
     const baseColorRGB = d3.rgb(baseColor);
     const lighterColor = d3.color(baseColorRGB.toString());
