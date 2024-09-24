@@ -249,113 +249,112 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private createLegend(): void {
-    const legendData = [
-      { region: "North Europe", colorScale: this.artistService.getRegionColorScale("North Europe") },
-      { region: "Eastern Europe", colorScale: this.artistService.getRegionColorScale("Eastern Europe") },
-      { region: "Southern Europe", colorScale: this.artistService.getRegionColorScale("Southern Europe") },
-      { region: "Western Europe", colorScale: this.artistService.getRegionColorScale("Western Europe") }
-    ];
-  
+    // Define legend data based on the map type
+    const legendData = this.isModernMap
+        ? [
+            { region: "North Europe", colorScale: this.artistService.getRegionColorScale("North Europe") },
+            { region: "Eastern Europe", colorScale: this.artistService.getRegionColorScale("Eastern Europe") },
+            { region: "Southern Europe", colorScale: this.artistService.getRegionColorScale("Southern Europe") },
+            { region: "Western Europe", colorScale: this.artistService.getRegionColorScale("Western Europe") }
+        ]
+        : [
+            { region: "North Europe", colorScale: this.artistService.getOldRegionColorScale("North Europe") },
+            { region: "Eastern Europe", colorScale: this.artistService.getOldRegionColorScale("Eastern Europe") },
+            { region: "Southern Europe", colorScale: this.artistService.getOldRegionColorScale("Southern Europe") },
+            { region: "Western Europe", colorScale: this.artistService.getOldRegionColorScale("Western Europe") },
+            { region: "Central Europe", colorScale: this.artistService.getOldRegionColorScale("Central Europe") } // Added Central Europe
+        ];
+
     const legendWidth = 350;
     const legendHeight = legendData.length * 40 + 10;
-    const margin = 20; // Margin from the bottom and right sides
-  
-    // Get SVG dimensions
+    const margin = 20;
+
     const svgWidth = this.svg.attr('width');
     const svgHeight = this.svg.attr('height');
-  
-    // Calculate legend position
+
     const legendX = svgWidth - legendWidth - margin;
     const legendY = svgHeight - legendHeight - margin;
-  
+
     const legend = this.svg.append('g')
-      .attr('class', 'legend')
-      .attr('transform', `translate(${legendX}, ${legendY})`);
-  
-    // Add white background for the legend
+        .attr('class', 'legend')
+        .attr('transform', `translate(${legendX}, ${legendY})`);
+
     legend.append('rect')
-      .attr('x', 0)
-      .attr('y', 0)
-      .attr('width', legendWidth)
-      .attr('height', legendHeight)
-      .attr('fill', '#fff')
-      .attr('stroke', '#000')
-      .attr('stroke-width', 2)
-      .attr('rx', 10)
-      .attr('ry', 10);
-  
-    // Add legend items
+        .attr('x', 0)
+        .attr('y', 0)
+        .attr('width', legendWidth)
+        .attr('height', legendHeight)
+        .attr('fill', '#fff')
+        .attr('stroke', '#000')
+        .attr('stroke-width', 2)
+        .attr('rx', 10)
+        .attr('ry', 10);
+
     const legendItems = legend.selectAll('.legend-item')
-      .data(legendData)
-      .enter()
-      .append('g')
-      .attr('class', 'legend-item')
-      .attr('transform', (d: any, i: number) => `translate(10, ${i * 40 + 10})`);
-  
-    // Create gradients
+        .data(legendData)
+        .enter()
+        .append('g')
+        .attr('class', 'legend-item')
+        .attr('transform', (d: any, i: number) => `translate(10, ${i * 40 + 10})`);
+
     const defs = this.svg.append('defs');
     legendData.forEach(d => {
-      const gradientId = `gradient-${d.region.replace(/\s+/g, '-')}`;
-      const gradient = defs.append('linearGradient')
-        .attr('id', gradientId)
-        .attr('x1', '0%')
-        .attr('y1', '0%')
-        .attr('x2', '100%')
-        .attr('y2', '0%');
-  
-      // Create gradient stops
-      for (let j = 0; j <= 10; j++) {
-        gradient.append('stop')
-          .attr('offset', `${j * 10}%`)
-          .attr('stop-color', d.colorScale(j / 10));
-      }
+        const gradientId = `gradient-${d.region.replace(/\s+/g, '-')}`;
+        const gradient = defs.append('linearGradient')
+            .attr('id', gradientId)
+            .attr('x1', '0%')
+            .attr('y1', '0%')
+            .attr('x2', '100%')
+            .attr('y2', '0%');
+
+        for (let j = 0; j <= 10; j++) {
+            gradient.append('stop')
+                .attr('offset', `${j * 10}%`)
+                .attr('stop-color', d.colorScale(j / 10));
+        }
     });
-  
-    // Add gradient rects to legend items
+
     legendItems.append('rect')
-      .attr('x', 0)
-      .attr('y', 0)
-      .attr('width', 100)
-      .attr('height', 30)
-      .attr('fill', (d: any) => `url(#gradient-${d.region.replace(/\s+/g, '-')})`);
-  
-    // Add text for each legend item
+        .attr('x', 0)
+        .attr('y', 0)
+        .attr('width', 100)
+        .attr('height', 30)
+        .attr('fill', (d: any) => `url(#gradient-${d.region.replace(/\s+/g, '-')})`);
+
     const textElements = legendItems.append('text')
-      .attr('x', 110)
-      .attr('y', 15)
-      .attr('dy', '.35em')
-      .text((d: any) => d.region)
-      .style('fill', '#2a0052')
-      .style('font-family', 'Roboto, sans-serif')
-      .style('font-weight', 'bold');
-  
-    // Calculate the maximum font size for the longest text
+        .attr('x', 110)
+        .attr('y', 15)
+        .attr('dy', '.35em')
+        .text((d: any) => d.region)
+        .style('fill', '#2a0052')
+        .style('font-family', 'Roboto, sans-serif')
+        .style('font-weight', 'bold');
+
     const longestText = legendData.reduce((max, d) => d.region.length > max.length ? d.region : max, "");
     const textElement = this.svg.append('text')
-      .attr('x', -9999)
-      .attr('y', -9999)
-      .text(longestText)
-      .style('fill', '#2a0052')
-      .style('font-family', 'Roboto, sans-serif')
-      .style('font-weight', 'bold');
-  
-    const availableWidth = legendWidth - 150; // 120 is the position of text start + padding
-    let newFontSize = 30; // Start with larger initial font size
-    const minFontSize = 8; // Set a minimum font size
+        .attr('x', -9999)
+        .attr('y', -9999)
+        .text(longestText)
+        .style('fill', '#2a0052')
+        .style('font-family', 'Roboto, sans-serif')
+        .style('font-weight', 'bold');
+
+    const availableWidth = legendWidth - 150;
+    let newFontSize = 30;
+    const minFontSize = 8;
     textElement.style('font-size', `${newFontSize}px`);
     let textLength = textElement.node()!.getComputedTextLength();
-  
+
     while (textLength > availableWidth && newFontSize > minFontSize) {
-      newFontSize -= 1;
-      textElement.style('font-size', `${newFontSize}px`);
-      textLength = textElement.node()!.getComputedTextLength();
+        newFontSize -= 1;
+        textElement.style('font-size', `${newFontSize}px`);
+        textLength = textElement.node()!.getComputedTextLength();
     }
-  
+
     textElement.remove();
-  
-    // Apply the calculated font size to all text elements
     textElements.style('font-size', `${newFontSize}px`);
-  }
+}
+
 
   public toggleMap(event: Event): void {
     if (this.isNationalityMode) return; // Prevent toggling if nationality mode is active

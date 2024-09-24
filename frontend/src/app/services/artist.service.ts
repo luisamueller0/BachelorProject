@@ -318,9 +318,11 @@ public pinkColorPalette: string[] = [
 
 public greenColorPalette:string[]=
 [
-  "#bfe29e",
+  "#8ad44e",
+
   "#a6db77",
-  "#8ad44e"
+  "#bfe29e"
+
 ]
 
  // Divergent color scale from yellow to orange
@@ -699,26 +701,33 @@ public getOldCountryColor(countryName: string | undefined, opacity: number = 1):
 
 //4
 public cyanOldColorPalette: string[] = [
-  "#359d97",
-  "#41a9a3",
-  "#4db6af",
-  "#59c2bb",
 
+
+  "#28918b",
+  "#41a9a3",
+  "#59c2bb",
+  "#70dcd4",
 ];
 
 
 //3
 public blueOldColorPalette: string[] = [
 
-  "#2f92d3",
-  "#3fa0db",
-  "#50aee3"
+
+  "#1575c2",
+  "#50aee3",
+  "#9ce6ff"
+
+
 ];
 
 
 
 //9
 public purpleOldColorPalette: string[] = [
+
+
+
   "#7A21D4",
   "#8725EB",
   "#9338F1",
@@ -735,10 +744,13 @@ public purpleOldColorPalette: string[] = [
 
 //4
 public pinkOldColorPalette: string[] = [
-  "#F262CC",
-  "#F474D3",
+
+  "#EA2BB7", // Dark pink
+  "#F050C5",
   "#F686DA",
-  "#F898E1"
+  "#FAAAE8",
+
+
 ];
 
 
