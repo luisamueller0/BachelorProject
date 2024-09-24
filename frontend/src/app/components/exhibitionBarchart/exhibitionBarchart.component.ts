@@ -71,7 +71,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
   private margin = {
     top: 1.75,
     right:  1.5,
-    bottom:  1.25,
+    bottom:  1,
     left:  1.5
   };
 
@@ -543,7 +543,7 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
     const xScale = d3.scaleBand()
       .domain(years)
       .range([0, this.contentWidth])
-      .padding(0.1);
+      //.padding(0.01);
   
     this.xScale = xScale;
   
@@ -631,11 +631,18 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
       .on('click', (event: any, d: any) => this.handleYearSelection(d.data.year));
   
     // Append x-axis with years
-    this.svg.append('g')
-      .attr('class', 'x-axis')
-      .attr('transform', `translate(0,${this.contentHeight})`)
-      .call(d3.axisBottom(xScale));
-  
+
+
+   // Append x-axis with years
+this.svg.append('g')
+.attr('class', 'x-axis')
+.attr('transform', `translate(0,${this.contentHeight})`)
+.call(d3.axisBottom(xScale).tickSize(0)) // Remove tick lines
+.selectAll('.tick text')
+.style('font-size', '0.7vw')
+.attr('dy', '0.7vw'); // Adjust dy to give more space (increase this value for more space)
+// Set font size to 0.7vw
+
     // Append y-axis
     // Append y-axis
     this.svg.append('g')
@@ -645,6 +652,23 @@ export class ExhibitionBarchartComponent implements OnInit, OnChanges, OnDestroy
       .tickFormat(d3.format('d')) // Ensure only integers are displayed
     );
 
+
+    // Add vertical lines to separate years
+    this.svg.append('g')
+        .selectAll('.year-separator')
+        .data(years)
+        .enter()
+        .append('line')
+        .attr('class', 'year-separator')
+        .attr('x1', (d: string) => xScale(d)! + xScale.bandwidth())
+        .attr('x2', (d: string) => xScale(d)! + xScale.bandwidth())
+        .attr('y1', yScale(0))
+        .attr('y2', yScale(yScale.domain()[1])) // Set the line's end point to match the y-axis height
+        .attr('stroke', 'lightgray')
+        .attr('opacity', 0.75)
+        .attr('display', 'block');
+
+        
   
     // Add a brush to the chart after drawing the bars
     this.addBrush();
