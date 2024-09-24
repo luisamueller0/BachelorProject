@@ -3,16 +3,23 @@
   <app-notification
     [message]="aiResponse"
     *ngIf="aiResponse"
+    [title]="aiTitle"
     (closeNotification)="closeNotification()"
   ></app-notification>
+
 
   <!-- Flex container for title and button with label -->
   <div class="header-container">
     <h1 class="title">{{ getTitle() }}</h1>
     <div class="ai-suggestion-container" *ngIf="selectedNodes.length > 0">
       <div class="ai-title">AI suggestion on connections</div>
+
+      <!-- Conditionally show either the loading spinner or the button -->
+      <div *ngIf="aiLoading" class="ai-loading-spinner"></div>
+      
       <div 
         class="ai-button" 
+        *ngIf="!aiLoading"
         (click)="handleButtonClick()" 
         (mouseover)="showTooltip($event)" 
         (mouseout)="hideTooltip()"

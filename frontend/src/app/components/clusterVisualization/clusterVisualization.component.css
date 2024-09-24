@@ -66,6 +66,21 @@ button:active {
   visibility: visible;  /* Hidden by default */
 }
 
+.ai-loading-spinner {
+  border: 3px solid #f3f3f3; /* Light grey */
+  border-top: 3px solid #7e24c7; /* Your desired color */
+  border-radius: 50%;
+  width: 1vw; /* Adjust size */
+  height: 1vw; /* Adjust size */
+  animation: spin 1s linear infinite; /* Spinner animation */
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+
 .ai-button {
   width: 1vw;     /* Match the height of the title */
   height: 1vw;    /* Match the height of the title */

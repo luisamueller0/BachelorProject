@@ -29,6 +29,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     public isLoading: boolean = true;
     private firstK: number = -1;
     private isIniatialized: boolean = false;
+    public aiLoading:boolean = false;
   
     private svg: any;
     private contentWidth: number = 0;
@@ -105,6 +106,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     private clusterSimulation: d3.Simulation<ClusterNode, undefined> | null = d3.forceSimulation<ClusterNode>();
     
   
+    public aiTitle =''
   
     private countryIndexMap = new Map<string, number>();
   
@@ -301,6 +303,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       // Method to close the notification
   closeNotification(): void {
     this.aiResponse = ''; // Clear the message when close is clicked
+    this.aiTitle=''
   }
 
     private updateNetworkOnSunburstChange(newCategory: string): void {
@@ -2210,6 +2213,7 @@ this.g.append(() => clusterGroup);  // Add the cluster to the main SVG
       tooltip.style("display", "none");
     }
 handleButtonClick(): void {
+  this.aiLoading = true;
   
     // Convert the cluster index back to a number
   
@@ -2221,6 +2225,13 @@ handleButtonClick(): void {
     return artistNodeData.artist; // Return the artist object
     });
     const artistNames = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname}`);
+    // Format artist names with quotes and add "and" before the last name
+const formattedNames = artistNames.map(name => `"${name}"`);
+const joinedNames = formattedNames.length > 1 
+  ? formattedNames.slice(0, -1).join(", ") + " and " + formattedNames[formattedNames.length - 1]
+  : formattedNames[0];
+
+
   
     const category = this.decisionService.getDecisionSunburst();
     let prompt = '';
@@ -2231,10 +2242,12 @@ handleButtonClick(): void {
 
           case 'nationality':
               prompt = `In around 5 sentences, discuss the connections, similarities, and differences among the following artists: ${artistNames.join(", ")} based on their national identities. How did their national backgrounds shape their artistic relationships and collaborations?`;
+              this.aiTitle = `AI Suggestion:<br>Connections among artists ${joinedNames} based on their nationalities`;
               break;
       
           case 'birthcountry':
               prompt = `In around 5 sentences, compare and contrast how the early environments of these artists: ${artistNames.join(", ")} influenced their artistic connections. What similarities or differences emerged in their work due to their birth countries?`;
+              this.aiTitle = `AI Suggestion:<br>Connections among artists ${joinedNames} in their early life stages`;
               break;
 
              /*  case 'nationality':
@@ -2247,10 +2260,13 @@ handleButtonClick(): void {
       
           case 'deathcountry':
               prompt = `Briefly, in around 5 sentences, analyze how the final stages of life in their respective death countries impacted the connections and artistic evolution of these artists: ${artistNames.join(", ")}. What common or differing themes are observed?`;
+              this.aiTitle = `AI Suggestion:<br>Connections among artists ${joinedNames} in their final life stages`;
               break;
       
           case 'mostexhibited':
               prompt = `In around 5 sentences, examine the influence of exhibition history on the connections among these artists: ${artistNames.join(", ")}. How did their most exhibited locations shape the common threads and distinctions in their careers?`;
+              this.aiTitle = `AI Suggestion:<br>Connections among artists ${joinedNames} through their exhibition history`;
+
               break;
       
           
@@ -2292,19 +2308,24 @@ handleButtonClick(): void {
 
       switch (category) {
         case 'nationality':
-          prompt = `In around 5 sentences, explain how ${artistNames.join(", ")}'s national background (${nationality}) influenced their connections with other artists. What similarities or differences arose from this influence?`;
+          prompt = `In around 5 sentences, explain how ${artistNames}'s national background (${nationality}) influenced their connections with other artists. What similarities or differences arose from this influence?`;
+          this.aiTitle = `AI Suggestion: Summary of the life of ${artistNames}`;
           break;
 
       case 'birthcountry':
           prompt = `Briefly, in around 5 sentences, discuss how the early environment in ${birthcountry} shaped ${artistNames.join(", ")}'s artistic connections. What common threads or unique differences were evident in their interactions with others?`;
+          this.aiTitle = `AI Suggestion: Overview of the early life stages of ${artistNames}`;
           break;
 
       case 'deathcountry':
           prompt = `In around 5 sentences, analyze how ${artistNames.join(", ")}'s later years in ${deathcountry} influenced their connections with other artists. What key similarities or contrasts emerged in their final works?`;
+          this.aiTitle = `AI Suggestion: Overview of the final life stages of ${artistNames}`;
+
           break;
 
       case 'mostexhibited':
           prompt = `Provide a short summary of around 5 sentences on how exhibiting mainly in ${mostexhibited} influenced ${artistNames.join(", ")}'s artistic connections. What common influences or distinctions were evident in their work?`;
+          this.aiTitle = `AI Suggestion: Exhibition journey of ${artistNames}`;
           break;
        /*    case 'nationality':
             prompt = `Explain in 5 sentences how the national background of ${artistNames.join(", ")} from ${nationality} influenced their artistic style and career. Focus on the most important aspects.`;
@@ -2333,11 +2354,11 @@ handleButtonClick(): void {
         this.generativeAIService.generateAIResponse(prompt).subscribe(
             response => {
                 this.aiResponse = response.content;  // Store the response
-
-
+                this.aiLoading = false;
                 console.log("AI Response:", this.aiResponse);
             },
             error => {
+              this.aiLoading = true;
                 console.error("Error generating AI response:", error);
             }
         );

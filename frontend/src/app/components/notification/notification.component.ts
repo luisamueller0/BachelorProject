@@ -7,6 +7,8 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 })
 export class NotificationComponent {
   @Input() message: string = ''; // The message to display
+  @Input() title: string = 'Default'; // The title to display
+
   @Output() closeNotification = new EventEmitter<void>();
 
   close() {
