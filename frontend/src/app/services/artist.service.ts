@@ -318,10 +318,11 @@ public pinkColorPalette: string[] = [
 
 public greenColorPalette:string[]=
 [
-  "#8ad44e",
+  "#7EB83D",
+  "#92C755",
 
-  "#a6db77",
-  "#bfe29e"
+  "#AEE371",
+
 
 ]
 
