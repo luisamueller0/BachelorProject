@@ -169,6 +169,9 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       this.subscriptions.add(this.selectionService.currentHoveredCountry.subscribe(country => {
         this.hoverOnCountry(country);
       }));
+      this.subscriptions.add(this.selectionService.currentHoveredOldCountry.subscribe(country => {
+        this.hoverOnCountry(country);
+      }));
       
   
       window.addEventListener('resize', this.onResize.bind(this));
