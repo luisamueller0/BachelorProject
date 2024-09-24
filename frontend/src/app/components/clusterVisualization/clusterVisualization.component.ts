@@ -176,73 +176,33 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
   
 
     private hoverOnCountry(country: string | null) {
-      const self = this;
       const category = this.decisionService.getDecisionSunburst();
-      if (country) {
-          // Select all path elements
-          this.svg.selectAll('path')
-              // Filter paths to include only those with the matching country
-              .filter(function(d: any) {
-                  return d.country === country; // Check if the path's country matches the provided country
-              })
-              .style("opacity", 1); // Set opacity to 1 for the matching paths
-          
-              this.svg.selectAll('.artist-node')
-              .filter(function(d: any) {
-                return self.getArtistCountryBasedOnCategory(d.artist, category) === country; // Check if the path's country matches the provided country
-            }).style("opacity",1)
-
-            this.svg.selectAll('.artist-edge')
-            .style('opacity', 1)
-
   
-          // Optionally, reduce opacity for paths that don't match the specified country
+      if (country) {
+          // Highlight paths matching the hovered country
           this.svg.selectAll('path')
-              .filter(function(d: any) {
-                  return d.country !== country;
-              })
-              .style("opacity", 0.2); // Set opacity to 0.2 for non-matching paths
-
-              this.svg.selectAll('.artist-node')
-              .filter(function(d: any) {
-                return self.getArtistCountryBasedOnCategory(d.artist, category) !== country; // Check if the path's country matches the provided country
-            }).style("opacity",0.4)
-
-
-              // Get all artist IDs with opacity 1
-        const artistIdsWithOpacity1 = new Set<number>();
-        this.svg.selectAll('.artist-node')
-            .filter(function(d: any) {
-                return self.getArtistCountryBasedOnCategory(d.artist, category) === country;
-            })
-            .each(function(d: any) {
-                artistIdsWithOpacity1.add(d.artist.id);
-            });
-
-
-            console.log(artistIdsWithOpacity1)
-
-        // Set edges to opacity 1 if either the source or target artist is in the set
-        this.svg.selectAll('.artist-edge')
-            .filter(function(d: any) {
-              console.log(d)
-                return artistIdsWithOpacity1.has(d.source.id) || artistIdsWithOpacity1.has(d.target.id);
-            })
-            .style("opacity", 1);
-
-        // Set all other edges to opacity 0.4
-        this.svg.selectAll('.artist-edge')
-            .filter(function(d: any) {
-                return !artistIdsWithOpacity1.has(d.source.id) && !artistIdsWithOpacity1.has(d.target.id);
-            })
-            .style("opacity", 0.1);
+              .style("opacity", (d: any) => d.country === country ? 1 : 0.2);
+  
+          // Identify artist nodes belonging to the hovered country and gather their IDs
+          const artistIdsWithOpacity1 = new Set<number>();
+          this.svg.selectAll('.artist-node')
+              .style("opacity", (d: any) => {
+                  const match = this.getArtistCountryBasedOnCategory(d.artist, category) === country;
+                  if (match) artistIdsWithOpacity1.add(d.artist.id);
+                  return match ? 1 : 0.4;
+              });
+  
+          // Adjust edge opacity based on whether their source or target belongs to the selected country
+          this.svg.selectAll('.artist-edge')
+              .style("opacity", (d: any) =>
+                  artistIdsWithOpacity1.has(d.source.id) || artistIdsWithOpacity1.has(d.target.id) ? 1 : 0.1
+              );
       } else {
-     // If no country is provided, reset all paths, nodes, and edges to full opacity
-     this.svg.selectAll('path').style("opacity", 1);
-     this.svg.selectAll('.artist-node').style('opacity', 1);
-     this.svg.selectAll('.artist-edge').style('opacity', 1);
+          // Reset all elements to full opacity
+          this.svg.selectAll('path, .artist-node, .artist-edge').style("opacity", 1);
       }
   }
+  
   
     private updateMap(category: string): void {
       const countries: string[] = [];
