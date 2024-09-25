@@ -98,5 +98,9 @@ export class DecisionService {
     return this.kSource.getValue();
   }
 
+  getDecisionRanking(): string {
+    return this.rankingSource.getValue();
+  }
+
   
 }

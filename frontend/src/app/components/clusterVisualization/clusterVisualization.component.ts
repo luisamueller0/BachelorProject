@@ -185,6 +185,8 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
 
 
     private updateClusterPosition(ranking: string): void {
+      if(!this.svg)
+        return;
       // Determine the scale based on the ranking
       let xScale;
   
@@ -257,8 +259,10 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
               .alpha(1) // Set the alpha to 1 to restart the simulation
               .restart();
   
+              if(this.clusterNodes){
           // Transition the clusters to their new positions
           this.g.selectAll(".cluster")
+          .data(this.clusterNodes)
               .transition()
               .duration(750) // Set the transition duration in milliseconds
               .attr("transform", (d: ClusterNode) => {
@@ -279,6 +283,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
                           return `translate(${xScale(d.totalExhibitedArtworks)}, ${this.contentHeight / 2})`;
                   }
               });
+            }
   
           this.clusterSimulation = simulation;
       }
@@ -289,6 +294,8 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     private hoverOnCountry(country: string | null) {
       const category = this.decisionService.getDecisionSunburst();
   
+      if(!this.svg)
+        return;
       if (country) {
           // Highlight paths matching the hovered country
           this.svg.selectAll('path')
@@ -943,6 +950,8 @@ private onClusterClick(clusterNode: ClusterNode): void {
     }
     
     private highlightArtistNode(id: string | null) {
+      if(!this.svg)
+        return;
       if (id === null) {
         this.g.selectAll(".artist-node").style('filter', '');
         return;
@@ -2092,31 +2101,90 @@ this.clusters.forEach((cluster, i, nodes) => {
     }
     
     private applyForceSimulation(): void {
-      const nodes = this.clusterNodes;      
+      const nodes = this.clusterNodes;
       const height = this.contentHeight;
-
-  // Define the xScale based on totalExhibitedArtworks
-  const xScale = d3.scaleLinear()
-  .domain([d3.max(nodes, d => d.totalExhibitedArtworks) || 0,d3.min(nodes, d => d.totalExhibitedArtworks) || 0])
-  .range([this.cellWidth/2, this.contentWidth-this.cellWidth/2]);  // Full width of the SVG
-
+  
+      // Get the current ranking from the decision service
+      const ranking = this.decisionService.getDecisionRanking();
+  
+      // Define the xScale based on the current ranking
+      let xScale;
+      switch (ranking) {
+          case 'exhibitions':
+              xScale = d3.scaleLinear()
+                  .domain([d3.max(nodes, d => d.totalExhibitions) || 0, d3.min(nodes, d => d.totalExhibitions) || 0])
+                  .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
+              break;
+  
+          case 'techniques':
+              xScale = d3.scaleLinear()
+                  .domain([d3.max(nodes, d => d.totalTechniques) || 0, d3.min(nodes, d => d.totalTechniques) || 0])
+                  .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
+              break;
+  
+          case 'artworks':
+              xScale = d3.scaleLinear()
+                  .domain([d3.max(nodes, d => d.totalExhibitedArtworks) || 0, d3.min(nodes, d => d.totalExhibitedArtworks) || 0])
+                  .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
+              break;
+  
+          case 'birthyear':
+              xScale = d3.scaleLinear()
+                  .domain([d3.min(nodes, d => d.meanBirthYear) || 1900, d3.max(nodes, d => d.meanBirthYear) || 1950])
+                  .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
+              break;
+  
+          case 'deathyear':
+              xScale = d3.scaleLinear()
+                  .domain([d3.min(nodes, d => d.meanDeathYear) || 1850, d3.max(nodes, d => d.meanDeathYear) || 1900])
+                  .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
+              break;
+  
+          case 'time': // Use meanAvgDate for the 'time' ranking
+              xScale = d3.scaleTime()
+                  .domain([d3.min(nodes, d => d.meanAvgDate) || new Date(1850, 0, 1), 
+                           d3.max(nodes, d => d.meanAvgDate) || new Date(1950, 0, 1)])
+                  .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
+              break;
+  
+          default:
+              xScale = d3.scaleLinear()
+                  .domain([d3.max(nodes, d => d.totalExhibitedArtworks) || 0, d3.min(nodes, d => d.totalExhibitedArtworks) || 0])
+                  .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
+              break;
+      }
+  
       // Set up the force simulation with the nodes
       this.clusterSimulation = d3.forceSimulation<ClusterNode>(nodes)
-      .force('charge', d3.forceManyBody().strength(5))
-        .force("collision", d3.forceCollide<ClusterNode>().radius(d => d.outerRadius))
-        .force('x', d3.forceX().x((d: any) => {
-          // Use the xScale to map totalExhibitedArtworks to the x position
-          return xScale(d.totalExhibitedArtworks);
-      }))       
-        .force('y', d3.forceY().y(function(d) {
-          return height / 2;
-        }))
-        .on("tick", () => this.ticked()); // Re-enable the tick function
-  this.g.selectAll(".cluster").attr("transform", (d: ClusterNode) => { return `translate(${50}, ${50})`; });
-  console.log(typeof this.g.selectAll(".cluster"))
-      console.log("Cluster simulation setup with links:", this.clusterSimulation);
-    }
+          .force('charge', d3.forceManyBody().strength(5))
+          .force("collision", d3.forceCollide<ClusterNode>().radius(d => d.outerRadius))
+          .force('x', d3.forceX().x((d: any) => {
+              // Use the xScale to map the appropriate attribute to the x position
+              switch (ranking) {
+                  case 'exhibitions':
+                      return xScale(d.totalExhibitions);
+                  case 'artworks':
+                      return xScale(d.totalExhibitedArtworks);
+                  case 'techniques':
+                      return xScale(d.totalTechniques);
+                  case 'birthyear':
+                      return xScale(d.meanBirthYear);
+                  case 'deathyear':
+                      return xScale(d.meanDeathYear);
+                  case 'time':
+                      return xScale(d.meanAvgDate);
+                  default:
+                      return xScale(d.totalExhibitedArtworks);
+              }
+          }))
+          .force('y', d3.forceY().y(() => height / 2))
+          .on("tick", () => this.ticked()); // Re-enable the tick function
+  
     
+      console.log(typeof this.g.selectAll(".cluster"));
+      console.log("Cluster simulation setup with links:", this.clusterSimulation);
+  }
+  
 
 /*   .force('x', d3.forceX().x(function(d) {
     return xScale(d.value);
@@ -2225,116 +2293,7 @@ this.clusters.forEach((cluster, i, nodes) => {
     });
   }
    */
-/*   private addButtonToCell(cell: any, x: string | number, y: string | number, cellWidth: number, cellHeight: number): void {
-    const buttonSize = 15 * cellWidth / 100;  // Size of the button
-  
-    //const buttonSize = Math.min(cellWidth, cellHeight) * 0.2;  // Size of the button is 20% of the smaller cell dimension
-    const marginRight = cellWidth * 0.05; // 5% of the cell width for right margin
-    const marginTop = cellHeight * 0.001;  // 5% of the cell height for top margin
-  
-  
-    // Adjust position to top right corner
-    const positionX = cellWidth - buttonSize - marginRight;
-    const positionY = marginTop;
-  
-    const clusterIndex =  Number(x) - 1; // Determine cluster index based on the current cell
 
-    const tooltip = d3.select("div#tooltip");
-  
-    const showTooltip = (event: any) => {
-    
-      tooltip.style("display", "block")
-          .style("left", `${event.pageX + 5}px`)
-          .style("top", `${event.pageY + 5}px`)
-          .style("color", "black")
-          .html(`Get suggestion of reasoning of connections between those artists on click by an ai.<br/>`);
-    };
-    
-    const hideTooltip = () => {
-      tooltip.style("display", "none");
-    };
-  
-    // Append a button element within a foreignObject
-    const button = cell.append("foreignObject")
-      .attr("x", positionX)
-      .attr("y", positionY)
-      .attr("width", buttonSize + marginRight) // Ensure foreignObject is wide enough
-      .attr("height", buttonSize + marginTop)  // Ensure foreignObject is tall enough
-      .append("xhtml:div")  // Use div instead of button for better control
-      .attr("data-cluster-index", clusterIndex) // Store the cluster index as a data attribute
-      .attr("class", `ai-button-${clusterIndex}`)  // Add your custom class here
-      .style("width", `${buttonSize}px`)
-      .style("height", `${buttonSize}px`)
-      .style("background-color", "#f5e0ff")
-      .style("border-radius", "50%")
-      .style("display", "flex")
-      .style("align-items", "center")
-      .style("justify-content", "center")
-      .style("font-size", `${buttonSize * 0.8}px`)  // Adjust font size relative to the button size
-      .style("font-weight", `800`) 
-      .style("line-height", `${buttonSize}px`)  // Ensure the symbol is centered
-      .style("color", "#7e24c7")  // Set text color
-      .html("✧") // Use the ✧ symbol
-      .on("click", (event: MouseEvent) => {
-        const target = event.currentTarget as HTMLElement;
-        const clusterIndex = target.getAttribute('data-cluster-index');
-        this.handleButtonClick(clusterIndex); // Call the handler with the cluster index
-    
-      })
-      .on("mouseover", (event: MouseEvent) => {
-        const target = event.currentTarget as HTMLElement;
-      //  target.style.borderColor = "#7e24c7";  // Change background color on hover
-        showTooltip(event);
-        target.style.backgroundColor = "#e0baf2"
-      })
-      .on("mouseout", (event: MouseEvent) => {
-        const target = event.currentTarget as HTMLElement;
-       // target.style.borderColor = "#f5e0ff";  // Reset background color on mouse out
-        hideTooltip();
-        target.style.backgroundColor = "#f5e0ff"
-      })
-      .style("visibility", "hidden")
-      .style('cursor', 'pointer');  // Add this line to change the cursor
-
-
-      
-
-      
-    }
-   */
-   
-      
-  
-  // Handler function for button click
-/*   private handleButtonClick(clusterIndex: string | null): void {
-    if (clusterIndex === null) return;
-  
-    // Convert the cluster index back to a number
-    const index = Number(clusterIndex);
-  
-    // Retrieve the corresponding cluster and network information
-    const cluster = this.clusters[index];
-    const artistNames = cluster.map(artist => `${artist.firstname} ${artist.lastname}`);
-  
-    console.log(`Button clicked for cluster ${index}. Artists:`, artistNames);
-  
-    const prompt = "What do all of the following artists have in common: " + artistNames.join(", ") + ". In 5 sentences.";
-    //Summarize the connections between the following artists:
-  
-      this.generativeAIService.generateAIResponse(prompt).subscribe(
-        response => {
-          this.aiResponse = response.content;  // Store the response
-          console.log("AI Response:", this.aiResponse);
-        },
-        error => {
-          console.error("Error generating AI response:", error);
-        }
-      );
-    
-  
-    // You can now use this information as needed, e.g., displaying it in a tooltip, modal, etc.
-  } */
-  
   
   
     showTooltip(event: MouseEvent): void {
@@ -2379,12 +2338,15 @@ const joinedNames = formattedNames.length > 1
       switch (category) {
 
           case 'nationality':
-              prompt = `In around 5 sentences, discuss the connections, similarities, and differences among the following artists: ${artistNames.join(", ")} based on their national identities. How did their national backgrounds shape their artistic relationships and collaborations?`;
+              prompt = `
+              In 60 words, discuss the connections, similarities, and differences among the following artists: ${artistNames.join(", ")}. 
+              How did their national backgrounds shape their artistic relationships and collaborations?`;
               this.aiTitle = `AI Suggestion:<br>Connections among artists ${joinedNames} based on their nationalities`;
               break;
       
           case 'birthcountry':
-              prompt = `In around 5 sentences, compare and contrast how the early environments of these artists: ${artistNames.join(", ")} influenced their artistic connections. What similarities or differences emerged in their work due to their birth countries?`;
+            prompt = `In 60 words, discuss how their early life stages shaped the connections and collaborations among these artists: ${joinedNames}. Note any shared themes, styles, or early artistic interactions.`
+             // prompt = `In 40 words, describe the similarities of these artists: ${artistNames.join(", ")} during their early life and if they have influenced each other or collaborated in any way.`;
               this.aiTitle = `AI Suggestion:<br>Connections among artists ${joinedNames} in their early life stages`;
               break;
 
@@ -2397,12 +2359,16 @@ const joinedNames = formattedNames.length > 1
                 break; */
       
           case 'deathcountry':
-              prompt = `Briefly, in around 5 sentences, analyze how the final stages of life in their respective death countries impacted the connections and artistic evolution of these artists: ${artistNames.join(", ")}. What common or differing themes are observed?`;
+            prompt = `In 60 words, discuss how their final life stages shaped the connections and collaborations among these artists: ${joinedNames}.
+             Highlight any common themes, influences, or late-life partnerships.`
+           // prompt = `In 40 words, describe the similarities of these artists: ${artistNames.join(", ")} during their final life stages and if they have influenced each other or collaborated in any way.`;
               this.aiTitle = `AI Suggestion:<br>Connections among artists ${joinedNames} in their final life stages`;
               break;
       
           case 'mostexhibited':
-              prompt = `In around 5 sentences, examine the influence of exhibition history on the connections among these artists: ${artistNames.join(", ")}. How did their most exhibited locations shape the common threads and distinctions in their careers?`;
+            prompt = `In 60 words, examine the influence of exhibition history on the connections among these artists: ${artistNames.join(", ")} and if they have influenced each other or collaborated in any way.`;
+
+              //prompt = `In around 5 sentences, examine the influence of exhibition history on the connections among these artists: ${artistNames.join(", ")}. How did their most exhibited locations shape the common threads and distinctions in their careers?`;
               this.aiTitle = `AI Suggestion:<br>Connections among artists ${joinedNames} through their exhibition history`;
 
               break;
@@ -2439,30 +2405,30 @@ const joinedNames = formattedNames.length > 1
     // Only one artist selected
     else if (this.selectedNodes.length === 1) {
       const selectedArtist = selectedArtists[0];
-      const nationality = selectedArtist.nationality;
-      const birthcountry = selectedArtist.birthcountry;
-      const deathcountry = selectedArtist.deathcountry;
-      const mostexhibited = selectedArtist.most_exhibited_in;
+      const nationality =  this.artistService.countryMap[selectedArtist.nationality] 
+      const birthcountry =  this.modernMap? this.artistService.countryMap[selectedArtist.birthcountry]  : this.artistService.oldCountryMap[selectedArtist.oldBirthCountry]
+      const deathcountry =  this.modernMap? this.artistService.countryMap[selectedArtist.deathcountry]  : this.artistService.oldCountryMap[selectedArtist.oldDeathCountry]
+      const mostexhibited =  this.modernMap? this.artistService.countryMap[selectedArtist.most_exhibited_in]  : this.artistService.oldCountryMap[selectedArtist.mostExhibitedInOldCountry]
 
       switch (category) {
         case 'nationality':
-          prompt = `In around 5 sentences, explain how ${artistNames}'s national background (${nationality}) influenced their connections with other artists. What similarities or differences arose from this influence?`;
+          prompt = `In 60 words, describe how ${artistNames}'s nationality (${nationality}) shaped their connections with other artists. Highlight key influences and similarities.`;
           this.aiTitle = `AI Suggestion: Summary of the life of ${artistNames}`;
           break;
 
       case 'birthcountry':
-          prompt = `Briefly, in around 5 sentences, discuss how the early environment in ${birthcountry} shaped ${artistNames.join(", ")}'s artistic connections. What common threads or unique differences were evident in their interactions with others?`;
+          prompt = `In 60 words, describe how ${artistNames}'s nationality (${nationality}) shaped their connections with other artists. Highlight key influences and similarities.`;
           this.aiTitle = `AI Suggestion: Overview of the early life stages of ${artistNames}`;
           break;
 
       case 'deathcountry':
-          prompt = `In around 5 sentences, analyze how ${artistNames.join(", ")}'s later years in ${deathcountry} influenced their connections with other artists. What key similarities or contrasts emerged in their final works?`;
+          prompt = `In 60 words, discuss how ${artistNames}'s later years in ${deathcountry} influenced their final artistic connections and styles.`;
           this.aiTitle = `AI Suggestion: Overview of the final life stages of ${artistNames}`;
 
           break;
 
       case 'mostexhibited':
-          prompt = `Provide a short summary of around 5 sentences on how exhibiting mainly in ${mostexhibited} influenced ${artistNames.join(", ")}'s artistic connections. What common influences or distinctions were evident in their work?`;
+          prompt = `In 60 words, analyze why ${artistNames}'s artworks were most exhibited in ${mostexhibited} and how other artists influenced this. Highlight the artistic connections that led to this exhibition focus.`;
           this.aiTitle = `AI Suggestion: Exhibition journey of ${artistNames}`;
           break;
        /*    case 'nationality':
