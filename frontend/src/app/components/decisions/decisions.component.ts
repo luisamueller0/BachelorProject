@@ -102,7 +102,12 @@ public isLoadingRange: boolean = false;
   RankingOptions: { label: string, value: string }[] = [
     { label: 'Amount of Exhibitions', value: 'exhibitions' },
     { label: 'Variety of Used Techniques', value: 'techniques' },
-    { label: 'Exhibited Artworks', value: 'artworks' }
+    { label: 'Amount of Exhibited Artworks', value: 'artworks' },
+    { label: 'Average Birthyear', value: 'birthyear' },
+    { label: 'Average Deathyear', value: 'deathyear' },
+    { label: 'Average Exhibition Time', value: 'time' }
+
+
 
   ];
   selectedSunburst: string = 'birthcountry';
