@@ -2410,22 +2410,7 @@ const joinedNames = formattedNames.length > 1
           prompt = `In 60 words, analyze why ${artistNames}'s artworks were most exhibited in ${mostexhibited} and how other artists influenced this. Highlight the artistic connections that led to this exhibition focus.`;
           this.aiTitle = `AI Suggestion: Exhibition journey of ${artistNames}`;
           break;
-       /*    case 'nationality':
-            prompt = `Explain in 5 sentences how the national background of ${artistNames.join(", ")} from ${nationality} influenced their artistic style and career. Focus on the most important aspects.`;
-              break;
-
-          case 'birthcountry':
-              prompt = `Summarize in 5 sentences how early life experiences in ${birthcountry} shaped the career of ${artistNames.join(", ")}. What were the key influences from their birth country?`;
-              break;
-
-          case 'deathcountry':
-            prompt = `In 5 sentences, describe how ${artistNames.join(", ")}'s time in ${deathcountry} influenced their later works. Highlight the most important changes or connections.`;
-              break;
-
-          case 'mostexhibited':
-            prompt = `Provide a short summary of 5 sentences of how exhibiting mainly in ${mostexhibited} influenced the career of ${artistNames.join(", ")}. Focus on the key effects on their style and legacy.`;
-              break;
- */
+      
           default:
               console.warn('Unknown category:', category);
               break;
@@ -2604,8 +2589,8 @@ const joinedNames = formattedNames.length > 1
     .on('mouseout', hideTooltip);
   
   // [Optional: Store paths in clusterNode for later access]
-  
-  const textsize = 0.5 * Math.min(cellHeight, cellWidth) / 10;
+  const innerRadius= clusterNode.innerRadius;
+  const textsize = innerRadius/7.5;
   
   clusterGroup.selectAll("text")
     .data(data)
@@ -2963,11 +2948,11 @@ console.log(this.clusterNodes)
   
     private createSunburstProperties(clusterSize: number, maxSize: number, cellSize: number): [number, number] {
       const paddedCellSize = cellSize * (1 - this.paddingRatio); // Reduce cell size by padding ratio
-      const minRadius = paddedCellSize / 2;
-      const maxRadius = paddedCellSize / 2; // Adjust max radius to fit within cells
+      const minRadius = paddedCellSize / 5;
+      const maxRadius = paddedCellSize /5 * 3; // Adjust max radius to fit within cells
   
       const outerRadius = minRadius + ((maxRadius - minRadius) * (clusterSize / maxSize));
-      const innerRadius = outerRadius - paddedCellSize / 10; // Reduced thickness for small cells
+      const innerRadius = outerRadius - outerRadius/5; // Reduced thickness for small cells
   
       return [outerRadius, innerRadius];
   }
