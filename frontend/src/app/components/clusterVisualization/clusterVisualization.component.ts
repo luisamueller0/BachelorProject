@@ -121,6 +121,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
 
   
   
+  
 
     private currentSelection: {
   type: 'artist' | 'cluster' | 'none';
@@ -175,10 +176,53 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         this.hoverOnCountry(country);
       }));
       
-  
+      this.subscriptions.add(this.decisionService.currentRanking.subscribe(ranking => {  
+        this.updateClusterPosition(ranking);
+      }));
       window.addEventListener('resize', this.onResize.bind(this));
     }
   
+
+
+ private updateClusterPosition(ranking: string): void {
+      // Determine the scale based on the ranking
+      let xScale;
+    
+      switch (ranking) {
+        case 'exhibitions':
+          xScale = d3.scaleLinear()
+            .domain([d3.min(this.clusterNodes, d => d.totalExhibitions) || 0, d3.max(this.clusterNodes, d => d.totalExhibitions) || 0])
+            .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
+          break;
+    
+        case 'exhibitedArtworks':
+        default:
+          xScale = d3.scaleLinear()
+            .domain([d3.min(this.clusterNodes, d => d.totalExhibitedArtworks) || 0, d3.max(this.clusterNodes, d => d.totalExhibitedArtworks) || 0])
+            .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
+          break;
+      }
+    
+      // Update the force simulation with the new xScale
+      const simulation = this.clusterSimulation;
+      if (simulation) {
+        simulation
+          .force('x', d3.forceX().x((d: any) => xScale(ranking === 'exhibitions' ? d.totalExhibitions : d.totalExhibitedArtworks)))
+          .alpha(1) // Set the alpha to 1 to restart the simulation
+          .restart();
+
+          
+    
+        // Transition the clusters to their new positions
+        this.g.selectAll(".cluster")
+          .transition()
+          .duration(2000) // Set the transition duration in milliseconds
+          .attr("transform", (d: ClusterNode) => `translate(${xScale(ranking === 'exhibitions' ? d.totalExhibitions : d.totalExhibitedArtworks)}, ${this.contentHeight / 2})`);
+    
+        this.clusterSimulation = simulation;
+      }
+    }
+    
 
     private hoverOnCountry(country: string | null) {
       const category = this.decisionService.getDecisionSunburst();
@@ -2019,38 +2063,59 @@ this.clusters.forEach((cluster, i, nodes) => {
         
     
 
-    private drawCluster( x: number, cellWidth: number, cellHeight: number): void {
-      const clusterIndex = x;
-      const cluster = this.clusters[clusterIndex];
-      if (!cluster) return;
+  private drawCluster(x: number, cellWidth: number, cellHeight: number): void {
+    const clusterIndex = x;
+    const cluster = this.clusters[clusterIndex];
+    if (!cluster) return;
   
-      const cellSize = Math.min(cellWidth, cellHeight);
-      const paddedCellSize = cellSize * (1 - this.paddingRatio); // Reduce cell size by padding ratio
-      const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, this.clusters[0].length, paddedCellSize);
-      this.innerRadius = innerRadius; 
-      const totalExhibitedArtworks = cluster.reduce((total, artist) => total + artist.total_exhibited_artworks, 0);
-
-      const clusterNode: ClusterNode = {
-          clusterId: clusterIndex,
-          artists: cluster,
-          outerRadius: outerRadius,
-          innerRadius: innerRadius,
-          x: 0,
-          y: 0,
-          meanAvgDate: new Date(),
-          meanBirthDate: new Date(),
-          totalExhibitedArtworks: totalExhibitedArtworks
-      };
+    const cellSize = Math.min(cellWidth, cellHeight);
+    const paddedCellSize = cellSize * (1 - this.paddingRatio); // Reduce cell size by padding ratio
+    const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, this.clusters[0].length, paddedCellSize);
+    this.innerRadius = innerRadius; 
   
-      const category = this.decisionService.getDecisionSunburst();
-      const clusterGroup = this.createClusterGroup(clusterNode, category, cellWidth, cellHeight);
+    // Use a single reduce function to calculate the average birth year and other properties
+    const metrics = cluster.reduce((acc, artist) => {
+      acc.totalBirthYear += artist.birthyear;
+      acc.totalExhibitedArtworks += artist.total_exhibited_artworks;
+      acc.totalExhibitions += artist.total_exhibitions;
+      acc.totalTechniques += artist.amount_techniques;
+      acc.count += 1;
+      return acc;
+    }, {
+      totalBirthYear: 0,
+      totalExhibitedArtworks: 0,
+      totalExhibitions: 0,
+      totalTechniques: 0,
+      count: 0
+    });
+  
+    // Calculate the average birth year
+    const avgBirthYear = metrics.count > 0 ? metrics.totalBirthYear / metrics.count : 1910;
+  
+    // Create the clusterNode with the calculated values
+    const clusterNode: ClusterNode = {
+        clusterId: clusterIndex,
+        artists: cluster,
+        outerRadius: outerRadius,
+        innerRadius: innerRadius,
+        x: 0,
+        y: 0,
+        meanAvgDate: new Date(),  // Adjust this if you have a value to calculate for meanAvgDate
+        meanBirthYear: avgBirthYear, // Set the calculated average birth year as a Date object
+        totalExhibitedArtworks: metrics.totalExhibitedArtworks,
+        totalExhibitions: metrics.totalExhibitions,
+        totalTechniques: metrics.totalTechniques
+    };
+  
+    const category = this.decisionService.getDecisionSunburst();
+    const clusterGroup = this.createClusterGroup(clusterNode, category, cellWidth, cellHeight);
   
     // Append the clusterGroup to this.svg
-this.g.append(() => clusterGroup);  // Add the cluster to the main SVG
-
-//d3.select(clusterGroup).datum(clusterNode);
-  
+    this.g.append(() => clusterGroup);  // Add the cluster to the main SVG
   }
+  
+
+
 
 
     
@@ -2073,7 +2138,7 @@ this.g.append(() => clusterGroup);  // Add the cluster to the main SVG
   
   
   
-  private drawCells(xScale: d3.ScaleBand<string>, yScale: d3.ScaleBand<string>, xData: string[], yData: string[], cellWidth: number, cellHeight: number): void {
+/*   private drawCells(xScale: d3.ScaleBand<string>, yScale: d3.ScaleBand<string>, xData: string[], yData: string[], cellWidth: number, cellHeight: number): void {
     const cells = this.g.selectAll("g.cell")
       .data( xData.flatMap(x => yData.map(y => ({ x, y }))))
       .enter()
@@ -2086,7 +2151,7 @@ this.g.append(() => clusterGroup);  // Add the cluster to the main SVG
      // this.addButtonToCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight);
     });
   }
-  
+   */
 /*   private addButtonToCell(cell: any, x: string | number, y: string | number, cellWidth: number, cellHeight: number): void {
     const buttonSize = 15 * cellWidth / 100;  // Size of the button
   
@@ -2366,7 +2431,7 @@ const joinedNames = formattedNames.length > 1
   }
 }
     
-    private drawClusterInCell(cell: any, x: string | number, y: string | number, cellWidth: number, cellHeight: number): void {
+/*     private drawClusterInCell(cell: any, x: string | number, y: string | number, cellWidth: number, cellHeight: number): void {
       const clusterIndex = Number(x) - 1;
       const cluster = this.clusters[clusterIndex];
       if (!cluster) return;
@@ -2396,7 +2461,7 @@ const joinedNames = formattedNames.length > 1
   
       
       cell.node().appendChild(clusterGroup);
-  }
+  } */
   
     
   private createClusterGroup(clusterNode: ClusterNode, value: string, cellWidth: number, cellHeight: number): SVGGElement {

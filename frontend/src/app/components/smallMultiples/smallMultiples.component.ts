@@ -1009,7 +1009,7 @@ private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks
       .range([0, this.contentHeight])
       .padding(0.1);
   
-    this.drawCells(xScale, yScale, xData, yData, cellWidth, cellHeight, isSwitched);
+    //this.drawCells(xScale, yScale, xData, yData, cellWidth, cellHeight, isSwitched);
   
     if (isSwitched) {
       this.drawHorizontalSeparators(yScale, yData); // Draw horizontal lines
@@ -1076,7 +1076,7 @@ private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks
 }
 
 
-
+/* 
 private drawCells(xScale: d3.ScaleBand<string>, yScale: d3.ScaleBand<string>, xData: string[], yData: string[], cellWidth: number, cellHeight: number, isSwitched: boolean): void {
   const cells = this.g.selectAll("g.cell")
     .data(isSwitched ? yData.flatMap(y => xData.map(x => ({ x, y }))) : xData.flatMap(x => yData.map(y => ({ x, y }))))
@@ -1089,7 +1089,7 @@ private drawCells(xScale: d3.ScaleBand<string>, yScale: d3.ScaleBand<string>, xD
     this.drawClusterInCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight, isSwitched);
     //this.addButtonToCell(d3.select(nodes[i]), d.x, d.y, cellWidth, cellHeight, isSwitched); // Add the button
   });
-}
+} */
 
 private addButtonToCell(cell: any, x: string | number, y: string | number, cellWidth: number, cellHeight: number, isSwitched: boolean): void {
   const buttonSize = 15 * cellWidth / 100;  // Size of the button
@@ -1183,7 +1183,7 @@ private handleButtonClick(clusterIndex: string | null): void {
 
 
   
-  private drawClusterInCell(cell: any, x: string | number, y: string | number, cellWidth: number, cellHeight: number, isSwitched: boolean): void {
+/*   private drawClusterInCell(cell: any, x: string | number, y: string | number, cellWidth: number, cellHeight: number, isSwitched: boolean): void {
     const clusterIndex = isSwitched ? Number(y) - 1 : Number(x) - 1;
     const cluster = this.clusters[clusterIndex];
     if (!cluster) return;
@@ -1200,7 +1200,7 @@ private handleButtonClick(clusterIndex: string | null): void {
         x: 0,
         y: 0,
         meanAvgDate: new Date(),
-        meanBirthDate: new Date(),
+        meanBirthYear: 1910,
         totalExhibitedArtworks: 0
     };
 
@@ -1209,7 +1209,7 @@ private handleButtonClick(clusterIndex: string | null): void {
     d3.select(clusterGroup).datum(clusterNode);
 
     cell.node().appendChild(clusterGroup);
-}
+} */
 
   
 private createClusterGroup(clusterNode: ClusterNode, value: string, cellWidth: number, cellHeight: number): SVGGElement {

@@ -63,7 +63,9 @@ interface ArtistData {
     y: number;
     meanAvgDate: Date;
     totalExhibitedArtworks: number;
-    meanBirthDate: Date;
+    totalExhibitions:number;
+    totalTechniques: number;
+    meanBirthYear: number;
   }
   
   

@@ -137,6 +137,8 @@ public isLoadingRange: boolean = false;
   selectedThickness: string = '';
   ThicknessOptions: string[] = ['none', '#exhibitions of Artist 1 and 2', 'Same techniques'];
 
+
+
   onSunburstChange(event: any) {
     this.decisionService.changeDecisionSunburst(event.target.value);
   }
