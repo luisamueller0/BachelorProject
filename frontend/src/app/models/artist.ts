@@ -66,6 +66,7 @@ interface ArtistData {
     totalExhibitions:number;
     totalTechniques: number;
     meanBirthYear: number;
+    meanDeathYear: number;
   }
   
   

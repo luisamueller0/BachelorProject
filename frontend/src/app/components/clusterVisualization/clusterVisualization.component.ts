@@ -184,44 +184,106 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
   
 
 
- private updateClusterPosition(ranking: string): void {
+    private updateClusterPosition(ranking: string): void {
       // Determine the scale based on the ranking
       let xScale;
-    
+  
       switch (ranking) {
-        case 'exhibitions':
-          xScale = d3.scaleLinear()
-            .domain([d3.min(this.clusterNodes, d => d.totalExhibitions) || 0, d3.max(this.clusterNodes, d => d.totalExhibitions) || 0])
-            .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
-          break;
-    
-        case 'exhibitedArtworks':
-        default:
-          xScale = d3.scaleLinear()
-            .domain([d3.min(this.clusterNodes, d => d.totalExhibitedArtworks) || 0, d3.max(this.clusterNodes, d => d.totalExhibitedArtworks) || 0])
-            .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
-          break;
+          case 'exhibitions':
+              xScale = d3.scaleLinear()
+              .domain([d3.max(this.clusterNodes, d => d.totalExhibitions) || 0, d3.min(this.clusterNodes, d => d.totalExhibitions) || 0])
+              .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]); // Left to right as usual
+              break;
+          case 'techniques':
+            xScale = d3.scaleLinear()
+            .domain([d3.max(this.clusterNodes, d => d.totalTechniques) || 0, d3.min(this.clusterNodes, d => d.totalTechniques) || 0])
+            .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]); // Left to right as usual
+            break;
+  
+          case 'artworks':
+              xScale = d3.scaleLinear()
+              .domain([d3.max(this.clusterNodes, d => d.totalExhibitedArtworks) || 0, d3.min(this.clusterNodes, d => d.totalExhibitedArtworks) || 0])
+              .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]); // Left to right as usual
+              break;
+  
+          case 'birthyear': // Birth year, keep the usual left-to-right orientation
+              xScale = d3.scaleLinear()
+                  .domain([d3.min(this.clusterNodes, d => d.meanBirthYear) || 1900, d3.max(this.clusterNodes, d => d.meanBirthYear) || 1950])
+                  .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
+              break;
+          case 'deathyear': // Birth year, keep the usual left-to-right orientation
+            xScale = d3.scaleLinear()
+                .domain([d3.min(this.clusterNodes, d => d.meanDeathYear) || 1850, d3.max(this.clusterNodes, d => d.meanDeathYear) || 1900])
+                .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
+            break;
+
+            case 'time': // Use meanAvgDate for the 'time' ranking
+            xScale = d3.scaleLinear()
+                .domain([d3.min(this.clusterNodes, d => d.meanAvgDate.getTime()) || new Date(1850, 0, 1).getTime(), 
+                         d3.max(this.clusterNodes, d => d.meanAvgDate.getTime()) || new Date(1950, 0, 1).getTime()])
+                .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
+                
+            break;
+  
+          default:
+            xScale = d3.scaleLinear()
+            .domain([d3.max(this.clusterNodes, d => d.totalExhibitedArtworks) || 0, d3.min(this.clusterNodes, d => d.totalExhibitedArtworks) || 0])
+            .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]); // Left to right as usual
+            break;
       }
-    
+  
       // Update the force simulation with the new xScale
       const simulation = this.clusterSimulation;
       if (simulation) {
-        simulation
-          .force('x', d3.forceX().x((d: any) => xScale(ranking === 'exhibitions' ? d.totalExhibitions : d.totalExhibitedArtworks)))
-          .alpha(1) // Set the alpha to 1 to restart the simulation
-          .restart();
-
-          
-    
-        // Transition the clusters to their new positions
-        this.g.selectAll(".cluster")
-          .transition()
-          .duration(2000) // Set the transition duration in milliseconds
-          .attr("transform", (d: ClusterNode) => `translate(${xScale(ranking === 'exhibitions' ? d.totalExhibitions : d.totalExhibitedArtworks)}, ${this.contentHeight / 2})`);
-    
-        this.clusterSimulation = simulation;
+          simulation
+              .force('x', d3.forceX().x((d: any) => {
+                  switch (ranking) {
+                      case 'exhibitions':
+                          return xScale(d.totalExhibitions);
+                      case 'artworks':
+                          return xScale(d.totalExhibitedArtworks);
+                      case 'techniques':
+                          return xScale(d.totalTechniques);
+                      case 'birthyear':
+                          return xScale(d.meanBirthYear);
+                      case 'deathyear':
+                          return xScale(d.meanDeathYear);
+                      case 'time':
+                          return xScale(d.meanAvgDate.getTime());
+                      default:
+                          return xScale(d.totalExhibitedArtworks);
+                  }
+              }))
+              .alpha(1) // Set the alpha to 1 to restart the simulation
+              .restart();
+  
+          // Transition the clusters to their new positions
+          this.g.selectAll(".cluster")
+              .transition()
+              .duration(750) // Set the transition duration in milliseconds
+              .attr("transform", (d: ClusterNode) => {
+                  switch (ranking) {
+                      case 'exhibitions':
+                          return `translate(${xScale(d.totalExhibitions)}, ${this.contentHeight / 2})`;
+                      case 'techniques':
+                          return `translate(${xScale(d.totalTechniques)}, ${this.contentHeight / 2})`;
+                      case 'artworks':
+                          return `translate(${xScale(d.totalExhibitedArtworks)}, ${this.contentHeight / 2})`;
+                      case 'birthyear':
+                          return `translate(${xScale(d.meanBirthYear)}, ${this.contentHeight / 2})`;
+                      case 'deathyear':
+                          return `translate(${xScale(d.meanDeathYear)}, ${this.contentHeight / 2})`;
+                      case 'time':
+                          return `translate(${xScale(d.meanAvgDate.getTime())}, ${this.contentHeight / 2})`;
+                      default:
+                          return `translate(${xScale(d.totalExhibitedArtworks)}, ${this.contentHeight / 2})`;
+                  }
+              });
+  
+          this.clusterSimulation = simulation;
       }
-    }
+  }
+  
     
 
     private hoverOnCountry(country: string | null) {
@@ -2079,18 +2141,28 @@ this.clusters.forEach((cluster, i, nodes) => {
       acc.totalExhibitedArtworks += artist.total_exhibited_artworks;
       acc.totalExhibitions += artist.total_exhibitions;
       acc.totalTechniques += artist.amount_techniques;
+      acc.totalDeathYear += artist.deathyear;
+      acc.totalAvgDate += new Date(artist.overall_avg_date).getTime(); // Convert to timestamp
       acc.count += 1;
       return acc;
     }, {
+      totalAvgDate: 0,
       totalBirthYear: 0,
       totalExhibitedArtworks: 0,
       totalExhibitions: 0,
       totalTechniques: 0,
+      totalDeathYear: 0,
       count: 0
     });
   
     // Calculate the average birth year
     const avgBirthYear = metrics.count > 0 ? metrics.totalBirthYear / metrics.count : 1910;
+    const  avgDeathYear = metrics.count > 0 ? metrics.totalDeathYear / metrics.count : 1910;
+
+       // Calculate the average date
+       const avgDateTimestamp = metrics.count > 0 ? metrics.totalAvgDate / metrics.count : new Date(1910, 0, 1).getTime();
+       const avgDate = new Date(avgDateTimestamp); // Convert back to Date object
+   
   
     // Create the clusterNode with the calculated values
     const clusterNode: ClusterNode = {
@@ -2102,6 +2174,7 @@ this.clusters.forEach((cluster, i, nodes) => {
         y: 0,
         meanAvgDate: new Date(),  // Adjust this if you have a value to calculate for meanAvgDate
         meanBirthYear: avgBirthYear, // Set the calculated average birth year as a Date object
+        meanDeathYear: avgDeathYear,
         totalExhibitedArtworks: metrics.totalExhibitedArtworks,
         totalExhibitions: metrics.totalExhibitions,
         totalTechniques: metrics.totalTechniques
