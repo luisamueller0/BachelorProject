@@ -196,7 +196,7 @@ private accumulateTechniqueDistribution(artists: Artist[]): Map<string, number> 
   
     // Combine techniques of selected artists if there are multiple selected artists
     let selectedTechniqueDistribution: Map<string, number>;
-    if (selectedArtists && selectedArtists.length > 1 && selectedArtists.length < this.selectedCluster!.length) {
+    if (selectedArtists && selectedArtists.length > 1 && this.selectedCluster && selectedArtists.length < this.selectedCluster.length) {
       selectedTechniqueDistribution = this.accumulateTechniqueDistribution(selectedArtists);
     } else {
       selectedTechniqueDistribution = this.calculateTechniqueDistribution(selectedArtists);

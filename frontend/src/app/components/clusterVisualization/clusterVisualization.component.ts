@@ -1067,7 +1067,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
       
       this.selectMultipleNodes(artistNode, circle);
       this.applyStyleToNode(circle,artistNode, filter);
-      this.svg.select('')
+      //this.svg.select('')
   
       // Dynamically adjust the shadow based on the radius of the selected node
       const radius = parseFloat(d3.select(circle).attr('r')); // Get the radius of the node
