@@ -2374,27 +2374,6 @@ const joinedNames = formattedNames.length > 1
               break;
       
           
-        
-     /*    case 'nationality':
-          prompt = `In a 5 sentences, explain how the national identity of the following artists: ${artistNames.join(", ")} shaped their connections and careers over time. What were the key cultural or artistic links they shared?`;
-          //prompt = "What do all of the following artists have in common: " + artistNames.join(", ") + ". In 5 sentences.";
-          break;
-  
-        case 'birthcountry':
-          prompt = `Briefly summarize in 5 sentences how early life experiences of the following artists: ${artistNames.join(", ")} influenced their careers. What key connections or influences can be attributed to their early environments?`;
-          //prompt = "What do all of the following artists have in common considering their early years: " + artistNames.join(", ") + ". In 5 sentences.";
-          break;
-  
-        case 'deathcountry':
-          prompt = `Provide a short summary in 5 sentences of how the later life experiences of the following artists: ${artistNames.join(", ")} influenced their work. What key artistic themes or connections emerged in their final years?`;
-          //prompt = "What do all of the following artists have in common considering their late years before their death: " + artistNames.join(", ") + ". In 5 sentences.";
-          break;
-  
-        case 'mostexhibited':
-          prompt = `In a 5 sentences, summarize how exhibition history influenced the artistic evolution of the following artists: ${artistNames.join(", ")}. What were the most important shared experiences that shaped their careers?`;
-          //prompt = "What do all of the following artists have in common considering their exhibition activity: " + artistNames.join(", ") + ". In 5 sentences.";
-          break; */
-  
         default:
             console.warn('Unknown category:', category);
             break;
@@ -2417,7 +2396,7 @@ const joinedNames = formattedNames.length > 1
           break;
 
       case 'birthcountry':
-          prompt = `In 60 words, describe how ${artistNames}'s nationality (${nationality}) shaped their connections with other artists. Highlight key influences and similarities.`;
+          prompt = `In 60 words, dicuss how ${artistNames}'s early years in ${birthcountry} shaped their connections with other artists. Highlight key influences and similarities.`;
           this.aiTitle = `AI Suggestion: Overview of the early life stages of ${artistNames}`;
           break;
 
