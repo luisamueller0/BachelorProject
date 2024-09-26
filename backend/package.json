@@ -3,13 +3,14 @@
   "version": "1.0.0",
   "main": "app.js",
   "scripts": {
-    "start": "nodemon --exec babel-node app.js"
+    "start": "npx nodemon --exec babel-node app.js"
   },
   "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.24.4",
     "@babel/node": "^7.23.9",
-    "@babel/preset-env": "^7.24.4"
+    "@babel/preset-env": "^7.24.4",
+    "nodemon": "^3.1.7"
   },
   "dependencies": {
     "@google/generative-ai": "^0.17.1",
@@ -18,7 +19,6 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "mathjs": "^12.4.2",
-    "neo4j-driver": "^5.20.0",
-    "nodemon": "^3.1.0"
+    "neo4j-driver": "^5.20.0"
   }
 }
