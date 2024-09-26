@@ -1,8 +1,8 @@
 import express from 'express'
 import cors from 'cors'
-import artist from './src/routes/artist'
-import exhibition from './src/routes/exhibition'
-import generativeAI from './src/routes/generativeAI';
+import artist from './routes/artist'
+import exhibition from './routes/exhibition'
+import generativeAI from './routes/generativeAI';
 require('dotenv').config()
 
 const app = express()
