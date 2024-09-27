@@ -197,62 +197,99 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       let xScale;
   
       switch (ranking) {
-          case 'exhibitions':
-              const minTotalExhibitions = d3.min(this.clusterNodes, d => d.totalExhibitions) || 0;
-              const maxTotalExhibitions = d3.max(this.clusterNodes, d => d.totalExhibitions) || 0;
-              xScale = d3.scaleLinear()
-                  .domain([maxTotalExhibitions, minTotalExhibitions])
-                  .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
-              break;
-  
-          case 'techniques':
-              const minTotalTechniques = d3.min(this.clusterNodes, d => d.totalTechniques) || 0;
-              const maxTotalTechniques = d3.max(this.clusterNodes, d => d.totalTechniques) || 0;
-              xScale = d3.scaleLinear()
-                  .domain([maxTotalTechniques, minTotalTechniques])
-                  .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
-              break;
-  
-          case 'artworks':
-              const minTotalArtworks = d3.min(this.clusterNodes, d => d.totalExhibitedArtworks) || 0;
-              const maxTotalArtworks = d3.max(this.clusterNodes, d => d.totalExhibitedArtworks) || 0;
-              xScale = d3.scaleLinear()
-                  .domain([maxTotalArtworks, minTotalArtworks])
-                  .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
-              break;
-  
-          case 'birthyear':
-              const minBirthYear = d3.min(this.clusterNodes, d => d.meanBirthYear) || 1900;
-              const maxBirthYear = d3.max(this.clusterNodes, d => d.meanBirthYear) || 1950;
-              xScale = d3.scaleLinear()
-                  .domain([minBirthYear, maxBirthYear])
-                  .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
-              break;
-  
-          case 'deathyear':
-              const minDeathYear = d3.min(this.clusterNodes, d => d.meanDeathYear) || 1850;
-              const maxDeathYear = d3.max(this.clusterNodes, d => d.meanDeathYear) || 1900;
-              xScale = d3.scaleLinear()
-                  .domain([minDeathYear, maxDeathYear])
-                  .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
-              break;
-  
-          case 'time':
-              const minAvgDate = d3.min(this.clusterNodes, d => d.meanAvgDate.getTime()) || new Date(1850, 0, 1).getTime();
-              const maxAvgDate = d3.max(this.clusterNodes, d => d.meanAvgDate.getTime()) || new Date(1950, 0, 1).getTime();
-              xScale = d3.scaleLinear()
-                  .domain([minAvgDate, maxAvgDate])
-                  .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
-              break;
-  
-          default:
-              const minTotalArtworks2 = d3.min(this.clusterNodes, d => d.totalExhibitedArtworks) || 0;
-              const maxTotalArtworks2 = d3.max(this.clusterNodes, d => d.totalExhibitedArtworks) || 0;
-              xScale = d3.scaleLinear()
-                  .domain([maxTotalArtworks2, minTotalArtworks2])
-                  .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
-              break;
-      }
+        case 'exhibitions':
+            const minTotalExhibitions = d3.min(this.clusterNodes, d => d.totalExhibitions) || 0;
+            const minExhibitionNode = this.clusterNodes.find(d => d.totalExhibitions === minTotalExhibitions);
+            const maxTotalExhibitions = d3.max(this.clusterNodes, d => d.totalExhibitions) || 0;
+            const maxExhibitionNode = this.clusterNodes.find(d => d.totalExhibitions === maxTotalExhibitions);
+            const leftExhibitionRange = maxExhibitionNode ? maxExhibitionNode.outerRadius: this.cellWidth / 2;
+            const rightExhibitionRange = minExhibitionNode ? minExhibitionNode.outerRadius : this.cellWidth / 2;
+
+            xScale = d3.scaleLinear()
+                .domain([maxTotalExhibitions, minTotalExhibitions])
+                .range([leftExhibitionRange, this.contentWidth - rightExhibitionRange]);
+            break;
+
+        case 'techniques':
+            const minTotalTechniques = d3.min(this.clusterNodes, d => d.totalTechniques) || 0;
+            const minTechniqueNode = this.clusterNodes.find(d => d.totalTechniques === minTotalTechniques);
+            const maxTotalTechniques = d3.max(this.clusterNodes, d => d.totalTechniques) || 0;
+            const maxTechniqueNode = this.clusterNodes.find(d => d.totalTechniques === maxTotalTechniques);
+            const leftTechniqueRange = maxTechniqueNode ? maxTechniqueNode.outerRadius : this.cellWidth / 2;
+            const rightTechniqueRange = minTechniqueNode ? minTechniqueNode.outerRadius : this.cellWidth / 2;
+
+            xScale = d3.scaleLinear()
+                .domain([maxTotalTechniques, minTotalTechniques])
+                .range([leftTechniqueRange, this.contentWidth - rightTechniqueRange]);
+            break;
+
+        case 'artworks':
+            const minTotalArtworks = d3.min(this.clusterNodes, d => d.totalExhibitedArtworks) || 0;
+            const minArtworkNode = this.clusterNodes.find(d => d.totalExhibitedArtworks === minTotalArtworks);
+            const maxTotalArtworks = d3.max(this.clusterNodes, d => d.totalExhibitedArtworks) || 0;
+            const maxArtworkNode = this.clusterNodes.find(d => d.totalExhibitedArtworks === maxTotalArtworks);
+            const leftArtworkRange = maxArtworkNode ? maxArtworkNode.outerRadius: this.cellWidth / 2;
+            const rightArtworkRange = minArtworkNode ? minArtworkNode.outerRadius : this.cellWidth / 2;
+
+            xScale = d3.scaleLinear()
+                .domain([maxTotalArtworks, minTotalArtworks])
+                .range([leftArtworkRange, this.contentWidth - rightArtworkRange]);
+            break;
+
+        case 'birthyear':
+            const minBirthYear = d3.min(this.clusterNodes, d => d.meanBirthYear) || 1900;
+            const minBirthYearNode = this.clusterNodes.find(d => d.meanBirthYear === minBirthYear);
+            const maxBirthYear = d3.max(this.clusterNodes, d => d.meanBirthYear) || 1950;
+            const maxBirthYearNode = this.clusterNodes.find(d => d.meanBirthYear === maxBirthYear);
+            const leftBirthYearRange = maxBirthYearNode ? maxBirthYearNode.outerRadius : this.cellWidth / 2;
+            const rightBirthYearRange = minBirthYearNode ? minBirthYearNode.outerRadius : this.cellWidth / 2;
+
+            xScale = d3.scaleLinear()
+                .domain([minBirthYear, maxBirthYear])
+                .range([leftBirthYearRange, this.contentWidth - rightBirthYearRange]);
+            break;
+
+        case 'deathyear':
+            const minDeathYear = d3.min(this.clusterNodes, d => d.meanDeathYear) || 1850;
+            const minDeathYearNode = this.clusterNodes.find(d => d.meanDeathYear === minDeathYear);
+            const maxDeathYear = d3.max(this.clusterNodes, d => d.meanDeathYear) || 1900;
+            const maxDeathYearNode = this.clusterNodes.find(d => d.meanDeathYear === maxDeathYear);
+            const leftDeathYearRange = maxDeathYearNode ? maxDeathYearNode.outerRadius : this.cellWidth / 2;
+            const rightDeathYearRange = minDeathYearNode ? minDeathYearNode.outerRadius : this.cellWidth / 2;
+
+            xScale = d3.scaleLinear()
+                .domain([minDeathYear, maxDeathYear])
+                .range([leftDeathYearRange, this.contentWidth - rightDeathYearRange]);
+            break;
+
+        case 'time':
+            const minAvgDate = d3.min(this.clusterNodes, d => d.meanAvgDate.getTime()) || new Date(1850, 0, 1).getTime();
+            const minTimeNode = this.clusterNodes.find(d => d.meanAvgDate.getTime() === minAvgDate);
+            const maxAvgDate = d3.max(this.clusterNodes, d => d.meanAvgDate.getTime()) || new Date(1950, 0, 1).getTime();
+            const maxTimeNode = this.clusterNodes.find(d => d.meanAvgDate.getTime() === maxAvgDate);
+            const leftTimeRange = maxTimeNode ? maxTimeNode.outerRadius : this.cellWidth / 2;
+            const rightTimeRange = minTimeNode ? minTimeNode.outerRadius  : this.cellWidth / 2;
+
+            xScale = d3.scaleLinear()
+                .domain([minAvgDate, maxAvgDate])
+                .range([leftTimeRange, this.contentWidth - rightTimeRange]);
+            break;
+
+        default:
+          const minTotalArtworks2 = d3.min(this.clusterNodes, d => d.totalExhibitedArtworks) || 0;
+          const minArtworkNode2 = this.clusterNodes.find(d => d.totalExhibitedArtworks === minTotalArtworks2);
+          const maxTotalArtworks2 = d3.max(this.clusterNodes, d => d.totalExhibitedArtworks) || 0;
+          const maxArtworkNode2 = this.clusterNodes.find(d => d.totalExhibitedArtworks === maxTotalArtworks2);
+          const leftArtworkRange2 = maxArtworkNode2 ? maxArtworkNode2.outerRadius: this.cellWidth / 2;
+          const rightArtworkRange2 = minArtworkNode2 ? minArtworkNode2.outerRadius : this.cellWidth / 2;
+
+          xScale = d3.scaleLinear()
+              .domain([maxTotalArtworks2, minTotalArtworks2])
+              .range([leftArtworkRange2, this.contentWidth - rightArtworkRange2]);
+       
+            break;
+    }
+
   
       // Create an array of clusterIds ordered by their position in the xScale
       const orderedClusterIds = this.clusterNodes
@@ -2067,16 +2104,14 @@ const category = this.decisionService.getDecisionSunburst();
       
       const element = this.chartContainer.nativeElement.querySelector('.matrix-svg-container');
       const k = this.decisionService.getK();
-   
-        let margin = {
-          top: this.margin.top * window.innerHeight / 100,
-          right: this.margin.right * window.innerWidth / 100,
-          bottom: this.margin.bottom * window.innerWidth / 100,
-          left: this.margin.left * window.innerWidth / 100
-        };
-  
-      
      
+      let margin = {
+        top: this.margin.top * window.innerHeight / 100,
+        right: this.margin.right * window.innerWidth / 100,
+        bottom: this.margin.bottom * window.innerWidth / 100,
+        left: this.margin.left * window.innerWidth / 100
+      };
+    
       const width = element.offsetWidth - margin.left - margin.right;
       const height = element.offsetHeight - margin.top - margin.bottom;
       
@@ -2091,7 +2126,7 @@ const category = this.decisionService.getDecisionSunburst();
       this.contentWidth = width;
       this.contentHeight = height;
       
-      // Add zoom functionality with limited scale extent
+      // Define the zoom behavior with limited scale extent
       const zoom = d3.zoom()
         .scaleExtent([1, 10]) // Only allow zooming in, starting from default scale (1)
         .on("zoom", (event) => {
@@ -2099,6 +2134,14 @@ const category = this.decisionService.getDecisionSunburst();
         });
       
       this.svg.call(zoom);
+    
+      // Add double-click event to reset zoom to the original state
+      // Adding a tap + click event to reset zoom
+  this.svg.on("click", (event: MouseEvent) => {
+    if (event.shiftKey) { // Check if Shift key is pressed when clicking
+      this.svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity);
+    }
+  });
     }
     
     
@@ -2114,7 +2157,7 @@ const category = this.decisionService.getDecisionSunburst();
       const yData =  [currentSunburst];
     
       const cellWidth = this.contentWidth / xData.length;
-      const cellHeight = this.contentHeight / yData.length;
+      const cellHeight = this.contentHeight;
 
       this.cellWidth = cellWidth;
       this.cellHeight = cellHeight;
@@ -2184,23 +2227,99 @@ this.clusters.forEach((cluster, i, nodes) => {
       // Define the xScale based on the current ranking
       let xScale;
       switch (ranking) {
-          case 'exhibitions':
-              // Same logic as before for setting up xScale
-              const minTotalExhibitions = d3.min(this.clusterNodes, d => d.totalExhibitions) || 0;
-              const maxTotalExhibitions = d3.max(this.clusterNodes, d => d.totalExhibitions) || 0;
-              xScale = d3.scaleLinear()
-                  .domain([maxTotalExhibitions, minTotalExhibitions])
-                  .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
-              break;
-          // Include other cases for 'techniques', 'artworks', 'birthyear', etc. as you have it in your existing code...
-          default:
-              const minTotalArtworks = d3.min(this.clusterNodes, d => d.totalExhibitedArtworks) || 0;
-              const maxTotalArtworks = d3.max(this.clusterNodes, d => d.totalExhibitedArtworks) || 0;
-              xScale = d3.scaleLinear()
-                  .domain([maxTotalArtworks, minTotalArtworks])
-                  .range([this.cellWidth / 2, this.contentWidth - this.cellWidth / 2]);
-              break;
-      }
+        case 'exhibitions':
+            const minTotalExhibitions = d3.min(this.clusterNodes, d => d.totalExhibitions) || 0;
+            const minExhibitionNode = this.clusterNodes.find(d => d.totalExhibitions === minTotalExhibitions);
+            const maxTotalExhibitions = d3.max(this.clusterNodes, d => d.totalExhibitions) || 0;
+            const maxExhibitionNode = this.clusterNodes.find(d => d.totalExhibitions === maxTotalExhibitions);
+            const leftExhibitionRange = maxExhibitionNode ? maxExhibitionNode.outerRadius: this.cellWidth / 2;
+            const rightExhibitionRange = minExhibitionNode ? minExhibitionNode.outerRadius : this.cellWidth / 2;
+
+            xScale = d3.scaleLinear()
+                .domain([maxTotalExhibitions, minTotalExhibitions])
+                .range([leftExhibitionRange, this.contentWidth - rightExhibitionRange]);
+            break;
+
+        case 'techniques':
+            const minTotalTechniques = d3.min(this.clusterNodes, d => d.totalTechniques) || 0;
+            const minTechniqueNode = this.clusterNodes.find(d => d.totalTechniques === minTotalTechniques);
+            const maxTotalTechniques = d3.max(this.clusterNodes, d => d.totalTechniques) || 0;
+            const maxTechniqueNode = this.clusterNodes.find(d => d.totalTechniques === maxTotalTechniques);
+            const leftTechniqueRange = maxTechniqueNode ? maxTechniqueNode.outerRadius : this.cellWidth / 2;
+            const rightTechniqueRange = minTechniqueNode ? minTechniqueNode.outerRadius : this.cellWidth / 2;
+
+            xScale = d3.scaleLinear()
+                .domain([maxTotalTechniques, minTotalTechniques])
+                .range([leftTechniqueRange, this.contentWidth - rightTechniqueRange]);
+            break;
+
+        case 'artworks':
+            const minTotalArtworks = d3.min(this.clusterNodes, d => d.totalExhibitedArtworks) || 0;
+            const minArtworkNode = this.clusterNodes.find(d => d.totalExhibitedArtworks === minTotalArtworks);
+            const maxTotalArtworks = d3.max(this.clusterNodes, d => d.totalExhibitedArtworks) || 0;
+            const maxArtworkNode = this.clusterNodes.find(d => d.totalExhibitedArtworks === maxTotalArtworks);
+            const leftArtworkRange = maxArtworkNode ? maxArtworkNode.outerRadius: this.cellWidth / 2;
+            const rightArtworkRange = minArtworkNode ? minArtworkNode.outerRadius : this.cellWidth / 2;
+
+            xScale = d3.scaleLinear()
+                .domain([maxTotalArtworks, minTotalArtworks])
+                .range([leftArtworkRange, this.contentWidth - rightArtworkRange]);
+            break;
+
+        case 'birthyear':
+            const minBirthYear = d3.min(this.clusterNodes, d => d.meanBirthYear) || 1900;
+            const minBirthYearNode = this.clusterNodes.find(d => d.meanBirthYear === minBirthYear);
+            const maxBirthYear = d3.max(this.clusterNodes, d => d.meanBirthYear) || 1950;
+            const maxBirthYearNode = this.clusterNodes.find(d => d.meanBirthYear === maxBirthYear);
+            const leftBirthYearRange = maxBirthYearNode ? maxBirthYearNode.outerRadius : this.cellWidth / 2;
+            const rightBirthYearRange = minBirthYearNode ? minBirthYearNode.outerRadius : this.cellWidth / 2;
+
+            xScale = d3.scaleLinear()
+                .domain([minBirthYear, maxBirthYear])
+                .range([leftBirthYearRange, this.contentWidth - rightBirthYearRange]);
+            break;
+
+        case 'deathyear':
+            const minDeathYear = d3.min(this.clusterNodes, d => d.meanDeathYear) || 1850;
+            const minDeathYearNode = this.clusterNodes.find(d => d.meanDeathYear === minDeathYear);
+            const maxDeathYear = d3.max(this.clusterNodes, d => d.meanDeathYear) || 1900;
+            const maxDeathYearNode = this.clusterNodes.find(d => d.meanDeathYear === maxDeathYear);
+            const leftDeathYearRange = maxDeathYearNode ? maxDeathYearNode.outerRadius : this.cellWidth / 2;
+            const rightDeathYearRange = minDeathYearNode ? minDeathYearNode.outerRadius : this.cellWidth / 2;
+
+            xScale = d3.scaleLinear()
+                .domain([minDeathYear, maxDeathYear])
+                .range([leftDeathYearRange, this.contentWidth - rightDeathYearRange]);
+            break;
+
+        case 'time':
+            const minAvgDate = d3.min(this.clusterNodes, d => d.meanAvgDate.getTime()) || new Date(1850, 0, 1).getTime();
+            const minTimeNode = this.clusterNodes.find(d => d.meanAvgDate.getTime() === minAvgDate);
+            const maxAvgDate = d3.max(this.clusterNodes, d => d.meanAvgDate.getTime()) || new Date(1950, 0, 1).getTime();
+            const maxTimeNode = this.clusterNodes.find(d => d.meanAvgDate.getTime() === maxAvgDate);
+            const leftTimeRange = maxTimeNode ? maxTimeNode.outerRadius : this.cellWidth / 2;
+            const rightTimeRange = minTimeNode ? minTimeNode.outerRadius  : this.cellWidth / 2;
+
+            xScale = d3.scaleLinear()
+                .domain([minAvgDate, maxAvgDate])
+                .range([leftTimeRange, this.contentWidth - rightTimeRange]);
+            break;
+
+        default:
+          const minTotalArtworks2 = d3.min(this.clusterNodes, d => d.totalExhibitedArtworks) || 0;
+          const minArtworkNode2 = this.clusterNodes.find(d => d.totalExhibitedArtworks === minTotalArtworks2);
+          const maxTotalArtworks2 = d3.max(this.clusterNodes, d => d.totalExhibitedArtworks) || 0;
+          const maxArtworkNode2 = this.clusterNodes.find(d => d.totalExhibitedArtworks === maxTotalArtworks2);
+          const leftArtworkRange2 = maxArtworkNode2 ? maxArtworkNode2.outerRadius: this.cellWidth / 2;
+          const rightArtworkRange2 = minArtworkNode2 ? minArtworkNode2.outerRadius : this.cellWidth / 2;
+
+          xScale = d3.scaleLinear()
+              .domain([maxTotalArtworks2, minTotalArtworks2])
+              .range([leftArtworkRange2, this.contentWidth - rightArtworkRange2]);
+       
+            break;
+    }
+
   
       // Set up the force simulation with the nodes
       this.clusterSimulation = d3.forceSimulation<ClusterNode>(nodes)
@@ -2261,7 +2380,7 @@ this.clusters.forEach((cluster, i, nodes) => {
   
     const cellSize = Math.min(cellWidth, cellHeight);
     const paddedCellSize = cellSize * (1 - this.paddingRatio); // Reduce cell size by padding ratio
-    const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, this.clusters[0].length, paddedCellSize);
+    const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, this.clusters[0].length, paddedCellSize, this.clusters.length);
     this.innerRadius = innerRadius; 
   
     // Use a single reduce function to calculate the average birth year and other properties
@@ -2998,16 +3117,28 @@ console.log(this.clusterNodes)
     return sortedArtists;
   }
   
-    private createSunburstProperties(clusterSize: number, maxSize: number, cellSize: number): [number, number] {
-      const paddedCellSize = cellSize * (1 - this.paddingRatio); // Reduce cell size by padding ratio
-      const minRadius = paddedCellSize / 5;
-      const maxRadius = paddedCellSize /5 * 3; // Adjust max radius to fit within cells
-  
-      const outerRadius = minRadius + ((maxRadius - minRadius) * (clusterSize / maxSize));
-      const innerRadius = outerRadius - outerRadius/5; // Reduced thickness for small cells
-  
-      return [outerRadius, innerRadius];
-  }
+  private createSunburstProperties(clusterSize: number, maxSize: number, cellSize: number, totalClusters: number): [number, number] {
+    const paddedCellSize = cellSize * (1 - this.paddingRatio); // Reduce cell size by padding ratio
+    const minRadius = paddedCellSize / 5;
+
+    // Calculate the unrestricted max radius
+    const unrestrictedMaxRadius = paddedCellSize / 5 * 3;
+
+    // Define lower and upper bounds for the max radius based on the total clusters
+    const lowerBoundMaxRadius = Math.min(this.contentHeight, this.contentWidth) / (2 * totalClusters); // Adjust as needed
+    const upperBoundMaxRadius = Math.min(this.contentHeight, this.contentWidth) / totalClusters;      // Adjust as needed
+
+    // Calculate the final max radius within bounds
+    const maxRadius = Math.min(Math.max(unrestrictedMaxRadius, lowerBoundMaxRadius), upperBoundMaxRadius);
+
+    const outerRadius = minRadius + ((maxRadius - minRadius) * (clusterSize / maxSize));
+    const innerRadius = outerRadius - outerRadius / 5; // Reduced thickness for small cells
+
+    return [outerRadius, innerRadius];
+}
+
+
+
   
     
   
