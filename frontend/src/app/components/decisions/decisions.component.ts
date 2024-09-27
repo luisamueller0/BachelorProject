@@ -100,16 +100,17 @@ public isLoadingRange: boolean = false;
 
   selectRanking: string ='artworks';
   RankingOptions: { label: string, value: string }[] = [
-    { label: 'Amount of Exhibitions', value: 'exhibitions' },
-    { label: 'Variety of Used Techniques', value: 'techniques' },
-    { label: 'Amount of Exhibited Artworks', value: 'artworks' },
-    { label: 'Average Birthyear', value: 'birthyear' },
-    { label: 'Average Deathyear', value: 'deathyear' },
-    { label: 'Average Exhibition Time', value: 'time' }
-
-
-
+      { label: 'Number of Exhibitions (High-Low)', value: 'exhibitions' },
+      { label: 'Variety of Techniques (Most-Least)', value: 'techniques' },
+      { label: 'Exhibited Artworks Count (High-Low)', value: 'artworks' },
+      { label: 'Average Birth Year (Earliest-Latest)', value: 'birthyear' },
+      { label: 'Average Death Year (Earliest-Latest)', value: 'deathyear' },
+      { label: 'Average Exhibition Period (Earliest-Latest)', value: 'time' }
   ];
+  
+
+
+  
   selectedSunburst: string = 'birthcountry';
   SunburstOptions: { label: string, value: string }[] = [
     { label: 'Nationality', value: 'nationality' },
