@@ -346,20 +346,30 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       if(clusterId !== undefined){
        const width = 0.07 * this.clusterNodes[clusterId].innerRadius / 100;
       // Reduce opacity of all clusters
-      this.g.selectAll('.cluster').style('opacity', '0.5');
+      this.g.selectAll('.cluster').style('opacity', '0.2');
       // Set opacity of selected cluster to 1
       this.g.selectAll(`.cluster-${clusterId}`).style('opacity', '1');
 
-      this.g.selectAll('.artist-node').filter((d: any) => d.cluster === clusterId && d.artist.id !== artistId).style('opacity', '0.8');
-      this.g.selectAll('.artist-node').filter((d: any) => d.cluster !== clusterId).style('opacity', '0.5');
+      this.g.selectAll('.artist-node').filter((d: any) => d.cluster === clusterId && d.artist.id !== artistId).style('opacity', '0.9');
+      this.g.selectAll('.artist-node').filter((d: any) => d.cluster !== clusterId).style('opacity', '0.2');
       this.g.selectAll('.artist-node').filter((d: any) => d.artist.id === artistId).style('opacity', '1').style("stroke-width", `${width}vw`)
       .style("stroke", "grey");
       }
 
     } else {
         // Reset all elements to full opacity
-        this.svg.selectAll('.cluster, .artist-node').style("opacity", 1);
-        this.g.selectAll('.artist-node').filter((d: any) => d.artist.id === this.previousOnHover).style("stroke", "none");
+        if(this.selectedClusterNode){
+          console.log('selected cluster', this.selectedClusterNode)
+          this.svg.selectAll('.cluster').filter((d: any) => d.clusterId === this.selectedClusterNode?.clusterId).style("opacity", 1);
+          this.svg.selectAll('.cluster').filter((d: any) => d.clusterId !== this.selectedClusterNode?.clusterId).style("opacity", 0.2);
+          this.g.selectAll('.artist-node').filter((d: any) => d.artist.cluster !== this.selectedClusterNode?.clusterId).style('opacity', '0.2');
+          this.g.selectAll('.artist-node').filter((d: any) => d.artist.cluster === this.selectedClusterNode?.clusterId).style('opacity', '1');
+          this.g.selectAll('.artist-node').filter((d: any) => d.artist.id === this.previousOnHover).style("stroke", "none");
+        }else{
+          this.g.selectAll('.cluster, .artist-node').style("opacity", 1);
+          this.g.selectAll('.artist-node').filter((d: any) => d.artist.id === this.previousOnHover).style("stroke", "none");
+        }
+       
         this.previousOnHover = null;
 
     }
@@ -848,6 +858,7 @@ const category = this.decisionService.getDecisionSunburst();
 
         // Restore opacity of all clusters
         this.g.selectAll('.cluster').style('opacity', '1');
+        this.g.selectAll('.artist-node').style('opacity', '1');
 
         this.g.selectAll('path').style('opacity', '1');
         return;
