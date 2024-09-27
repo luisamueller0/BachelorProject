@@ -5,7 +5,7 @@ var _cors = _interopRequireDefault(require("cors"));
 var _artist = _interopRequireDefault(require("./routes/artist"));
 var _exhibition = _interopRequireDefault(require("./routes/exhibition"));
 var _generativeAI = _interopRequireDefault(require("./routes/generativeAI"));
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
 require('dotenv').config();
 var app = (0, _express["default"])();
 // List of allowed origins
