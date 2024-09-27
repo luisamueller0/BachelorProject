@@ -3120,16 +3120,8 @@ console.log(this.clusterNodes)
   private createSunburstProperties(clusterSize: number, maxSize: number, cellSize: number, totalClusters: number): [number, number] {
     const paddedCellSize = cellSize * (1 - this.paddingRatio); // Reduce cell size by padding ratio
     const minRadius = paddedCellSize / 5;
-
-    // Calculate the unrestricted max radius
-    const unrestrictedMaxRadius = paddedCellSize / 5 * 3;
-
-    // Define lower and upper bounds for the max radius based on the total clusters
-    const lowerBoundMaxRadius = Math.min(this.contentHeight, this.contentWidth) / (2 * totalClusters); // Adjust as needed
-    const upperBoundMaxRadius = Math.min(this.contentHeight, this.contentWidth) / totalClusters;      // Adjust as needed
-
     // Calculate the final max radius within bounds
-    const maxRadius = Math.min(Math.max(unrestrictedMaxRadius, lowerBoundMaxRadius), upperBoundMaxRadius);
+    const maxRadius = paddedCellSize*0.75;
 
     const outerRadius = minRadius + ((maxRadius - minRadius) * (clusterSize / maxSize));
     const innerRadius = outerRadius - outerRadius / 5; // Reduced thickness for small cells
