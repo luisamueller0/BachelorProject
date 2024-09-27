@@ -3121,7 +3121,7 @@ console.log(this.clusterNodes)
     const paddedCellSize = cellSize * (1 - this.paddingRatio); // Reduce cell size by padding ratio
     const minRadius = paddedCellSize / 5;
     // Calculate the final max radius within bounds
-    const maxRadius = paddedCellSize*0.75;
+    const maxRadius = paddedCellSize*0.72;
 
     const outerRadius = minRadius + ((maxRadius - minRadius) * (clusterSize / maxSize));
     const innerRadius = outerRadius - outerRadius / 5; // Reduced thickness for small cells
