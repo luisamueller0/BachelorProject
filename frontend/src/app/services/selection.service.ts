@@ -27,6 +27,7 @@ export class SelectionService {
   private selectedOldCountries = new BehaviorSubject<string[]>([]);
   private hoveredCountry = new BehaviorSubject<string|null>(null);
   private hoveredOldCountry = new BehaviorSubject<string|null>(null);
+  private hoveredArtist = new BehaviorSubject<number|null>(null);
 
   currentArtists = this.selectedArtists.asObservable();
   currentCluster = this.selectedCluster.asObservable();
@@ -43,10 +44,14 @@ export class SelectionService {
 currentOldCountries = this.selectedOldCountries.asObservable();
 currentHoveredCountry = this.hoveredCountry.asObservable();
 currentHoveredOldCountry = this.hoveredOldCountry.asObservable();
+currentHoveredArtist = this.hoveredArtist.asObservable();
 
 
 hoverOnCountry(country:string|null){
   this.hoveredCountry.next(country);
+}
+hoverOnArtist(artistId:number|null){
+  this.hoveredArtist.next(artistId);
 }
 hoverOnOldCountry(country:string|null){
   this.hoveredOldCountry.next(country);

@@ -314,6 +314,12 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
         const tooltip = d3.select("div#tooltip");
   
         const showTooltip = (event: any, d: any) => {
+
+          this.selectionService.hoverOnArtist(artist.id);
+
+
+
+
           const birthyear = artist.birthyear !== -1 ? artist.birthyear : 'unknown';
           const deathyear = artist.deathyear !== -1 ? artist.deathyear : 'unknown';
           const age = artist.birthyear !== -1 && artist.deathyear !== -1 ? artist.deathyear - artist.birthyear : 'unknown';
@@ -338,6 +344,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       }
   
         const hideTooltip = () => {
+          this.selectionService.hoverOnArtist(null);
           tooltip.style("display", "none");
         };
   

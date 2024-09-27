@@ -61,6 +61,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     private selectedClusterNode: ClusterNode | null = null;
     private g: any; // Group for zooming
     private paddingRatio: number = 0.05; // 5% padding
+    private previousOnHover: number | null = null;
     private allCountriesByCategory: { [key: string]: string[] } = {
       nationality: [],
       birthcountry: [],
@@ -175,6 +176,10 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       this.subscriptions.add(this.selectionService.currentHoveredOldCountry.subscribe(country => {
         this.hoverOnCountry(country);
       }));
+
+      this.subscriptions.add(this.selectionService.currentHoveredArtist.subscribe(artistId => {
+        this.hoverOnArtist(artistId);
+      }));
       
       this.subscriptions.add(this.decisionService.currentRanking.subscribe(ranking => {  
         this.updateClusterPosition(ranking);
@@ -182,6 +187,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       window.addEventListener('resize', this.onResize.bind(this));
     }
   
+
 
 
     private updateClusterPosition(ranking: string): void {
@@ -324,6 +330,40 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
           this.clusterSimulation = simulation;
       }
   }
+
+
+  private hoverOnArtist(artistId: number | null) {
+
+    if(!this.svg)
+      return;
+    if (artistId) {
+      this.previousOnHover = artistId;
+
+      const clusterId = this.artistClusterMap.get(artistId)?.clusterId
+
+      console.log(clusterId)
+
+      if(clusterId !== undefined){
+       const width = 0.07 * this.clusterNodes[clusterId].innerRadius / 100;
+      // Reduce opacity of all clusters
+      this.g.selectAll('.cluster').style('opacity', '0.5');
+      // Set opacity of selected cluster to 1
+      this.g.selectAll(`.cluster-${clusterId}`).style('opacity', '1');
+
+      this.g.selectAll('.artist-node').filter((d: any) => d.cluster === clusterId && d.artist.id !== artistId).style('opacity', '0.8');
+      this.g.selectAll('.artist-node').filter((d: any) => d.cluster !== clusterId).style('opacity', '0.5');
+      this.g.selectAll('.artist-node').filter((d: any) => d.artist.id === artistId).style('opacity', '1').style("stroke-width", `${width}vw`)
+      .style("stroke", "grey");
+      }
+
+    } else {
+        // Reset all elements to full opacity
+        this.svg.selectAll('.cluster, .artist-node').style("opacity", 1);
+        this.g.selectAll('.artist-node').filter((d: any) => d.artist.id === this.previousOnHover).style("stroke", "none");
+        this.previousOnHover = null;
+
+    }
+}
   
   
     
@@ -1339,7 +1379,7 @@ if(this.modernMap){
       const connectedNodeIds = new Set<number>();
       const unconnectedNodeIds = new Set<number>();
   
-      const width = 0.07 * this.innerRadius / 100;
+      const width = 0.07 * this.clusterNodes[clusterId].innerRadius / 100;
     
       
   
