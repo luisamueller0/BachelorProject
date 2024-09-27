@@ -30,7 +30,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
     top: 4.5,
     right: 1.5,
     bottom: 1,
-    left: 1.5
+    left: 1
   };
 
   constructor(
@@ -281,15 +281,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
   
       yOffset += halfExtraSpace;
   
-      this.svg.append('text')
-        .attr('class', 'label')
-        .attr('x', -10)
-        .attr('y', yOffset + (clusterArtists.length * barHeight / 2))
-        .attr('dy', '.35em')
-        .attr('text-anchor', 'end')
-        .attr('fill', '#2a0052')
-        .style('font-size', '0.7vw')
-        .text(cluster);
+
   
       clusterArtists.forEach((artist, index) => {
         const gradientId = `gradient-${artist.id}`;

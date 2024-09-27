@@ -1102,6 +1102,8 @@ private onClusterClick(clusterNode: ClusterNode): void {
       }
     }
 
+
+    
     private handleMultiNodeSelection(artistNode: ArtistNode, circle: SVGCircleElement, filter:any) {
       console.log('clicked', this.selectedNodes);
       
@@ -1178,6 +1180,8 @@ private onClusterClick(clusterNode: ClusterNode): void {
     
         }
       }
+
+      
     private selectMultipleNodes(artistNode: ArtistNode, circle: SVGCircleElement) {
       const clusterIndex = this.artistClusterMap.get(artistNode.id)?.clusterId;
 
@@ -2751,15 +2755,6 @@ console.log(this.clusterNodes)
   this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
       // Adding the text label to display the clusterIndex
 
-      clusterGroup.append("text")
-      .attr("x", 0) // Center the text horizontally
-      .attr("y", -clusterNode.outerRadius - 10) // Position the text above the cluster by 10px, adjust as needed
-      .attr("dy", ".35em") // Fine-tune vertical alignment
-      .attr("text-anchor", "middle") // Center alignment
-      .text(`${clusterNode.clusterId+1}`) // Display the cluster index as a title
-      .style("font-size", `${Math.min(cellWidth, cellHeight) * 0.08}px`) // Adjust the font size relative to the cell size
-      .style("font-weight", "bold")
-      .style("fill", "black"); // You can change this to any color you prefer
 
   
   return clusterGroup.node() as SVGGElement;
