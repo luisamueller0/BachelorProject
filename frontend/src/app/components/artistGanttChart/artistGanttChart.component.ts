@@ -61,6 +61,12 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
       })
     );
 
+    this.subscriptions.add(
+      this.decisionService.currentRankingOrder.subscribe(() => {
+        this.tryInitialize();
+      }));
+
+
     window.addEventListener('resize', this.onResize.bind(this));
   }
 
@@ -144,7 +150,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private drawTimeline(artists: Artist[]): void {
-    if (!artists) {
+    if (!artists || this.decisionService.getRankingOrder().length === 0) {
       return;
     }
   
@@ -174,7 +180,7 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
           deathyear: artist.deathyear,
           birthplace: artist.birthplace,
           deathplace: artist.deathplace,
-          clusterIndex: artist.cluster + 1,
+          clusterIndex: artist.cluster,
           id: artist.id
         }))
       : artists.filter(artist => artist.birthyear !== -1 || artist.deathyear !== -1).map(artist => ({
@@ -190,14 +196,17 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
           deathyear: artist.deathyear,
           birthplace: artist.birthplace,
           deathplace: artist.deathplace,
-          clusterIndex: artist.cluster + 1,
+          clusterIndex: artist.cluster,
           id: artist.id
         }));
   
     const groupedByCluster = d3.group(timelineData, d => d.clusterIndex);
-    const sortedClusters = Array.from(groupedByCluster.entries())
-      .sort((a, b) => d3.ascending(a[0], b[0]))  // Sort by cluster index (ascending)
-      .map(([clusterIndex]) => clusterIndex);
+    const orderedClusterIds = this.decisionService.getRankingOrder(); // Get the ordered cluster IDs from your decision service
+
+const sortedClusters = Array.from(groupedByCluster.entries())
+.sort((a, b) => orderedClusterIds.indexOf(a[0]) - orderedClusterIds.indexOf(b[0]))
+.map(([clusterIndex]) => clusterIndex);
+
   
       const paddingPercentage = 0.05; // 5% padding on both ends
 

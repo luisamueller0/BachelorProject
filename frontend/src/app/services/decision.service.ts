@@ -19,6 +19,7 @@ export class DecisionService {
   private loadingBackendK = new BehaviorSubject<boolean>(false);
   private clusters = new BehaviorSubject<Artist[][]|null>(null);
   private interCommunityEdges = new BehaviorSubject<exhibited_with[]|null>(null);
+  private rankingOrder = new BehaviorSubject<number[]>([]);
 
   currentRanking = this.rankingSource.asObservable();
   currentSunburst = this.sunburstSource.asObservable();
@@ -32,6 +33,11 @@ export class DecisionService {
   currentLoadingBackendRange = this.loadingBackendRange.asObservable();
   currentLoadingBackendK = this.loadingBackendK.asObservable();
   currentInterCommunityEdges = this.interCommunityEdges.asObservable();
+  currentRankingOrder = this.rankingOrder.asObservable();
+
+  changeRankingOrder(order: number[]) {
+    this.rankingOrder.next(order);
+  }
 
 
   changeInterCommunityEdges(edges: exhibited_with[] | null) {
@@ -100,6 +106,10 @@ export class DecisionService {
 
   getDecisionRanking(): string {
     return this.rankingSource.getValue();
+  }
+
+  getRankingOrder(): number[] {
+    return this.rankingOrder.getValue();
   }
 
   
