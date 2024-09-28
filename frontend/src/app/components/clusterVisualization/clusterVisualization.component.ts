@@ -102,6 +102,9 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     private isNodeClick: boolean = false;
 
     public selectedNodes: Array<[SVGCircleElement, string]> = []; // To store multiple selected nodes
+    private selectedEdges: Map<string, { edge: any, artistIds: number[] }> = new Map();
+    private connectedNodeIds: Set<number> = new Set();
+
 
   
     private clusterSimulation: d3.Simulation<ClusterNode, undefined> | null = d3.forceSimulation<ClusterNode>();
@@ -309,46 +312,33 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
   
           this.decisionService.changeRankingOrder(orderedClusterIds);
           // Update the force simulation with the new xScale
-      const simulation = this.clusterSimulation;
-      if (simulation) {
-          simulation
-              .force('x', d3.forceX().x((d: any) => {
-                  switch (ranking) {
-                      case 'exhibitions': return xScale(d.totalExhibitions);
-                      case 'artworks': return xScale(d.totalExhibitedArtworks);
-                      case 'techniques': return xScale(d.totalTechniques);
-                      case 'birthyear': return xScale(d.meanBirthYear);
-                      case 'deathyear': return xScale(d.meanDeathYear);
-                      case 'time': return xScale(d.meanAvgDate.getTime());
-                      default: return xScale(d.totalExhibitedArtworks);
-                  }
-              }))
-              .alpha(1)
-              .restart();
-  
-          if (this.clusterNodes) {
-              // Transition the clusters to their new positions
-              this.g.selectAll(".cluster")
-                  .data(this.clusterNodes)
-                  .transition()
-                  .duration(750)
-                  .attr("transform", (d: ClusterNode) => {
-                      switch (ranking) {
-                          case 'exhibitions': return `translate(${xScale(d.totalExhibitions)}, ${this.contentHeight / 2})`;
-                          case 'techniques': return `translate(${xScale(d.totalTechniques)}, ${this.contentHeight / 2})`;
-                          case 'artworks': return `translate(${xScale(d.totalExhibitedArtworks)}, ${this.contentHeight / 2})`;
-                          case 'birthyear': return `translate(${xScale(d.meanBirthYear)}, ${this.contentHeight / 2})`;
-                          case 'deathyear': return `translate(${xScale(d.meanDeathYear)}, ${this.contentHeight / 2})`;
-                          case 'time': return `translate(${xScale(d.meanAvgDate.getTime())}, ${this.contentHeight / 2})`;
-                          default: return `translate(${xScale(d.totalExhibitedArtworks)}, ${this.contentHeight / 2})`;
-                      }
-                  });
-          }
-  
-          this.clusterSimulation = simulation;
-      }
+          if (this.clusterSimulation) {
+            this.clusterSimulation
+                .force('x', d3.forceX().x((d: any) => xScale(this.getRankingValue(d, ranking))))
+                .alpha(1) // Start with a high alpha for the initial simulation
+                .alphaDecay(0.02) // Set a slower decay for smoother movement
+                .on("tick", () => this.ticked()) // Continue to use your existing ticked function
+                .on("end", () => {
+                    // Apply transitions after the simulation ends
+                    this.applyTransitions(); 
+                })
+                .restart();
+            }
   }
   
+
+// Helper function to extract the appropriate ranking value
+private getRankingValue(node: ClusterNode, ranking: string): number {
+  switch (ranking) {
+      case 'exhibitions': return node.totalExhibitions;
+      case 'techniques': return node.totalTechniques;
+      case 'artworks': return node.totalExhibitedArtworks;
+      case 'birthyear': return node.meanBirthYear;
+      case 'deathyear': return node.meanDeathYear;
+      case 'time': return node.meanAvgDate.getTime();
+      default: return node.totalExhibitedArtworks;
+  }
+}
 
 
   private hoverOnArtist(artistId: number | null) {
@@ -1251,54 +1241,101 @@ private onClusterClick(clusterNode: ClusterNode): void {
     
     
       const selectedNodeId = artistNode.id;
-      const connectedNodeIds: Set<number> = new Set<number>();
+
     
-      // Identify connected nodes
-      this.g.selectAll(".artist-edge").each((d: any) => {
+         // Identify connected nodes
+         this.g.selectAll(".artist-edge").each((d: any) => {
           if (d.source.id === selectedNodeId) {
-              connectedNodeIds.add(d.target.id);
+              this.connectedNodeIds.add(d.target.id);
           } else if (d.target.id === selectedNodeId) {
-              connectedNodeIds.add(d.source.id);
+              this.connectedNodeIds.add(d.source.id);
           }
       });
-    
+
       
           const clusterId = this.artistClusterMap.get(artistNode.id)?.clusterId;
     const category = this.decisionService.getDecisionSunburst();
+
           if (clusterId !== undefined) {
-              const clusterNode = this.clusters[clusterId];
-
-              let artistColor = this.getArtistColorBasedOnCategory(artistNode.artist, category);
-              artistColor = d3.rgb(artistColor).darker(0.5).toString()
-
-              const sharedExhibitionMinArtworksValues: number[] = [];
-              this.g.selectAll(`.artist-edge-${clusterId}`).each((d: any) => {
-                  sharedExhibitionMinArtworksValues.push(d.sharedExhibitionMinArtworks);
-              });
-    
-              const minArtworks = d3.min(sharedExhibitionMinArtworksValues) ?? 0;
-              const maxArtworks = d3.max(sharedExhibitionMinArtworksValues) ?? 1;
-              const edgeColorScale = this.createEdgeColorScale(artistColor, minArtworks, maxArtworks);
-    
-              // Update edges connected to the selected node with the scaled color
-              this.g.selectAll(`.artist-edge-${clusterId}`)
-                  .style('stroke', (d: any) => {
-                      if (d.source.id === artistNode.id || d.target.id === artistNode.id) {
-                          return edgeColorScale(d.sharedExhibitionMinArtworks);
-                      } else {
-                          return this.edgeColorScale(d.sharedExhibitionMinArtworks);
-                      }
-                  })
-                  .style('opacity', (d: any) => {
-                      return (d.source.id === artistNode.id || d.target.id === artistNode.id) ? '1' : '0';
-                  });
-    
+            
+            console.log('connected ids', this.connectedNodeIds)
               // Reduce opacity for nodes not connected to the selected node
-              this.g.selectAll(`.artist-node-${clusterId}-${category}`)
-                  .filter((d: any) => d.id !== artistNode.id && !connectedNodeIds.has(d.id))
+              this.g.selectAll(`.artist-node-${clusterId}`)
+              .filter((d: any) => d.id === artistNode.id || this.connectedNodeIds.has(d.id))
+              .style('opacity', '1');
+          
+              this.g.selectAll(`.artist-node-${clusterId}`)
+                  .filter((d: any) => d.id !== artistNode.id && !this.connectedNodeIds.has(d.id))
                   .style('opacity', '0.2');
-          }
+
+                  const newEdges: any[] = [];
+
+    // Inside your selectMultipleNodes or equivalent function
+this.g.selectAll(".artist-edge")
+.filter((d: any) => d.source.id === selectedNodeId || d.target.id === selectedNodeId)
+.each((edge: any) => {
+    const key = `${Math.min(edge.source.id, edge.target.id)}-${Math.max(edge.source.id, edge.target.id)}`;
+    if (this.selectedEdges.has(key)) {
+        // If the edge is already in the map, add the artist ID to the array
+        const edgeData = this.selectedEdges.get(key);
+        if (!edgeData!.artistIds.includes(selectedNodeId)) {
+            edgeData!.artistIds.push(selectedNodeId);
+        }
+
+        // Change color to reflect the combined selection
+        //this.changeColorEdge(edge, edgeData!.artistIds);
+    } else {
+        // If the edge is new, add it to the map with the current artist ID
+        this.selectedEdges.set(key, { edge, artistIds: [selectedNodeId] });
+
+        newEdges.push(edge);
+    }
+  });
+      
+    // Now apply the edgeColorScale to newEdges
+    
+// Now apply the edgeColorScale to newEdges
+if (newEdges.length > 0) {
+  // Create the edgeColorScale once for all new edges
+  let artistColor = this.getArtistColorBasedOnCategory(artistNode.artist, category);
+  artistColor = d3.rgb(artistColor).darker(0.5).toString();
+
+  const sharedExhibitionMinArtworksValues: number[] = [];
+  this.g.selectAll(`.artist-edge-${clusterId}`).each((d: any) => {
+      sharedExhibitionMinArtworksValues.push(d.sharedExhibitionMinArtworks);
+  });
+
+  const minArtworks = d3.min(sharedExhibitionMinArtworksValues) ?? 0;
+  const maxArtworks = d3.max(sharedExhibitionMinArtworksValues) ?? 1;
+  const edgeColorScale = this.createEdgeColorScale(artistColor, minArtworks, maxArtworks);
+
+
+  this.g.selectAll(`.artist-edge-${clusterId}`).style("opacity", "0");
+  console.log('selected', this.selectedEdges)
+
   
+  this.selectedEdges.forEach((edgeData) => {
+    this.g.selectAll(`.artist-edge-${clusterId}`)
+    .filter((d: any) => {
+      console.log('edge data', edgeData,d)
+      return (d.source.id === edgeData.edge.source.id && d.target.id === edgeData.edge.target.id) || 
+             (d.source.id === edgeData.edge.target.id && d.target.id === edgeData.edge.source.id);
+    })
+        .style("opacity", "1");
+});
+  // Apply the color scale to each of the new edges
+  newEdges.forEach((edge: any) => {
+    // Select the specific edge element using both source and target ids
+    this.g.selectAll(`.artist-edge-${clusterId}`)
+      .filter((d: any) => {
+        return (d.source.id === edge.source.id && d.target.id === edge.target.id) || 
+               (d.source.id === edge.target.id && d.target.id === edge.source.id);
+      })
+      .style('stroke', (d: any) => edgeColorScale(d.sharedExhibitionMinArtworks))
+      .style("opacity", "1");
+  });
+}
+
     
       const clusterNode = this.artistClusterMap.get(artistNode.id);
       if (clusterNode) {
@@ -1407,7 +1444,7 @@ if(this.modernMap){
           this.selectionService.selectClusterEdges(selectedClusterEdges);
       }
      
-      }
+      }}
       
     private highlightInterClusterConnections(artistId: number, clusterId: number): void {
       const connectedNodeIds = new Set<number>();
@@ -2156,7 +2193,7 @@ const category = this.decisionService.getDecisionSunburst();
       const xData =d3.range(1, k + 1).map(String);
       const yData =  [currentSunburst];
     
-      const cellWidth = this.contentWidth / xData.length;
+      const cellWidth = this.contentWidth / k;
       const cellHeight = this.contentHeight;
 
       this.cellWidth = cellWidth;
@@ -2216,6 +2253,32 @@ this.clusters.forEach((cluster, i, nodes) => {
         .attr("x2", (d: any) => d.target.x)
         .attr("y2", (d: any) => d.target.y);
     }
+
+
+// Apply transitions after the simulation ends
+private applyTransitions(): void {
+  this.g.selectAll(".cluster")
+      .transition()
+      .duration(1000)
+      .ease(d3.easeLinear)
+      .attr("transform", (d: ClusterNode) => `translate(${d.x}, ${d.y})`);
+
+  this.g.selectAll(".artist-node")
+      .transition()
+      .duration(1000)
+      .ease(d3.easeLinear)
+      .attr("cx", (d: ArtistNode) => d.x)
+      .attr("cy", (d: ArtistNode) => d.y);
+
+  this.g.selectAll(".artist-edge")
+      .transition()
+      .duration(1000)
+      .ease(d3.easeLinear)
+      .attr("x1", (d: any) => d.source.x)
+      .attr("y1", (d: any) => d.source.y)
+      .attr("x2", (d: any) => d.target.x)
+      .attr("y2", (d: any) => d.target.y);
+}
     
     private applyForceSimulation(): void {
       const nodes = this.clusterNodes;
@@ -2344,7 +2407,10 @@ this.clusters.forEach((cluster, i, nodes) => {
               }
           }))
           .force('y', d3.forceY().y(() => height / 2))
-          .on("tick", () => this.ticked());
+          .alpha(1) // Start with a high alpha for the initial simulation
+          .alphaDecay(0.02) // Set a slower decay for smoother movement
+          .on("tick", () => this.ticked()) // Use your existing ticked function for updates
+          .on("end", () => this.applyTransitions());
   
       // Create an array of clusterIds ordered by their position in the xScale
       const orderedClusterIds = this.clusterNodes
@@ -2380,7 +2446,11 @@ this.clusters.forEach((cluster, i, nodes) => {
   
     const cellSize = Math.min(cellWidth, cellHeight);
     const paddedCellSize = cellSize * (1 - this.paddingRatio); // Reduce cell size by padding ratio
-    const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, this.clusters[0].length, paddedCellSize, this.clusters.length);
+ 
+    // Find the maximum cluster size
+const maxClusterSize = d3.max(this.clusters, cluster => cluster.length) || 0;
+
+    const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, maxClusterSize, paddedCellSize, this.clusters.length);
     this.innerRadius = innerRadius; 
   
     // Use a single reduce function to calculate the average birth year and other properties
@@ -2901,9 +2971,21 @@ console.log(this.clusterNodes)
     const sizes = this.getNodeSize(clusterGroup);
     const padding = cluster.innerRadius / 100 * 0.05;
     const centralNode = artistNodes.reduce((maxNode, node) => {
-        const degree = degreeMap.get(node.artist.id) || 0;
-        return degree > (degreeMap.get(maxNode.artist.id) || 0) ? node : maxNode;
-    }, artistNodes[0]);
+      // Get the degree for the current node, defaulting to -Infinity if not present
+      const currentDegree = degreeMap.get(node.artist.id) ?? -Infinity;
+  
+      // Get the degree for the current maxNode, defaulting to -Infinity if not present
+      const maxDegree = degreeMap.get(maxNode.artist.id) ?? -Infinity;
+  
+      // Choose the node with the higher degree
+      return currentDegree > maxDegree ? node : maxNode;
+  }, artistNodes.length > 0 ? artistNodes[0] : null); // Fallback to null if artistNodes is empty
+
+  // Handle the case where centralNode might be null
+if (!centralNode) {
+  console.warn('No central node could be determined: artistNodes is empty or degreeMap is missing entries.');
+  // Apply a sensible fallback, e.g., picking the first artist node or returning early
+}
   
     // Initialize the force simulation
     const simulation = d3.forceSimulation(artistNodes)
@@ -3116,15 +3198,16 @@ console.log(this.clusterNodes)
   
     return sortedArtists;
   }
-  
   private createSunburstProperties(clusterSize: number, maxSize: number, cellSize: number, totalClusters: number): [number, number] {
-    const paddedCellSize = cellSize * (1 - this.paddingRatio); // Reduce cell size by padding ratio
-    const minRadius = paddedCellSize / 5;
-    // Calculate the final max radius within bounds
-    const maxRadius = paddedCellSize*0.72;
+    const minRadius = cellSize / 5; // Minimum radius scaled with padding
+    const maxRadius = cellSize / 5*3; // Max radius should be within half of cellSize
 
-    const outerRadius = minRadius + ((maxRadius - minRadius) * (clusterSize / maxSize));
-    const innerRadius = outerRadius - outerRadius / 5; // Reduced thickness for small cells
+    // Calculate outerRadius based on cluster size relative to maxSize, constrained by maxRadius
+    const outerRadius = Math.min(maxRadius, minRadius + ((maxRadius - minRadius) * (clusterSize / maxSize)));
+    
+    const innerRadius = outerRadius - outerRadius / 5; // Maintain the proportionate thickness
+
+    console.log('outer', outerRadius);
 
     return [outerRadius, innerRadius];
 }
