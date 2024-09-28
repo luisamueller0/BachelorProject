@@ -2281,18 +2281,21 @@ const category = this.decisionService.getDecisionSunburst();
               const circleElement = this.selectedNodes[0][0] as SVGCircleElement;
               const compareNode = d3.select(circleElement).datum() as ArtistNode;
               const clusterNode = this.artistClusterMap.get(compareNode.id);
+
+              console.log('cluster', clusterNode)
       
               // If the node belongs to a cluster, update the selection
               if (clusterNode) {
                 this.selectedClusterNode = clusterNode;
+                this.selectedNodes = [];
+                this.resetNodeSelection();
                 this.updateClusterSelection(clusterNode);
               } else {
                 // If no cluster was found, clear the selected artists
                 this.updateClusterSelection(null);
               }
       
-              this.selectedNodes = [];
-              this.resetNodeSelection();
+          
             }
           }
         }
