@@ -198,6 +198,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       
       // Determine the scale based on the ranking
       let xScale;
+
   
       switch (ranking) {
         case 'exhibitions':
@@ -556,8 +557,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
 
      private updatePosition(type: string, id:number, countryData:any,degreeMap: Map<number, number>, metricMap: Map<number, number>, cluster: ClusterNode): { x: number, y: number } {
       const degree = degreeMap.get(id) || 0;
-     console.log('help id',id)
-     console.log('help',degreeMap)
+ 
      
       const radialScale = this.setupRadialScale(cluster.innerRadius);
       const radial = radialScale(degree);
@@ -1016,7 +1016,6 @@ private onClusterClick(clusterNode: ClusterNode): void {
             sharedExhibitionMinArtworks: edge.sharedExhibitionMinArtworks,
           }));
         }}
-        this.isLoading = false;
         this.decisionService.changeLoadingBackendK(false);
       let allArtists:Artist[]= [];
       this.clusters.forEach((cluster, clusterIndex) => {
@@ -1047,8 +1046,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
       this.calculateNodeDegreesForClusters();
   
   this.visualizeData();
-  this.isLoading = true;
-      
+
   
     }
   
@@ -1892,7 +1890,7 @@ const category = this.decisionService.getDecisionSunburst();
       this.selectionService.selectCountries(this.allCountriesByCategory[category]);
       console.log('all old', this.allOldCountriesByCategory)
       this.selectionService.selectOldCountries(this.allOldCountriesByCategory[category]);
-      this.isLoading = false;
+ 
     }
   
 
@@ -2221,18 +2219,28 @@ const category = this.decisionService.getDecisionSunburst();
         .range([0, this.contentHeight])
         .padding(0.1);
     
+        this
       // Create a Promise array to ensure clusters are drawn before applying the force simulation
       const drawPromises = this.clusters.map((cluster, i) => {
-          return new Promise<void>((resolve) => {
-              this.drawCluster(i, cellWidth, cellHeight);
-              resolve(); // Resolve when the cluster drawing is complete
-          });
-      });
-  
-      // Wait for all drawCluster calls to complete before applying the force simulation
-      Promise.all(drawPromises).then(() => {
+        return new Promise<void>((resolve) => {
+            this.drawCluster(i, cellWidth, cellHeight);
+            
+            // Use requestAnimationFrame to ensure the drawing is complete before resolving
+            requestAnimationFrame(() => {
+                resolve(); // Resolve after ensuring the drawing is complete
+            });
+        });
+    });
+     // Wait for all drawCluster calls to complete
+     Promise.all(drawPromises).then(() => {
+      // Add a short delay to ensure DOM is fully updated
+      setTimeout(() => {
           this.applyForceSimulation();
-      });
+          this.isLoading = false;
+       
+      }, 1000); // 100 milliseconds delay
+    
+  });
   }
   
 
@@ -2244,14 +2252,17 @@ const category = this.decisionService.getDecisionSunburst();
     private ticked(): void {
 
       // Update the cluster positions
+
+
       this.g.selectAll(".cluster")
-      .data(this.clusterNodes)  // Use the clusterNodes data
-      .attr("transform", (d: ClusterNode) => {
-        if (typeof d.x !== 'undefined' && typeof d.y !== 'undefined') {
-          return `translate(${d.x}, ${d.y})`;  // Update cluster position using x and y
-        }
-        return "";
-      });
+        .data(this.clusterNodes)
+        .attr("transform", (d: ClusterNode) => {
+            if (typeof d.x !== 'undefined' && !isNaN(d.x) && typeof d.y !== 'undefined' && !isNaN(d.y)) {
+                return `translate(${d.x}, ${d.y})`;
+            }
+            console.log('NaN detected in ticked function:', d);
+            return `translate(0, ${this.contentHeight / 2})`; // Default positioning if NaN
+        });
   
       // Update positions of artist nodes within clusters
       this.g.selectAll(".artist-node")
@@ -2271,21 +2282,35 @@ const category = this.decisionService.getDecisionSunburst();
 
     
     private applyForceSimulation(): void {
-      const nodes = this.clusterNodes;
       const height = this.contentHeight;
+      console.log('clusters', this.clusterNodes)
+      
+
+     
+      const nodes = this.clusterNodes;
+      nodes.forEach(node => {
+        if (typeof node.x === 'undefined' || isNaN(node.x)) {
+            node.x = Math.random() * this.contentWidth; // Random initial x position
+        }
+        if (typeof node.y === 'undefined' || isNaN(node.y)) {
+            node.y = this.contentHeight / 2; // Set y to center height if undefined
+        }
+        if (isNaN(node.x) || isNaN(node.y)) {
+            node.x = 0;
+            node.y=0;
+            console.log('NaN detected in applyForceSimulation initialization:', node);
+        }
+    });
+    
+    this.clusterNodes = nodes;
   
       // Get the current ranking from the decision service
       const ranking = this.decisionService.getDecisionRanking();
 
+
+
           // Initialize the x and y positions for each node if undefined
-    nodes.forEach(node => {
-      if (typeof node.x === 'undefined' || isNaN(node.x)) {
-          node.x = Math.random() * this.contentWidth; // Random initial x position
-      }
-      if (typeof node.y === 'undefined' || isNaN(node.y)) {
-          node.y = height / 2; // Set y to center height if undefined
-      }
-  });
+  
   
       // Define the xScale based on the current ranking
       let xScale;
@@ -2396,14 +2421,13 @@ const category = this.decisionService.getDecisionSunburst();
                            ranking === 'deathyear' ? d.meanDeathYear :
                            ranking === 'time' ? d.meanAvgDate :
                            0;
-                           console.log('value', xValue)
             return isNaN(xValue) ? 0 : xScale(xValue); // Handle NaN by defaulting to 0 or any suitable value
         }))
           .force('y', d3.forceY().y(() => height / 2))
           .alpha(1) // Ensure high alpha for the initial simulation
           .alphaDecay(0.02) // Slower decay for smoother movement
           .on("tick", () => this.ticked())
-          .restart(); // Restart the simulation after setting up the forces
+          // Restart the simulation after setting up the forces
   
       // Create an array of clusterIds ordered by their position in the xScale
       const orderedClusterIds = this.clusterNodes
@@ -2474,6 +2498,7 @@ const maxClusterSize = d3.max(this.clusters, cluster => cluster.length) || 0;
        const avgDateTimestamp = metrics.count > 0 ? metrics.totalAvgDate / metrics.count : new Date(1910, 0, 1).getTime();
        const avgDate = new Date(avgDateTimestamp); // Convert back to Date object
    
+       console.log('clusterindex', clusterIndex)
   
     // Create the clusterNode with the calculated values
     const clusterNode: ClusterNode = {
@@ -2490,6 +2515,9 @@ const maxClusterSize = d3.max(this.clusters, cluster => cluster.length) || 0;
         totalExhibitions: metrics.totalExhibitions,
         totalTechniques: metrics.totalTechniques
     };
+
+    this.clusterNodes[clusterIndex] = clusterNode;
+   
   
     const category = this.decisionService.getDecisionSunburst();
     const clusterGroup = this.createClusterGroup(clusterNode, category, cellWidth, cellHeight);
@@ -2861,9 +2889,6 @@ const joinedNames = formattedNames.length > 1
     this.countryCentroids[value] = {};
   }
   this.countryCentroids[value][clusterNode.clusterId] = countryCentroids;
-  this.clusterNodes [clusterNode.clusterId] =  clusterNode;
-console.log(this.clusterNodes)
-
   
   this.createArtistNetwork(value, clusterGroup, clusterNode, countryCentroids);
       // Adding the text label to display the clusterIndex
@@ -3192,15 +3217,13 @@ if (!centralNode) {
     return sortedArtists;
   }
   private createSunburstProperties(clusterSize: number, maxSize: number, cellSize: number, totalClusters: number): [number, number] {
-    const minRadius = cellSize / 5; // Minimum radius scaled with padding
-    const maxRadius = cellSize / 5*3; // Max radius should be within half of cellSize
+    const minRadius = cellSize *0.2; // Minimum radius scaled with padding
+    const maxRadius = cellSize * 0.65; // Max radius should be within half of cellSize
 
     // Calculate outerRadius based on cluster size relative to maxSize, constrained by maxRadius
     const outerRadius = Math.min(maxRadius, minRadius + ((maxRadius - minRadius) * (clusterSize / maxSize)));
     
     const innerRadius = outerRadius - outerRadius / 5; // Maintain the proportionate thickness
-
-    console.log('outer', outerRadius);
 
     return [outerRadius, innerRadius];
 }

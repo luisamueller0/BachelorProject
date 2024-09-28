@@ -1,4 +1,7 @@
 <div class="matrix-container" #matrix>
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="loading-spinner"></div>
+  </div>
   <!-- Notification component -->
   <app-notification
     [message]="aiResponse"
@@ -31,7 +34,5 @@
 
   <figure class="matrix-svg-container"></figure>
   <div id="tooltip" class="tooltip" style="display: none;"></div>
-  <div *ngIf="isLoading" class="loading-container">
-    <div class="loading-spinner"></div>
-  </div>
+
 </div>
