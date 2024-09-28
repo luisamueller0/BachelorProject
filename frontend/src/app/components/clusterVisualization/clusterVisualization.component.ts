@@ -2293,6 +2293,8 @@ const category = this.decisionService.getDecisionSunburst();
               } else {
                 // If no cluster was found, clear the selected artists
                 this.updateClusterSelection(null);
+                this.selectedNodes = [];
+                this.resetNodeSelection();
               }
       
           
