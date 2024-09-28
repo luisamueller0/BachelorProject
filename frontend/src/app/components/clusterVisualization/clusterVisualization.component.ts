@@ -2575,7 +2575,7 @@ const category = this.decisionService.getDecisionSunburst();
     if (!cluster) return;
   
     const cellSize = Math.min(cellWidth, cellHeight);
-    const paddedCellSize = cellSize * (1 - this.paddingRatio); // Reduce cell size by padding ratio
+    const paddedCellSize = cellSize; // Reduce cell size by padding ratio
  
     // Find the maximum cluster size
 const maxClusterSize = d3.max(this.clusters, cluster => cluster.length) || 0;
@@ -3331,7 +3331,7 @@ if (!centralNode) {
   }
   private createSunburstProperties(clusterSize: number, maxSize: number, cellSize: number, totalClusters: number): [number, number] {
     const minRadius = cellSize *0.2; // Minimum radius scaled with padding
-    const maxRadius = cellSize * 0.65; // Max radius should be within half of cellSize
+    const maxRadius = cellSize * 0.75; // Max radius should be within half of cellSize
 
     // Calculate outerRadius based on cluster size relative to maxSize, constrained by maxRadius
     const outerRadius = Math.min(maxRadius, minRadius + ((maxRadius - minRadius) * (clusterSize / maxSize)));
