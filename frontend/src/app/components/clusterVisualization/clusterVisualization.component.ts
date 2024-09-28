@@ -312,33 +312,46 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
   
           this.decisionService.changeRankingOrder(orderedClusterIds);
           // Update the force simulation with the new xScale
-          if (this.clusterSimulation) {
-            this.clusterSimulation
-                .force('x', d3.forceX().x((d: any) => xScale(this.getRankingValue(d, ranking))))
-                .alpha(1) // Start with a high alpha for the initial simulation
-                .alphaDecay(0.02) // Set a slower decay for smoother movement
-                .on("tick", () => this.ticked()) // Continue to use your existing ticked function
-                .on("end", () => {
-                    // Apply transitions after the simulation ends
-                   // this.applyTransitions(); 
-                })
-                .restart();
-            }
+      const simulation = this.clusterSimulation;
+      if (simulation) {
+          simulation
+              .force('x', d3.forceX().x((d: any) => {
+                  switch (ranking) {
+                      case 'exhibitions': return xScale(d.totalExhibitions);
+                      case 'artworks': return xScale(d.totalExhibitedArtworks);
+                      case 'techniques': return xScale(d.totalTechniques);
+                      case 'birthyear': return xScale(d.meanBirthYear);
+                      case 'deathyear': return xScale(d.meanDeathYear);
+                      case 'time': return xScale(d.meanAvgDate.getTime());
+                      default: return xScale(d.totalExhibitedArtworks);
+                  }
+              }))
+              .alpha(1)
+              .restart();
+  
+          if (this.clusterNodes) {
+              // Transition the clusters to their new positions
+              this.g.selectAll(".cluster")
+                  .data(this.clusterNodes)
+                  .transition()
+                  .duration(2000)
+                  .attr("transform", (d: ClusterNode) => {
+                      switch (ranking) {
+                          case 'exhibitions': return `translate(${xScale(d.totalExhibitions)}, ${this.contentHeight / 2})`;
+                          case 'techniques': return `translate(${xScale(d.totalTechniques)}, ${this.contentHeight / 2})`;
+                          case 'artworks': return `translate(${xScale(d.totalExhibitedArtworks)}, ${this.contentHeight / 2})`;
+                          case 'birthyear': return `translate(${xScale(d.meanBirthYear)}, ${this.contentHeight / 2})`;
+                          case 'deathyear': return `translate(${xScale(d.meanDeathYear)}, ${this.contentHeight / 2})`;
+                          case 'time': return `translate(${xScale(d.meanAvgDate.getTime())}, ${this.contentHeight / 2})`;
+                          default: return `translate(${xScale(d.totalExhibitedArtworks)}, ${this.contentHeight / 2})`;
+                      }
+                  });
+          }
+  
+          this.clusterSimulation = simulation;
+      }
   }
   
-
-// Helper function to extract the appropriate ranking value
-private getRankingValue(node: ClusterNode, ranking: string): number {
-  switch (ranking) {
-      case 'exhibitions': return node.totalExhibitions;
-      case 'techniques': return node.totalTechniques;
-      case 'artworks': return node.totalExhibitedArtworks;
-      case 'birthyear': return node.meanBirthYear;
-      case 'deathyear': return node.meanDeathYear;
-      case 'time': return node.meanAvgDate.getTime();
-      default: return node.totalExhibitedArtworks;
-  }
-}
 
 
   private hoverOnArtist(artistId: number | null) {
@@ -2189,13 +2202,12 @@ const category = this.decisionService.getDecisionSunburst();
       // Get the current sunburst decision
       const currentSunburst = this.decisionService.getDecisionSunburst();
     
- 
-      const xData =d3.range(1, k + 1).map(String);
-      const yData =  [currentSunburst];
+      const xData = d3.range(1, k + 1).map(String);
+      const yData = [currentSunburst];
     
       const cellWidth = this.contentWidth / k;
       const cellHeight = this.contentHeight;
-
+  
       this.cellWidth = cellWidth;
       this.cellHeight = cellHeight;
     
@@ -2209,20 +2221,20 @@ const category = this.decisionService.getDecisionSunburst();
         .range([0, this.contentHeight])
         .padding(0.1);
     
-
-        
-this.clusters.forEach((cluster, i, nodes) => {
-
-        this.drawCluster(i, cellWidth, cellHeight);
-});
-     // this.drawCells(xScale, yScale, xData, yData, cellWidth, cellHeight);
-    
-      //this.drawVerticalSeparators(xScale, xData); // Draw vertical lines
-      
-
-       // Now, apply the force simulation on the nodes
-  this.applyForceSimulation();
-    }
+      // Create a Promise array to ensure clusters are drawn before applying the force simulation
+      const drawPromises = this.clusters.map((cluster, i) => {
+          return new Promise<void>((resolve) => {
+              this.drawCluster(i, cellWidth, cellHeight);
+              resolve(); // Resolve when the cluster drawing is complete
+          });
+      });
+  
+      // Wait for all drawCluster calls to complete before applying the force simulation
+      Promise.all(drawPromises).then(() => {
+          this.applyForceSimulation();
+      });
+  }
+  
 
     
 
@@ -2235,7 +2247,6 @@ this.clusters.forEach((cluster, i, nodes) => {
       this.g.selectAll(".cluster")
       .data(this.clusterNodes)  // Use the clusterNodes data
       .attr("transform", (d: ClusterNode) => {
-        console.log('clusternode', d)
         if (typeof d.x !== 'undefined' && typeof d.y !== 'undefined') {
           return `translate(${d.x}, ${d.y})`;  // Update cluster position using x and y
         }
@@ -2265,6 +2276,16 @@ this.clusters.forEach((cluster, i, nodes) => {
   
       // Get the current ranking from the decision service
       const ranking = this.decisionService.getDecisionRanking();
+
+          // Initialize the x and y positions for each node if undefined
+    nodes.forEach(node => {
+      if (typeof node.x === 'undefined' || isNaN(node.x)) {
+          node.x = Math.random() * this.contentWidth; // Random initial x position
+      }
+      if (typeof node.y === 'undefined' || isNaN(node.y)) {
+          node.y = height / 2; // Set y to center height if undefined
+      }
+  });
   
       // Define the xScale based on the current ranking
       let xScale;
@@ -2368,28 +2389,21 @@ this.clusters.forEach((cluster, i, nodes) => {
           .force('charge', d3.forceManyBody().strength(5))
           .force("collision", d3.forceCollide<ClusterNode>().radius(d => d.outerRadius))
           .force('x', d3.forceX().x((d: any) => {
-              switch (ranking) {
-                  case 'exhibitions':
-                      return xScale(d.totalExhibitions);
-                  case 'artworks':
-                      return xScale(d.totalExhibitedArtworks);
-                  case 'techniques':
-                      return xScale(d.totalTechniques);
-                  case 'birthyear':
-                      return xScale(d.meanBirthYear);
-                  case 'deathyear':
-                      return xScale(d.meanDeathYear);
-                  case 'time':
-                      return xScale(d.meanAvgDate);
-                  default:
-                      return xScale(d.totalExhibitedArtworks);
-              }
-          }))
+            const xValue = ranking === 'exhibitions' ? d.totalExhibitions :
+                           ranking === 'artworks' ? d.totalExhibitedArtworks :
+                           ranking === 'techniques' ? d.totalTechniques :
+                           ranking === 'birthyear' ? d.meanBirthYear :
+                           ranking === 'deathyear' ? d.meanDeathYear :
+                           ranking === 'time' ? d.meanAvgDate :
+                           0;
+                           console.log('value', xValue)
+            return isNaN(xValue) ? 0 : xScale(xValue); // Handle NaN by defaulting to 0 or any suitable value
+        }))
           .force('y', d3.forceY().y(() => height / 2))
-          .alpha(1) // Start with a high alpha for the initial simulation
-          .alphaDecay(0.02) // Set a slower decay for smoother movement
-          .on("tick", () => this.ticked()) // Use your existing ticked function for updates
-          //.on("end", () => this.applyTransitions());
+          .alpha(1) // Ensure high alpha for the initial simulation
+          .alphaDecay(0.02) // Slower decay for smoother movement
+          .on("tick", () => this.ticked())
+          .restart(); // Restart the simulation after setting up the forces
   
       // Create an array of clusterIds ordered by their position in the xScale
       const orderedClusterIds = this.clusterNodes
@@ -2468,7 +2482,7 @@ const maxClusterSize = d3.max(this.clusters, cluster => cluster.length) || 0;
         outerRadius: outerRadius,
         innerRadius: innerRadius,
         x: 0,
-        y: 0,
+        y: 0, vx: 0, vy: 0, // Initialize x and y positions and velocities
         meanAvgDate: new Date(),  // Adjust this if you have a value to calculate for meanAvgDate
         meanBirthYear: avgBirthYear, // Set the calculated average birth year as a Date object
         meanDeathYear: avgDeathYear,
