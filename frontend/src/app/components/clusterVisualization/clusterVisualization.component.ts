@@ -188,6 +188,8 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         this.updateClusterPosition(ranking);
       }));
       window.addEventListener('resize', this.onResize.bind(this));
+
+     
     }
   
 
@@ -1138,6 +1140,32 @@ private onClusterClick(clusterNode: ClusterNode): void {
     private handleMultiNodeSelection(artistNode: ArtistNode, circle: SVGCircleElement, filter:any) {
       console.log('clicked', this.selectedNodes);
       
+
+       // Access the bound data for the circle
+       const clusterNode = this.artistClusterMap.get(artistNode.id);
+       if(this.selectedNodes.length > 0){
+       const circleElement = this.selectedNodes[0][0] as SVGCircleElement;
+       const compareNode = d3.select(circleElement).datum() as ArtistNode;
+
+       if (
+         
+         clusterNode?.clusterId !== compareNode.artist.cluster 
+       ) {
+     
+         // If the node belongs to a cluster, update the selection
+         if (clusterNode) {
+           this.selectedClusterNode = clusterNode;
+           this.updateClusterSelection(clusterNode);
+         } else {
+           // If no cluster was found, clear the selected artists
+           this.updateClusterSelection(null);
+         }
+     
+         this.resetNodeSelection();
+         this.selectedNodes = []; // Reset the array to empty
+        }
+
+      }
       this.selectMultipleNodes(artistNode, circle);
       this.applyStyleToNode(circle,artistNode, filter);
       //this.svg.select('')
@@ -1149,6 +1177,24 @@ private onClusterClick(clusterNode: ClusterNode): void {
   
       // Apply the filter to the selected node
       d3.select(circle).style("filter", "url(#shadow)");
+      if(this.selectedNodes.length === 0){
+        const clusterNode = this.artistClusterMap.get(artistNode.id);
+
+        // If the node belongs to a cluster, update the selection
+        if (clusterNode) {
+          this.selectedClusterNode = clusterNode;
+            this.updateClusterSelection(clusterNode);
+        } else {
+            // If no cluster was found, clear the selected artists
+            this.updateClusterSelection(null);
+        }
+
+        
+
+
+       this.resetNodeSelection();
+
+      }
     }
     
 
@@ -1229,6 +1275,9 @@ private onClusterClick(clusterNode: ClusterNode): void {
     if (nodeIndex !== -1) {
         console.log('Node is already selected, removing:', artistNode.id);
 
+        
+      
+
         // Get the selected node info
         const [selectedCircle, originalColor] = this.selectedNodes[nodeIndex];
 
@@ -1252,6 +1301,11 @@ private onClusterClick(clusterNode: ClusterNode): void {
     
     
       const selectedNodeId = artistNode.id;
+
+      const clusterNode = this.artistClusterMap.get(artistNode.id);
+      if (clusterNode) {
+        this.highlightInterClusterConnections(artistNode.id, clusterNode?.clusterId);
+      }
 
     
          // Identify connected nodes
@@ -1346,6 +1400,23 @@ if (newEdges.length > 0) {
       .style("opacity", "1");
   });
 }
+
+// Cast `datum()` to `ArtistNode`
+const selectedNodeIds = new Set(this.selectedNodes.map(([node, color]) => {
+  const artistNodeData = d3.select(node).datum() as ArtistNode; // Cast to ArtistNode
+  return artistNodeData.id;
+}));
+
+   // Update edge visibility based on selected nodes
+   this.g.selectAll(`.artist-edge-${clusterId}`)
+   .style("opacity", (d: any) => {
+     // Check if both nodes of the edge are in the selected nodes
+     if ( d.source.id === selectedNodeId || d.target.id === selectedNodeId) {//selectedNodeIds.has(d.source.id) && selectedNodeIds.has(d.target.id) ||
+       return '1'; // Set opacity to 1 if both nodes are selected
+     } else {
+       return '0'; // Set opacity to 0 otherwise
+     }
+   });
 
     
       const clusterNode = this.artistClusterMap.get(artistNode.id);
@@ -2193,11 +2264,40 @@ const category = this.decisionService.getDecisionSunburst();
     
       // Add double-click event to reset zoom to the original state
       // Adding a tap + click event to reset zoom
-  this.svg.on("click", (event: MouseEvent) => {
-    if (event.shiftKey) { // Check if Shift key is pressed when clicking
-      this.svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity);
-    }
-  });
+      this.svg.on("click", (event: MouseEvent) => {
+        // Check if Shift key is pressed when clicking
+        if (event.shiftKey) {
+          this.svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity);
+        }
+      
+        // Check if Ctrl key is pressed when clicking
+        if (event.ctrlKey) {
+          // Check if the click happened outside of the nodes
+          const isNodeClick = d3.select(event.target as Element).classed("artist-node");
+      
+          if (!isNodeClick) {
+            // Reset selectedNodes if the click happened outside a node
+            if (this.selectedNodes.length > 0) {
+              const circleElement = this.selectedNodes[0][0] as SVGCircleElement;
+              const compareNode = d3.select(circleElement).datum() as ArtistNode;
+              const clusterNode = this.artistClusterMap.get(compareNode.id);
+      
+              // If the node belongs to a cluster, update the selection
+              if (clusterNode) {
+                this.selectedClusterNode = clusterNode;
+                this.updateClusterSelection(clusterNode);
+              } else {
+                // If no cluster was found, clear the selected artists
+                this.updateClusterSelection(null);
+              }
+      
+              this.selectedNodes = [];
+              this.resetNodeSelection();
+            }
+          }
+        }
+      });
+      
     }
     
     
