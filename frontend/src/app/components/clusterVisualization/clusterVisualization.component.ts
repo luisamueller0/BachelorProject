@@ -1629,8 +1629,11 @@ const category = this.decisionService.getDecisionSunburst();
           artistColor = d3.rgb(artistColor).darker(0.5).toString()
 
           const sharedExhibitionMinArtworksValues: number[] = [];
-          this.g.selectAll(`.artist-edge-${clusterId}`).each((d: any) => {
-              sharedExhibitionMinArtworksValues.push(d.sharedExhibitionMinArtworks);
+
+          this.g.selectAll(`.artist-edge-${clusterId}`)
+          .filter((d: any) => d.source.id === artistNode.id || d.target.id === artistNode.id)
+          .each((d: any) => {
+            sharedExhibitionMinArtworksValues.push(d.sharedExhibitionMinArtworks); // Collect values for further processing
           });
 
           const minArtworks = d3.min(sharedExhibitionMinArtworksValues) ?? 0;
@@ -1794,22 +1797,27 @@ const category = this.decisionService.getDecisionSunburst();
   }
   private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks: number): d3.ScaleLinear<string, number> {
     const baseColorRGB = d3.rgb(baseColor);
-    const lighterColor = d3.color(baseColorRGB.toString());
-    if (lighterColor) {
-        lighterColor.opacity = 0.1; // Set the opacity to 0.1 (10%)
-    }
-  
+    
+    // Generate a lighter color with more noticeable contrast
+    const lighterColor = baseColorRGB.brighter(1); // Increase the brightness level (2) for more contrast
+    const darkerColor = baseColorRGB.darker(4); // Darken the base color for the max value
+
+    // Adjust the opacity of the lighter color if needed
+    lighterColor.opacity = 0.2; // Set to 30% opacity for more visibility
+
+    // Check if min and max artworks are the same
     if (minArtworks === maxArtworks) {
-        // If all values are the same, return a scale that maps everything to the base color
         return d3.scaleLinear<string, number>()
             .domain([0, 1])
             .range([baseColor, baseColor]);
     } else {
+        // Create a color scale with intermediate colors
         return d3.scaleLinear<string, number>()
-            .domain([minArtworks, maxArtworks])
-            .range([lighterColor?.toString() || baseColor, baseColor]);
+            .domain([minArtworks,maxArtworks])
+            .range([lighterColor.toString(), darkerColor.toString()]);
     }
-  }
+}
+
    private focusHandler(clusterNode:ClusterNode){
      
       const selectedArtists = clusterNode.artists;
