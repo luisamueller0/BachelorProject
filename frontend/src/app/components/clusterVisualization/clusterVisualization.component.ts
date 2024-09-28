@@ -320,7 +320,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
                 .on("tick", () => this.ticked()) // Continue to use your existing ticked function
                 .on("end", () => {
                     // Apply transitions after the simulation ends
-                    this.applyTransitions(); 
+                   // this.applyTransitions(); 
                 })
                 .restart();
             }
@@ -2235,6 +2235,7 @@ this.clusters.forEach((cluster, i, nodes) => {
       this.g.selectAll(".cluster")
       .data(this.clusterNodes)  // Use the clusterNodes data
       .attr("transform", (d: ClusterNode) => {
+        console.log('clusternode', d)
         if (typeof d.x !== 'undefined' && typeof d.y !== 'undefined') {
           return `translate(${d.x}, ${d.y})`;  // Update cluster position using x and y
         }
@@ -2256,29 +2257,7 @@ this.clusters.forEach((cluster, i, nodes) => {
 
 
 // Apply transitions after the simulation ends
-private applyTransitions(): void {
-  this.g.selectAll(".cluster")
-      .transition()
-      .duration(1000)
-      .ease(d3.easeLinear)
-      .attr("transform", (d: ClusterNode) => `translate(${d.x}, ${d.y})`);
 
-  this.g.selectAll(".artist-node")
-      .transition()
-      .duration(1000)
-      .ease(d3.easeLinear)
-      .attr("cx", (d: ArtistNode) => d.x)
-      .attr("cy", (d: ArtistNode) => d.y);
-
-  this.g.selectAll(".artist-edge")
-      .transition()
-      .duration(1000)
-      .ease(d3.easeLinear)
-      .attr("x1", (d: any) => d.source.x)
-      .attr("y1", (d: any) => d.source.y)
-      .attr("x2", (d: any) => d.target.x)
-      .attr("y2", (d: any) => d.target.y);
-}
     
     private applyForceSimulation(): void {
       const nodes = this.clusterNodes;
@@ -2410,7 +2389,7 @@ private applyTransitions(): void {
           .alpha(1) // Start with a high alpha for the initial simulation
           .alphaDecay(0.02) // Set a slower decay for smoother movement
           .on("tick", () => this.ticked()) // Use your existing ticked function for updates
-          .on("end", () => this.applyTransitions());
+          //.on("end", () => this.applyTransitions());
   
       // Create an array of clusterIds ordered by their position in the xScale
       const orderedClusterIds = this.clusterNodes
