@@ -1137,65 +1137,164 @@ private onClusterClick(clusterNode: ClusterNode): void {
 
 
     
-    private handleMultiNodeSelection(artistNode: ArtistNode, circle: SVGCircleElement, filter:any) {
+    private handleMultiNodeSelection(artistNode: ArtistNode, circle: SVGCircleElement, filter: any) {
       console.log('clicked', this.selectedNodes);
-      
-
-       // Access the bound data for the circle
-       const clusterNode = this.artistClusterMap.get(artistNode.id);
-       if(this.selectedNodes.length > 0){
-       const circleElement = this.selectedNodes[0][0] as SVGCircleElement;
-       const compareNode = d3.select(circleElement).datum() as ArtistNode;
-
-       if (
-         
-         clusterNode?.clusterId !== compareNode.artist.cluster 
-       ) {
-     
-         // If the node belongs to a cluster, update the selection
-         if (clusterNode) {
-           this.selectedClusterNode = clusterNode;
-           this.updateClusterSelection(clusterNode);
-         } else {
-           // If no cluster was found, clear the selected artists
-           this.updateClusterSelection(null);
-         }
-     
-         this.resetNodeSelection();
-         this.selectedNodes = []; // Reset the array to empty
-        }
-
+  
+      // Access the bound data for the circle
+      const clusterNode = this.artistClusterMap.get(artistNode.id);
+  
+      // Test if a node of a different cluster was clicked, reset if different cluster
+      if (this.selectedNodes.length > 0) {
+          const firstSelectedCircle = this.selectedNodes[0][0] as SVGCircleElement;
+          const firstSelectedNode = d3.select(firstSelectedCircle).datum() as ArtistNode;
+  
+          if (clusterNode?.clusterId !== firstSelectedNode.artist.cluster) {
+              if (clusterNode) {
+                  this.selectedClusterNode = clusterNode;
+                  this.updateClusterSelection(clusterNode);
+              } else {
+                  this.updateClusterSelection(null);
+              }
+  
+              this.resetNodeSelection();
+              this.selectedNodes = []; // Reset the array to empty
+          }
       }
+  
+      // Check if the node is already in the selection
+      const nodeIndex = this.selectedNodes.findIndex(node => node[0] === circle);
+  
+      if (nodeIndex !== -1) {
+          console.log('Node is already selected, removing:', artistNode.id);
+  
+          // Remove the node from the selectedNodes array
+          this.selectedNodes.splice(nodeIndex, 1);
+  
+          // Reset the style of the deselected node
+          this.resetStyleOfNode(circle, artistNode.artist);
+          this.g.selectAll(".artist-edge")
+              .style('stroke', (d: any) =>
+                  d.sharedExhibitionMinArtworks >= 0.4 ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none'
+              )
+              .style('opacity', 1);
+  
+          // Check if this was the last selected node
+          if (this.selectedNodes.length === 0) {
+              // Select the cluster without updating the selectionService
+              if (clusterNode) {
+                console.log('cluster node', clusterNode)
+                  this.selectedClusterNode = clusterNode;
+                  this.updateClusterSelection(clusterNode);
+              } else {
+                  this.updateClusterSelection(null);
+              }
+             
+              return; // Exit the function
+          }
+  
+          // If not the last node, continue updating the selectionService
+          const selectedArtists = this.selectedNodes.map(([node, color]) => {
+              const artistNodeData = d3.select(node).datum() as ArtistNode; // Get the bound data for each node
+              return artistNodeData.artist; // Return the artist object
+          });
+  
+          // Pass the array of selected artists to the selectionService
+          this.selectionService.selectArtists(selectedArtists);
+  
+          // Handle countries update
+          const countries: string[] = [];
+          const category = this.decisionService.getDecisionSunburst();
+          if (this.modernMap) {
+              this.updateSelectedCountries(selectedArtists, category, countries, true);
+              this.selectionService.selectCountries(countries);
+          } else {
+              this.updateSelectedCountries(selectedArtists, category, countries, false);
+              this.selectionService.selectOldCountries(countries);
+          }
+  
+          return; // Exit the function since we've handled the removal
+      }
+  
+      // Add the node to the selection
       this.selectMultipleNodes(artistNode, circle);
-      this.applyStyleToNode(circle,artistNode, filter);
-      //this.svg.select('')
+      this.applyStyleToNode(circle, artistNode, filter);
   
       // Dynamically adjust the shadow based on the radius of the selected node
       const radius = parseFloat(d3.select(circle).attr('r')); // Get the radius of the node
       filter.select('feDropShadow')
-        .attr('stdDeviation', Math.max(0.5, radius / 3)); // Adjust stdDeviation relative to the node size
+          .attr('stdDeviation', Math.max(0.5, radius / 3)); // Adjust stdDeviation relative to the node size
   
       // Apply the filter to the selected node
       d3.select(circle).style("filter", "url(#shadow)");
-      if(this.selectedNodes.length === 0){
-        const clusterNode = this.artistClusterMap.get(artistNode.id);
-
-        // If the node belongs to a cluster, update the selection
-        if (clusterNode) {
-          this.selectedClusterNode = clusterNode;
-            this.updateClusterSelection(clusterNode);
-        } else {
-            // If no cluster was found, clear the selected artists
-            this.updateClusterSelection(null);
-        }
-
-        
-
-
-       this.resetNodeSelection();
-
+  }
+  
+  // Helper function to update countries
+  private updateSelectedCountries(selectedArtists: Artist[], category: string, countries: string[], modernMap: boolean) {
+      if (modernMap) {
+          switch (category) {
+              case 'nationality':
+                  selectedArtists.forEach(artist => {
+                      if (artist.nationality && !countries.includes(artist.nationality)) {
+                          countries.push(artist.nationality);
+                      }
+                  });
+                  break;
+              case 'birthcountry':
+                  selectedArtists.forEach(artist => {
+                      if (artist.birthcountry && !countries.includes(artist.birthcountry)) {
+                          countries.push(artist.birthcountry);
+                      }
+                  });
+                  break;
+              case 'deathcountry':
+                  selectedArtists.forEach(artist => {
+                      if (artist.deathcountry && !countries.includes(artist.deathcountry)) {
+                          countries.push(artist.deathcountry);
+                      }
+                  });
+                  break;
+              case 'mostexhibited':
+                  selectedArtists.forEach(artist => {
+                      if (artist.most_exhibited_in && !countries.includes(artist.most_exhibited_in)) {
+                          countries.push(artist.most_exhibited_in);
+                      }
+                  });
+                  break;
+              default:
+                  console.warn('Unknown category:', category);
+                  break;
+          }
+      } else {
+          switch (category) {
+              case 'birthcountry':
+                  selectedArtists.forEach(artist => {
+                      if (artist.oldBirthCountry && !countries.includes(artist.oldBirthCountry)) {
+                          countries.push(artist.oldBirthCountry);
+                      }
+                  });
+                  break;
+              case 'deathcountry':
+                  selectedArtists.forEach(artist => {
+                      if (artist.oldDeathCountry && !countries.includes(artist.oldDeathCountry)) {
+                          countries.push(artist.oldDeathCountry);
+                      }
+                  });
+                  break;
+              case 'mostexhibited':
+                  selectedArtists.forEach(artist => {
+                      if (artist.mostExhibitedInOldCountry && !countries.includes(artist.mostExhibitedInOldCountry)) {
+                          countries.push(artist.mostExhibitedInOldCountry);
+                      }
+                  });
+                  break;
+              default:
+                  console.warn('Unknown category:', category);
+                  break;
+          }
       }
-    }
+  }
+  
+  
     
 
     private applyStyleToNode(circle: SVGCircleElement, artistNode: ArtistNode, filter: any) {
@@ -1215,6 +1314,8 @@ private onClusterClick(clusterNode: ClusterNode): void {
       circle.style.strokeWidth= `${width}vw`;
       circle.style.stroke =  'black';
     };
+
+ 
 
 
 
@@ -1268,30 +1369,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
           .style('visibility', 'visible');
       }
 
-         // Check if the node is already in the selection
-    const nodeIndex = this.selectedNodes.findIndex(node => node[0] === circle);
-
-    // If the node is already selected, remove it
-    if (nodeIndex !== -1) {
-        console.log('Node is already selected, removing:', artistNode.id);
-
-        
-      
-
-        // Get the selected node info
-        const [selectedCircle, originalColor] = this.selectedNodes[nodeIndex];
-
-        // Restore the original style of the node
-        d3.select(selectedCircle)
-            .style("fill", originalColor)
-            .style("filter", "none")
-            .style("stroke", "none");
-
-        // Remove the node from the selectedNodes array
-        this.selectedNodes.splice(nodeIndex, 1);
-        return; // Exit the function since we've handled the removal
-    }
-    
+  
    // Otherwise, add the node to the selection
    this.selectedNodes.push([circle, circle.style.fill]);
 
@@ -2312,12 +2390,21 @@ const category = this.decisionService.getDecisionSunburst();
     
       // Get the current sunburst decision
       const currentSunburst = this.decisionService.getDecisionSunburst();
+
+          // Determine the number of rows based on the number of clusters
+    const rows = Math.ceil(k / 10);
+    const clustersPerRow = Math.min(10, k);
+
+    // Calculate the width and height for cells based on rows
+    const cellWidth = this.contentWidth / clustersPerRow;
+    const cellHeight = this.contentHeight / rows;
+    const xData = d3.range(1, k + 1).map(String);
+    const yData = [currentSunburst];
     
-      const xData = d3.range(1, k + 1).map(String);
-      const yData = [currentSunburst];
+/*      
     
       const cellWidth = this.contentWidth / k;
-      const cellHeight = this.contentHeight;
+      const cellHeight = this.contentHeight; */
   
       this.cellWidth = cellWidth;
       this.cellHeight = cellHeight;
@@ -3331,7 +3418,7 @@ if (!centralNode) {
   }
   private createSunburstProperties(clusterSize: number, maxSize: number, cellSize: number, totalClusters: number): [number, number] {
     const minRadius = cellSize *0.2; // Minimum radius scaled with padding
-    const maxRadius = cellSize * 0.75; // Max radius should be within half of cellSize
+    const maxRadius = cellSize * 0.6; // Max radius should be within half of cellSize
 
     // Calculate outerRadius based on cluster size relative to maxSize, constrained by maxRadius
     const outerRadius = Math.min(maxRadius, minRadius + ((maxRadius - minRadius) * (clusterSize / maxSize)));
