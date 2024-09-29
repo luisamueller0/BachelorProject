@@ -728,7 +728,7 @@ public blueOldColorPalette: string[] = [
 public purpleOldColorPalette: string[] = [
 
 
-
+ "#471377",
   "#7A21D4",
   "#8725EB",
   "#9338F1",
