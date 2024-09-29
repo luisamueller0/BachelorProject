@@ -59,7 +59,7 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
 
     this.selectionService.currentCountries.subscribe(selectedCountries => {
     
-      //this.updateCountryColors(selectedCountries);
+      this.updateCountryColors(selectedCountries);
     });
     this.selectionService.currentOldCountries.subscribe(selectedCountries => {
       if(!this.isModernMap && selectedCountries.length>0)
@@ -196,12 +196,12 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
         // Ensure selected countries are updated after the map is fully rendered
         if(this.isModernMap){
           const selectedCountries = this.selectionService.getSelectedCountries();
-        //this.updateCountryColors(selectedCountries);
+        this.updateCountryColors(selectedCountries);
         }
         else{
           const selectedOldCountries = this.selectionService.getOldCountries();
           console.log('selectedOldCountries', selectedOldCountries)
-          //this.updateOldCountryColors(selectedOldCountries);
+          this.updateOldCountryColors(selectedOldCountries);
         
         }
       })
