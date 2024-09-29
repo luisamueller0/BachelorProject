@@ -55,11 +55,20 @@
   scrollbar-color: #e5aeff white;
   scrollbar-width: thin;
 }
-.sidebar-left app-decisions,
+
+.sidebar-left app-decisions{
+  height: 50%;
+  width: 100%;
+  border: 1px solid #e5aeff;
+  box-sizing: border-box;
+  overflow:hidden;
+
+}
+
 .sidebar-left app-map,
 .sidebar-left app-oldMap,
 .sidebar-left app-barchart {
-  height: 33.33%;
+  height: 25%;
   width: 100%;
   border: 1px solid #e5aeff;
   box-sizing: border-box;

@@ -88,7 +88,7 @@ public isLoadingRange: boolean = false;
   k: number = 7; // Initial K value
   kOptions: Options = {
     floor: 1,
-    ceil: 11,
+    ceil: 13,
     step: 1,
   };
   private subscription: Subscription = new Subscription();
