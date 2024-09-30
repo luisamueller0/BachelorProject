@@ -3094,7 +3094,58 @@ const joinedNames = formattedNames.length > 1
     .style('stroke', 'none')
     .on("mouseover", showTooltip)
     .on("mousemove", showTooltip)
-    .on('mouseout', hideTooltip);
+    .on('mouseout', hideTooltip)
+    .on('click', (event: MouseEvent, d: any) => {
+      if (event.ctrlKey) {
+        event.stopPropagation(); // Prevent the click event from propagating to the cluster group
+
+          // Find all artists belonging to the selected country
+          const selectedArtists = countryMap.get(d.country) || [];
+          
+          // Iterate over each artist and call `selectMultipleNodes`
+          selectedArtists.forEach(artist => {
+              // Find the SVG circle element associated with the artist node
+              const circle = this.g.selectAll('.artist-node')
+                  .filter((nodeData: any) => nodeData.artist.id === artist.id)
+                  .node() as SVGCircleElement;
+
+                  
+      // Ensure defs and filter are only created once
+      let defs = this.svg.select('defs');
+      if (defs.empty()) {
+        defs = this.svg.append('defs');
+      }
+    
+      let filter = defs.select('#shadow');
+      if (filter.empty()) {
+        filter = defs.append('filter')
+          .attr('id', 'shadow')
+          .attr('x', '-50%')
+          .attr('y', '-50%')
+          .attr('width', '200%')
+          .attr('height', '200%');
+    
+        filter.append('feDropShadow')
+          .attr('dx', 0)
+          .attr('dy', 0)
+          .attr('flood-color', 'black')
+          .attr('flood-opacity', 1);
+    
+        let feMerge = filter.append('feMerge');
+        feMerge.append('feMergeNode');
+        feMerge.append('feMergeNode')
+          .attr('in', 'SourceGraphic');
+      }
+    
+
+              // Make sure that the circle element exists
+              if (circle) {
+                  const artistNodeData = d3.select(circle).datum() as ArtistNode;
+                  this.handleMultiNodeSelection(artistNodeData, circle, filter);
+              }
+          });
+      }
+  });
   
   // [Optional: Store paths in clusterNode for later access]
   const innerRadius= clusterNode.innerRadius;
@@ -3109,7 +3160,59 @@ const joinedNames = formattedNames.length > 1
     .text((d: any) => d.country)
     .style("font-size", `${textsize}px`)
     .style("font-weight", "bold")
-    .style("fill", "white");
+    .style("fill", "white")
+    .on('click', (event: MouseEvent, d: any) => {
+      if (event.ctrlKey) {
+        event.stopPropagation(); // Prevent the click event from propagating to the cluster group
+
+          // Find all artists belonging to the selected country
+          const selectedArtists = countryMap.get(d.country) || [];
+          
+          // Iterate over each artist and call `selectMultipleNodes`
+          selectedArtists.forEach(artist => {
+              // Find the SVG circle element associated with the artist node
+              const circle = this.g.selectAll('.artist-node')
+                  .filter((nodeData: any) => nodeData.artist.id === artist.id)
+                  .node() as SVGCircleElement;
+
+                  
+      // Ensure defs and filter are only created once
+      let defs = this.svg.select('defs');
+      if (defs.empty()) {
+        defs = this.svg.append('defs');
+      }
+    
+      let filter = defs.select('#shadow');
+      if (filter.empty()) {
+        filter = defs.append('filter')
+          .attr('id', 'shadow')
+          .attr('x', '-50%')
+          .attr('y', '-50%')
+          .attr('width', '200%')
+          .attr('height', '200%');
+    
+        filter.append('feDropShadow')
+          .attr('dx', 0)
+          .attr('dy', 0)
+          .attr('flood-color', 'black')
+          .attr('flood-opacity', 1);
+    
+        let feMerge = filter.append('feMerge');
+        feMerge.append('feMergeNode');
+        feMerge.append('feMergeNode')
+          .attr('in', 'SourceGraphic');
+      }
+    
+
+              // Make sure that the circle element exists
+              if (circle) {
+                  const artistNodeData = d3.select(circle).datum() as ArtistNode;
+                  this.handleMultiNodeSelection(artistNodeData, circle, filter);
+              }
+          });
+      }
+  });
+  
   
   let countryCentroids: { [country: string]: { startAngle: number, endAngle: number, middleAngle: number, color: string | number, country: string } } = {};
   data.forEach(d => {
