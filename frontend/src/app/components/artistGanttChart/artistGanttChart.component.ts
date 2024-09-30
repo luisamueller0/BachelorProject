@@ -113,14 +113,13 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
     d3.select(this.ganttContainer.nativeElement).select("figure.artist-gantt-svg-container").select("svg").remove();
   
     const element = this.ganttContainer.nativeElement.querySelector('figure.artist-gantt-svg-container');
-    const margin = {
+    let margin = {
       top: this.margin.top * window.innerHeight / 100,
       right: this.margin.right * window.innerWidth / 100,
       bottom: this.margin.bottom * window.innerWidth / 100,
       left: this.margin.left * window.innerWidth / 100
     };
-    const width = element.offsetWidth - margin.left - margin.right;
-
+    
     const cluster = this.selectionService.getFocusedCluster() || [];
   
     const numArtists = artists.length < cluster.length ? cluster.length : artists.length;
@@ -134,6 +133,19 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
     // Calculate the required height
     const calculatedHeight = (numArtists * barHeight) + (numClusters * extraSpace) + margin.top + margin.bottom;
     const height =  calculatedHeight;
+
+    const containerHeight = element.clientHeight;
+    if (height > containerHeight) {
+        console.log('SVG height exceeds container height, scrollbar will appear');
+    } else {
+        console.log('SVG fits within the container height, no scrollbar needed');
+        margin.right = this.margin.left * window.innerWidth / 100;
+    }
+
+
+  
+    const width = element.offsetWidth - margin.left - margin.right;
+
   
     this.svg = d3.select(element).append('svg')
       .attr('width', element.offsetWidth)
