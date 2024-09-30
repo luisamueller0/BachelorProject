@@ -24,11 +24,12 @@
         class="ai-button" 
         *ngIf="!aiLoading"
         (click)="handleButtonClick()" 
-        (mouseover)="showTooltip($event)" 
-        (mouseout)="hideTooltip()"
+    
         [ngStyle]="{'visibility': selectedNodes.length > 0 ? 'visible' : 'hidden'}"
         [style.cursor]="'pointer'"
       >✧</div>
+        <!--   (mouseover)="showTooltip($event)" 
+        (mouseout)="hideTooltip()" -->
     </div>
   </div>
 

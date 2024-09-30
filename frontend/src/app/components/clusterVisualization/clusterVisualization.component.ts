@@ -2809,7 +2809,7 @@ const maxClusterSize = d3.max(this.clusters, cluster => cluster.length) || 0;
    */
 
   
-  
+  /* 
     showTooltip(event: MouseEvent): void {
       const tooltip = d3.select("div#tooltip");
       tooltip.style("display", "block")
@@ -2822,7 +2822,7 @@ const maxClusterSize = d3.max(this.clusters, cluster => cluster.length) || 0;
     hideTooltip(): void {
       const tooltip = d3.select("div#tooltip");
       tooltip.style("display", "none");
-    }
+    } */
 handleButtonClick(): void {
   this.aiLoading = true;
   
@@ -2915,7 +2915,8 @@ const joinedNames = formattedNames.length > 1
           break;
 
       case 'deathcountry':
-          prompt = `In 60 words, discuss how ${artistNames}'s later years in ${deathcountry} influenced their final artistic connections and styles.`;
+          prompt = `In 60 words, discuss how ${artistNames}'s later years in ${deathcountry} influenced their final artistic connections and styles and shaped their connections with other artists.
+          Highlight key influences and similarities.`;
           this.aiTitle = `AI Suggestion: Overview of the final life stages of ${artistNames}`;
 
           break;
