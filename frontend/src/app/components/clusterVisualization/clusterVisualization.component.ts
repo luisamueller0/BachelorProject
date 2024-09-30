@@ -62,6 +62,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     private g: any; // Group for zooming
     private paddingRatio: number = 0.05; // 5% padding
     private previousOnHover: number | null = null;
+    private previouslySelected: boolean= false;
     private allCountriesByCategory: { [key: string]: string[] } = {
       nationality: [],
       birthcountry: [],
@@ -358,48 +359,83 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
 
 
   private hoverOnArtist(artistId: number | null) {
+    if (!this.svg) return;
 
-    if(!this.svg)
-      return;
     if (artistId) {
-      this.previousOnHover = artistId;
+        this.previousOnHover = artistId;
+        
+        // Check if the current circle's stroke is black
+        const currentCircle = this.g.selectAll('.artist-node')
+            .filter((d: any) => d.artist.id === artistId)
+            .node() as SVGCircleElement;
 
-      const clusterId = this.artistClusterMap.get(artistId)?.clusterId
+        if (currentCircle) {
+            const strokeColor = d3.select(currentCircle).style('stroke');
+            this.previouslySelected = strokeColor === 'black';
+        }
 
-      console.log(clusterId)
+        const clusterId = this.artistClusterMap.get(artistId)?.clusterId;
+        console.log(clusterId);
 
-      if(clusterId !== undefined){
-       const width = 0.07 * this.clusterNodes[clusterId].innerRadius / 100;
-      // Reduce opacity of all clusters
-      this.g.selectAll('.cluster').style('opacity', '0.2');
-      // Set opacity of selected cluster to 1
-      this.g.selectAll(`.cluster-${clusterId}`).style('opacity', '1');
+        if (clusterId !== undefined) {
+            const width = 0.07 * this.clusterNodes[clusterId].innerRadius / 100;
+            // Reduce opacity of all clusters
+            this.g.selectAll('.cluster').style('opacity', '0.2');
+            // Set opacity of the selected cluster to 1
+            this.g.selectAll(`.cluster-${clusterId}`).style('opacity', '1');
 
-      this.g.selectAll('.artist-node').filter((d: any) => d.cluster === clusterId && d.artist.id !== artistId).style('opacity', '0.9');
-      this.g.selectAll('.artist-node').filter((d: any) => d.cluster !== clusterId).style('opacity', '0.2');
-      this.g.selectAll('.artist-node').filter((d: any) => d.artist.id === artistId).style('opacity', '1').style("stroke-width", `${width}vw`)
-      .style("stroke", "grey");
-      }
+            this.g.selectAll('.artist-node').filter((d: any) => d.cluster === clusterId && d.artist.id !== artistId).style('opacity', '0.9');
+            this.g.selectAll('.artist-node').filter((d: any) => d.cluster !== clusterId).style('opacity', '0.2');
+            this.g.selectAll('.artist-node').filter((d: any) => d.artist.id === artistId).style('opacity', '1')
+                .style("stroke-width", `${width}vw`)
+                .style("stroke", "grey");
+        }
 
     } else {
-        // Reset all elements to full opacity
-        if(this.selectedClusterNode){
-          console.log('selected cluster', this.selectedClusterNode)
-          this.svg.selectAll('.cluster').filter((d: any) => d.clusterId === this.selectedClusterNode?.clusterId).style("opacity", 1);
-          this.svg.selectAll('.cluster').filter((d: any) => d.clusterId !== this.selectedClusterNode?.clusterId).style("opacity", 0.2);
-          this.g.selectAll('.artist-node').filter((d: any) => d.artist.cluster !== this.selectedClusterNode?.clusterId).style('opacity', '0.2');
-          this.g.selectAll('.artist-node').filter((d: any) => d.artist.cluster === this.selectedClusterNode?.clusterId).style('opacity', '1');
-          this.g.selectAll('.artist-node').filter((d: any) => d.artist.id === this.previousOnHover).style("stroke", "none");
-        }else{
-          this.g.selectAll('.cluster, .artist-node').style("opacity", 1);
-          this.g.selectAll('.artist-node').filter((d: any) => d.artist.id === this.previousOnHover).style("stroke", "none");
+        // Extract the IDs of all currently selected nodes
+        const selectedNodeIds = this.selectedNodes.map(([node]) => {
+            const artistNodeData = d3.select(node as SVGCircleElement).datum() as ArtistNode;
+            return artistNodeData.artist.id;
+        });
+        if (selectedNodeIds.length === 0 && this.selectedNode) {
+          const nodeId = this.selectedNode[1].id;
+  selectedNodeIds.push(nodeId);
         }
-       
-        this.previousOnHover = null;
+        // Reset all elements to full opacity
+        if (this.selectedClusterNode) {
+            console.log('selected cluster', this.selectedClusterNode);
 
+            // Set full opacity for the selected cluster and reset opacity for other clusters
+            this.svg.selectAll('.cluster')
+                .filter((d: any) => d.clusterId === this.selectedClusterNode?.clusterId)
+                .style("opacity", 1);
+
+            this.svg.selectAll('.cluster')
+                .filter((d: any) => d.clusterId !== this.selectedClusterNode?.clusterId)
+                .style("opacity", 1);
+
+            this.g.selectAll('.artist-node')
+                .filter((d: any) => d.artist.cluster !== this.selectedClusterNode?.clusterId)
+                .style('opacity', '1');
+
+            this.g.selectAll('.artist-node')
+                .filter((d: any) => d.artist.cluster === this.selectedClusterNode?.clusterId)
+                .style('opacity', '1');
+
+        } else {
+            // Reset all clusters and nodes to full opacity
+            this.g.selectAll('.cluster, .artist-node').style("opacity", 1);
+        }
+
+        // Set stroke to black for all nodes that are in the selectedNodeIds array
+        this.g.selectAll('.artist-node')
+            .style("stroke", (d: any) => selectedNodeIds.includes(d.artist.id) ? "black" : "none");
+
+        this.previousOnHover = null;
     }
 }
-  
+
+
   
     
 
@@ -864,6 +900,8 @@ const category = this.decisionService.getDecisionSunburst();
   
   
   private updateClusterSelection(clusterNode: ClusterNode | null): void {
+
+
     // Deselect the current cluster if clusterNode is null
     if (!clusterNode) {
         this.selectedClusterNode = null;
@@ -937,6 +975,7 @@ const category = this.decisionService.getDecisionSunburst();
     }
 
     // Reduce opacity of all clusters
+    console.log('update')
     this.g.selectAll('.cluster').style('opacity', '0.2');
     // Set opacity of selected cluster to 1
     this.g.selectAll(`.cluster-${clusterNode.clusterId}`).style('opacity', '1');
@@ -1172,7 +1211,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
   
           // Reset the style of the deselected node
           this.resetStyleOfNode(circle, artistNode.artist);
-          this.g.selectAll(".artist-edge")
+          this.g.selectAll(`.artist-edge-${clusterNode?.clusterId}`)
               .style('stroke', (d: any) =>
                   d.sharedExhibitionMinArtworks >= 0.4 ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none'
               )
@@ -1182,7 +1221,6 @@ private onClusterClick(clusterNode: ClusterNode): void {
           if (this.selectedNodes.length === 0) {
               // Select the cluster without updating the selectionService
               if (clusterNode) {
-                console.log('cluster node', clusterNode)
                   this.selectedClusterNode = clusterNode;
                   this.updateClusterSelection(clusterNode);
               } else {
@@ -1460,7 +1498,6 @@ if (newEdges.length > 0) {
   this.selectedEdges.forEach((edgeData) => {
     this.g.selectAll(`.artist-edge-${clusterId}`)
     .filter((d: any) => {
-      console.log('edge data', edgeData,d)
       return (d.source.id === edgeData.edge.source.id && d.target.id === edgeData.edge.target.id) || 
              (d.source.id === edgeData.edge.target.id && d.target.id === edgeData.edge.source.id);
     })
