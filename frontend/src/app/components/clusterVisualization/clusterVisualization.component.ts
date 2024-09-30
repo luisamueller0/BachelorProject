@@ -921,6 +921,12 @@ const category = this.decisionService.getDecisionSunburst();
         // Restore opacity of all clusters
         this.g.selectAll('.cluster').style('opacity', '1');
         this.g.selectAll('.artist-node').style('opacity', '1');
+        // Reset the stroke color and opacity for all artist edges
+    this.g.selectAll(".artist-edge")
+    .style('stroke', (d: any) =>
+        d.sharedExhibitionMinArtworks >= 0.4 ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none'
+    )
+    .style('opacity', 1);
 
         this.g.selectAll('path').style('opacity', '1');
         return;
