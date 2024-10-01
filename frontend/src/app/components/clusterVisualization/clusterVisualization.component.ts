@@ -60,6 +60,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     private artistNodes: { [clusterId: number]: ArtistNode[] } = {};
     private selectedClusterNode: ClusterNode | null = null;
     private g: any; // Group for zooming
+
     private paddingRatio: number = 0.05; // 5% padding
     private previousOnHover: number | null = null;
     private previouslySelected: boolean= false;
@@ -196,11 +197,10 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
   
 
     private initializeRankingArrow(): void {
-      // Create the group for the arrow and label if it doesn't already exist
-      if (this.svg.select(".ranking-arrow-group").empty()) {
-          this.svg.append("g")
+      if (this.g.select(".ranking-arrow-group").empty()) {
+          this.g.append("g")
               .attr("class", "ranking-arrow-group")
-              .attr("transform", `translate(${this.contentWidth / 2}, -10)`); // Adjust position as needed
+              .attr("transform", `translate(${this.contentWidth / 2}, -10)`); // Adjust as needed
       }
   }
   
@@ -231,8 +231,8 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
             rightLabel = 'Right';
     }
 
-    // Select the existing arrow group
-    const arrowGroup = this.svg.select(".ranking-arrow-group");
+    // Select the existing arrow group in the fixedElements group
+    const arrowGroup = this.g.select(".ranking-arrow-group");
 
     // Clear any existing content in the group
     arrowGroup.selectAll("*").remove();
@@ -240,7 +240,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     // Draw the left text (initially invisible)
     const leftText = arrowGroup.append("text")
         .attr("x", -this.contentWidth / 2 + this.contentWidth / 100) // Initial estimate
-        .attr("y", this.contentHeight / 100 * 5)
+        .attr("y", this.contentHeight / 100 * 6)
         .attr("text-anchor", "center")
         .style("font-weight", "600")
         .style("font-size", "0.85vw")
@@ -251,7 +251,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     // Draw the right text (initially invisible)
     const rightText = arrowGroup.append("text")
         .attr("x", this.contentWidth / 2 - this.contentWidth / 100 * 2) // Initial estimate
-        .attr("y", this.contentHeight / 100 * 5)
+        .attr("y", this.contentHeight / 100 * 6)
         .attr("text-anchor", "center")
         .style("font-weight", "600")
         .style("font-size", "0.85vw")
@@ -260,8 +260,8 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         .text(rightLabel);
 
     // Measure text widths
-    const leftTextWidth = leftText.node().getBBox().width;
-    const rightTextWidth = rightText.node().getBBox().width;
+    const leftTextWidth = leftText.node()?.getBBox().width || 0;
+    const rightTextWidth = rightText.node()?.getBBox().width || 0;
 
     // Adjust text positions based on measured widths
     leftText
@@ -276,8 +276,8 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     arrowGroup.append("line")
         .attr("x1", -this.contentWidth / 2 + leftTextWidth + this.contentWidth / 100 * 3) // Start right after left text ends
         .attr("x2", this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3) // End right before right text starts
-        .attr("y1", this.contentHeight / 100 * 4)
-        .attr("y2", this.contentHeight / 100 * 4)
+        .attr("y1", this.contentHeight / 100 * 5)
+        .attr("y2", this.contentHeight / 100 * 5)
         .attr("stroke", "#2a0052") // Pink color
         .attr("stroke-width", this.contentWidth / 200) // Adjust stroke-width for scaling
         .attr("stroke-dasharray", `${this.contentWidth / 200},${this.contentWidth / 200}`); // Make dash size proportional
@@ -285,9 +285,9 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     // Draw arrowhead adjusted to the new end of the line
     arrowGroup.append("path")
         .attr("d", d3.line()([
-            [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3, this.contentHeight / 100 * 4 - this.contentWidth / 200],
-            [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 2, this.contentHeight / 100 * 4],
-            [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3, this.contentHeight / 100 * 4 + this.contentWidth / 200]
+            [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3, this.contentHeight / 100 * 5 - this.contentWidth / 200],
+            [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 2, this.contentHeight / 100 * 5],
+            [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3, this.contentHeight / 100 * 5 + this.contentWidth / 200]
         ]))
         .attr("fill", "#2a0052"); // Pink color
 }
@@ -2566,7 +2566,12 @@ const category = this.decisionService.getDecisionSunburst();
         
   
     
-       
+        this.initializeRankingArrow();
+          
+      const ranking = this.decisionService.getDecisionRanking();
+
+
+      this.updateRankingArrow(ranking);
       // Create a Promise array to ensure clusters are drawn before applying the force simulation
       const drawPromises = this.clusters.map((cluster, i) => {
         return new Promise<void>((resolve) => {
@@ -2587,11 +2592,7 @@ const category = this.decisionService.getDecisionSunburst();
        
       }, 1000); // 100 milliseconds delay
 
-      this.initializeRankingArrow();
-      const ranking = this.decisionService.getDecisionRanking();
-
-      this.updateRankingArrow(ranking);
-
+  
     
   });
   }
