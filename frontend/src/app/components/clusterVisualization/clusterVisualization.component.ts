@@ -8,6 +8,13 @@ import { Artist, ArtistNode, ClusterNode } from '../../models/artist';
 import exhibited_with from '../../models/exhibited_with';
 import { GenerativeAIService } from '../../services/generativeAI.service';
 import { NotificationComponent } from '../notification/notification.component';
+import Fuse from 'fuse.js';
+
+interface SearchedArtist {
+  id: number;
+  name: string;
+  artworks: number;
+}
 
 interface InterCommunityEdge extends d3.SimulationLinkDatum<ClusterNode> {
   source: number | ClusterNode;
@@ -25,6 +32,20 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
 
     @ViewChild('matrix', { static: true }) private chartContainer!: ElementRef;
     aiResponse: string = ''; // Store the AI response
+
+    //search bar
+    public searchedArtist: SearchedArtist | null = null;
+    public allSearchbarArtists: Map<number, { name: string; artworks: number }> = new Map();
+    public notInCurrentRange: boolean = false;
+    public searchQuery: string = '';
+    public filteredArtists: { id: number; name: string; artworks: number }[] = [];
+    private fuse: Fuse<{ id: number; name: string; artworks: number }>;
+
+
+
+    public allArtists: Artist[] = [];
+
+
 
     public isLoading: boolean = true;
     private firstK: number = -1;
@@ -55,7 +76,6 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     private interCommunityEdges: InterCommunityEdge[] = [];
     private singleInterCommunityEdges: exhibited_with[][] = [];
     private clusterNodes: ClusterNode[] = [];
-    public allArtists: Artist[] = [];
     private artistClusterMap: Map<number, ClusterNode> = new Map<number, ClusterNode>();
     private artistNodes: { [clusterId: number]: ArtistNode[] } = {};
     private selectedClusterNode: ClusterNode | null = null;
@@ -152,6 +172,10 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       private artistService: ArtistService,
       private generativeAIService: GenerativeAIService
     ) {
+      this.fuse = new Fuse([], {
+        keys: ['name'],
+        threshold: 0.3, // Adjust threshold for error tolerance
+      });
       //this.handleNodeClick = this.handleNodeClick.bind(this);
     }
   
@@ -201,6 +225,45 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
 
      
     }
+
+
+    
+    onArtistSearch() {
+      if (this.searchQuery.trim() === '') {
+        this.filteredArtists = [];
+        this.notInCurrentRange = false;
+        this.highlightArtistNode(null);
+        return;
+      }
+    
+      // Perform fuzzy search
+      const results = this.fuse.search(this.searchQuery);
+      this.filteredArtists = results.map((result) => result.item);
+    
+      console.log('Filtered Artists:', this.filteredArtists); // Check if results are populated
+    }
+    
+    selectArtist(artist: { id: number; name: string; artworks: number }) {
+      this.searchedArtist = artist;
+      this.searchQuery = artist.name;
+      this.filteredArtists = [];
+      
+      // Convert the Map to an array and then find the artist
+      const artistInRange = Array.from(this.allSearchbarArtists.values()).find((a) => a.name.toString() === artist.name.toString());
+    
+      if (artistInRange) {
+        this.notInCurrentRange = false;
+        this.highlightArtistNode(artist.id.toString());
+      } else {
+        this.highlightArtistNode(null);
+        this.notInCurrentRange = true;
+      }
+    }
+    
+
+    
+  
+
   
 
     private initializeRankingArrow(): void {
@@ -1189,6 +1252,16 @@ private onClusterClick(clusterNode: ClusterNode): void {
       
       }
     }
+    // Call this function after updating `allArtists`
+private updateFuseCollection(allArtists: Artist[]): void {
+  const allArtistArray = allArtists.map(artist => ({
+    id: artist.id,
+    name: artist.firstname + ' ' + artist.lastname,
+    artworks: artist.total_exhibited_artworks,
+  }));
+  // Reset the fuse collection with the updated artist data
+  this.fuse.setCollection(allArtistArray);
+}
   
     private loadNewData(clusters: Artist[][], intraCommunityEdges: exhibited_with[][], interCommunityEdges: exhibited_with[]|InterCommunityEdge[]){
       // Remove the existing SVG element
@@ -1215,6 +1288,12 @@ private onClusterClick(clusterNode: ClusterNode): void {
       this.allArtists = allArtists;
       this.selectionService.selectArtists(null);
       this.selectionService.selectAllArtists(this.allArtists);
+       // Update the searchbar artists using the updated artist array
+      this.allSearchbarArtists = this.artistService.turnIntoMap(allArtists);
+
+      // Update Fuse.js collection
+      this.updateFuseCollection(allArtists);
+      
      /*  const biggestCluster = this.clusters.reduce((max, cluster) => cluster.length > max.length ? cluster : max, this.clusters[0]);
       const biggestClusterId = this.clusters.findIndex(cluster => cluster === biggestCluster);
       const biggestClusterEdges = this.intraCommunityEdges[biggestClusterId]
@@ -2269,6 +2348,25 @@ const category = this.decisionService.getDecisionSunburst();
 
 
     private createChart(): void {
+      this.artistService.getAllArtists().subscribe(
+        (array) => {
+         // Assuming turnIntoMap returns a Map object
+this.allSearchbarArtists = this.artistService.turnIntoMap(array);
+
+// Convert Map to an array using Array.from
+const allArtistArray = Array.from(this.allSearchbarArtists.entries()).map(([id, value]) => ({
+  id,
+  ...value,
+}));
+
+// Update Fuse.js collection
+this.fuse.setCollection(allArtistArray);
+     
+        },
+        (error) => {
+          console.error('Error fetching default data:', error);
+        }
+      );
       
       // Fetch data from backend
       this.artistService.clusterAmountArtists([200, 2217], 7)
@@ -2300,6 +2398,10 @@ const category = this.decisionService.getDecisionSunburst();
           this.selectedCluster = allArtists;
           this.allArtists = allArtists;
           this.selectionService.selectAllArtists(allArtists);
+
+
+         
+    
   
           // Calculate degrees for each cluster
           this.calculateNodeDegreesForClusters();

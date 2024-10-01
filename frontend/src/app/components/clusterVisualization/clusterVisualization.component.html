@@ -14,24 +14,40 @@
   <!-- Flex container for title and button with label -->
   <div class="header-container">
     <h1 class="title">{{ getTitle() }}</h1>
+    
+    <!-- Add the search bar container -->
+    <div class="search-bar-container">
+      <input
+        type="text"
+        id="artistSearch"
+        [(ngModel)]="searchQuery"
+        (input)="onArtistSearch()"
+        placeholder="Search for an artist..."
+        class="artist-search"
+      />
+      <ul *ngIf="filteredArtists.length > 0" class="autocomplete-list">
+        <li *ngFor="let artist of filteredArtists" (click)="selectArtist(artist)">
+          {{ artist.name }}
+        </li>
+      </ul>
+      <div *ngIf="notInCurrentRange && searchedArtist !== null" class="info-text">
+        Artist you are searching for is currently not displayed in the cluster. Change the range to {{ searchedArtist.artworks }}.
+      </div>
+    </div>
+    
     <div class="ai-suggestion-container" *ngIf="selectedNodes.length > 0">
       <div class="ai-title">AI suggestion on connections</div>
-
-      <!-- Conditionally show either the loading spinner or the button -->
       <div *ngIf="aiLoading" class="ai-loading-spinner"></div>
-      
       <div 
         class="ai-button" 
         *ngIf="!aiLoading"
         (click)="handleButtonClick()" 
-    
         [ngStyle]="{'visibility': selectedNodes.length > 0 ? 'visible' : 'hidden'}"
         [style.cursor]="'pointer'"
       >✧</div>
-        <!--   (mouseover)="showTooltip($event)" 
-        (mouseout)="hideTooltip()" -->
     </div>
   </div>
+  
 
   <figure class="matrix-svg-container"></figure>
   <div id="tooltip" class="tooltip" style="display: none;"></div>
