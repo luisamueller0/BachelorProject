@@ -229,24 +229,34 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
     if (!this.countryBorders) return;
 
     this.countryBorders
-      .attr('fill', (d: any) => {
-        const countryCode = Object.keys(this.countryMap).find(key => this.countryMap[key] === d.properties.name);
-        const base = this.artistService.getCountryColor(countryCode, 1);
-        const unselected = 'white';
-        return (countryCode && selectedCountries.includes(countryCode)) ? base : unselected;
-      });
-  }
+        .attr('fill', (d: any) => {
+            const countryCode = Object.keys(this.countryMap).find(key => this.countryMap[key] === d.properties.name);
+            const base = this.artistService.getCountryColor(countryCode, 1);
+            const unselected = 'white';
+            return (countryCode && selectedCountries.includes(countryCode)) ? base : unselected;
+        })
+        .style('pointer-events', (d: any) => {
+            const countryCode = Object.keys(this.countryMap).find(key => this.countryMap[key] === d.properties.name);
+            return (countryCode && selectedCountries.includes(countryCode)) ? 'auto' : 'none';
+        });
+}
+
   private updateOldCountryColors(selectedCountries: string[]): void {
     if (!this.countryBorders) return;
 
     this.countryBorders
-      .attr('fill', (d: any) => {
-        const countryCode = Object.keys(this.oldCountryMap).find(key => this.oldCountryMap[key] === d.properties.NAME);
-        const base = this.artistService.getOldCountryColor(countryCode, 1);
-        const unselected = 'white';
-        return (countryCode && selectedCountries.includes(countryCode)) ? base : unselected;
-      });
-  }
+        .attr('fill', (d: any) => {
+            const countryCode = Object.keys(this.oldCountryMap).find(key => this.oldCountryMap[key] === d.properties.NAME);
+            const base = this.artistService.getOldCountryColor(countryCode, 1);
+            const unselected = 'white';
+            return (countryCode && selectedCountries.includes(countryCode)) ? base : unselected;
+        })
+        .style('pointer-events', (d: any) => {
+            const countryCode = Object.keys(this.oldCountryMap).find(key => this.oldCountryMap[key] === d.properties.NAME);
+            return (countryCode && selectedCountries.includes(countryCode)) ? 'auto' : 'none';
+        });
+}
+
 
   private createLegend(): void {
     // Define legend data based on the map type

@@ -547,8 +547,10 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       if (country) {
           // Highlight paths matching the hovered country
           this.svg.selectAll('path')
-              .style("opacity", (d: any) => d.country === country ? 1 : 0.2);
-  
+          .style("opacity", (d: any) => {
+            if (!d || !d.country) return 0.2; // Check if 'd' and 'd.country' exist
+            return d.country === country ? 1 : 0.2;
+        });
           // Identify artist nodes belonging to the hovered country and gather their IDs
           const artistIdsWithOpacity1 = new Set<number>();
           this.svg.selectAll('.artist-node')
