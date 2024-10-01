@@ -1296,6 +1296,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
           const firstSelectedNode = d3.select(firstSelectedCircle).datum() as ArtistNode;
   
           if (clusterNode?.clusterId !== firstSelectedNode.artist.cluster) {
+            this.selectedEdges.clear();
               if (clusterNode) {
                   this.selectedClusterNode = clusterNode;
                   this.updateClusterSelection(clusterNode);
@@ -1313,9 +1314,25 @@ private onClusterClick(clusterNode: ClusterNode): void {
   
       if (nodeIndex !== -1) {
           console.log('Node is already selected, removing:', artistNode.id);
+
+          
   
           // Remove the node from the selectedNodes array
           this.selectedNodes.splice(nodeIndex, 1);
+
+           // Remove edges associated with this node from `this.selectedEdges`
+    const selectedNodeId = artistNode.id;
+          this.selectedEdges.forEach((edgeData, key) => {
+            if (edgeData.artistIds.includes(selectedNodeId)) {
+                // Remove the artistId from the edge's artistIds array
+                edgeData.artistIds = edgeData.artistIds.filter(id => id !== selectedNodeId);
+                
+                // If no artistIds are left for this edge, remove it from the map
+                if (edgeData.artistIds.length === 0) {
+                    this.selectedEdges.delete(key);
+                }
+            }
+        });
   
           // Reset the style of the deselected node
           this.resetStyleOfNode(circle, artistNode.artist);
@@ -1541,6 +1558,8 @@ private onClusterClick(clusterNode: ClusterNode): void {
           }
       });
 
+      console.log('connected ids', this.connectedNodeIds)
+
       
           const clusterId = this.artistClusterMap.get(artistNode.id)?.clusterId;
     const category = this.decisionService.getDecisionSunburst();
@@ -1599,7 +1618,6 @@ if (newEdges.length > 0) {
   const edgeColorScale = this.createEdgeColorScale(artistColor, minArtworks, maxArtworks);
 
 
-  this.g.selectAll(`.artist-edge-${clusterId}`).style("opacity", "0");
   console.log('selected', this.selectedEdges)
 
   
@@ -1864,6 +1882,7 @@ if(this.modernMap){
 
     // Clear the selectedNode variable as no node is selected now
     this.selectedNode = null;
+    
 }
 
   
@@ -2967,8 +2986,8 @@ const joinedNames = formattedNames.length > 1
 
           case 'nationality':
               prompt = `
-              In 60 words, discuss the connections, similarities, and differences among the following artists: ${artistNames.join(", ")}. 
-              How did their national backgrounds shape their artistic relationships and collaborations?`;
+        In 60 words, detail any known meetings, collaborations, or influences between the following artists: ${artistNames.join(", ")}. Include specific instances where their national backgrounds might have led to shared exhibitions, joint projects, or mutual influences.`;
+
               this.aiTitle = `AI Suggestion:<br>Connections among artists ${joinedNames} based on their nationalities`;
               break;
       
