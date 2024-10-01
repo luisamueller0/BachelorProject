@@ -189,7 +189,7 @@ private accumulateTechniqueDistribution(artists: Artist[]): Map<string, number> 
     
       // Check if both nonselectedArtists and selectedArtists exist
       if (data.nonselectedArtists && data.selectedArtists) {
-          tooltipText = `${data.selectedArtists}/${data.nonselectedArtists} artworks`;
+          tooltipText = `${data.selectedArtists}/${data.nonselectedArtists + data.selectedArtists} artworks`;
       } 
       // If only nonselectedArtists exists
       else if (data.nonselectedArtists) {

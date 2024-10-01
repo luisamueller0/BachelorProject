@@ -303,17 +303,14 @@ public purpleColorPalette: string[] = [
 
 //8
 public pinkColorPalette: string[] = [
+  "#CC149B",
   "#EA2BB7", // Dark pink
   "#ED3EBE",
   "#F050C5",
   "#F262CC",
   "#F474D3",
   "#F686DA",
-  "#F898E1",
-  "#FAAAE8",
-  "#FCBCEE",  // Light pink
-  "#FECDF4",
-  "#FFE0FA"   // Very light pink
+  "#F898E1"
 ];
 
 public greenColorPalette:string[]=
