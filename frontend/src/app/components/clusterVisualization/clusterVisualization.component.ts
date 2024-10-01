@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild, ElementRef, OnChanges, OnDestroy, HostListener } from '@angular/core';
 import * as d3 from 'd3';
-import { Subscription } from 'rxjs';
+import { last, Subscription } from 'rxjs';
 import { SelectionService } from '../../services/selection.service';
 import { DecisionService } from '../../services/decision.service';
 import { ArtistService } from '../../services/artist.service';
@@ -60,6 +60,13 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     private artistNodes: { [clusterId: number]: ArtistNode[] } = {};
     private selectedClusterNode: ClusterNode | null = null;
     private g: any; // Group for zooming
+
+    private previouslyConnectedClusterNodeIds =new Set<number>();
+
+    private previouslyConnectedNodeIds =new Set<number>()
+
+    private previouslyLowOpacity:boolean=false;
+
 
     private paddingRatio: number = 0.05; // 5% padding
     private previousOnHover: number | null = null;
@@ -471,7 +478,9 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
 
         if (currentCircle) {
             const strokeColor = d3.select(currentCircle).style('stroke');
+            const opacity = d3.select(currentCircle).style('opacity');
             this.previouslySelected = strokeColor === 'black';
+            this.previouslyLowOpacity = opacity === '0.2';
         }
 
         const clusterId = this.artistClusterMap.get(artistId)?.clusterId;
@@ -480,15 +489,19 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         if (clusterId !== undefined) {
             const width = 0.07 * this.clusterNodes[clusterId].innerRadius / 100;
             // Reduce opacity of all clusters
+            if(!this.selectedClusterNode){
             this.g.selectAll('.cluster').style('opacity', '0.2');
-            // Set opacity of the selected cluster to 1
-            this.g.selectAll(`.cluster-${clusterId}`).style('opacity', '1');
+             // Set opacity of the selected cluster to 1
+             this.g.selectAll(`.cluster-${clusterId}`).style('opacity', '1');
+            }
+           
 
             this.g.selectAll('.artist-node').filter((d: any) => d.cluster === clusterId && d.artist.id !== artistId).style('opacity', '0.9');
             this.g.selectAll('.artist-node').filter((d: any) => d.cluster !== clusterId).style('opacity', '0.2');
             this.g.selectAll('.artist-node').filter((d: any) => d.artist.id === artistId).style('opacity', '1')
                 .style("stroke-width", `${width}vw`)
                 .style("stroke", "grey");
+            
         }
 
     } else {
@@ -501,8 +514,20 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
           const nodeId = this.selectedNode[1].id;
   selectedNodeIds.push(nodeId);
         }
+        if (this.previouslyConnectedNodeIds && this.previouslyConnectedNodeIds.size > 0) {
+          console.log('node ids', this.previouslyConnectedNodeIds);
+          
+          // Now handle the case for previously connected nodes
+          this.g.selectAll('.artist-node')
+              .filter((d: any) => this.previouslyConnectedNodeIds.has(d.id))
+              .style('opacity', 0.8) // Adjust opacity
+              .style("stroke", "grey") // Set stroke to grey
+              .style("stroke-width", `${0.07 * this.innerRadius / 100}vw`); // Adjust stroke width if needed
+      }
+     
         // Reset all elements to full opacity
         if (this.selectedClusterNode) {
+          
             console.log('selected cluster', this.selectedClusterNode);
 
             // Set full opacity for the selected cluster and reset opacity for other clusters
@@ -510,17 +535,26 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
                 .filter((d: any) => d.clusterId === this.selectedClusterNode?.clusterId)
                 .style("opacity", 1);
 
-            this.svg.selectAll('.cluster')
-                .filter((d: any) => d.clusterId !== this.selectedClusterNode?.clusterId)
-                .style("opacity", 1);
+            
 
-            this.g.selectAll('.artist-node')
-                .filter((d: any) => d.artist.cluster !== this.selectedClusterNode?.clusterId)
-                .style('opacity', '1');
-
-            this.g.selectAll('.artist-node')
+                this.g.selectAll('.artist-node')
                 .filter((d: any) => d.artist.cluster === this.selectedClusterNode?.clusterId)
                 .style('opacity', '1');
+                
+                let lastSelectedNode = null;
+                lastSelectedNode= this.selectedNode ? this.selectedNode[1].id : null;
+                const artistNodeData = d3.select(this.selectedNodes[this.selectedNodes.length - 1][0] as SVGCircleElement).datum() as ArtistNode;
+                lastSelectedNode = this.selectedNodes.length > 0 ? artistNodeData.id : null;
+
+               
+                if (this.previouslyConnectedClusterNodeIds && this.previouslyConnectedClusterNodeIds.size > 0 && lastSelectedNode) {
+                  // Now handle the case for previously connected nodes
+                  this.g.selectAll('.artist-node')
+                      .filter((d: any) => !this.previouslyConnectedClusterNodeIds.has(d.id) && d.id !== lastSelectedNode && d.artist.cluster === this.selectedClusterNode?.clusterId)
+                      .style('opacity', 0.2); // Adjust opacity
+              }
+              
+
 
         } else {
             // Reset all clusters and nodes to full opacity
@@ -530,6 +564,9 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         // Set stroke to black for all nodes that are in the selectedNodeIds array
         this.g.selectAll('.artist-node')
             .style("stroke", (d: any) => selectedNodeIds.includes(d.artist.id) ? "black" : "none");
+
+         
+            
 
         this.previousOnHover = null;
     }
@@ -1296,16 +1333,20 @@ private onClusterClick(clusterNode: ClusterNode): void {
           const firstSelectedNode = d3.select(firstSelectedCircle).datum() as ArtistNode;
   
           if (clusterNode?.clusterId !== firstSelectedNode.artist.cluster) {
+            console.log('be gone')
             this.selectedEdges.clear();
+            this.previouslyConnectedNodeIds.clear();
+            this.resetMultiNodeSelection();
               if (clusterNode) {
                   this.selectedClusterNode = clusterNode;
                   this.updateClusterSelection(clusterNode);
               } else {
                   this.updateClusterSelection(null);
               }
-  
-              this.resetNodeSelection();
               this.selectedNodes = []; // Reset the array to empty
+
+  
+             
           }
       }
   
@@ -1319,6 +1360,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
   
           // Remove the node from the selectedNodes array
           this.selectedNodes.splice(nodeIndex, 1);
+          this.previouslyConnectedNodeIds.clear();
 
            // Remove edges associated with this node from `this.selectedEdges`
     const selectedNodeId = artistNode.id;
@@ -1337,14 +1379,20 @@ private onClusterClick(clusterNode: ClusterNode): void {
           // Reset the style of the deselected node
           this.resetStyleOfNode(circle, artistNode.artist);
           this.g.selectAll(`.artist-edge-${clusterNode?.clusterId}`)
-              .style('stroke', (d: any) =>
-                  d.sharedExhibitionMinArtworks >= 0.4 ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none'
-              )
-              .style('opacity', 1);
+          .style('stroke', (d: any) =>
+              d.sharedExhibitionMinArtworks >= 0.4 ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none'
+          )
+          .style('opacity', 1);
+          this.resetOfOtherNodeStyles(selectedNodeId);
+
   
           // Check if this was the last selected node
           if (this.selectedNodes.length === 0) {
+            this.selectedEdges.clear();
+            this.previouslyConnectedNodeIds.clear();
+            this.previouslyConnectedClusterNodeIds.clear();
               // Select the cluster without updating the selectionService
+            
               if (clusterNode) {
                   this.selectedClusterNode = clusterNode;
                   this.updateClusterSelection(clusterNode);
@@ -1374,9 +1422,10 @@ private onClusterClick(clusterNode: ClusterNode): void {
               this.updateSelectedCountries(selectedArtists, category, countries, false);
               this.selectionService.selectOldCountries(countries);
           }
-  
+
+   
           return; // Exit the function since we've handled the removal
-      }
+        }
   
       // Add the node to the selection
       this.selectMultipleNodes(artistNode, circle);
@@ -1389,6 +1438,20 @@ private onClusterClick(clusterNode: ClusterNode): void {
   
       // Apply the filter to the selected node
       d3.select(circle).style("filter", "url(#shadow)");
+  }
+
+  private resetOfOtherNodeStyles(artistId:number){
+    const clusterId = this.artistClusterMap.get(artistId)?.clusterId;
+    this.g.selectAll(`.artist-node`)
+    .filter((d: any) =>  d.artist.cluster !== clusterId)
+      .style('opacity', '1')
+    .style('stroke', 'none')
+    .style('filter', 'none');
+    this.g.selectAll(`.artist-node`)
+    .filter((d: any) => d.artist.cluster === clusterId)
+      .style('opacity', '1')
+   ;
+
   }
   
   // Helper function to update countries
@@ -1524,6 +1587,7 @@ private onClusterClick(clusterNode: ClusterNode): void {
 
       
     private selectMultipleNodes(artistNode: ArtistNode, circle: SVGCircleElement) {
+      
       const clusterIndex = this.artistClusterMap.get(artistNode.id)?.clusterId;
 
       // Make the button visible by selecting it based on its class
@@ -1531,7 +1595,14 @@ private onClusterClick(clusterNode: ClusterNode): void {
         this.svg.select(`.ai-button-${clusterIndex}`)
           .style('visibility', 'visible');
       }
+     const clusterNode2= this.artistClusterMap.get(artistNode.id)
+      if(clusterNode2) this.updateClusterSelection(clusterNode2);
 
+      if (this.selectedNode && this.selectedNode[0]) {
+        const d3Node = d3.select(this.selectedNode[0]); // Convert to a D3 selection
+        const artistNodeData = d3Node.datum() as ArtistNode; // Use datum() on the D3 selection
+        this.handleNodeClick(artistNodeData, new MouseEvent('click')); // Simulate a click event
+    }
   
    // Otherwise, add the node to the selection
    this.selectedNodes.push([circle, circle.style.fill]);
@@ -1565,16 +1636,25 @@ private onClusterClick(clusterNode: ClusterNode): void {
     const category = this.decisionService.getDecisionSunburst();
 
           if (clusterId !== undefined) {
-            
-            console.log('connected ids', this.connectedNodeIds)
-              // Reduce opacity for nodes not connected to the selected node
-              this.g.selectAll(`.artist-node-${clusterId}`)
-              .filter((d: any) => d.id === artistNode.id || this.connectedNodeIds.has(d.id))
+        
+
+              const connectedNodeIds: Set<number> = new Set<number>();
+  
+    // Identify connected nodes
+    this.g.selectAll(".artist-edge").each((d: any) => {
+        if (d.source.id === selectedNodeId) {
+            connectedNodeIds.add(d.target.id);
+        } else if (d.target.id === selectedNodeId) {
+            connectedNodeIds.add(d.source.id);
+        }
+    });
+this.previouslyConnectedClusterNodeIds = connectedNodeIds;
+          this.g.selectAll(`.artist-node-${clusterId}`)
+              .filter((d: any) => d.id === artistNode.id || connectedNodeIds.has(d.id))
               .style('opacity', '1');
-          
               this.g.selectAll(`.artist-node-${clusterId}`)
-                  .filter((d: any) => d.id !== artistNode.id && !this.connectedNodeIds.has(d.id))
-                  .style('opacity', '0.2');
+              .filter((d: any) =>! connectedNodeIds.has(d.id) && !(d.id === artistNode.id))
+              .style('opacity', '0.2');
 
                   const newEdges: any[] = [];
 
@@ -1620,7 +1700,8 @@ if (newEdges.length > 0) {
 
   console.log('selected', this.selectedEdges)
 
-  
+  this.g.selectAll(`.artist-edge-${clusterId}`)
+      .style('opacity', "0")
   this.selectedEdges.forEach((edgeData) => {
     this.g.selectAll(`.artist-edge-${clusterId}`)
     .filter((d: any) => {
@@ -1769,75 +1850,74 @@ if(this.modernMap){
      
       }}
       
-    private highlightInterClusterConnections(artistId: number, clusterId: number): void {
-      const connectedNodeIds = new Set<number>();
-      const unconnectedNodeIds = new Set<number>();
-  
-      const width = 0.07 * this.clusterNodes[clusterId].innerRadius / 100;
+      private highlightInterClusterConnections(artistId: number, clusterId: number): void {
+        // Now proceed with your existing logic
+        const connectedNodeIds = new Set<number>();
+        const unconnectedNodeIds = new Set<number>();
     
-      
-  
-      // Identify connected and unconnected nodes
-      const clusterEdges = this.singleInterCommunityEdges[clusterId];
-      clusterEdges.forEach(edge => {
-          if (edge.startId === artistId) {
-              connectedNodeIds.add(edge.endId);
-          } else if (edge.endId === artistId) {
-              connectedNodeIds.add(edge.startId);
-          }
-      });
-  
-      // Populate unconnectedNodeIds excluding nodes in the same cluster
-      this.g.selectAll(".artist-node").each((d: any) => {
-          if (!connectedNodeIds.has(d.id) && d.artist.cluster !== clusterId) {
-              unconnectedNodeIds.add(d.id);
-          }
-      });
-  
-      const connectedOpacity = 0.8;
-      const unconnectedOpacity = 0.2;
-      const strokeWidth = 0.07 * this.innerRadius / 100;
-  
-      console.log(connectedNodeIds);
-  
-      // Highlight connected nodes and nodes in the same cluster
-      this.g.selectAll(".artist-node")
-          .filter((d: any) => connectedNodeIds.has(d.id) )
-          .style('opacity', connectedOpacity)
-          .style("stroke-width", `${width}vw`)
-          .style("stroke", "grey");
-  
-          this.g.selectAll(".artist-node")
-          .filter((d: any) => d.artist.cluster === clusterId)
-          .style('opacity', 1);
+        // Identify connected and unconnected nodes
+        const clusterEdges = this.singleInterCommunityEdges[clusterId];
+        clusterEdges.forEach(edge => {
+            if (edge.startId === artistId) {
+                connectedNodeIds.add(edge.endId);
+            } else if (edge.endId === artistId) {
+                connectedNodeIds.add(edge.startId);
+            }
+        });
     
-  
-      // Lower opacity for unconnected nodes that are not in the same cluster
-      this.g.selectAll(".artist-node")
-          .filter((d: any) => unconnectedNodeIds.has(d.id))
-          .style('opacity', unconnectedOpacity);
-  
-  
-          this.g.selectAll(".artist-edge")
-          .filter((d: any) => 
-              (d.source.cluster === clusterId && d.target.cluster === clusterId)
-          )
-          .style('opacity', 1);
-  
-      // Lower opacity for unconnected edges that are not within the same cluster
-      this.g.selectAll(".artist-edge")
-          .filter((d: any) => 
-              !(d.source.cluster === clusterId && d.target.cluster === clusterId)
-          )
-          .style('opacity', 0.05);
-  
-      // Adjust opacity for the `path` elements in each cluster
-      this.g.selectAll(`path`)
-          .style('opacity', unconnectedOpacity);
-  
-      // Set opacity to 1 for paths in the selected cluster
-      this.g.selectAll(`.cluster-${clusterId} path`).style('opacity', '1');
-  }
+        // Populate unconnectedNodeIds excluding nodes in the same cluster
+        this.g.selectAll(".artist-node").each((d: any) => {
+            if (!connectedNodeIds.has(d.id) && d.artist.cluster !== clusterId) {
+                unconnectedNodeIds.add(d.id);
+            }
+        });
+    
+        this.previouslyConnectedNodeIds = connectedNodeIds;
+
+        const connectedOpacity = 0.8;
+        const unconnectedOpacity = 0.2;
+    
+        // Loop over each cluster to adjust the stroke width for the artist nodes
+        Object.keys(this.clusterNodes).forEach((clusterKey: string) => {
+            const cluster = this.clusterNodes[+clusterKey]; // Retrieve the cluster object
+            const clusterInnerRadius = cluster.innerRadius;
+            const strokeWidth = 0.07 * clusterInnerRadius / 100;
+    
+            // Apply styles for connected nodes in this cluster
+            this.g.selectAll(`.artist-node-${clusterKey}`)
+                .filter((d: any) => connectedNodeIds.has(d.id))
+                .style('opacity', connectedOpacity)
+                .style("stroke-width", `${strokeWidth}vw`)
+                .style("stroke", "grey");
+    
+           
+        });
+    
+        // Lower opacity for unconnected nodes that are not in the same cluster
+        this.g.selectAll(".artist-node")
+            .filter((d: any) => unconnectedNodeIds.has(d.id))
+            .style('opacity', unconnectedOpacity);
+    
+        // Adjust the edges' opacity and paths
+        this.g.selectAll(".artist-edge")
+            .filter((d: any) => 
+                (d.source.cluster === clusterId && d.target.cluster === clusterId)
+            )
+            .style('opacity', 1);
+    
+        this.g.selectAll(".artist-edge")
+            .filter((d: any) => 
+                !(d.source.cluster === clusterId && d.target.cluster === clusterId)
+            )
+            .style('opacity', 0.05);
+    
+        this.g.selectAll(`path`)
+            .style('opacity', unconnectedOpacity);
+    
+        // Set opacity to 1 for paths in the selected cluster
+        this.g.selectAll(`.cluster-${clusterId} path`).style('opacity', '1');
+    }
+    
   
   private resetStyleOfNode(circle: SVGCircleElement, artist: Artist) {
          
@@ -1854,13 +1934,37 @@ if(this.modernMap){
         .style("filter", "none");      // Remove any shadow or other filter effects
   }
 
+  private resetMultiNodeSelection(): void {
+
+    // Reset styles for all artist nodes and edges across categories
+    const threshold = 0.4; // Threshold for deciding which edges are visible
+
+    // Reset the stroke color and opacity for all artist edges
+    this.g.selectAll(".artist-edge")
+        .style('stroke', (d: any) =>
+            d.sharedExhibitionMinArtworks >= threshold ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none'
+        )
+        .style('opacity', 1);
+
+    this.g.selectAll(".artist-node")
+        .style('opacity', '1')
+        .style('filter', 'none')
+        .style("stroke-width", "0px")
+        .style("stroke", "none");
+
+        this.previouslyConnectedNodeIds.clear();
+        this.previouslyConnectedClusterNodeIds.clear();
+    // Clear the selectedNode variable as no node is selected now
+    this.selectedNode = null;
+    
+}
   private resetNodeSelection(): void {
     // Check if there's a previously selected node
     if (this.selectedNode) {
         const previousNode = this.selectedNode[0];
         const previousArtist = this.selectedNode[1];
         this.resetStyleOfNode(previousNode, previousArtist);
-    } else {
+    } else{
       // If no node was selected previously, clear the selected artists
       this.updateClusterSelection(null);
   }
@@ -1880,6 +1984,8 @@ if(this.modernMap){
         .style("stroke-width", "0px")
         .style("stroke", "none");
 
+    this.previouslyConnectedNodeIds.clear();
+    this.previouslyConnectedClusterNodeIds.clear();
     // Clear the selectedNode variable as no node is selected now
     this.selectedNode = null;
     
@@ -1932,6 +2038,10 @@ const category = this.decisionService.getDecisionSunburst();
             connectedNodeIds.add(d.source.id);
         }
     });
+
+
+    this.previouslyConnectedClusterNodeIds = connectedNodeIds;
+
       const category = this.decisionService.getDecisionSunburst();
 
       const clusterId = this.artistClusterMap.get(artistNode.id)?.clusterId;
@@ -2980,90 +3090,72 @@ const joinedNames = formattedNames.length > 1
     const category = this.decisionService.getDecisionSunburst();
     let prompt = '';
 
-    if(this.selectedNodes.length > 1){
-
+    if (this.selectedNodes.length > 1) {
       switch (category) {
-
           case 'nationality':
-              prompt = `
-        In 60 words, detail any known meetings, collaborations, or influences between the following artists: ${artistNames.join(", ")}. Include specific instances where their national backgrounds might have led to shared exhibitions, joint projects, or mutual influences.`;
-
+              const nationalityInfo = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname} (Nationality: ${this.artistService.countryMap[artist.nationality]})`).join(", ");
+              prompt = `In 60 words, detail any known meetings, collaborations, or influences between the following artists: ${nationalityInfo}. Include specific instances where their national backgrounds might have led to shared exhibitions, joint projects, or mutual influences.`;
               this.aiTitle = `AI Suggestion:<br>Connections among artists ${joinedNames} based on their nationalities`;
               break;
-      
+  
           case 'birthcountry':
-            prompt = `In 60 words, discuss how their early life stages shaped the connections and collaborations among these artists: ${joinedNames}. Note any shared themes, styles, or early artistic interactions.`
-             // prompt = `In 40 words, describe the similarities of these artists: ${artistNames.join(", ")} during their early life and if they have influenced each other or collaborated in any way.`;
+              const birthCountryInfo = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname} (Born in: ${this.modernMap ? this.artistService.countryMap[artist.birthcountry] : this.artistService.oldCountryMap[artist.oldBirthCountry]})`).join(", ");
+              prompt = `In 60 words, discuss how their early life stages shaped the connections and collaborations among these artists: ${birthCountryInfo}. Note any shared themes, styles, or early artistic interactions.`;
               this.aiTitle = `AI Suggestion:<br>Connections among artists ${joinedNames} in their early life stages`;
               break;
-
-             /*  case 'nationality':
-                prompt = `In 40 words, discuss the connections, similarities, and differences among the following artists: ${artistNames.join(", ")} based on their national identities. How did their national backgrounds shape their artistic relationships and collaborations?`;
-                break;
-        
-            case 'birthcountry':
-                prompt = `In 40 words, describe the similarities of these artists: ${artistNames.join(", ")} during their early life.`;
-                break; */
-      
+  
           case 'deathcountry':
-            prompt = `In 60 words, discuss how their final life stages shaped the connections and collaborations among these artists: ${joinedNames}.
-             Highlight any common themes, influences, or late-life partnerships.`
-           // prompt = `In 40 words, describe the similarities of these artists: ${artistNames.join(", ")} during their final life stages and if they have influenced each other or collaborated in any way.`;
+              const deathCountryInfo = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname} (Died in: ${this.modernMap ? this.artistService.countryMap[artist.deathcountry] : this.artistService.oldCountryMap[artist.oldDeathCountry]})`).join(", ");
+              prompt = `In 60 words, discuss how their final life stages shaped the connections and collaborations among these artists: ${deathCountryInfo}. Highlight any common themes, influences, or late-life partnerships.`;
               this.aiTitle = `AI Suggestion:<br>Connections among artists ${joinedNames} in their final life stages`;
               break;
-      
+  
           case 'mostexhibited':
-            prompt = `In 60 words, examine the influence of exhibition history on the connections among these artists: ${artistNames.join(", ")} and if they have influenced each other or collaborated in any way.`;
-
-              //prompt = `In around 5 sentences, examine the influence of exhibition history on the connections among these artists: ${artistNames.join(", ")}. How did their most exhibited locations shape the common threads and distinctions in their careers?`;
+              const exhibitedInfo = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname} (Most exhibited in: ${this.modernMap ? this.artistService.countryMap[artist.most_exhibited_in] : this.artistService.oldCountryMap[artist.mostExhibitedInOldCountry]})`).join(", ");
+              prompt = `In 60 words, examine the influence of exhibition history on the connections among these artists: ${exhibitedInfo} and if they have influenced each other or collaborated in any way.`;
               this.aiTitle = `AI Suggestion:<br>Connections among artists ${joinedNames} through their exhibition history`;
-
               break;
-      
-          
+  
+          default:
+              console.warn('Unknown category:', category);
+              break
+
+      }
+    //Only one node selected
+    // Only one artist selected
+  } else if (this.selectedNodes.length === 1) {
+    const selectedArtist = selectedArtists[0];
+    const nationality = this.artistService.countryMap[selectedArtist.nationality];
+    const birthcountry = this.modernMap ? this.artistService.countryMap[selectedArtist.birthcountry] : this.artistService.oldCountryMap[selectedArtist.oldBirthCountry];
+    const deathcountry = this.modernMap ? this.artistService.countryMap[selectedArtist.deathcountry] : this.artistService.oldCountryMap[selectedArtist.oldDeathCountry];
+    const mostexhibited = this.modernMap ? this.artistService.countryMap[selectedArtist.most_exhibited_in] : this.artistService.oldCountryMap[selectedArtist.mostExhibitedInOldCountry];
+
+    switch (category) {
+        case 'nationality':
+            prompt = `In 60 words, describe how ${artistNames}'s nationality (${nationality}) shaped their connections with other artists. Highlight key influences and similarities.`;
+            this.aiTitle = `AI Suggestion: Summary of the life of ${artistNames}`;
+            break;
+
+        case 'birthcountry':
+            prompt = `In 60 words, discuss how ${artistNames}'s early years in ${birthcountry} shaped their connections with other artists. Highlight key influences and similarities.`;
+            this.aiTitle = `AI Suggestion: Overview of the early life stages of ${artistNames}`;
+            break;
+
+        case 'deathcountry':
+            prompt = `In 60 words, discuss how ${artistNames}'s later years in ${deathcountry} influenced their final artistic connections and styles and shaped their connections with other artists. Highlight key influences and similarities.`;
+            this.aiTitle = `AI Suggestion: Overview of the final life stages of ${artistNames}`;
+            break;
+
+        case 'mostexhibited':
+            prompt = `In 60 words, analyze why ${artistNames}'s artworks were most exhibited in ${mostexhibited} and how other artists influenced this. Highlight the artistic connections that led to this exhibition focus.`;
+            this.aiTitle = `AI Suggestion: Exhibition journey of ${artistNames}`;
+            break;
+
         default:
             console.warn('Unknown category:', category);
             break;
-        }
-
     }
-    //Only one node selected
-    // Only one artist selected
-    else if (this.selectedNodes.length === 1) {
-      const selectedArtist = selectedArtists[0];
-      const nationality =  this.artistService.countryMap[selectedArtist.nationality] 
-      const birthcountry =  this.modernMap? this.artistService.countryMap[selectedArtist.birthcountry]  : this.artistService.oldCountryMap[selectedArtist.oldBirthCountry]
-      const deathcountry =  this.modernMap? this.artistService.countryMap[selectedArtist.deathcountry]  : this.artistService.oldCountryMap[selectedArtist.oldDeathCountry]
-      const mostexhibited =  this.modernMap? this.artistService.countryMap[selectedArtist.most_exhibited_in]  : this.artistService.oldCountryMap[selectedArtist.mostExhibitedInOldCountry]
-
-      switch (category) {
-        case 'nationality':
-          prompt = `In 60 words, describe how ${artistNames}'s nationality (${nationality}) shaped their connections with other artists. Highlight key influences and similarities.`;
-          this.aiTitle = `AI Suggestion: Summary of the life of ${artistNames}`;
-          break;
-
-      case 'birthcountry':
-          prompt = `In 60 words, dicuss how ${artistNames}'s early years in ${birthcountry} shaped their connections with other artists. Highlight key influences and similarities.`;
-          this.aiTitle = `AI Suggestion: Overview of the early life stages of ${artistNames}`;
-          break;
-
-      case 'deathcountry':
-          prompt = `In 60 words, discuss how ${artistNames}'s later years in ${deathcountry} influenced their final artistic connections and styles and shaped their connections with other artists.
-          Highlight key influences and similarities.`;
-          this.aiTitle = `AI Suggestion: Overview of the final life stages of ${artistNames}`;
-
-          break;
-
-      case 'mostexhibited':
-          prompt = `In 60 words, analyze why ${artistNames}'s artworks were most exhibited in ${mostexhibited} and how other artists influenced this. Highlight the artistic connections that led to this exhibition focus.`;
-          this.aiTitle = `AI Suggestion: Exhibition journey of ${artistNames}`;
-          break;
-      
-          default:
-              console.warn('Unknown category:', category);
-              break;
-          }
-      }
+}
 
     // Call AI service to generate response
     if (prompt) {
