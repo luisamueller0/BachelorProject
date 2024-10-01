@@ -244,7 +244,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         .attr("text-anchor", "center")
         .style("font-weight", "600")
         .style("font-size", "0.85vw")
-        .style("fill", "#7e24c7")  // Matching pink color
+        .style("fill", "#2a0052")  // Matching pink color
         .style("visibility", "hidden") // Initially hide
         .text(leftLabel);
 
@@ -255,7 +255,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         .attr("text-anchor", "center")
         .style("font-weight", "600")
         .style("font-size", "0.85vw")
-        .style("fill", "#7e24c7")  // Matching pink color
+        .style("fill", "#2a0052")  // Matching pink color
         .style("visibility", "hidden") // Initially hide
         .text(rightLabel);
 
@@ -278,7 +278,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         .attr("x2", this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3) // End right before right text starts
         .attr("y1", this.contentHeight / 100 * 4)
         .attr("y2", this.contentHeight / 100 * 4)
-        .attr("stroke", "#7e24c7") // Pink color
+        .attr("stroke", "#2a0052") // Pink color
         .attr("stroke-width", this.contentWidth / 200) // Adjust stroke-width for scaling
         .attr("stroke-dasharray", `${this.contentWidth / 200},${this.contentWidth / 200}`); // Make dash size proportional
 
@@ -289,7 +289,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
             [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 2, this.contentHeight / 100 * 4],
             [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3, this.contentHeight / 100 * 4 + this.contentWidth / 200]
         ]))
-        .attr("fill", "#7e24c7"); // Pink color
+        .attr("fill", "#2a0052"); // Pink color
 }
 
 
