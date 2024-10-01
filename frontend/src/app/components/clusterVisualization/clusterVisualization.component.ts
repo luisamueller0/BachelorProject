@@ -477,9 +477,8 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
             .node() as SVGCircleElement;
 
         if (currentCircle) {
-            const strokeColor = d3.select(currentCircle).style('stroke');
             const opacity = d3.select(currentCircle).style('opacity');
-            this.previouslySelected = strokeColor === 'black';
+            
             this.previouslyLowOpacity = opacity === '0.2';
         }
 
@@ -543,8 +542,11 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
                 
                 let lastSelectedNode = null;
                 lastSelectedNode= this.selectedNode ? this.selectedNode[1].id : null;
-                const artistNodeData = d3.select(this.selectedNodes[this.selectedNodes.length - 1][0] as SVGCircleElement).datum() as ArtistNode;
-                lastSelectedNode = this.selectedNodes.length > 0 ? artistNodeData.id : null;
+                if(this.selectedNodes.length > 0){
+                  const artistNodeData = d3.select(this.selectedNodes[this.selectedNodes.length - 1][0] as SVGCircleElement).datum() as ArtistNode;
+                  lastSelectedNode =  artistNodeData.id 
+                }
+            
 
                
                 if (this.previouslyConnectedClusterNodeIds && this.previouslyConnectedClusterNodeIds.size > 0 && lastSelectedNode) {
