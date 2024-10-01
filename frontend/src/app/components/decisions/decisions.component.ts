@@ -101,8 +101,8 @@ public isLoadingRange: boolean = false;
   selectRanking: string ='artworks';
   RankingOptions: { label: string, value: string }[] = [
       { label: 'Number of Exhibitions (High-Low)', value: 'exhibitions' },
-      { label: 'Variety of Techniques (Most-Least)', value: 'techniques' },
-      { label: 'Exhibited Artworks Count (High-Low)', value: 'artworks' },
+      { label: 'Variety of Used Techniques (Most-Least)', value: 'techniques' },
+      { label: 'Number of Exhibited Artworks (High-Low)', value: 'artworks' },
       { label: 'Average Birth Year (Earliest-Latest)', value: 'birthyear' },
       { label: 'Average Death Year (Earliest-Latest)', value: 'deathyear' }
      // { label: 'Average Exhibition Period (Earliest-Latest)', value: 'time' }
