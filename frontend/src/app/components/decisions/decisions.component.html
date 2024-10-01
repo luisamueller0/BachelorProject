@@ -2,7 +2,7 @@
 <div class="dropdown-container">
   <!-- <i class="fa fa-info-circle" style="font-size:24px"></i>-->
   <div class="dropdown-group">
-    <label for="artistSearch" class="dropdown-label">Search for an artist:</label>
+    <label for="artistSearch" class="dropdown-label">Search for an artist</label>
     <input
       type="text"
       id="artistSearch"
@@ -21,14 +21,14 @@
     </div>
   </div>
   <div class="dropdown-group">
-    <label for="dropdown" class="dropdown-label">Select ranking category:</label>
+    <label for="dropdown" class="dropdown-label">Select ranking category</label>
     <select class="dropdown" [(ngModel)]="selectRanking" (change)="onRankingChange($event)">
       <option *ngFor="let option of RankingOptions" [value]="option.value">{{ option.label }}</option>
     </select>
   </div>
   
   <div class="dropdown-group">
-    <label for="dropdown" class="dropdown-label">Select country category:</label>
+    <label for="dropdown" class="dropdown-label">Select country category(✧)</label>
     <select class="dropdown" [(ngModel)]="selectedSunburst" (change)="onSunburstChange($event)">
       <option *ngFor="let option of SunburstOptions" [value]="option.value">{{ option.label }}</option>
     </select>
@@ -37,7 +37,7 @@
   
 
   <div class="dropdown-group">
-    <label for="dropdown" class="dropdown-label">Select node size:</label>
+    <label for="dropdown" class="dropdown-label">Select node size</label>
     <select class="dropdown" (change)="onSizeChange($event)">
       <option *ngFor="let option of SizeOptions" [value]="option.value">{{ option.label }}</option>
     </select>
@@ -61,7 +61,7 @@
   <!-- Addition of ngx-slider for selecting range -->
   
   <div class="dropdown-group">
-    <label class="dropdown-label">Select the range of exhibited artworks to filter artists:</label>
+    <label class="dropdown-label">Select the range of exhibited artworks to filter artists</label>
     <div class="dropdown-group2">
       <div class="custom-slider">
         <ngx-slider [(value)]="range[0]" [(highValue)]="range[1]" [options]="options" (valueChange)="onRangeSliderChange()"></ngx-slider>
@@ -83,7 +83,7 @@
   </div>
   
   <div class="dropdown-group">
-    <label class="dropdown-label">Select the number of artist clusters:</label>
+    <label class="dropdown-label">Select the number of artist clusters</label>
     <div class="dropdown-group2">
       <div class="custom-slider" [class.disabled]="isLoadingRange">
         <ngx-slider [(value)]="k" [options]="kOptions" (valueChange)="onKSliderChange()"></ngx-slider>

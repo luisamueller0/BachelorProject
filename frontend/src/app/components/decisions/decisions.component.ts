@@ -104,8 +104,8 @@ public isLoadingRange: boolean = false;
       { label: 'Variety of Techniques (Most-Least)', value: 'techniques' },
       { label: 'Exhibited Artworks Count (High-Low)', value: 'artworks' },
       { label: 'Average Birth Year (Earliest-Latest)', value: 'birthyear' },
-      { label: 'Average Death Year (Earliest-Latest)', value: 'deathyear' },
-      { label: 'Average Exhibition Period (Earliest-Latest)', value: 'time' }
+      { label: 'Average Death Year (Earliest-Latest)', value: 'deathyear' }
+     // { label: 'Average Exhibition Period (Earliest-Latest)', value: 'time' }
   ];
   
 

@@ -187,6 +187,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       
       this.subscriptions.add(this.decisionService.currentRanking.subscribe(ranking => {  
         this.updateClusterPosition(ranking);
+        this.updateRankingArrow(ranking);
       }));
       window.addEventListener('resize', this.onResize.bind(this));
 
@@ -194,8 +195,107 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     }
   
 
+    private initializeRankingArrow(): void {
+      // Create the group for the arrow and label if it doesn't already exist
+      if (this.svg.select(".ranking-arrow-group").empty()) {
+          this.svg.append("g")
+              .attr("class", "ranking-arrow-group")
+              .attr("transform", `translate(${this.contentWidth / 2}, -10)`); // Adjust position as needed
+      }
+  }
+  
 
 
+  private updateRankingArrow(ranking: string): void {
+    let leftLabel = '';
+    let rightLabel = '';
+
+    // Use a switch statement to handle different ranking cases
+    switch (ranking) {
+        case 'exhibitions':
+        case 'artworks':
+            leftLabel = 'High';
+            rightLabel = 'Low';
+            break;
+        case 'techniques':
+            leftLabel = 'Most';
+            rightLabel = 'Least';
+            break;
+        case 'birthyear':
+        case 'deathyear':
+            leftLabel = 'Earliest';
+            rightLabel = 'Latest';
+            break;
+        default:
+            leftLabel = 'Left';
+            rightLabel = 'Right';
+    }
+
+    // Select the existing arrow group
+    const arrowGroup = this.svg.select(".ranking-arrow-group");
+
+    // Clear any existing content in the group
+    arrowGroup.selectAll("*").remove();
+
+    // Draw the left text (initially invisible)
+    const leftText = arrowGroup.append("text")
+        .attr("x", -this.contentWidth / 2 + this.contentWidth / 100) // Initial estimate
+        .attr("y", this.contentHeight / 100 * 5)
+        .attr("text-anchor", "center")
+        .style("font-weight", "600")
+        .style("font-size", "0.85vw")
+        .style("fill", "#7e24c7")  // Matching pink color
+        .style("visibility", "hidden") // Initially hide
+        .text(leftLabel);
+
+    // Draw the right text (initially invisible)
+    const rightText = arrowGroup.append("text")
+        .attr("x", this.contentWidth / 2 - this.contentWidth / 100 * 2) // Initial estimate
+        .attr("y", this.contentHeight / 100 * 5)
+        .attr("text-anchor", "center")
+        .style("font-weight", "600")
+        .style("font-size", "0.85vw")
+        .style("fill", "#7e24c7")  // Matching pink color
+        .style("visibility", "hidden") // Initially hide
+        .text(rightLabel);
+
+    // Measure text widths
+    const leftTextWidth = leftText.node().getBBox().width;
+    const rightTextWidth = rightText.node().getBBox().width;
+
+    // Adjust text positions based on measured widths
+    leftText
+        .attr("x", -this.contentWidth / 2 + leftTextWidth / 2 - this.contentWidth / 100) // Adjust based on width
+        .style("visibility", "visible"); // Make it visible after adjustment
+
+    rightText
+        .attr("x", this.contentWidth / 2 - rightTextWidth / 2 - this.contentWidth / 100)
+        .style("visibility", "visible"); // Make it visible after adjustment
+
+    // Adjust the arrow line to fit between the adjusted text positions
+    arrowGroup.append("line")
+        .attr("x1", -this.contentWidth / 2 + leftTextWidth + this.contentWidth / 100 * 3) // Start right after left text ends
+        .attr("x2", this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3) // End right before right text starts
+        .attr("y1", this.contentHeight / 100 * 4)
+        .attr("y2", this.contentHeight / 100 * 4)
+        .attr("stroke", "#7e24c7") // Pink color
+        .attr("stroke-width", this.contentWidth / 200) // Adjust stroke-width for scaling
+        .attr("stroke-dasharray", `${this.contentWidth / 200},${this.contentWidth / 200}`); // Make dash size proportional
+
+    // Draw arrowhead adjusted to the new end of the line
+    arrowGroup.append("path")
+        .attr("d", d3.line()([
+            [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3, this.contentHeight / 100 * 4 - this.contentWidth / 200],
+            [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 2, this.contentHeight / 100 * 4],
+            [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3, this.contentHeight / 100 * 4 + this.contentWidth / 200]
+        ]))
+        .attr("fill", "#7e24c7"); // Pink color
+}
+
+
+
+  
+  
     private updateClusterPosition(ranking: string): void {
       if (!this.svg) return;
       
@@ -2461,8 +2561,10 @@ const category = this.decisionService.getDecisionSunburst();
         .domain(yData)
         .range([0, this.contentHeight])
         .padding(0.1);
+        
+  
     
-        this
+       
       // Create a Promise array to ensure clusters are drawn before applying the force simulation
       const drawPromises = this.clusters.map((cluster, i) => {
         return new Promise<void>((resolve) => {
@@ -2482,6 +2584,12 @@ const category = this.decisionService.getDecisionSunburst();
           this.isLoading = false;
        
       }, 1000); // 100 milliseconds delay
+
+      this.initializeRankingArrow();
+      const ranking = this.decisionService.getDecisionRanking();
+
+      this.updateRankingArrow(ranking);
+
     
   });
   }
@@ -2708,40 +2816,43 @@ const category = this.decisionService.getDecisionSunburst();
     const paddedCellSize = cellSize; // Reduce cell size by padding ratio
  
     // Find the maximum cluster size
-const maxClusterSize = d3.max(this.clusters, cluster => cluster.length) || 0;
+    const maxClusterSize = d3.max(this.clusters, cluster => cluster.length) || 0;
 
     const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, maxClusterSize, paddedCellSize, this.clusters.length);
     this.innerRadius = innerRadius; 
   
     // Use a single reduce function to calculate the average birth year and other properties
     const metrics = cluster.reduce((acc, artist) => {
-      acc.totalBirthYear += artist.birthyear;
-      acc.totalExhibitedArtworks += artist.total_exhibited_artworks;
-      acc.totalExhibitions += artist.total_exhibitions;
-      acc.totalTechniques += artist.amount_techniques;
-      acc.totalDeathYear += artist.deathyear;
-      acc.totalAvgDate += new Date(artist.overall_avg_date).getTime(); // Convert to timestamp
-      acc.count += 1;
-      return acc;
+        acc.totalBirthYear += artist.birthyear;
+        acc.totalExhibitedArtworks += artist.total_exhibited_artworks;
+        acc.totalExhibitions += artist.total_exhibitions;
+        acc.totalDeathYear += artist.deathyear;
+        acc.totalAvgDate += new Date(artist.overall_avg_date).getTime(); // Convert to timestamp
+        
+        // Add artist's distinct techniques to the Set to ensure uniqueness
+        artist.distinct_techniques.forEach(technique => acc.uniqueTechniques.add(technique));
+        
+        acc.count += 1;
+        return acc;
     }, {
-      totalAvgDate: 0,
-      totalBirthYear: 0,
-      totalExhibitedArtworks: 0,
-      totalExhibitions: 0,
-      totalTechniques: 0,
-      totalDeathYear: 0,
-      count: 0
+        totalAvgDate: 0,
+        totalBirthYear: 0,
+        totalExhibitedArtworks: 0,
+        totalExhibitions: 0,
+        uniqueTechniques: new Set<string>(), // Use a Set to track unique techniques
+        totalDeathYear: 0,
+        count: 0
     });
   
     // Calculate the average birth year
     const avgBirthYear = metrics.count > 0 ? metrics.totalBirthYear / metrics.count : 1910;
-    const  avgDeathYear = metrics.count > 0 ? metrics.totalDeathYear / metrics.count : 1910;
+    const avgDeathYear = metrics.count > 0 ? metrics.totalDeathYear / metrics.count : 1910;
 
-       // Calculate the average date
-       const avgDateTimestamp = metrics.count > 0 ? metrics.totalAvgDate / metrics.count : new Date(1910, 0, 1).getTime();
-       const avgDate = new Date(avgDateTimestamp); // Convert back to Date object
-   
-       console.log('clusterindex', clusterIndex)
+    // Calculate the average date
+    const avgDateTimestamp = metrics.count > 0 ? metrics.totalAvgDate / metrics.count : new Date(1910, 0, 1).getTime();
+    const avgDate = new Date(avgDateTimestamp); // Convert back to Date object
+
+    console.log('clusterindex', clusterIndex);
   
     // Create the clusterNode with the calculated values
     const clusterNode: ClusterNode = {
@@ -2756,18 +2867,18 @@ const maxClusterSize = d3.max(this.clusters, cluster => cluster.length) || 0;
         meanDeathYear: avgDeathYear,
         totalExhibitedArtworks: metrics.totalExhibitedArtworks,
         totalExhibitions: metrics.totalExhibitions,
-        totalTechniques: metrics.totalTechniques
+        totalTechniques: metrics.uniqueTechniques.size // Get the count of distinct techniques
     };
 
     this.clusterNodes[clusterIndex] = clusterNode;
-   
   
     const category = this.decisionService.getDecisionSunburst();
     const clusterGroup = this.createClusterGroup(clusterNode, category, cellWidth, cellHeight);
   
     // Append the clusterGroup to this.svg
     this.g.append(() => clusterGroup);  // Add the cluster to the main SVG
-  }
+}
+
   
 
 

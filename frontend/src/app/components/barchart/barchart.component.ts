@@ -13,6 +13,7 @@ import { ArtistService } from '../../services/artist.service';
 })
 export class BarchartComponent implements OnInit, OnChanges, OnDestroy {
   @ViewChild('barChart', { static: true }) private chartContainer!: ElementRef;
+
   private subscriptions: Subscription = new Subscription();
 
 
@@ -179,6 +180,36 @@ private accumulateTechniqueDistribution(artists: Artist[]): Map<string, number> 
 
   private drawBars(): void {
     if (!this.allArtists.length) return;
+
+    const tooltip = d3.select("div#tooltip");
+    
+
+    const showTooltip = (event: any, data: any) => {
+      let tooltipText = '';
+    
+      // Check if both nonselectedArtists and selectedArtists exist
+      if (data.nonselectedArtists && data.selectedArtists) {
+          tooltipText = `${data.selectedArtists}/${data.nonselectedArtists} artworks`;
+      } 
+      // If only nonselectedArtists exists
+      else if (data.nonselectedArtists) {
+          tooltipText = `${data.nonselectedArtists} artworks`;
+      } 
+      // If only selectedArtists exists
+      else {
+          tooltipText = `${data.selectedArtists} artworks`;
+      }
+  
+      tooltip.style("display", "block")
+          .style("left", `${event.pageX + 5}px`)
+          .style("top", `${event.pageY + 5}px`)
+          .style("color", "black")
+          .html(tooltipText);
+    };
+
+    const hideTooltip = () => {
+        tooltip.style("display", "none");
+    };
   
     const selectedArtists = this.selectedArtists || [];
   
@@ -304,7 +335,21 @@ private accumulateTechniqueDistribution(artists: Artist[]): Map<string, number> 
         return seriesIndex === 'nonselectedArtists' && selectedArtists.length > 0 ? 0.2 : 1;
       })
 
-      .attr("fill", 'grey');
+      .attr("fill", 'grey')
+      .on('mouseover', (event:any, d:any) => {
+        console.log(d)
+        if (d.data) {
+            showTooltip(event, d.data);
+        }
+    })
+      .on('mousemove',  (event:any, d:any) => {
+        console.log(d)
+        if (d.data) {
+            showTooltip(event, d.data);
+        }
+    })
+      .on('mouseout', hideTooltip);
+
 
     
 
@@ -337,7 +382,14 @@ xAxis.selectAll("text")
     .style("opacity", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? '1' : '0.4') : '1')
 
     .style("color", 'black')
-    .style("font-weight", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? 'bold' : '700') : '700');
+    .style("font-weight", (d: string) => selectedArtists.length > 0 ? (this.isTechniqueSelected(d, selectedArtists) ? 'bold' : '700') : '700')
+    .on('mouseover', (event:any, technique:any) => {
+      const data = combinedData.find(d => d.technique === technique);
+      if (data) {
+          showTooltip(event, data);
+      }
+  })
+  .on('mouseout', hideTooltip);
 
 
 
