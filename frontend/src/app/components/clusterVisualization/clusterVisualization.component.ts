@@ -1774,6 +1774,14 @@ this.g.selectAll(".artist-edge")
     // Now apply the edgeColorScale to newEdges
     
 // Now apply the edgeColorScale to newEdges
+this.selectedEdges.forEach((edgeData) => {
+  this.g.selectAll(`.artist-edge-${clusterId}`)
+  .filter((d: any) => {
+    return (d.source.id === edgeData.edge.source.id && d.target.id === edgeData.edge.target.id) || 
+           (d.source.id === edgeData.edge.target.id && d.target.id === edgeData.edge.source.id);
+  })
+      .style("opacity", "1");
+});
 if (newEdges.length > 0) {
   // Create the edgeColorScale once for all new edges
   let artistColor = this.getArtistColorBasedOnCategory(artistNode.artist, category);
@@ -1791,16 +1799,8 @@ if (newEdges.length > 0) {
 
   console.log('selected', this.selectedEdges)
 
-  this.g.selectAll(`.artist-edge-${clusterId}`)
-      .style('opacity', "0")
-  this.selectedEdges.forEach((edgeData) => {
-    this.g.selectAll(`.artist-edge-${clusterId}`)
-    .filter((d: any) => {
-      return (d.source.id === edgeData.edge.source.id && d.target.id === edgeData.edge.target.id) || 
-             (d.source.id === edgeData.edge.target.id && d.target.id === edgeData.edge.source.id);
-    })
-        .style("opacity", "1");
-});
+
+ 
   // Apply the color scale to each of the new edges
   newEdges.forEach((edge: any) => {
     // Select the specific edge element using both source and target ids
@@ -2856,12 +2856,12 @@ this.fuse.setCollection(allArtistArray);
       .attr("transform", (d: ClusterNode) => {
           if (typeof d.x !== 'undefined' && !isNaN(d.x) && typeof d.y !== 'undefined' && !isNaN(d.y)) {
               // Check if the cluster is above the boundary and push it down if necessary
-              if ((d.y -  d.outerRadius) < this.arrowYBoundary) {
-                  d.y = this.arrowYBoundary + d.outerRadius; // Push the cluster down below the boundary
-              }
+            
               return `translate(${d.x}, ${d.y})`;
           }
-          console.log('NaN detected in ticked function:', d);
+          if ((d.y -  d.outerRadius) < this.arrowYBoundary) {
+            d.y = d.outerRadius; // Push the cluster down below the boundary
+        }
           return `translate(0, ${this.contentHeight / 2})`; // Default positioning if NaN
       });
   
