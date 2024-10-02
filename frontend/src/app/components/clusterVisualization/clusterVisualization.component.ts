@@ -324,7 +324,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         .attr("text-anchor", "center")
         .style("font-weight", "600")
         .style("font-size", "0.85vw")
-        .style("fill", "#2a0052")  // Matching pink color
+        .style("fill", "#e5aeff")  // Matching pink color
         .style("visibility", "hidden") // Initially hide
         .text(leftLabel);
 
@@ -335,7 +335,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         .attr("text-anchor", "center")
         .style("font-weight", "600")
         .style("font-size", "0.85vw")
-        .style("fill", "#2a0052")  // Matching pink color
+        .style("fill", "#e5aeff")  // Matching pink color
         .style("visibility", "hidden") // Initially hide
         .text(rightLabel);
 
@@ -358,7 +358,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         .attr("x2", this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3) // End right before right text starts
         .attr("y1", this.contentHeight / 100 * 3.2)
         .attr("y2", this.contentHeight / 100 * 3.2)
-        .attr("stroke", "#2a0052") // Pink color
+        .attr("stroke", "#e5aeff") // Pink color
         .attr("stroke-width", this.contentWidth / 200) // Adjust stroke-width for scaling
         .attr("stroke-dasharray", `${this.contentWidth / 200},${this.contentWidth / 200}`); // Make dash size proportional
 
@@ -369,7 +369,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
             [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 2, this.contentHeight / 100 * 3.2],
             [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3, this.contentHeight / 100 * 3.2 + this.contentWidth / 200]
         ]))
-        .attr("fill", "#2a0052") // Pink color
+        .attr("fill", "#e5aeff") // Pink color
         .classed("arrowhead-path", true); // Add a specific class to the arrowhead
 
         this.arrowYBoundary = this.contentHeight / 100 * 3.2; // Save the y-boundary
