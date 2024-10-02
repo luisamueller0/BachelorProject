@@ -48,13 +48,7 @@
 }
 
 
-.sidebar-left app-decisions{
-  overflow-y: auto!important;
-  overflow-x:hidden;
- 
-  scrollbar-color: #e5aeff white;
-  scrollbar-width: thin;
-}
+
 .sidebar-left app-decisions,
 .sidebar-left app-map,
 .sidebar-left app-oldMap,

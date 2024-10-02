@@ -69,6 +69,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       left: 0.5
     };
   
+    private arrowYBoundary: number = 0;
   
     private innerRadius: number = 0;
     private clusters: Artist[][] = [];
@@ -318,7 +319,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     // Draw the left text (initially invisible)
     const leftText = arrowGroup.append("text")
         .attr("x", -this.contentWidth / 2 + this.contentWidth / 100) // Initial estimate
-        .attr("y", this.contentHeight / 100 * 5.5)
+        .attr("y", this.contentHeight / 100 * 4.2)
         .attr("text-anchor", "center")
         .style("font-weight", "600")
         .style("font-size", "0.85vw")
@@ -328,8 +329,8 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
 
     // Draw the right text (initially invisible)
     const rightText = arrowGroup.append("text")
-        .attr("x", this.contentWidth / 2 - this.contentWidth / 100 * 2) // Initial estimate
-        .attr("y", this.contentHeight / 100 * 5.5)
+        .attr("x", this.contentWidth / 2 - this.contentWidth / 100*2) // Initial estimate
+        .attr("y", this.contentHeight / 100 * 4.2)
         .attr("text-anchor", "center")
         .style("font-weight", "600")
         .style("font-size", "0.85vw")
@@ -347,15 +348,15 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         .style("visibility", "visible"); // Make it visible after adjustment
 
     rightText
-        .attr("x", this.contentWidth / 2 - rightTextWidth / 2 - this.contentWidth / 100)
+        .attr("x", this.contentWidth / 2 - rightTextWidth / 2 - this.contentWidth / 100*2)
         .style("visibility", "visible"); // Make it visible after adjustment
 
     // Adjust the arrow line to fit between the adjusted text positions
     arrowGroup.append("line")
         .attr("x1", -this.contentWidth / 2 + leftTextWidth + this.contentWidth / 100 * 3) // Start right after left text ends
         .attr("x2", this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3) // End right before right text starts
-        .attr("y1", this.contentHeight / 100 * 4.5)
-        .attr("y2", this.contentHeight / 100 * 4.5)
+        .attr("y1", this.contentHeight / 100 * 3.2)
+        .attr("y2", this.contentHeight / 100 * 3.2)
         .attr("stroke", "#2a0052") // Pink color
         .attr("stroke-width", this.contentWidth / 200) // Adjust stroke-width for scaling
         .attr("stroke-dasharray", `${this.contentWidth / 200},${this.contentWidth / 200}`); // Make dash size proportional
@@ -363,12 +364,14 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     // Draw arrowhead adjusted to the new end of the line
     arrowGroup.append("path")
         .attr("d", d3.line()([
-            [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3, this.contentHeight / 100 * 4.5 - this.contentWidth / 200],
-            [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 2, this.contentHeight / 100 * 4.5],
-            [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3, this.contentHeight / 100 * 4.5 + this.contentWidth / 200]
+            [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3, this.contentHeight / 100 * 3.2 - this.contentWidth / 200],
+            [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 2, this.contentHeight / 100 * 3.2],
+            [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3, this.contentHeight / 100 * 3.2 + this.contentWidth / 200]
         ]))
         .attr("fill", "#2a0052") // Pink color
         .classed("arrowhead-path", true); // Add a specific class to the arrowhead
+
+        this.arrowYBoundary = this.contentHeight / 100 * 3.2; // Save the y-boundary
 
 }
 
@@ -2849,14 +2852,18 @@ this.fuse.setCollection(allArtistArray);
 
 
       this.g.selectAll(".cluster")
-        .data(this.clusterNodes)
-        .attr("transform", (d: ClusterNode) => {
-            if (typeof d.x !== 'undefined' && !isNaN(d.x) && typeof d.y !== 'undefined' && !isNaN(d.y)) {
-                return `translate(${d.x}, ${d.y})`;
-            }
-            console.log('NaN detected in ticked function:', d);
-            return `translate(0, ${this.contentHeight / 2})`; // Default positioning if NaN
-        });
+      .data(this.clusterNodes)
+      .attr("transform", (d: ClusterNode) => {
+          if (typeof d.x !== 'undefined' && !isNaN(d.x) && typeof d.y !== 'undefined' && !isNaN(d.y)) {
+              // Check if the cluster is above the boundary and push it down if necessary
+              if ((d.y -  d.outerRadius) < this.arrowYBoundary) {
+                  d.y = this.arrowYBoundary + d.outerRadius; // Push the cluster down below the boundary
+              }
+              return `translate(${d.x}, ${d.y})`;
+          }
+          console.log('NaN detected in ticked function:', d);
+          return `translate(0, ${this.contentHeight / 2})`; // Default positioning if NaN
+      });
   
       // Update positions of artist nodes within clusters
       this.g.selectAll(".artist-node")
