@@ -35,9 +35,8 @@
       </div>
     </div>
     
-    <div class="ai-suggestion-container" *ngIf="selectedNodes.length > 0">
+    <div class="ai-suggestion-container" [ngStyle]="{'opacity': selectedNodes.length > 0 ? '1' : '0'}">
       <div class="ai-title">AI suggestion on connections</div>
-      <div *ngIf="aiLoading" class="ai-loading-spinner"></div>
       <div 
         class="ai-button" 
         *ngIf="!aiLoading"
@@ -47,7 +46,8 @@
       >✧</div>
     </div>
   </div>
-  
+  <div *ngIf="aiLoading" class="ai-loading-spinner"></div>
+
 
   <figure class="matrix-svg-container"></figure>
   <div id="tooltip" class="tooltip" style="display: none;"></div>

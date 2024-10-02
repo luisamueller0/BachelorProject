@@ -249,13 +249,12 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       this.filteredArtists = [];
       
       // Convert the Map to an array and then find the artist
-      const artistInRange = Array.from(this.allSearchbarArtists.values()).find((a) => a.name.toString() === artist.name.toString());
+      const artistInRange = Array.from(this.allArtists.values()).find((a) => a.firstname.toString() + ' ' + a.lastname.toString() === artist.name.toString());
     
       if (artistInRange) {
         this.notInCurrentRange = false;
         this.highlightArtistNode(artist.id.toString());
       } else {
-        this.highlightArtistNode(null);
         this.notInCurrentRange = true;
       }
     }
@@ -310,7 +309,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     // Draw the left text (initially invisible)
     const leftText = arrowGroup.append("text")
         .attr("x", -this.contentWidth / 2 + this.contentWidth / 100) // Initial estimate
-        .attr("y", this.contentHeight / 100 * 6)
+        .attr("y", this.contentHeight / 100 * 5.5)
         .attr("text-anchor", "center")
         .style("font-weight", "600")
         .style("font-size", "0.85vw")
@@ -321,7 +320,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     // Draw the right text (initially invisible)
     const rightText = arrowGroup.append("text")
         .attr("x", this.contentWidth / 2 - this.contentWidth / 100 * 2) // Initial estimate
-        .attr("y", this.contentHeight / 100 * 6)
+        .attr("y", this.contentHeight / 100 * 5.5)
         .attr("text-anchor", "center")
         .style("font-weight", "600")
         .style("font-size", "0.85vw")
@@ -346,8 +345,8 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     arrowGroup.append("line")
         .attr("x1", -this.contentWidth / 2 + leftTextWidth + this.contentWidth / 100 * 3) // Start right after left text ends
         .attr("x2", this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3) // End right before right text starts
-        .attr("y1", this.contentHeight / 100 * 5)
-        .attr("y2", this.contentHeight / 100 * 5)
+        .attr("y1", this.contentHeight / 100 * 4.5)
+        .attr("y2", this.contentHeight / 100 * 4.5)
         .attr("stroke", "#2a0052") // Pink color
         .attr("stroke-width", this.contentWidth / 200) // Adjust stroke-width for scaling
         .attr("stroke-dasharray", `${this.contentWidth / 200},${this.contentWidth / 200}`); // Make dash size proportional
@@ -355,9 +354,9 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     // Draw arrowhead adjusted to the new end of the line
     arrowGroup.append("path")
         .attr("d", d3.line()([
-            [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3, this.contentHeight / 100 * 5 - this.contentWidth / 200],
-            [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 2, this.contentHeight / 100 * 5],
-            [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3, this.contentHeight / 100 * 5 + this.contentWidth / 200]
+            [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3, this.contentHeight / 100 * 4.5 - this.contentWidth / 200],
+            [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 2, this.contentHeight / 100 * 4.5],
+            [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3, this.contentHeight / 100 * 4.5 + this.contentWidth / 200]
         ]))
         .attr("fill", "#2a0052"); // Pink color
 }
