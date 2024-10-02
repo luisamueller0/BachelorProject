@@ -73,11 +73,20 @@ button:active {
   margin-top: 0.1vw;
   margin-bottom: 0.1vw;
   flex-grow:1;
-  max-width: 33%;
+  max-width: 28%;
   display: flex;
-  justify-content: center; /* Center the search bar */}
+  justify-content: center; /* Center the search bar */
+  flex-direction: column; /* Stack elements vertically */
+
+}
 
 
+.input-wrapper {
+  display: flex;
+  align-items: center; /* Align input and cross button horizontally */
+  position: relative;
+  width: 100%;
+}
 .ai-title {
   font-size: 0.75vw;   /* Same size as h1 */
   font-weight: 600;
@@ -229,7 +238,15 @@ button:active {
   color: red;
   font-weight: 700;
   font-size: 0.6vw;
-margin-bottom: 0.2vh;}
+  margin-top: 0.2vh;
+  position: absolute;
+  top: 100%; /* Position it directly below the input-wrapper */
+  left: 0;
+  width: 100%; /* Make it span the width of the search bar */
+  z-index: 1000; /* Ensure it's above other content */
+  background-color: white; /* To prevent overlapping text from underneath */
+  padding: 0.2vh; /* Add padding for better readability */
+}
 
 /* Styles for dropdowns and search input */
 .dropdown,
@@ -238,11 +255,36 @@ margin-bottom: 0.2vh;}
   border-radius: 4px;
   border: 1px solid #ccc;
   background-color: #fff;
+  padding-right: 2vw; /* Add padding to the right to make room for the clear button */
+
   margin-bottom: 1vh;
   cursor: pointer;
   outline: none;
   width: 100%;
 }
+
+
+
+
+.clear-button {
+  position: absolute; /* Position it relative to the input-wrapper */
+  right: 0.2vw; /* Adjust distance from the right */
+  top: 50%; /* Center vertically */
+  transform: translateY(-67%); /* Correct vertical centering */
+  background: none;
+  font-size: 1.25vw;  /* Size for the "X" */
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  color: #e5aeff;
+}
+
+.clear-button:hover {
+  background:none;
+  color: #7e24c7; /* Add hover color for the clear button */
+}
+
 
 .dropdown:hover,
 #artistSearch:hover {

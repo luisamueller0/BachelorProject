@@ -17,23 +17,36 @@
     
     <!-- Add the search bar container -->
     <div class="search-bar-container">
-      <input
-        type="text"
-        id="artistSearch"
-        [(ngModel)]="searchQuery"
-        (input)="onArtistSearch()"
-        placeholder="Search for an artist..."
-        class="artist-search"
-      />
+      <div class="input-wrapper">
+        <input
+          type="text"
+          id="artistSearch"
+          [(ngModel)]="searchQuery"
+          (input)="onArtistSearch()"
+          placeholder="Search for an artist..."
+          class="artist-search"
+        />
+        <!-- Cross (clear) button -->
+        <button 
+          *ngIf="searchQuery" 
+          class="clear-button" 
+          (click)="clearSearch()"
+          aria-label="Clear search input">
+          &times;
+        </button>
+      </div>
+      
       <ul *ngIf="filteredArtists.length > 0" class="autocomplete-list">
         <li *ngFor="let artist of filteredArtists" (click)="selectArtist(artist)">
           {{ artist.name }}
         </li>
       </ul>
+    
       <div *ngIf="notInCurrentRange && searchedArtist !== null" class="info-text">
         Artist you are searching for is currently not displayed in the cluster. Change the range to {{ searchedArtist.artworks }}.
       </div>
     </div>
+    
     
     <div class="ai-suggestion-container" [ngStyle]="{'opacity': selectedNodes.length > 0 ? '1' : '0'}">
       <div class="ai-title">AI suggestion on connections</div>

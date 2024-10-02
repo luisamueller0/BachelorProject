@@ -227,6 +227,13 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     }
 
 
+    clearSearch() {
+      this.searchQuery = '';
+      this.filteredArtists = [];
+      this.notInCurrentRange = false;
+      this.searchedArtist = null;
+    }
+    
     
     onArtistSearch() {
       if (this.searchQuery.trim() === '') {
@@ -238,8 +245,10 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     
       // Perform fuzzy search
       const results = this.fuse.search(this.searchQuery);
-      this.filteredArtists = results.map((result) => result.item);
-    
+      this.filteredArtists = results
+      .map((result) => result.item)
+      .sort((a, b) => b.artworks - a.artworks);  // Sorting by artworks
+      
       console.log('Filtered Artists:', this.filteredArtists); // Check if results are populated
     }
     
@@ -358,7 +367,9 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
             [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 2, this.contentHeight / 100 * 4.5],
             [this.contentWidth / 2 - rightTextWidth - this.contentWidth / 100 * 3, this.contentHeight / 100 * 4.5 + this.contentWidth / 200]
         ]))
-        .attr("fill", "#2a0052"); // Pink color
+        .attr("fill", "#2a0052") // Pink color
+        .classed("arrowhead-path", true); // Add a specific class to the arrowhead
+
 }
 
 
@@ -1288,10 +1299,7 @@ private updateFuseCollection(allArtists: Artist[]): void {
       this.selectionService.selectArtists(null);
       this.selectionService.selectAllArtists(this.allArtists);
        // Update the searchbar artists using the updated artist array
-      this.allSearchbarArtists = this.artistService.turnIntoMap(allArtists);
 
-      // Update Fuse.js collection
-      this.updateFuseCollection(allArtists);
       
      /*  const biggestCluster = this.clusters.reduce((max, cluster) => cluster.length > max.length ? cluster : max, this.clusters[0]);
       const biggestClusterId = this.clusters.findIndex(cluster => cluster === biggestCluster);
@@ -1991,7 +1999,7 @@ if(this.modernMap){
             )
             .style('opacity', 0.05);
     
-        this.g.selectAll(`path`)
+            this.g.selectAll(`path:not(.arrowhead-path)`)
             .style('opacity', unconnectedOpacity);
     
         // Set opacity to 1 for paths in the selected cluster
