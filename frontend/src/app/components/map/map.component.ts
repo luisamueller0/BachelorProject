@@ -147,10 +147,10 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
           .append('path')
           .attr('d', path)
           .attr('fill', (d: any) => {
-             console.log('try', d.properties.NAME)
+          //   console.log('try', d.properties.NAME)
              if(!this.isModernMap){
-                console.log('old', this.artistService.getOldCountrycode(d.properties.NAME))
-                console.log('old', this.artistService.getOldCountryColor(this.artistService.getOldCountrycode(d.properties.NAME), 1))
+                //console.log('old', this.artistService.getOldCountrycode(d.properties.NAME))
+                //console.log('old', this.artistService.getOldCountryColor(this.artistService.getOldCountrycode(d.properties.NAME), 1))
               }
            return  this.isModernMap ? this.artistService.getCountryColor(this.artistService.getCountrycode(d.properties.name), 1):
           this.artistService.getOldCountryColor(this.artistService.getOldCountrycode(d.properties.NAME), 1)})
@@ -200,7 +200,7 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
         }
         else{
           const selectedOldCountries = this.selectionService.getOldCountries();
-          console.log('selectedOldCountries', selectedOldCountries)
+          //console.log('selectedOldCountries', selectedOldCountries)
           this.updateOldCountryColors(selectedOldCountries);
         
         }

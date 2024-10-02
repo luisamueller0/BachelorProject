@@ -337,13 +337,13 @@ private accumulateTechniqueDistribution(artists: Artist[]): Map<string, number> 
 
       .attr("fill", 'grey')
       .on('mouseover', (event:any, d:any) => {
-        console.log(d)
+        //console.log(d)
         if (d.data) {
             showTooltip(event, d.data);
         }
     })
       .on('mousemove',  (event:any, d:any) => {
-        console.log(d)
+        //console.log(d)
         if (d.data) {
             showTooltip(event, d.data);
         }

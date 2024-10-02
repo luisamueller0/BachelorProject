@@ -116,7 +116,7 @@ const node = this.g.selectAll('circle')
   .attr('r', (d: any) => d.size*2) // Node size proportional to cluster size
   .attr('fill', '#69b3a2')
   .on('click', (event:any, d:any) => {
-    console.log('Node clicked:', d.id);
+    //console.log('Node clicked:', d.id);
   });
 
 

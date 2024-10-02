@@ -71,7 +71,7 @@ switchSelectModern(modern:boolean){
     this.selectedExhibitions.next(exhibitions);
   }
   selectArtists(artists:Artist[]|null) {
-    console.log('selected artists', artists?.length)
+    //console.log('selected artists', artists?.length)
     this.selectedArtists.next(artists);
   }
   selectAllClusters(clusters:Artist[][]|null){
@@ -94,11 +94,9 @@ switchSelectModern(modern:boolean){
 
 
   selectCountries(countries:string[]){
-    console.log('HALLO:', countries);
     this.selectedCountries.next(countries);
   }
   selectOldCountries(countries: string[]) {
-    console.log('HALLO OLD:', countries);
     this.selectedOldCountries.next(countries);
   }
   

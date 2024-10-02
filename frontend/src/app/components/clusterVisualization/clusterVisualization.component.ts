@@ -251,7 +251,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
       .map((result) => result.item)
       .sort((a, b) => b.artworks - a.artworks);  // Sorting by artworks
       
-      console.log('Filtered Artists:', this.filteredArtists); // Check if results are populated
+      //console.log('Filtered Artists:', this.filteredArtists); // Check if results are populated
     }
     
     selectArtist(artist: { id: number; name: string; artworks: number }) {
@@ -310,6 +310,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
             leftLabel = 'Left';
             rightLabel = 'Right';
     }
+if(!this.g) return;
 
     // Select the existing arrow group in the fixedElements group
     const arrowGroup = this.g.select(".ranking-arrow-group");
@@ -560,7 +561,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         }
 
         const clusterId = this.artistClusterMap.get(artistId)?.clusterId;
-        console.log(clusterId);
+        //console.log(clusterId);
 
         if (clusterId !== undefined) {
             const width = 0.07 * this.clusterNodes[clusterId].innerRadius / 100;
@@ -591,7 +592,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
   selectedNodeIds.push(nodeId);
         }
         if (this.previouslyConnectedNodeIds && this.previouslyConnectedNodeIds.size > 0) {
-          console.log('node ids', this.previouslyConnectedNodeIds);
+          //console.log('node ids', this.previouslyConnectedNodeIds);
           
           // Now handle the case for previously connected nodes
           this.g.selectAll('.artist-node')
@@ -604,7 +605,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         // Reset all elements to full opacity
         if (this.selectedClusterNode) {
           
-            console.log('selected cluster', this.selectedClusterNode);
+            //console.log('selected cluster', this.selectedClusterNode);
 
             // Set full opacity for the selected cluster and reset opacity for other clusters
             this.svg.selectAll('.cluster')
@@ -1199,7 +1200,7 @@ const category = this.decisionService.getDecisionSunburst();
     }
 
     // Reduce opacity of all clusters
-    console.log('update')
+   // console.log('update')
     this.g.selectAll('.cluster').style('opacity', '0.2');
     // Set opacity of selected cluster to 1
     this.g.selectAll(`.cluster-${clusterNode.clusterId}`).style('opacity', '1');
@@ -1414,7 +1415,7 @@ private updateFuseCollection(allArtists: Artist[]): void {
 
     
     private handleMultiNodeSelection(artistNode: ArtistNode, circle: SVGCircleElement, filter: any) {
-      console.log('clicked', this.selectedNodes);
+     // console.log('clicked', this.selectedNodes);
   
       // Access the bound data for the circle
       const clusterNode = this.artistClusterMap.get(artistNode.id);
@@ -1425,7 +1426,6 @@ private updateFuseCollection(allArtists: Artist[]): void {
           const firstSelectedNode = d3.select(firstSelectedCircle).datum() as ArtistNode;
   
           if (clusterNode?.clusterId !== firstSelectedNode.artist.cluster) {
-            console.log('be gone')
             this.selectedEdges.clear();
             this.previouslyConnectedNodeIds.clear();
             this.resetMultiNodeSelection();
@@ -1446,7 +1446,7 @@ private updateFuseCollection(allArtists: Artist[]): void {
       const nodeIndex = this.selectedNodes.findIndex(node => node[0] === circle);
   
       if (nodeIndex !== -1) {
-          console.log('Node is already selected, removing:', artistNode.id);
+        //  console.log('Node is already selected, removing:', artistNode.id);
 
           
   
@@ -1721,7 +1721,7 @@ private updateFuseCollection(allArtists: Artist[]): void {
           }
       });
 
-      console.log('connected ids', this.connectedNodeIds)
+      //console.log('connected ids', this.connectedNodeIds)
 
       
           const clusterId = this.artistClusterMap.get(artistNode.id)?.clusterId;
@@ -1798,7 +1798,7 @@ if (newEdges.length > 0) {
   const edgeColorScale = this.createEdgeColorScale(artistColor, minArtworks, maxArtworks);
 
 
-  console.log('selected', this.selectedEdges)
+ // console.log('selected', this.selectedEdges)
 
 
  
@@ -2384,7 +2384,7 @@ this.fuse.setCollection(allArtistArray);
         .subscribe(data => {
       
           this.clusters = data[0];
-          console.log('hallo', this.clusters[0][0])
+          //console.log('hallo', this.clusters[0][0])
           this.decisionService.changeInterCommunityEdges(data[2])
           this.decisionService.changeClusters(data[0]);
   
@@ -2434,7 +2434,7 @@ this.fuse.setCollection(allArtistArray);
       this.saveOldCountryCentroidsOnInitialization();
       const category = this.decisionService.getDecisionSunburst();  
       this.selectionService.selectCountries(this.allCountriesByCategory[category]);
-      console.log('all old', this.allOldCountriesByCategory)
+     // console.log('all old', this.allOldCountriesByCategory)
       this.selectionService.selectOldCountries(this.allOldCountriesByCategory[category]);
  
     }
@@ -2458,7 +2458,7 @@ this.fuse.setCollection(allArtistArray);
             // Generate country centroids for this category and cluster
             const countryCentroids = this.createOldCountryCentroids(clusterNode.artists, category, clusterNode);
     
-            console.log('country centroids', countryCentroids)
+            //console.log('country centroids', countryCentroids)
             // Ensure the category is initialized in countryCentroids object
             if (!this.countryCentroids[category]) {
               this.countryCentroids[category] = {};
@@ -2749,7 +2749,7 @@ this.fuse.setCollection(allArtistArray);
               const compareNode = d3.select(circleElement).datum() as ArtistNode;
               const clusterNode = this.artistClusterMap.get(compareNode.id);
 
-              console.log('cluster', clusterNode)
+              //console.log('cluster', clusterNode)
       
               // If the node belongs to a cluster, update the selection
               if (clusterNode) {
@@ -2885,7 +2885,7 @@ this.fuse.setCollection(allArtistArray);
     
     private applyForceSimulation(): void {
       const height = this.contentHeight;
-      console.log('clusters', this.clusterNodes)
+     // console.log('clusters', this.clusterNodes)
       
 
      
@@ -2900,7 +2900,7 @@ this.fuse.setCollection(allArtistArray);
         if (isNaN(node.x) || isNaN(node.y)) {
             node.x = 0;
             node.y=0;
-            console.log('NaN detected in applyForceSimulation initialization:', node);
+           // console.log('NaN detected in applyForceSimulation initialization:', node);
         }
     });
     
@@ -3103,7 +3103,7 @@ this.fuse.setCollection(allArtistArray);
     const avgDateTimestamp = metrics.count > 0 ? metrics.totalAvgDate / metrics.count : new Date(1910, 0, 1).getTime();
     const avgDate = new Date(avgDateTimestamp); // Convert back to Date object
 
-    console.log('clusterindex', clusterIndex);
+   // console.log('clusterindex', clusterIndex);
   
     // Create the clusterNode with the calculated values
     const clusterNode: ClusterNode = {
@@ -3330,7 +3330,7 @@ const joinedNames = formattedNames.length > 1
             response => {
                 this.aiResponse = response.content;  // Store the response
                 this.aiLoading = false;
-                console.log("AI Response:", this.aiResponse);
+               // console.log("AI Response:", this.aiResponse);
             },
             error => {
               this.aiLoading = true;
@@ -3781,7 +3781,7 @@ if (!centralNode) {
   
     this.artistNodes[cluster.clusterId] = artistNodes;
 
-    console.log('artistnodes', this.artistNodes)
+    //console.log('artistnodes', this.artistNodes)
     this.simulations[cluster.clusterId] = simulation;
   
     switch (value) {

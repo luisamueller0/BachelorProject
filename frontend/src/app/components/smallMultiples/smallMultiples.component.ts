@@ -861,7 +861,7 @@ private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks
         this.decisionService.changeClusters(data[0]);
 
         this.decisionService.changeInterCommunityEdges(data[2])
-        console.log(data[2])
+       // console.log(data[2])
 
         
 

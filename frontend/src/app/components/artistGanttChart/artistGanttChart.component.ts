@@ -136,9 +136,9 @@ export class ArtistGanttChartComponent implements OnInit, OnChanges, OnDestroy {
 
     const containerHeight = element.clientHeight;
     if (height > containerHeight) {
-        console.log('SVG height exceeds container height, scrollbar will appear');
+        //console.log('SVG height exceeds container height, scrollbar will appear');
     } else {
-        console.log('SVG fits within the container height, no scrollbar needed');
+        //console.log('SVG fits within the container height, no scrollbar needed');
         margin.right = this.margin.left * window.innerWidth / 100;
     }
 
