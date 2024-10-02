@@ -57,9 +57,10 @@
         [ngStyle]="{'visibility': selectedNodes.length > 0 ? 'visible' : 'hidden'}"
         [style.cursor]="'pointer'"
       >✧</div>
+      <div *ngIf="aiLoading" class="ai-loading-spinner"></div>
+
     </div>
   </div>
-  <div *ngIf="aiLoading" class="ai-loading-spinner"></div>
 
 
   <figure class="matrix-svg-container"></figure>
