@@ -164,13 +164,15 @@ public europeanRegions = {
     "Eastern Europe": ["BY", "BG", "CZ", "HU", "PL", "MD", "RO", "RU", "SK", "UA"],
     "Southern Europe": ["BA", "HR", "GI", "GR", "IT", "ME", "PT", "RS", "SI", "ES", "XK","MT", "MK"],
  "Western Europe": ["AT", "BE", "FR", "DE", "LU", "NL", "CH"],
- "Others": ["ID", "US", "AU", "CA", "GE", "DZ", "MX", "AZ", "EE", "AR", "UY", "CU", "TN", "EG", "TR", "VI", "DO", 
-       "JP", "MQ", "IN", "MU", "CL", "ZA", "NZ", "KH", "VE", "GT", "SV", "PY", "LK", "EC", "BR", "SG", "BL", 
-       "PE", "TH", "PF", "AM", "IL", "MC", "CN", "UZ", "KZ", "MA", "BO", "VN", "NA", "JO", "IR", "JM", "SA", "CD", "CW","SY","GY"],
+ "Others": ['AM', 'AR', 'AU', 'AZ', 'BL', 'BO', 'BR', 'CA', 'CD', 'CL', 'CN', 'CU', 'CW', 'DO', 
+  'DZ', 'EC', 'EE', 'EG', 'GE', 'GT', 'GY', 'ID', 'IL', 'IN', 'IR', 'JM', 'JO', 'JP', 'KH', 'KZ',
+   'LK', 'MA', 'MC', 'MQ', 'MU', 'MX', 'NA', 'NZ', 'PE', 'PF', 'PY', 'SA', 'SG', 'SV', 'SY', 'TH', 
+   'TN', 'TR', 'US', 'UY', 'UZ', 'VE', 'VI', 'VN', 'ZA']
+ ,
   "\\N" :["\\N"]
 };
 
-/* public europeanRegions = {
+/* public europeanRegions = {Z
 
   "North Europe": ["DK", "EE", "FI", "IE", "LV", "LT", "NO", "SE", "GB"], // Denmark, Estonia, Finland, Ireland, Latvia, Lithuania, Norway, Sweden, United Kingdom
   "Eastern Europe": ["BY", "BG", "UA", "RU", "MD", "RO"], // Belarus, Bulgaria, Ukraine, Russia, Moldova, Romania
@@ -315,7 +317,8 @@ public pinkColorPalette: string[] = [
 
 public greenColorPalette:string[]=
 [
-  "#7EB83D",
+  "#6EA133",
+
   "#92C755",
 
   "#AEE371",
@@ -627,21 +630,23 @@ public oldCountryMap: { [key: string]: string } = {
 }; */
 
 public oldEuropeanRegions = {
-  "North Europe": ["IS", "SN", "DK","UK"],
-  "Eastern Europe": ["RO",  "RE", "BG"],
-  "Southern Europe": ["ES", "PT", "IT", "GR", "MT", "OT","RS", "MO", "BH"],
-  "Western Europe": ["LU", "BE", "NL", "FR"],
+  "North Europe": ["DK",  "SN" ,"UK"],
+  "Eastern Europe": [ "BG","RO",  "RE"],
+  "Southern Europe": ["BH", ,"GR", "IT","MO", "PT", "MT","RS","ES","OT"],
+  "Western Europe": ["BE", "FR","LU",  "NL" ],
   "Central Europe": ["AH", "DE", "CH"],
   "Others": [
-        "AF", "AG", "AN", "AR", "AU", "BA", "BO", "BR", "BRJ", "CA", "CC", "CEY", "CL", "CR", "CU", "CZ", "DO",
-        "DZ", "EC", "EG", "HK", "ID", "IE", "IJ", "IN", "JP", "KH", "KH", "LU", "MX", "NEI", "NL", "NZ", "PE", "PY",
-        "QLD", "RAT", "SA", "SE", "SG", "SV", "TN", "TV", "UY", "VIC", "WA", "ZA","US", "NSW", "GT", "JM", "MA", 
-        "MC", "MU", "MY", "PH", "PR", "TH", "TR", "VN", "CD", "CW", "SY", "GY",
-        "M?ori","ME","FRI","VE","GI", "NA","PF","PER", "MCH","NZ", "JUK", "CBE", "VI", "MFR", "BFR"
+    'AF', 'AG', 'AN', 'AR', 'AU', 'BA', 'BFR', 'BO', 'BR', 'BRJ', 'CA', 'CBE', 'CC', 'CD', 'CEY', 'CL',
+     'CR', 'CU', 'CW',  'CZ', 'DO', 'DZ', 'EC', 'EG', 'FRI', 'GI', 'GT', 'GY', 'HK', 'ID', 'IE', 'IJ', 
+     'IN', 'JM', 'JP', 'JUK', 'KH', 'KH',  'LU', 'M?ori', 'MA', 'MC', 'MCH', 'ME', 'MFR', 'MU', 'MX', 
+     'MY', 'NA', 'NEI', 'NL', 'NSW', 'NZ', 'NZ', 'PE', 'PER',  'PF', 'PH', 'PR', 'PY', 'QLD', 'RAT', 
+     'SA', 'SE', 'SG', 'SV', 'SY', 'TH', 'TN', 'TR', 'TV', 'US', 'UY', 'VE', 'VI',  'VIC', 'VN', 'WA', 'ZA'
+
     ],
     "\\N": ["\\N"]
 
 };
+
 
 
 
@@ -697,11 +702,11 @@ public getOldCountryColor(countryName: string | undefined, opacity: number = 1):
 }
 
 
-//4
+//3
 public cyanOldColorPalette: string[] = [
 
 
-  "#28918b",
+ // "#28918b",
   "#41a9a3",
   "#59c2bb",
   "#70dcd4",
