@@ -661,7 +661,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
         return;
       if (country) {
           // Highlight paths matching the hovered country
-          this.svg.selectAll('path')
+          this.svg.selectAll('path:not(.arrowhead-path)')
           .style("opacity", (d: any) => {
             if (!d || !d.country) return 0.2; // Check if 'd' and 'd.country' exist
             return d.country === country ? 1 : 0.2;
@@ -682,7 +682,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
               );
       } else {
           // Reset all elements to full opacity
-          this.svg.selectAll('path, .artist-node, .artist-edge').style("opacity", 1);
+          this.svg.selectAll('path:not(.arrowhead-path), .artist-node, .artist-edge').style("opacity", 1);
       }
   }
   
@@ -1145,7 +1145,7 @@ const category = this.decisionService.getDecisionSunburst();
     )
     .style('opacity', 1);
 
-        this.g.selectAll('path').style('opacity', '1');
+        this.g.selectAll('path:not(.arrowhead-path)').style('opacity', '1');
         return;
     }
 
