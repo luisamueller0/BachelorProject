@@ -386,7 +386,11 @@ xAxis.selectAll("text")
     .on('mouseover', (event:any, technique:any) => {
       const data = combinedData.find(d => d.technique === technique);
       if (data) {
+        
+          const isGrey = d3.select(event.target).style("opacity") === "0.4"; // or check color if you prefer
+         if(!isGrey){
           showTooltip(event, data);
+         }
       }
   })
   .on('mouseout', hideTooltip);
