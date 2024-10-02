@@ -9,7 +9,7 @@
   </div>
   
   <div class="dropdown-group">
-    <label for="dropdown" class="dropdown-label">Select country category(✧)</label>
+    <label for="dropdown" class="dropdown-label">Select country category ✧</label>
     <select class="dropdown" [(ngModel)]="selectedSunburst" (change)="onSunburstChange($event)">
       <option *ngFor="let option of SunburstOptions" [value]="option.value">{{ option.label }}</option>
     </select>

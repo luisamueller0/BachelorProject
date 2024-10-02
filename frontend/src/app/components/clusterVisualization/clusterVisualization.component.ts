@@ -32,6 +32,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
 
     @ViewChild('matrix', { static: true }) private chartContainer!: ElementRef;
     aiResponse: string = ''; // Store the AI response
+    aiSmallTitle: string = ''; // Store the AI small title
 
     //search bar
     public searchedArtist: SearchedArtist | null = null;
@@ -3212,26 +3213,40 @@ const joinedNames = formattedNames.length > 1
       switch (category) {
           case 'nationality':
               const nationalityInfo = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname} (Nationality: ${this.artistService.countryMap[artist.nationality]})`).join(", ");
-              prompt = `In 60 words, detail any known meetings, collaborations, or influences between the following artists: ${nationalityInfo}. Include specific instances where their national backgrounds might have led to shared exhibitions, joint projects, or mutual influences.`;
-              this.aiTitle = `AI Suggestion:<br>Connections among artists ${joinedNames} based on their nationalities`;
+              prompt = `In 60 words, detail any known meetings, collaborations, or influences between the following artists: ${nationalityInfo}. 
+              Include specific instances where their national backgrounds might have led to shared exhibitions, joint projects, or mutual influences.
+              If no direct connections exist, explore similarities in their artistic movements, styles, or influences. Only use the artists' last names in your answer.`;
+             
+              this.aiTitle = `AI Insight: You chose the category "nationality" and the artists ${joinedNames}`
+              this.aiSmallTitle = `How Nationality Shaped Their Connections`;
               break;
   
           case 'birthcountry':
               const birthCountryInfo = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname} (Born in: ${this.modernMap ? this.artistService.countryMap[artist.birthcountry] : this.artistService.oldCountryMap[artist.oldBirthCountry]})`).join(", ");
-              prompt = `In 60 words, discuss how their early life stages shaped the connections and collaborations among these artists: ${birthCountryInfo}. Note any shared themes, styles, or early artistic interactions.`;
-              this.aiTitle = `AI Suggestion:<br>Connections among artists ${joinedNames} in their early life stages`;
+              prompt = `"In 60 words, describe any meetings, collaborations, or influences among the following artists: ${birthCountryInfo}. 
+              Focus on their early life and artistic careers. Highlight specific instances contributing to shared exhibitions, joint projects, or mutual influences. 
+              If no direct connections exist, explore similarities in their artistic movements, styles, or early influences. Only use the artists' last names in your answer.`;
+              this.aiTitle = `AI Insight: You chose the category "Country of Birth" and the artists ${joinedNames}`
+              this.aiSmallTitle = `Artistic Connections in Their Early Years`;
+
               break;
   
           case 'deathcountry':
               const deathCountryInfo = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname} (Died in: ${this.modernMap ? this.artistService.countryMap[artist.deathcountry] : this.artistService.oldCountryMap[artist.oldDeathCountry]})`).join(", ");
-              prompt = `In 60 words, discuss how their final life stages shaped the connections and collaborations among these artists: ${deathCountryInfo}. Highlight any common themes, influences, or late-life partnerships.`;
-              this.aiTitle = `AI Suggestion:<br>Connections among artists ${joinedNames} in their final life stages`;
+              prompt = `"In 60 words, describe any meetings, collaborations, or influences among the following artists: ${deathCountryInfo}. 
+              Focus on their later and final years in life and their artistic careers. Highlight specific instances contributing to shared exhibitions, joint projects, or mutual influences. 
+              If no direct connections exist, explore similarities in their artistic movements, styles, or  influences during this period. Only use the artists' last names in your answer.`;              
+              this.aiTitle = `AI Insight: You chose the category "Country of Death" and the artists ${joinedNames}`
+              this.aiSmallTitle = `Artistic Connections in Their Final Years`;
               break;
   
           case 'mostexhibited':
-              const exhibitedInfo = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname} (Most exhibited in: ${this.modernMap ? this.artistService.countryMap[artist.most_exhibited_in] : this.artistService.oldCountryMap[artist.mostExhibitedInOldCountry]})`).join(", ");
-              prompt = `In 60 words, examine the influence of exhibition history on the connections among these artists: ${exhibitedInfo} and if they have influenced each other or collaborated in any way.`;
-              this.aiTitle = `AI Suggestion:<br>Connections among artists ${joinedNames} through their exhibition history`;
+              const exhibitedInfo = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname} (Most exhibited in: ${this.modernMap ? this.artistService.countryMap[artist.most_exhibited_in] : this.artistService.oldCountryMap[artist.mostExhibitedInOldCountry]})`).join(", "); 
+              prompt = `In 60 words, analyze why the following artists were most exhibited in these countries: ${exhibitedInfo}. 
+              Focus on the reasons for their prominence in these regions, similarities among the artists, and any known group exhibitions or collaborative projects that may have occurred. 
+              Highlight how their artistic styles or backgrounds contributed to their popularity in these locations. Only use the artists' last names in your answer.`;
+              this.aiTitle = `AI Insight: You chose the category "Most Exhibited Country" and the artists ${joinedNames}`
+              this.aiSmallTitle=`Their Prominence in Their Most Exhibited Countries Explained`;
               break;
   
           default:
@@ -3243,30 +3258,63 @@ const joinedNames = formattedNames.length > 1
     // Only one artist selected
   } else if (this.selectedNodes.length === 1) {
     const selectedArtist = selectedArtists[0];
+
+    // Extract nationality, birthcountry, deathcountry, and mostexhibited outside the switch
     const nationality = this.artistService.countryMap[selectedArtist.nationality];
-    const birthcountry = this.modernMap ? this.artistService.countryMap[selectedArtist.birthcountry] : this.artistService.oldCountryMap[selectedArtist.oldBirthCountry];
-    const deathcountry = this.modernMap ? this.artistService.countryMap[selectedArtist.deathcountry] : this.artistService.oldCountryMap[selectedArtist.oldDeathCountry];
-    const mostexhibited = this.modernMap ? this.artistService.countryMap[selectedArtist.most_exhibited_in] : this.artistService.oldCountryMap[selectedArtist.mostExhibitedInOldCountry];
+    const birthcountry = this.modernMap 
+        ? this.artistService.countryMap[selectedArtist.birthcountry] 
+        : this.artistService.oldCountryMap[selectedArtist.oldBirthCountry];
+    const deathcountry = this.modernMap 
+        ? this.artistService.countryMap[selectedArtist.deathcountry] 
+        : this.artistService.oldCountryMap[selectedArtist.oldDeathCountry];
+    const mostexhibited = this.modernMap 
+        ? this.artistService.countryMap[selectedArtist.most_exhibited_in] 
+        : this.artistService.oldCountryMap[selectedArtist.mostExhibitedInOldCountry];
+
+    const clusterNode = this.artistClusterMap.get(selectedArtist.id);
+
+    let joinedNames = '';
+    
+    if (clusterNode) {
+        const artists = this.clusters[clusterNode.clusterId];
+        
+        // Format artist names with quotes and add "or" before the last name
+        const formattedNames = artists.map(name => `"${name.firstname} ${name.lastname}"`);
+        joinedNames = formattedNames.length > 1 
+            ? formattedNames.slice(0, -1).join(", ") + " or " + formattedNames[formattedNames.length - 1]
+            : formattedNames[0];
+    }
 
     switch (category) {
         case 'nationality':
-            prompt = `In 60 words, describe how ${artistNames}'s nationality (${nationality}) shaped their connections with other artists. Highlight key influences and similarities.`;
-            this.aiTitle = `AI Suggestion: Summary of the life of ${artistNames}`;
+            prompt = `In 60 words, explore how ${artistNames}'s nationality (${nationality}) influenced their artistic journey and connections with other artists such as ${joinedNames}. 
+            Focus on how cultural background and national identity shaped key collaborations and stylistic influences. Only use the artists' last names in your answer.`;
+            this.aiTitle = `AI Insight: You chose the category "Nationality" and the artist ${artistNames}`;
+            this.aiSmallTitle = `The Impact of Their Nationality (${nationality}) on Their Art and Collaborations`;
             break;
 
         case 'birthcountry':
-            prompt = `In 60 words, discuss how ${artistNames}'s early years in ${birthcountry} shaped their connections with other artists. Highlight key influences and similarities.`;
-            this.aiTitle = `AI Suggestion: Overview of the early life stages of ${artistNames}`;
+            prompt = `In 60 words, examine how growing up in ${birthcountry} shaped ${artistNames}'s early artistic development and relationships with other artists such as ${joinedNames}. 
+            Highlight early influences, movements, or regional connections that shaped their style. Only use the artists' last names in your answer.`;
+            this.aiTitle = `AI Insight: You chose the category "Country of Birth" and the artist ${artistNames}`;
+            this.aiSmallTitle = `Impact of Their Birth Country (${birthcountry}) on Their Early Career and Connections`;
+
             break;
 
         case 'deathcountry':
-            prompt = `In 60 words, discuss how ${artistNames}'s later years in ${deathcountry} influenced their final artistic connections and styles and shaped their connections with other artists. Highlight key influences and similarities.`;
-            this.aiTitle = `AI Suggestion: Overview of the final life stages of ${artistNames}`;
+            prompt = `In 60 words, analyze how ${artistNames}'s later years in ${deathcountry} influenced their final works and connections with artists such as ${joinedNames}. 
+            Explore any late-career collaborations or influences during this period. Only use the artists' last names in your answer.`;
+            this.aiTitle = `AI Insight: You chose the category "Country of Death" and the artist ${artistNames}`;
+            this.aiSmallTitle = `Impact of Their Death Country (${deathcountry}) on Their Late Career and Connections`;
+
             break;
 
         case 'mostexhibited':
-            prompt = `In 60 words, analyze why ${artistNames}'s artworks were most exhibited in ${mostexhibited} and how other artists influenced this. Highlight the artistic connections that led to this exhibition focus.`;
-            this.aiTitle = `AI Suggestion: Exhibition journey of ${artistNames}`;
+            prompt = `In 60 words, discuss why ${artistNames}'s works were most exhibited in ${mostexhibited}, and how connections with other artists, including ${joinedNames}, may have contributed to this focus. 
+            Explore key exhibitions, collaborations, or regional influences. Only use the artists' last names in your answer.`;
+            this.aiTitle = `AI Insight: You chose the category "Most Exhibited Country" and the artist ${artistNames}`;
+            this.aiSmallTitle = `Why Their Art Was Most Exhibited in ${mostexhibited}`;
+
             break;
 
         default:
@@ -3274,6 +3322,7 @@ const joinedNames = formattedNames.length > 1
             break;
     }
 }
+
 
     // Call AI service to generate response
     if (prompt) {
