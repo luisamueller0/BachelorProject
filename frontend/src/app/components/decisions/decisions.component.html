@@ -1,25 +1,6 @@
 <!-- <h1>Possible user changes:</h1> -->
 <div class="dropdown-container">
-  <!-- <i class="fa fa-info-circle" style="font-size:24px"></i>-->
-  <div class="dropdown-group">
-    <label for="artistSearch" class="dropdown-label">Search for an artist</label>
-    <input
-      type="text"
-      id="artistSearch"
-      [(ngModel)]="searchQuery"
-      (input)="onArtistSearch()"
-      placeholder="Type artist name..."
-      class="dropdown"
-    />
-    <ul *ngIf="filteredArtists.length > 0" class="autocomplete-list">
-      <li *ngFor="let artist of filteredArtists" (click)="selectArtist(artist)">
-        {{ artist.name }}
-      </li>
-    </ul>
-    <div *ngIf="notInCurrentRange && searchedArtist !== null" class="info-text">
-      Artist you are searching for is currently not displayed in the cluster. Change the range to {{ searchedArtist.artworks }}.
-    </div>
-  </div>
+
   <div class="dropdown-group">
     <label for="dropdown" class="dropdown-label">Select ranking category</label>
     <select class="dropdown" [(ngModel)]="selectRanking" (change)="onRankingChange($event)">
@@ -100,8 +81,8 @@
         </ng-template>
       </div>
     </div>
-    <div *ngIf="isLoadingK" class="green-label">Clustering artists... Please wait while we cluster the artists based on the selected criteria.</div>
-    <div *ngIf="showK" class="info-text">Please select the number of clusters for {{ numberOfArtists }} artists before updating the visualization .</div> <!-- before updating the visualization -->
+    <div *ngIf="isLoadingK" class="green-label">Clustering artists... Please wait while we cluster the artists.</div>
+    <div *ngIf="showK" class="info-text">Please select the number of clusters for {{ numberOfArtists }} artists.</div> <!-- before updating the visualization -->
     <div *ngIf="kChanged" class="green-label">Click the checkbox on the right to apply the changes.</div>
   </div>
 </div>
