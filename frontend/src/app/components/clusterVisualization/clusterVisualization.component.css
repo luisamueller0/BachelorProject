@@ -47,6 +47,7 @@ button:active {
   width: 100%;
   position: relative;
   align-content:flex-start;
+  margin-bottom: -1vw;
 }
 .title {
   margin: 0;
