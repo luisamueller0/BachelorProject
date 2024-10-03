@@ -632,7 +632,7 @@ public oldCountryMap: { [key: string]: string } = {
 public oldEuropeanRegions = {
   "North Europe": ["DK",  "SN" ,"UK"],
   "Eastern Europe": [ "BG","RE","RO" ],
-  "Southern Europe": ["BH", ,"GR", "IT","MO", "PT", "MT","RS","ES","OT"],
+  "Southern Europe": ["BH","GR", "IT","MO", "PT", "MT","RS","ES","OT"],
   "Western Europe": ["BE", "FR","LU",  "NL" ],
   "Central Europe": ["AH", "DE", "CH"],
   "Others": [
@@ -731,13 +731,13 @@ public purpleOldColorPalette: string[] = [
 
 
  "#471377",
- "#BD90FA",
+  "#7A21D4",
   "#8725EB",
   "#9338F1",
   "#9D4EF3",
   "#A764F6",
   "#B27AF8",
-  "#BD90FA",
+  "#BD90FA", 
   "#C7A6FC",
   "#D2BCFE",
 
