@@ -1687,8 +1687,7 @@ private updateFuseCollection(allArtists: Artist[]): void {
         this.svg.select(`.ai-button-${clusterIndex}`)
           .style('visibility', 'visible');
       }
-     const clusterNode2= this.artistClusterMap.get(artistNode.id)
-      if(clusterNode2) this.updateClusterSelection(clusterNode2);
+  
 
       if (this.selectedNode && this.selectedNode[0]) {
         const d3Node = d3.select(this.selectedNode[0]); // Convert to a D3 selection
