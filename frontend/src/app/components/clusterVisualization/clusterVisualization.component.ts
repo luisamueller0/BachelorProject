@@ -591,17 +591,7 @@ if(!this.g) return;
           const nodeId = this.selectedNode[1].id;
   selectedNodeIds.push(nodeId);
         }
-        if (this.previouslyConnectedNodeIds && this.previouslyConnectedNodeIds.size > 0) {
-          //console.log('node ids', this.previouslyConnectedNodeIds);
-          
-          // Now handle the case for previously connected nodes
-          this.g.selectAll('.artist-node')
-              .filter((d: any) => this.previouslyConnectedNodeIds.has(d.id))
-              .style('opacity', 0.8) // Adjust opacity
-              .style("stroke", "grey") // Set stroke to grey
-              .style("stroke-width", `${0.07 * this.innerRadius / 100}vw`); // Adjust stroke width if needed
-      }
-     
+        
         // Reset all elements to full opacity
         if (this.selectedClusterNode) {
           
@@ -644,6 +634,18 @@ if(!this.g) return;
         // Set stroke to black for all nodes that are in the selectedNodeIds array
         this.g.selectAll('.artist-node')
             .style("stroke", (d: any) => selectedNodeIds.includes(d.artist.id) ? "black" : "none");
+
+            if (this.previouslyConnectedNodeIds && this.previouslyConnectedNodeIds.size > 0) {
+              //console.log('node ids', this.previouslyConnectedNodeIds);
+              
+              // Now handle the case for previously connected nodes
+              this.g.selectAll('.artist-node')
+                  .filter((d: any) => this.previouslyConnectedNodeIds.has(d.id))
+                  .style('opacity', 0.8) // Adjust opacity
+                  .style("stroke", "grey") // Set stroke to grey
+                  .style("stroke-width", `${0.07 * this.innerRadius / 100}vw`); // Adjust stroke width if needed
+          }
+         
 
          
             
@@ -1119,6 +1121,7 @@ const category = this.decisionService.getDecisionSunburst();
   
   
   private updateClusterSelection(clusterNode: ClusterNode | null): void {
+   
 
 
     // Deselect the current cluster if clusterNode is null
@@ -1199,11 +1202,7 @@ const category = this.decisionService.getDecisionSunburst();
         this.selectionService.selectOldCountries(countries);
     }
 
-    // Reduce opacity of all clusters
-   // console.log('update')
-    this.g.selectAll('.cluster').style('opacity', '0.2');
-    // Set opacity of selected cluster to 1
-    this.g.selectAll(`.cluster-${clusterNode.clusterId}`).style('opacity', '1');
+
 }
 
     
@@ -1219,6 +1218,10 @@ private onClusterClick(clusterNode: ClusterNode): void {
   // If the same cluster is clicked again, deselect it
   if (this.selectedClusterNode && this.selectedClusterNode.clusterId === clusterNode.clusterId) {
       this.updateClusterSelection(null);
+          // Reduce opacity of all clusters
+   // console.log('update')
+    this.g.selectAll('.cluster').style('opacity', '1');
+    // Set opacity of selected cluster to 1
   } else {
     this.updateClusterSelection(null);
       // Copy the list of artist names to the clipboard
@@ -1227,6 +1230,10 @@ private onClusterClick(clusterNode: ClusterNode): void {
 
       // Update the cluster selection
       this.updateClusterSelection(clusterNode);
+      this.g.selectAll('.cluster').style('opacity', '0.2');
+      // Set opacity of selected cluster to 1
+      this.g.selectAll(`.cluster-${clusterNode.clusterId}`).style('opacity', '1');
+
   }
 }
 
@@ -1470,6 +1477,7 @@ private updateFuseCollection(allArtists: Artist[]): void {
   
           // Reset the style of the deselected node
           this.resetStyleOfNode(circle, artistNode.artist);
+         
           this.g.selectAll(`.artist-edge-${clusterNode?.clusterId}`)
           .style('stroke', (d: any) =>
               d.sharedExhibitionMinArtworks >= 0.4 ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none'
@@ -1483,14 +1491,15 @@ private updateFuseCollection(allArtists: Artist[]): void {
             this.selectedEdges.clear();
             this.previouslyConnectedNodeIds.clear();
             this.previouslyConnectedClusterNodeIds.clear();
+
+            if (clusterNode) {
+              this.selectedClusterNode = clusterNode;
+              this.updateClusterSelection(clusterNode);
+          } else {
+              this.updateClusterSelection(null);
+          }
               // Select the cluster without updating the selectionService
             
-              if (clusterNode) {
-                  this.selectedClusterNode = clusterNode;
-                  this.updateClusterSelection(clusterNode);
-              } else {
-                  this.updateClusterSelection(null);
-              }
              
               return; // Exit the function
           }
@@ -1536,7 +1545,7 @@ private updateFuseCollection(allArtists: Artist[]): void {
     const clusterId = this.artistClusterMap.get(artistId)?.clusterId;
     this.g.selectAll(`.artist-node`)
     .filter((d: any) =>  d.artist.cluster !== clusterId)
-      .style('opacity', '1')
+      .style('opacity', '0.2')
     .style('stroke', 'none')
     .style('filter', 'none');
     this.g.selectAll(`.artist-node`)
@@ -1646,20 +1655,28 @@ private updateFuseCollection(allArtists: Artist[]): void {
   
       //If the same circle got selected
       if (this.selectedNode && this.selectedNode[0] === circle) {
+        // Reset styles for all artist nodes and edges across categories
+    const threshold = 0.4; // Threshold for deciding which edges are visible
+    const clusterNode = this.artistClusterMap.get(artistNode.id);
+    if(clusterNode){
+       // Reset the stroke color and opacity for all artist edges
+       this.g.selectAll(`.artist-edge-${clusterNode.clusterId}`)  
+           .style('stroke', (d: any) =>
+               d.sharedExhibitionMinArtworks >= threshold ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none'
+           )
+           .style('opacity', 1);
 
-        const clusterNode = this.artistClusterMap.get(artistNode.id);
+           this.g.selectAll('.artist-node')
+           .filter((d: any) => d.artist.cluster !== clusterNode.clusterId)
+           .style('opacity', '0.2')
+           .style('stroke', 'none')
 
-         // If the node belongs to a cluster, update the selection
-         if (clusterNode) {
-           this.selectedClusterNode = clusterNode;
-             this.updateClusterSelection(clusterNode);
-         } else {
-             // If no cluster was found, clear the selected artists
-             this.updateClusterSelection(null);
-         }
+   this.updateClusterSelection(clusterNode);
+          }
+          this.resetNodeSelection();
 
 
-        this.resetNodeSelection();
+        
 
         
       //If a different node is selected
@@ -1942,6 +1959,8 @@ if(this.modernMap){
       }}
       
       private highlightInterClusterConnections(artistId: number, clusterId: number): void {
+         // Reset the opacity of all artist nodes and edges before applying the highlight logic
+ 
         // Now proceed with your existing logic
         const connectedNodeIds = new Set<number>();
         const unconnectedNodeIds = new Set<number>();
@@ -2059,21 +2078,8 @@ if(this.modernMap){
       // If no node was selected previously, clear the selected artists
       this.updateClusterSelection(null);
   }
-    // Reset styles for all artist nodes and edges across categories
-    const threshold = 0.4; // Threshold for deciding which edges are visible
-
-    // Reset the stroke color and opacity for all artist edges
-    this.g.selectAll(".artist-edge")
-        .style('stroke', (d: any) =>
-            d.sharedExhibitionMinArtworks >= threshold ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none'
-        )
-        .style('opacity', 1);
-
-    this.g.selectAll(".artist-node")
-        .style('opacity', '1')
-        .style('filter', 'none')
-        .style("stroke-width", "0px")
-        .style("stroke", "none");
+    
+  
 
     this.previouslyConnectedNodeIds.clear();
     this.previouslyConnectedClusterNodeIds.clear();
@@ -2729,47 +2735,58 @@ this.fuse.setCollection(allArtistArray);
       this.svg.call(zoom);
     
       // Add double-click event to reset zoom to the original state
-      // Adding a tap + click event to reset zoom
       this.svg.on("click", (event: MouseEvent) => {
         // Check if Shift key is pressed when clicking
         if (event.shiftKey) {
           this.svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity);
         }
       
-        // Check if Ctrl key is pressed when clicking
+        // Check if Ctrl key is pressed when clicking outside of nodes
         if (event.ctrlKey) {
-          // Check if the click happened outside of the nodes
           const isNodeClick = d3.select(event.target as Element).classed("artist-node");
-      
-          if (!isNodeClick) {
-            // Reset selectedNodes if the click happened outside a node
-            if (this.selectedNodes.length > 0) {
-              const circleElement = this.selectedNodes[0][0] as SVGCircleElement;
-              const compareNode = d3.select(circleElement).datum() as ArtistNode;
-              const clusterNode = this.artistClusterMap.get(compareNode.id);
-
-              //console.log('cluster', clusterNode)
-      
-              // If the node belongs to a cluster, update the selection
-              if (clusterNode) {
-                this.selectedClusterNode = clusterNode;
-                this.selectedNodes = [];
-                this.resetNodeSelection();
-                this.updateClusterSelection(clusterNode);
-              } else {
-                // If no cluster was found, clear the selected artists
-                this.updateClusterSelection(null);
-                this.selectedNodes = [];
-                this.resetNodeSelection();
-              }
-      
-          
+    
+          if (!isNodeClick && this.selectedNodes.length > 0) {
+            // If Ctrl is pressed but the click is outside any node, reset the selection
+            let defs = this.svg.select('defs');
+            if (defs.empty()) {
+              defs = this.svg.append('defs');
             }
+    
+            let filter = defs.select('#shadow');
+            if (filter.empty()) {
+              filter = defs.append('filter')
+                .attr('id', 'shadow')
+                .attr('x', '-50%')
+                .attr('y', '-50%')
+                .attr('width', '200%')
+                .attr('height', '200%');
+            
+              filter.append('feDropShadow')
+                .attr('dx', 0)
+                .attr('dy', 0)
+                .attr('flood-color', 'black')
+                .attr('flood-opacity', 1);
+            
+              let feMerge = filter.append('feMerge');
+              feMerge.append('feMergeNode');
+              feMerge.append('feMergeNode')
+                .attr('in', 'SourceGraphic');
+            }
+    
+            const allNodes = [...this.selectedNodes];
+            // Reset selection for all selected nodes
+            allNodes.forEach((node) => {
+              const circle = node[0] as SVGCircleElement;
+              if (circle) {
+                const artistNodeData = d3.select(circle).datum() as ArtistNode;
+                this.handleMultiNodeSelection(artistNodeData, circle, filter);
+              }
+            });
           }
         }
       });
-      
     }
+    
     
     
     
