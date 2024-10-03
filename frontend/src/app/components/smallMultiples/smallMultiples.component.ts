@@ -918,6 +918,7 @@ private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks
 
        this.visualizeData();
       }, error => {
+        
         console.error('There was an error', error);
         this.isLoading = false;
       });

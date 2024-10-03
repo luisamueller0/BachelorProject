@@ -1261,13 +1261,13 @@ private onClusterClick(clusterNode: ClusterNode): void {
         const intraCommunityEdges = data[1] as exhibited_with[][];
         const interCommunityEdges = data[2] as exhibited_with[];
         this.singleInterCommunityEdges = data[3] as exhibited_with[][];
-  
-        
-      
+
         this.loadNewData(clusters, intraCommunityEdges, interCommunityEdges);
   
       }, error => {
         console.error('There was an error', error);
+        alert('An error occurred: ' + error.message + '. Please reload the website.');
+
         this.isLoading = false;
       });
         
@@ -2381,6 +2381,8 @@ this.fuse.setCollection(allArtistArray);
         },
         (error) => {
           console.error('Error fetching default data:', error);
+          alert('An error occurred: ' + error.message + '. Please reload the website.');
+
         }
       );
       
@@ -2425,6 +2427,8 @@ this.fuse.setCollection(allArtistArray);
          this.visualizeData();
         }, error => {
           console.error('There was an error', error);
+          alert('An error occurred: ' + error.message + '. Please reload the website.');
+
           this.isLoading = false;
         });
      
@@ -3350,6 +3354,8 @@ const joinedNames = formattedNames.length > 1
             },
             error => {
               this.aiLoading = true;
+              alert('Error generating AI response: ' + error.message + '. Please try again.');
+
                 console.error("Error generating AI response:", error);
             }
         );

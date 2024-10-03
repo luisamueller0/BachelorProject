@@ -55,6 +55,7 @@ public isLoadingRange: boolean = false;
     
       },
       (error) => {
+        alert('An error occurred: ' + error.message + '. Please reload the website.');
         console.error('Error fetching default data:', error);
       }
     );
@@ -71,6 +72,7 @@ public isLoadingRange: boolean = false;
    
       },
       (error) => {
+        alert('An error occurred: ' + error.message + '. Please reload the website.');
         console.error('Error fetching default data:', error);
       }
     );
@@ -175,6 +177,7 @@ public isLoadingRange: boolean = false;
         this.kOptions = { ...this.kOptions, ceil: newCeil }; // Create a new object for kOptions
       }
     } catch (error) {
+      alert('An error occurred: ' + error + '. Please reload the website.');
       console.error('There was an error', error);
     }
   }
