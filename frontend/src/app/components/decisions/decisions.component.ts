@@ -116,7 +116,7 @@ public isLoadingRange: boolean = false;
     { label: 'Nationality', value: 'nationality' },
     { label: 'Country of Birth', value: 'birthcountry' },
     { label: 'Country of Death', value: 'deathcountry' },
-    { label: 'Most Exhibited Country', value: 'mostexhibited' } // Alternatively: 'Country of Most Exhibitions'
+    { label: 'Top Country by Exhibited Artworks', value: 'mostexhibited' } // Alternatively: 'Country of Most Exhibitions'
   ];
     selectedSize: string = '';
  
