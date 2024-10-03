@@ -1667,6 +1667,11 @@ private updateFuseCollection(allArtists: Artist[]): void {
            .style('opacity', 1);
 
            this.g.selectAll('.artist-node')
+           .filter((d: any) => d.artist.cluster === clusterNode.clusterId)
+           .style('opacity', '1')
+           .style('stroke', 'none')
+
+           this.g.selectAll('.artist-node')
            .filter((d: any) => d.artist.cluster !== clusterNode.clusterId)
            .style('opacity', '0.2')
            .style('stroke', 'none')
