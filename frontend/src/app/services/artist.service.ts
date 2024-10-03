@@ -631,7 +631,7 @@ public oldCountryMap: { [key: string]: string } = {
 
 public oldEuropeanRegions = {
   "North Europe": ["DK",  "SN" ,"UK"],
-  "Eastern Europe": [ "BG","RO",  "RE"],
+  "Eastern Europe": [ "BG","RE","RO" ],
   "Southern Europe": ["BH", ,"GR", "IT","MO", "PT", "MT","RS","ES","OT"],
   "Western Europe": ["BE", "FR","LU",  "NL" ],
   "Central Europe": ["AH", "DE", "CH"],
@@ -718,7 +718,7 @@ public blueOldColorPalette: string[] = [
 
 
   "#1575c2",
-  "#50aee3",
+  "#75caf1",
   "#9ce6ff"
 
 
@@ -731,7 +731,7 @@ public purpleOldColorPalette: string[] = [
 
 
  "#471377",
-  "#7A21D4",
+ "#BD90FA",
   "#8725EB",
   "#9338F1",
   "#9D4EF3",
@@ -750,7 +750,7 @@ public pinkOldColorPalette: string[] = [
 
   "#EA2BB7", // Dark pink
   "#F050C5",
-  "#F686DA",
+  "#F474D3",
   "#FAAAE8",
 
 
