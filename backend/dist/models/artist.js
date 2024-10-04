@@ -30,6 +30,14 @@ var latestRelationships = [];
 var latestMinLimit = -1;
 var latestMaxLimit = -1;
 var latestValue = '';
+const seedrandom = require('seedrandom');
+
+function setRandomSeed(seed) {
+    seedrandom(seed, { global: true }); // Sets the seed for the entire process
+}
+
+setRandomSeed(12345); // Example: setting a fixed seed
+
 var Artist = /*#__PURE__*/_createClass(function Artist(data) {
   _classCallCheck(this, Artist);
   this.id = Number(data.id);
@@ -710,32 +718,45 @@ function calculateCentroids(data, clusters, k) {
   });
 }
 function kMeansClustering(data, k) {
-  var maxIterations = 500;
-  var bestCentroids = [];
-  var bestClusterAssignments = [];
-  var minTotalDistance = Infinity;
-  for (var initialization = 0; initialization < 10; initialization++) {
-    // Try multiple random initializations
-    var centroids = initializeCentroidsPlusPlus(data, k);
-    var clusterAssignments = [];
-    for (var iteration = 0; iteration < maxIterations; iteration++) {
-      var newClusterAssignments = assignPointsToCentroids(data, centroids);
-      var newCentroids = updateCentroids(data, newClusterAssignments, k);
-      if (centroidsEqual(newCentroids, centroids)) {
-        clusterAssignments = newClusterAssignments;
-        break;
+  const maxIterations = 500;
+  let bestCentroids = [];
+  let bestClusterAssignments = [];
+  let minTotalDistance = Infinity;
+
+  // Ensure the random seed is set for reproducibility
+  setRandomSeed(12345); // Use the same seed to make the process deterministic
+
+  // Try multiple initializations
+  for (let initialization = 0; initialization < 10; initialization++) {
+      let centroids = initializeCentroidsPlusPlus(data, k); // Deterministic initialization
+      let clusterAssignments = [];
+
+      for (let iteration = 0; iteration < maxIterations; iteration++) {
+          let newClusterAssignments = assignPointsToCentroids(data, centroids);
+          let newCentroids = updateCentroids(data, newClusterAssignments, k);
+
+          if (centroidsEqual(newCentroids, centroids)) {
+              clusterAssignments = newClusterAssignments;
+              break;
+          }
+
+          centroids = newCentroids;
       }
-      centroids = newCentroids;
-    }
-    var totalDistance = calculateTotalDistance(data, centroids, clusterAssignments);
-    if (totalDistance < minTotalDistance) {
-      bestCentroids = centroids;
-      bestClusterAssignments = clusterAssignments;
-      minTotalDistance = totalDistance;
-    }
+
+      // Calculate the total distance for this initialization
+      let totalDistance = calculateTotalDistance(data, centroids, clusterAssignments);
+
+      // Keep track of the best clustering result
+      if (totalDistance < minTotalDistance) {
+          bestCentroids = centroids;
+          bestClusterAssignments = clusterAssignments;
+          minTotalDistance = totalDistance;
+      }
   }
-  return bestClusterAssignments;
+
+  return bestClusterAssignments; // Return the best clusters
 }
+
 function initializeCentroidsPlusPlus(data, k) {
   var centroids = [data[Math.floor(Math.random() * data.length)]];
   var _loop = function _loop() {

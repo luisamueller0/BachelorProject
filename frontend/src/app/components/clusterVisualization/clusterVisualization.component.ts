@@ -964,22 +964,17 @@ if(!this.g) return;
     
       const showTooltip = (event: any, d: any) => {
         const countryCode = d.country;
-        let fullCountryName;
-        if(this.modernMap){
-          fullCountryName = this.artistService.countryMap[countryCode];
-
-        }{
-          fullCountryName = this.artistService.oldCountryMap[countryCode];
-
-        }
+        const fullCountryName = this.modernMap? this.artistService.countryMap[countryCode]:this.artistService.oldCountryMap[countryCode];
+      
+        tooltip.style("display", "block")
+            .style("left", `${event.pageX + 5}px`)
+            .style("top", `${event.pageY + 5}px`)
+            .style("color", "black")
+            .html(`${fullCountryName}<br/>`);
+      };
 
     
-        tooltip.style("display", "block")
-          .style("left", `${event.pageX + 5}px`)
-          .style("top", `${event.pageY + 5}px`)
-          .style("color", "black")
-          .html(`${fullCountryName}<br/>`);
-      };
+      
     
       const hideTooltip = () => {
         tooltip.style("display", "none");
@@ -3498,7 +3493,7 @@ const joinedNames = formattedNames.length > 1
   
   const showTooltip = (event: any, d: any) => {
     const countryCode = d.country;
-    const fullCountryName = this.artistService.countryMap[countryCode];
+    const fullCountryName = this.modernMap? this.artistService.countryMap[countryCode]:this.artistService.oldCountryMap[countryCode];
   
     tooltip.style("display", "block")
         .style("left", `${event.pageX + 5}px`)
