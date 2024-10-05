@@ -1645,6 +1645,8 @@ private updateFuseCollection(allArtists: Artist[]): void {
       // If a node without Ctrl is clicked, focus is only on that node
         if (this.selectedNodes.length !== 0) {
         this.resetNodeSelection();
+        this.resetMultiNodeSelection();
+
         this.selectedNodes = [];
       }
   
@@ -3673,6 +3675,8 @@ const joinedNames = formattedNames.length > 1
   
     const metricMap = this.calculateNormalizedMaps(size)[cluster.clusterId];
     const degreeMap = this.degreesMap[cluster.clusterId] || new Map<number, number>();
+
+    console.log(degreeMap, artists, artists[0].cluster)
   
     const centerX = 0;
     const centerY = 0;
@@ -4097,6 +4101,7 @@ if (!centralNode) {
           degreeMap.set(rel.startId, (degreeMap.get(rel.startId) || 0) + 1);
           degreeMap.set(rel.endId, (degreeMap.get(rel.endId) || 0) + 1);
         });
+        console.log(degreeMap, clusterId)
         const normalizedDegrees = this.normalizeLinear(degreeMap);
         this.degreesMap[clusterId] = normalizedDegrees;
       });
