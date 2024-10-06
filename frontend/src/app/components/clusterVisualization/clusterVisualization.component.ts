@@ -1288,6 +1288,11 @@ private updateFuseCollection(allArtists: Artist[]): void {
       // Remove the existing SVG element
       
       this.clusters = clusters;
+      clusters.forEach((cluster, clusterIndex) => {
+       if(cluster.length === 0){
+        console.log('ACHTUNG, CLUSTER EMPTY')
+      }
+    });
   
       this.intraCommunityEdges = intraCommunityEdges;
       if (Array.isArray(interCommunityEdges) && interCommunityEdges.length > 0) {
@@ -1454,24 +1459,7 @@ private updateFuseCollection(allArtists: Artist[]): void {
       const nodeIndex = this.selectedNodes.findIndex(node => node[0] === circle);
   
       if (nodeIndex !== -1) {
-        if (single) {
-          this.resetMultiNodeSelection();
-          this.selectedNodes = [];
-          this.selectedEdges.clear();
-          this.previouslyConnectedNodeIds.clear();
-          this.previouslyConnectedClusterNodeIds.clear();
-
-          if (clusterNode) {
-            this.selectedClusterNode = clusterNode;
-            this.updateClusterSelection(clusterNode);
-        } else {
-            this.updateClusterSelection(null);
-        }
-            // Select the cluster without updating the selectionService
-          
-           
-            return; // Exit the function
-        }
+        
 
         //  console.log('Node is already selected, removing:', artistNode.id);
 
@@ -1549,20 +1537,22 @@ private updateFuseCollection(allArtists: Artist[]): void {
           return; // Exit the function since we've handled the removal
         }else{
           if (single) {
+            
                 // Reset the style of the deselected node
           this.resetStyleOfNode(circle, artistNode.artist);
-         
           this.g.selectAll(`.artist-edge-${clusterNode?.clusterId}`)
           .style('stroke', (d: any) =>
               d.sharedExhibitionMinArtworks >= 0.4 ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none'
           )
           .style('opacity', 1);
           this.resetOfOtherNodeStyles(artistNode.id);
-            this.resetMultiNodeSelection();
             this.selectedNodes = [];
             this.selectedEdges.clear();
             this.previouslyConnectedNodeIds.clear();
             this.previouslyConnectedClusterNodeIds.clear();
+
+            
+            
         }
         
         }
@@ -1587,6 +1577,8 @@ private updateFuseCollection(allArtists: Artist[]): void {
       .style('opacity', '0.2')
     .style('stroke', 'none')
     .style('filter', 'none');
+
+    
     this.g.selectAll(`.artist-node`)
     .filter((d: any) => d.artist.cluster === clusterId)
       .style('opacity', '1')
@@ -2034,7 +2026,7 @@ if(this.modernMap){
         const unconnectedOpacity = 0.2;
     
         // Loop over each cluster to adjust the stroke width for the artist nodes
-        Object.keys(this.clusterNodes).forEach((clusterKey: string) => {
+        Object.keys(this.clusters).forEach((clusterKey: string) => {
             const cluster = this.clusterNodes[+clusterKey]; // Retrieve the cluster object
             const clusterInnerRadius = cluster.innerRadius;
             const strokeWidth = 0.07 * clusterInnerRadius / 100;
@@ -2792,54 +2784,8 @@ this.fuse.setCollection(allArtistArray);
         const isEdgeClick = clickedElement.classed("artist-edge"); // Replace with the class name used for artist edges
         const isPathClick = clickedElement.classed("path"); // Replace with the class name used for paths
       
-        if (!isNodeClick && !isClusterClick && !isEdgeClick && !isPathClick) {
-          if(this.selectedNodes.length>0){
-              // If Ctrl is pressed but the click is outside any node, reset the selection
-              let defs = this.svg.select('defs');
-              if (defs.empty()) {
-                defs = this.svg.append('defs');
-              }
-      
-              let filter = defs.select('#shadow');
-              if (filter.empty()) {
-                filter = defs.append('filter')
-                  .attr('id', 'shadow')
-                  .attr('x', '-50%')
-                  .attr('y', '-50%')
-                  .attr('width', '200%')
-                  .attr('height', '200%');
-              
-                filter.append('feDropShadow')
-                  .attr('dx', 0)
-                  .attr('dy', 0)
-                  .attr('flood-color', 'black')
-                  .attr('flood-opacity', 1);
-              
-                let feMerge = filter.append('feMerge');
-                feMerge.append('feMergeNode');
-                feMerge.append('feMergeNode')
-                  .attr('in', 'SourceGraphic');
-              }
-      
-              const allNodes = [...this.selectedNodes];
-              // Reset selection for all selected nodes
-              allNodes.forEach((node) => {
-                const circle = node[0] as SVGCircleElement;
-                if (circle) {
-                  const artistNodeData = d3.select(circle).datum() as ArtistNode;
-                  this.handleMultiNodeSelection(artistNodeData, circle, filter,false);
-                }
-              });
-            
-         
-
-          }
-          if(this.selectedClusterNode){
-            this.onClusterClick(this.selectedClusterNode);
-          }}
-
-        // Check if Shift key is pressed when clicking
-        if (event.shiftKey) {
+         // Check if Shift key is pressed when clicking
+         if (event.shiftKey) {
           this.svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity);
         }
 
@@ -2888,6 +2834,53 @@ this.fuse.setCollection(allArtistArray);
 
         }
 
+        else if (!isNodeClick && !isClusterClick && !isEdgeClick && !isPathClick) {
+          if(this.selectedNodes.length>0){
+              // If Ctrl is pressed but the click is outside any node, reset the selection
+              let defs = this.svg.select('defs');
+              if (defs.empty()) {
+                defs = this.svg.append('defs');
+              }
+      
+              let filter = defs.select('#shadow');
+              if (filter.empty()) {
+                filter = defs.append('filter')
+                  .attr('id', 'shadow')
+                  .attr('x', '-50%')
+                  .attr('y', '-50%')
+                  .attr('width', '200%')
+                  .attr('height', '200%');
+              
+                filter.append('feDropShadow')
+                  .attr('dx', 0)
+                  .attr('dy', 0)
+                  .attr('flood-color', 'black')
+                  .attr('flood-opacity', 1);
+              
+                let feMerge = filter.append('feMerge');
+                feMerge.append('feMergeNode');
+                feMerge.append('feMergeNode')
+                  .attr('in', 'SourceGraphic');
+              }
+      
+              const allNodes = [...this.selectedNodes];
+              // Reset selection for all selected nodes
+              allNodes.forEach((node) => {
+                const circle = node[0] as SVGCircleElement;
+                if (circle) {
+                  const artistNodeData = d3.select(circle).datum() as ArtistNode;
+                  this.handleMultiNodeSelection(artistNodeData, circle, filter,false);
+                }
+              });
+            
+         
+
+          }
+          if(this.selectedClusterNode){
+            this.onClusterClick(this.selectedClusterNode);
+          }}
+
+       
 
 
 
@@ -2899,6 +2892,7 @@ this.fuse.setCollection(allArtistArray);
     
     private drawClusters(): void {
       const k = this.decisionService.getK();
+      this.clusterNodes = [];
     
       // Get the current sunburst decision
       const currentSunburst = this.decisionService.getDecisionSunburst();
@@ -3059,8 +3053,8 @@ this.fuse.setCollection(allArtistArray);
             const minExhibitionNode = this.clusterNodes.find(d => d.totalExhibitions === minTotalExhibitions);
             const maxTotalExhibitions = d3.max(this.clusterNodes, d => d.totalExhibitions) || 0;
             const maxExhibitionNode = this.clusterNodes.find(d => d.totalExhibitions === maxTotalExhibitions);
-            const leftExhibitionRange = maxExhibitionNode ? maxExhibitionNode.outerRadius: this.cellWidth / 2;
-            const rightExhibitionRange = minExhibitionNode ? minExhibitionNode.outerRadius : this.cellWidth / 2;
+            const leftExhibitionRange = maxExhibitionNode ? maxExhibitionNode.outerRadius*1.2: this.cellWidth / 2;
+            const rightExhibitionRange = minExhibitionNode ? minExhibitionNode.outerRadius*1.2 : this.cellWidth / 2;
 
             xScale = d3.scaleLinear()
                 .domain([maxTotalExhibitions, minTotalExhibitions])
@@ -3072,8 +3066,8 @@ this.fuse.setCollection(allArtistArray);
             const minTechniqueNode = this.clusterNodes.find(d => d.totalTechniques === minTotalTechniques);
             const maxTotalTechniques = d3.max(this.clusterNodes, d => d.totalTechniques) || 0;
             const maxTechniqueNode = this.clusterNodes.find(d => d.totalTechniques === maxTotalTechniques);
-            const leftTechniqueRange = maxTechniqueNode ? maxTechniqueNode.outerRadius : this.cellWidth / 2;
-            const rightTechniqueRange = minTechniqueNode ? minTechniqueNode.outerRadius : this.cellWidth / 2;
+            const leftTechniqueRange = maxTechniqueNode ? maxTechniqueNode.outerRadius*1.2 : this.cellWidth / 2;
+            const rightTechniqueRange = minTechniqueNode ? minTechniqueNode.outerRadius*1.2 : this.cellWidth / 2;
 
             xScale = d3.scaleLinear()
                 .domain([maxTotalTechniques, minTotalTechniques])
@@ -3085,8 +3079,8 @@ this.fuse.setCollection(allArtistArray);
             const minArtworkNode = this.clusterNodes.find(d => d.totalExhibitedArtworks === minTotalArtworks);
             const maxTotalArtworks = d3.max(this.clusterNodes, d => d.totalExhibitedArtworks) || 0;
             const maxArtworkNode = this.clusterNodes.find(d => d.totalExhibitedArtworks === maxTotalArtworks);
-            const leftArtworkRange = maxArtworkNode ? maxArtworkNode.outerRadius: this.cellWidth / 2;
-            const rightArtworkRange = minArtworkNode ? minArtworkNode.outerRadius : this.cellWidth / 2;
+            const leftArtworkRange = maxArtworkNode ? maxArtworkNode.outerRadius*1.2: this.cellWidth / 2;
+            const rightArtworkRange = minArtworkNode ? minArtworkNode.outerRadius*1.2 : this.cellWidth / 2;
 
             xScale = d3.scaleLinear()
                 .domain([maxTotalArtworks, minTotalArtworks])
@@ -3098,8 +3092,8 @@ this.fuse.setCollection(allArtistArray);
             const minBirthYearNode = this.clusterNodes.find(d => d.meanBirthYear === minBirthYear);
             const maxBirthYear = d3.max(this.clusterNodes, d => d.meanBirthYear) || 1950;
             const maxBirthYearNode = this.clusterNodes.find(d => d.meanBirthYear === maxBirthYear);
-            const leftBirthYearRange = maxBirthYearNode ? maxBirthYearNode.outerRadius : this.cellWidth / 2;
-            const rightBirthYearRange = minBirthYearNode ? minBirthYearNode.outerRadius : this.cellWidth / 2;
+            const leftBirthYearRange = maxBirthYearNode ? maxBirthYearNode.outerRadius*1.2 : this.cellWidth / 2;
+            const rightBirthYearRange = minBirthYearNode ? minBirthYearNode.outerRadius*1.2 : this.cellWidth / 2;
 
             xScale = d3.scaleLinear()
                 .domain([minBirthYear, maxBirthYear])
@@ -3111,8 +3105,8 @@ this.fuse.setCollection(allArtistArray);
             const minDeathYearNode = this.clusterNodes.find(d => d.meanDeathYear === minDeathYear);
             const maxDeathYear = d3.max(this.clusterNodes, d => d.meanDeathYear) || 1900;
             const maxDeathYearNode = this.clusterNodes.find(d => d.meanDeathYear === maxDeathYear);
-            const leftDeathYearRange = maxDeathYearNode ? maxDeathYearNode.outerRadius : this.cellWidth / 2;
-            const rightDeathYearRange = minDeathYearNode ? minDeathYearNode.outerRadius : this.cellWidth / 2;
+            const leftDeathYearRange = maxDeathYearNode ? maxDeathYearNode.outerRadius*1.2 : this.cellWidth / 2;
+            const rightDeathYearRange = minDeathYearNode ? minDeathYearNode.outerRadius*1.2 : this.cellWidth / 2;
 
             xScale = d3.scaleLinear()
                 .domain([minDeathYear, maxDeathYear])
@@ -3124,8 +3118,8 @@ this.fuse.setCollection(allArtistArray);
             const minTimeNode = this.clusterNodes.find(d => d.meanAvgDate.getTime() === minAvgDate);
             const maxAvgDate = d3.max(this.clusterNodes, d => d.meanAvgDate.getTime()) || new Date(1950, 0, 1).getTime();
             const maxTimeNode = this.clusterNodes.find(d => d.meanAvgDate.getTime() === maxAvgDate);
-            const leftTimeRange = maxTimeNode ? maxTimeNode.outerRadius : this.cellWidth / 2;
-            const rightTimeRange = minTimeNode ? minTimeNode.outerRadius  : this.cellWidth / 2;
+            const leftTimeRange = maxTimeNode ? maxTimeNode.outerRadius*1.2 : this.cellWidth / 2;
+            const rightTimeRange = minTimeNode ? minTimeNode.outerRadius*1.2  : this.cellWidth / 2;
 
             xScale = d3.scaleLinear()
                 .domain([minAvgDate, maxAvgDate])
@@ -3147,7 +3141,25 @@ this.fuse.setCollection(allArtistArray);
             break;
     }
 
-  
+    this.clusterNodes.forEach(clusterNode => {
+      const xValue = ranking === 'exhibitions' ? clusterNode.totalExhibitions :
+                     ranking === 'artworks' ? clusterNode.totalExhibitedArtworks :
+                     ranking === 'techniques' ? clusterNode.totalTechniques :
+                     ranking === 'birthyear' ? clusterNode.meanBirthYear :
+                     ranking === 'deathyear' ? clusterNode.meanDeathYear :
+                     ranking === 'time' ? clusterNode.meanAvgDate :
+                     0;
+    
+      // Ensure xValue is valid and calculate its position using xScale
+      clusterNode.x = xScale(xValue);
+      
+      // Assign y position to the middle of the height
+      clusterNode.y = height / 2;
+    });
+    
+    
+
+   
       // Set up the force simulation with the nodes
       this.clusterSimulation = d3.forceSimulation<ClusterNode>(nodes)
           .force('charge', d3.forceManyBody().strength(5))
@@ -3206,12 +3218,33 @@ this.fuse.setCollection(allArtistArray);
     // Find the maximum cluster size
     const maxClusterSize = d3.max(this.clusters, cluster => cluster.length) || 0;
 let   [outerRadius, innerRadius] :number[]=[] ;
-    if(this.clusters.length >1){
+const amount = this.clusters.length
+let size=0;
+if(amount<6){
+switch(amount){
+  case 1:
+      size = Math.min(this.contentHeight,this.contentWidth)/2;
+      [outerRadius, innerRadius] = [size,size - size / 5]   ;
+      break;
+  case 2:
+      size = Math.min(this.contentHeight,this.contentWidth)/3;
+      [outerRadius, innerRadius] = [size,size - size / 5]   ;
+      break;
+  case 3:
+      size = Math.min(this.contentHeight,this.contentWidth)/4;
+      [outerRadius, innerRadius] = [size,size - size / 5]   ;
+      break;
+  case 4:
+      size = Math.min(this.contentHeight,this.contentWidth)/5;
+      [outerRadius, innerRadius] = [size,size - size / 5]   ;
+      break;
+  case 5:
+      size = Math.min(this.contentHeight,this.contentWidth)/6;
+      [outerRadius, innerRadius] = [size,size - size / 5]   ;
+      break;
+  }
+}else{
       [outerRadius, innerRadius]  = this.createSunburstProperties(cluster.length, maxClusterSize, paddedCellSize, this.clusters.length);
-    }else{
-      const size = Math.min(this.contentHeight,this.contentWidth)/2;
-      [outerRadius, innerRadius] = [size,size - size / 5]       
-   
     }
     this.innerRadius = innerRadius; 
   
@@ -3796,8 +3829,6 @@ let   [outerRadius, innerRadius] :number[]=[] ;
     const metricMap = this.calculateNormalizedMaps(size)[cluster.clusterId];
     const degreeMap = this.degreesMap[cluster.clusterId] || new Map<number, number>();
 
-    console.log(degreeMap, artists, artists[0].cluster)
-  
     const centerX = 0;
     const centerY = 0;
   

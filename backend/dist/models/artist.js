@@ -657,51 +657,84 @@ function _spectralClustering() {
   return _spectralClustering.apply(this, arguments);
 }
 function redistributeClusters(data, clusters, k, minClusterSize, maxClusterSize) {
-  var centroids = calculateCentroids(data, clusters, k);
-  var clusterSizes = new Array(k).fill(0);
-  clusters.forEach(function (cluster) {
-    return clusterSizes[cluster]++;
-  });
-  var needsHelp = clusterSizes.map(function (size, index) {
-    return {
+  // Calculate initial centroids
+  let centroids = calculateCentroids(data, clusters, k);
+  
+  // Calculate initial cluster sizes
+  let clusterSizes = new Array(k).fill(0);
+  clusters.forEach(cluster => clusterSizes[cluster]++);
+  
+  // Handle undersized and oversized clusters
+  let needsHelp = clusterSizes.map((size, index) => ({
       index: index,
       size: size,
       type: size < minClusterSize ? 'undersized' : size > maxClusterSize ? 'oversized' : 'ok'
-    };
-  }).filter(function (stat) {
-    return stat.type !== 'ok';
-  });
-  needsHelp.forEach(function (need) {
-    if (need.type === 'oversized') {
-      data.forEach(function (point, idx) {
-        if (clusters[idx] === need.index) {
-          var currentClusterIndex = need.index;
-          var closest = {
-            index: -1,
-            distance: Infinity
-          };
-          centroids.forEach(function (centroid, index) {
-            if (index !== currentClusterIndex && clusterSizes[index] < maxClusterSize) {
-              var distance = euclideanDistance(point, centroid);
-              if (distance < closest.distance) {
-                closest = {
-                  index: index,
-                  distance: distance
-                };
+  })).filter(stat => stat.type !== 'ok');
+  
+  // Redistribute oversized clusters to undersized ones
+  needsHelp.forEach(need => {
+      if (need.type === 'oversized') {
+          data.forEach((point, idx) => {
+              if (clusters[idx] === need.index) {
+                  let currentClusterIndex = need.index;
+                  let closest = { index: -1, distance: Infinity };
+                  
+                  // Find the closest centroid of a cluster that is undersized
+                  centroids.forEach((centroid, index) => {
+                      if (index !== currentClusterIndex && clusterSizes[index] < maxClusterSize) {
+                          let distance = euclideanDistance(point, centroid);
+                          if (distance < closest.distance) {
+                              closest = { index: index, distance: distance };
+                          }
+                      }
+                  });
+                  
+                  // Reassign point to the closest valid cluster
+                  if (closest.index !== -1) {
+                      clusters[idx] = closest.index;
+                      clusterSizes[currentClusterIndex]--;
+                      clusterSizes[closest.index]++;
+                  }
               }
-            }
           });
-          if (closest.index !== -1) {
-            clusters[idx] = closest.index;
-            clusterSizes[currentClusterIndex]--;
-            clusterSizes[closest.index]++;
-          }
-        }
-      });
-    }
+      }
   });
+  
+  // Check and handle empty clusters by redistributing points
+  clusters = handleEmptyClusters(clusters, data, centroids, k, clusterSizes);
+
   return clusters;
 }
+
+// Function to handle empty clusters and reassign points to them
+function handleEmptyClusters(clusters, data, centroids, k, clusterSizes) {
+  for (let i = 0; i < k; i++) {
+      if (clusterSizes[i] === 0) {
+          console.log(`Cluster ${i} is empty. Reassigning the farthest point to it.`);
+          
+          // Find the point furthest from its current centroid and reassign it
+          let farthestPointIndex = -1;
+          let maxDistance = -Infinity;
+          data.forEach((point, idx) => {
+              let currentCluster = clusters[idx];
+              let distance = euclideanDistance(point, centroids[currentCluster]);
+              if (distance > maxDistance) {
+                  maxDistance = distance;
+                  farthestPointIndex = idx;
+              }
+          });
+          
+          // Reassign the farthest point to the empty cluster
+          clusters[farthestPointIndex] = i;
+          clusterSizes[i] = 1; // The empty cluster now has one point
+          clusterSizes[clusters[farthestPointIndex]]--; // Decrease the size of the old cluster
+      }
+  }
+  return clusters;
+}
+
+
+
 function calculateCentroids(data, clusters, k) {
   var centroids = Array(k).fill(null).map(function () {
     return [];
