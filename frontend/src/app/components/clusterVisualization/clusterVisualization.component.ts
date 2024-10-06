@@ -287,6 +287,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
 
 
   private updateRankingArrow(ranking: string): void {
+    if(this.clusters.length === 1) return;
     let leftLabel = '';
     let rightLabel = '';
 
@@ -383,7 +384,7 @@ if(!this.g) return;
   
     private updateClusterPosition(ranking: string): void {
       if (!this.svg) return;
-      
+      if(this.clusters.length ===1) return;
       // Determine the scale based on the ranking
       let xScale;
 
@@ -2909,14 +2910,18 @@ this.fuse.setCollection(allArtistArray);
             });
         });
     });
+   
      // Wait for all drawCluster calls to complete
      Promise.all(drawPromises).then(() => {
       // Add a short delay to ensure DOM is fully updated
       setTimeout(() => {
+        if(this.clusters.length>1){
           this.applyForceSimulation();
+        }
           this.isLoading = false;
        
       }, 1000); // 100 milliseconds delay
+      
 
   
     
@@ -3193,8 +3198,10 @@ this.fuse.setCollection(allArtistArray);
         artists: cluster,
         outerRadius: outerRadius,
         innerRadius: innerRadius,
-        x: 0,
-        y: 0, vx: 0, vy: 0, // Initialize x and y positions and velocities
+        x: this.contentWidth/2,
+        y: this.contentHeight/2, 
+        vx: 0,
+         vy:  0, // Initialize x and y positions and velocities
         meanAvgDate: new Date(),  // Adjust this if you have a value to calculate for meanAvgDate
         meanBirthYear: avgBirthYear, // Set the calculated average birth year as a Date object
         meanDeathYear: avgDeathYear,
