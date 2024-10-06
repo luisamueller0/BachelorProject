@@ -3701,6 +3701,9 @@ let   [outerRadius, innerRadius] :number[]=[] ;
     .style("font-size", `${textsize}px`)
     .style("font-weight", "bold")
     .style("fill", "white")
+    .on("mouseover", showTooltip)
+    .on("mousemove", showTooltip)
+    .on('mouseout', hideTooltip)
     .on('click', (event: MouseEvent, d: any) => {
       if (event.ctrlKey) {
         event.stopPropagation(); // Prevent the click event from propagating to the cluster group
