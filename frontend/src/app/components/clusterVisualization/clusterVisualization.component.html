@@ -49,13 +49,13 @@
     </div>
     
     
-    <div class="ai-suggestion-container" [ngStyle]="{'opacity': selectedNodes.length > 0 ? '1' : '0'}">
+    <div class="ai-suggestion-container" [ngStyle]="{'opacity': selectedNodes.length > 0  || this.selectedClusterNode? '1' : '0' }">
       <div class="ai-title">AI suggestion on connections</div>
       <div 
         class="ai-button" 
         *ngIf="!aiLoading"
         (click)="handleButtonClick()" 
-        [ngStyle]="{'visibility': selectedNodes.length > 0 ? 'visible' : 'hidden'}"
+        [ngStyle]="{'visibility': selectedNodes.length > 0 || this.selectedClusterNode? 'visible' : 'hidden'}"
         [style.cursor]="'pointer'"
       >✧</div>
       <div *ngIf="aiLoading" class="ai-loading-spinner"></div>

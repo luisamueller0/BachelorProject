@@ -80,7 +80,7 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     private clusterNodes: ClusterNode[] = [];
     private artistClusterMap: Map<number, ClusterNode> = new Map<number, ClusterNode>();
     private artistNodes: { [clusterId: number]: ArtistNode[] } = {};
-    private selectedClusterNode: ClusterNode | null = null;
+    selectedClusterNode: ClusterNode | null = null;
     private g: any; // Group for zooming
 
     private previouslyConnectedClusterNodeIds =new Set<number>();
@@ -1202,6 +1202,7 @@ const category = this.decisionService.getDecisionSunburst();
 
     
 private onClusterClick(clusterNode: ClusterNode): void {
+  event?.stopPropagation();
   // Check if a node was selected prior to this cluster click
   if (this.selectedNode) {
       // Reset node selection if any node was selected before clicking on the cluster
@@ -1231,6 +1232,8 @@ private onClusterClick(clusterNode: ClusterNode): void {
 
   }
 }
+
+
 
 
   
@@ -1408,15 +1411,15 @@ private updateFuseCollection(allArtists: Artist[]): void {
     
       // If Ctrl/Cmd is not pressed, reset previously selected nodes
       if (isCtrlPressed) {
-        this.handleMultiNodeSelection(artistNode, circle,filter);
+        this.handleMultiNodeSelection(artistNode, circle,filter, false);
       } else {
-        this.handleSingleNodeSelection(artistNode, circle,filter);
+        this.handleMultiNodeSelection(artistNode, circle,filter, true);
       }
     }
 
 
     
-    private handleMultiNodeSelection(artistNode: ArtistNode, circle: SVGCircleElement, filter: any) {
+    private handleMultiNodeSelection(artistNode: ArtistNode, circle: SVGCircleElement, filter: any, single: boolean): void {
      // console.log('clicked', this.selectedNodes);
   
       // Access the bound data for the circle
@@ -1482,7 +1485,7 @@ private updateFuseCollection(allArtists: Artist[]): void {
 
   
           // Check if this was the last selected node
-          if (this.selectedNodes.length === 0) {
+          if (this.selectedNodes.length === 0 || single) {
             this.selectedEdges.clear();
             this.previouslyConnectedNodeIds.clear();
             this.previouslyConnectedClusterNodeIds.clear();
@@ -2742,14 +2745,66 @@ this.fuse.setCollection(allArtistArray);
     
       // Add double-click event to reset zoom to the original state
       this.svg.on("click", (event: MouseEvent) => {
+        const clickedElement = d3.select(event.target as Element);
+        const isNodeClick = clickedElement.classed("artist-node");
+        const isClusterClick = clickedElement.classed("cluster"); // Replace with the class name used for clusters
+        const isEdgeClick = clickedElement.classed("artist-edge"); // Replace with the class name used for artist edges
+        const isPathClick = clickedElement.classed("path"); // Replace with the class name used for paths
+      
+        if (!isNodeClick && !isClusterClick && !isEdgeClick && !isPathClick) {
+          if(this.selectedNodes.length>0){
+              // If Ctrl is pressed but the click is outside any node, reset the selection
+              let defs = this.svg.select('defs');
+              if (defs.empty()) {
+                defs = this.svg.append('defs');
+              }
+      
+              let filter = defs.select('#shadow');
+              if (filter.empty()) {
+                filter = defs.append('filter')
+                  .attr('id', 'shadow')
+                  .attr('x', '-50%')
+                  .attr('y', '-50%')
+                  .attr('width', '200%')
+                  .attr('height', '200%');
+              
+                filter.append('feDropShadow')
+                  .attr('dx', 0)
+                  .attr('dy', 0)
+                  .attr('flood-color', 'black')
+                  .attr('flood-opacity', 1);
+              
+                let feMerge = filter.append('feMerge');
+                feMerge.append('feMergeNode');
+                feMerge.append('feMergeNode')
+                  .attr('in', 'SourceGraphic');
+              }
+      
+              const allNodes = [...this.selectedNodes];
+              // Reset selection for all selected nodes
+              allNodes.forEach((node) => {
+                const circle = node[0] as SVGCircleElement;
+                if (circle) {
+                  const artistNodeData = d3.select(circle).datum() as ArtistNode;
+                  this.handleMultiNodeSelection(artistNodeData, circle, filter,false);
+                }
+              });
+            
+         
+
+          }
+          if(this.selectedClusterNode){
+            this.onClusterClick(this.selectedClusterNode);
+          }}
+
         // Check if Shift key is pressed when clicking
         if (event.shiftKey) {
           this.svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity);
         }
+
       
         // Check if Ctrl key is pressed when clicking outside of nodes
         if (event.ctrlKey) {
-          const isNodeClick = d3.select(event.target as Element).classed("artist-node");
     
           if (!isNodeClick && this.selectedNodes.length > 0) {
             // If Ctrl is pressed but the click is outside any node, reset the selection
@@ -2785,11 +2840,16 @@ this.fuse.setCollection(allArtistArray);
               const circle = node[0] as SVGCircleElement;
               if (circle) {
                 const artistNodeData = d3.select(circle).datum() as ArtistNode;
-                this.handleMultiNodeSelection(artistNodeData, circle, filter);
+                this.handleMultiNodeSelection(artistNodeData, circle, filter,false);
               }
             });
           }
+
         }
+
+
+
+
       });
     }
     
@@ -3207,163 +3267,157 @@ this.fuse.setCollection(allArtistArray);
       const tooltip = d3.select("div#tooltip");
       tooltip.style("display", "none");
     } */
-handleButtonClick(): void {
-  this.aiLoading = true;
-  
-    // Convert the cluster index back to a number
-  
-    // Retrieve the corresponding cluster and network information
-       // Extract the artist information from each selected node
-    if(this.selectedNodes){
-    const selectedArtists = this.selectedNodes.map(([node, color]) => {
-    const artistNodeData = d3.select(node).datum() as ArtistNode; // Get the bound data for each node
-    return artistNodeData.artist; // Return the artist object
-    });
-    const artistNames = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname}`);
-    // Format artist names with quotes and add "and" before the last name
-const formattedNames = artistNames.map(name => `"${name}"`);
-const joinedNames = formattedNames.length > 1 
-  ? formattedNames.slice(0, -1).join(", ") + " and " + formattedNames[formattedNames.length - 1]
-  : formattedNames[0];
-
-
-  
-    const category = this.decisionService.getDecisionSunburst();
-    let prompt = '';
-
-    if (this.selectedNodes.length > 1) {
-      switch (category) {
-          case 'nationality':
-              const nationalityInfo = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname} (Nationality: ${this.artistService.countryMap[artist.nationality]})`).join(", ");
-              prompt = `In 60 words, detail any known meetings, collaborations, or influences between the following artists: ${nationalityInfo}. 
-              Include specific instances where their national backgrounds might have led to shared exhibitions, joint projects, or mutual influences.
-              If no direct connections exist, explore similarities in their artistic movements, styles, or influences. Only use the artists' last names in your answer.`;
-             
-              this.aiTitle = `AI Insight: You chose the category "nationality" and the artists ${joinedNames}`
-              this.aiSmallTitle = `How Nationality Shaped Their Connections`;
-              break;
-  
-          case 'birthcountry':
-              const birthCountryInfo = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname} (Born in: ${this.modernMap ? this.artistService.countryMap[artist.birthcountry] : this.artistService.oldCountryMap[artist.oldBirthCountry]})`).join(", ");
-              prompt = `"In 60 words, describe any meetings, collaborations, or influences among the following artists: ${birthCountryInfo}. 
-              Focus on their early life and artistic careers. Highlight specific instances contributing to shared exhibitions, joint projects, or mutual influences. 
-              If no direct connections exist, explore similarities in their artistic movements, styles, or early influences. Only use the artists' last names in your answer.`;
-              this.aiTitle = `AI Insight: You chose the category "Country of Birth" and the artists ${joinedNames}`
-              this.aiSmallTitle = `Artistic Connections in Their Early Years`;
-
-              break;
-  
-          case 'deathcountry':
-              const deathCountryInfo = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname} (Died in: ${this.modernMap ? this.artistService.countryMap[artist.deathcountry] : this.artistService.oldCountryMap[artist.oldDeathCountry]})`).join(", ");
-              prompt = `"In 60 words, describe any meetings, collaborations, or influences among the following artists: ${deathCountryInfo}. 
-              Focus on their later and final years in life and their artistic careers. Highlight specific instances contributing to shared exhibitions, joint projects, or mutual influences. 
-              If no direct connections exist, explore similarities in their artistic movements, styles, or  influences during this period. Only use the artists' last names in your answer.`;              
-              this.aiTitle = `AI Insight: You chose the category "Country of Death" and the artists ${joinedNames}`
-              this.aiSmallTitle = `Artistic Connections in Their Final Years`;
-              break;
-  
-          case 'mostexhibited':
-              const exhibitedInfo = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname} (Most exhibited in: ${this.modernMap ? this.artistService.countryMap[artist.most_exhibited_in] : this.artistService.oldCountryMap[artist.mostExhibitedInOldCountry]})`).join(", "); 
-              prompt = `In 60 words, analyze why the following artists were most exhibited in these countries: ${exhibitedInfo}. 
-              Focus on the reasons for their prominence in these regions, similarities among the artists, and any known group exhibitions or collaborative projects that may have occurred. 
-              Highlight how their artistic styles or backgrounds contributed to their popularity in these locations. Only use the artists' last names in your answer.`;
-              this.aiTitle = `AI Insight: You chose the category "Most Exhibited Country" and the artists ${joinedNames}`
-              this.aiSmallTitle=`Their Prominence in Their Most Exhibited Countries Explained`;
-              break;
-  
-          default:
-              console.warn('Unknown category:', category);
-              break
-
+      handleButtonClick(): void {
+        this.aiLoading = true;
+      
+        if (this.selectedNodes && this.selectedNodes.length > 0) {
+          const selectedArtists = this.getSelectedArtists();
+          const category = this.decisionService.getDecisionSunburst();
+          const prompt = this.generatePrompt(selectedArtists, category);
+      
+          if (prompt) {
+            this.generateAIResponse(prompt);
+          }
+        } else if (this.selectedClusterNode) {
+          const clusterArtists = this.selectedClusterNode.artists;
+          const category = this.decisionService.getDecisionSunburst();
+          const prompt = this.generatePromptForCluster(clusterArtists, category);
+      
+          if (prompt) {
+            this.generateAIResponse(prompt);
+          }
+        }
       }
-    //Only one node selected
-    // Only one artist selected
-  } else if (this.selectedNodes.length === 1) {
-    const selectedArtist = selectedArtists[0];
-
-    // Extract nationality, birthcountry, deathcountry, and mostexhibited outside the switch
-    const nationality = this.artistService.countryMap[selectedArtist.nationality];
-    const birthcountry = this.modernMap 
-        ? this.artistService.countryMap[selectedArtist.birthcountry] 
-        : this.artistService.oldCountryMap[selectedArtist.oldBirthCountry];
-    const deathcountry = this.modernMap 
-        ? this.artistService.countryMap[selectedArtist.deathcountry] 
-        : this.artistService.oldCountryMap[selectedArtist.oldDeathCountry];
-    const mostexhibited = this.modernMap 
-        ? this.artistService.countryMap[selectedArtist.most_exhibited_in] 
-        : this.artistService.oldCountryMap[selectedArtist.mostExhibitedInOldCountry];
-
-    const clusterNode = this.artistClusterMap.get(selectedArtist.id);
-
-    let joinedNames = '';
-    
-    if (clusterNode) {
-        const artists = this.clusters[clusterNode.clusterId];
-        
-        // Format artist names with quotes and add "or" before the last name
-        const formattedNames = artists.map(name => `"${name.firstname} ${name.lastname}"`);
-        joinedNames = formattedNames.length > 1 
-            ? formattedNames.slice(0, -1).join(", ") + " or " + formattedNames[formattedNames.length - 1]
-            : formattedNames[0];
-    }
-
-    switch (category) {
-        case 'nationality':
-            prompt = `In 60 words, explore how ${artistNames}'s nationality (${nationality}) influenced their artistic journey and connections with other artists such as ${joinedNames}. 
-            Focus on how cultural background and national identity shaped key collaborations and stylistic influences. Only use the artists' last names in your answer.`;
-            this.aiTitle = `AI Insight: You chose the category "Nationality" and the artist ${artistNames}`;
-            this.aiSmallTitle = `The Impact of Their Nationality (${nationality}) on Their Art and Collaborations`;
+      
+      // Function to get selected artists from the nodes
+      getSelectedArtists(): Artist[] {
+        return this.selectedNodes.map(([node]) => {
+          const artistNodeData = d3.select(node).datum() as ArtistNode;
+          return artistNodeData.artist;
+        });
+      }
+      
+      // Function to generate a prompt based on selected artists and category
+      generatePrompt(selectedArtists: Artist[], category: string): string {
+        const artistNames = selectedArtists.map(artist => `${artist.firstname} ${artist.lastname}`);
+        const formattedNames = this.formatArtistNames(artistNames);
+        let prompt = '';
+      
+        switch (category) {
+          case 'nationality':
+            prompt = this.createNationalityPrompt(selectedArtists, formattedNames);
             break;
-
-        case 'birthcountry':
-            prompt = `In 60 words, examine how growing up in ${birthcountry} shaped ${artistNames}'s early artistic development and relationships with other artists such as ${joinedNames}. 
-            Highlight early influences, movements, or regional connections that shaped their style. Only use the artists' last names in your answer.`;
-            this.aiTitle = `AI Insight: You chose the category "Country of Birth" and the artist ${artistNames}`;
-            this.aiSmallTitle = `Impact of Their Birth Country (${birthcountry}) on Their Early Career and Connections`;
-
+          case 'birthcountry':
+            prompt = this.createBirthCountryPrompt(selectedArtists, formattedNames);
             break;
-
-        case 'deathcountry':
-            prompt = `In 60 words, analyze how ${artistNames}'s later years in ${deathcountry} influenced their final works and connections with artists such as ${joinedNames}. 
-            Explore any late-career collaborations or influences during this period. Only use the artists' last names in your answer.`;
-            this.aiTitle = `AI Insight: You chose the category "Country of Death" and the artist ${artistNames}`;
-            this.aiSmallTitle = `Impact of Their Death Country (${deathcountry}) on Their Late Career and Connections`;
-
+          case 'deathcountry':
+            prompt = this.createDeathCountryPrompt(selectedArtists, formattedNames);
             break;
-
-        case 'mostexhibited':
-            prompt = `In 60 words, discuss why ${artistNames}'s works were most exhibited in ${mostexhibited}, and how connections with other artists, including ${joinedNames}, may have contributed to this focus. 
-            Explore key exhibitions, collaborations, or regional influences. Only use the artists' last names in your answer.`;
-            this.aiTitle = `AI Insight: You chose the category "Most Exhibited Country" and the artist ${artistNames}`;
-            this.aiSmallTitle = `Why Their Art Was Most Exhibited in ${mostexhibited}`;
-
+          case 'mostexhibited':
+            prompt = this.createExhibitedCountryPrompt(selectedArtists, formattedNames);
             break;
-
-        default:
+          default:
             console.warn('Unknown category:', category);
             break;
-    }
-}
-
-
-    // Call AI service to generate response
-    if (prompt) {
+        }
+      
+        return prompt;
+      }
+      
+      // Function to generate a prompt for the entire cluster
+      generatePromptForCluster(clusterArtists: Artist[], category: string): string {
+        const artistNames = clusterArtists.map(artist => `${artist.firstname} ${artist.lastname}`);
+        const formattedNames = this.formatArtistNames(artistNames);
+        let prompt = '';
+      
+        switch (category) {
+          case 'nationality':
+            prompt = this.createNationalityPrompt(clusterArtists, formattedNames);
+            break;
+          case 'birthcountry':
+            prompt = this.createBirthCountryPrompt(clusterArtists, formattedNames);
+            break;
+          case 'deathcountry':
+            prompt = this.createDeathCountryPrompt(clusterArtists, formattedNames);
+            break;
+          case 'mostexhibited':
+            prompt = this.createExhibitedCountryPrompt(clusterArtists, formattedNames);
+            break;
+          default:
+            console.warn('Unknown category:', category);
+            break;
+        }
+      
+        return prompt;
+      }
+      
+      // Format artist names into a readable string
+      formatArtistNames(artistNames: string[]): string {
+        return artistNames.length > 1
+          ? artistNames.slice(0, -1).join(", ") + " and " + artistNames[artistNames.length - 1]
+          : artistNames[0];
+      }
+      
+      // Functions to generate prompts based on the selected category (examples below)
+      createNationalityPrompt(selectedArtists: Artist[], formattedNames: string): string {
+        const nationalityInfo = selectedArtists
+          .map(artist => `${artist.firstname} ${artist.lastname} (Nationality: ${this.artistService.countryMap[artist.nationality]})`)
+          .join(", ");
+        
+        this.aiTitle = `AI Insight: You chose the category "Nationality" and the artists ${formattedNames}`;
+        this.aiSmallTitle = `How Nationality Shaped Their Connections`;
+        
+        return `In 60 words, detail any known meetings, collaborations, or influences between the following artists: ${nationalityInfo}. Focus on how their national backgrounds might have led to shared exhibitions, joint projects, or mutual influences. If no direct connections exist, explore similarities in their artistic movements, styles, or influences. Only use the artists' last names in your answer.`;
+      }
+      
+      createBirthCountryPrompt(selectedArtists: Artist[], formattedNames: string): string {
+        const birthCountryInfo = selectedArtists
+          .map(artist => `${artist.firstname} ${artist.lastname} (Born in: ${this.modernMap ? this.artistService.countryMap[artist.birthcountry] : this.artistService.oldCountryMap[artist.oldBirthCountry]})`)
+          .join(", ");
+        
+        this.aiTitle = `AI Insight: You chose the category "Country of Birth" and the artists ${formattedNames}`;
+        this.aiSmallTitle = `Artistic Connections in Their Early Years`;
+        
+        return `In 60 words, describe any meetings, collaborations, or influences among the following artists: ${birthCountryInfo}. Focus on their early life and artistic careers. Highlight specific instances contributing to shared exhibitions, joint projects, or mutual influences. If no direct connections exist, explore similarities in their artistic movements, styles, or early influences. Only use the artists' last names in your answer.`;
+      }
+      
+      createDeathCountryPrompt(selectedArtists: Artist[], formattedNames: string): string {
+        const deathCountryInfo = selectedArtists
+          .map(artist => `${artist.firstname} ${artist.lastname} (Died in: ${this.modernMap ? this.artistService.countryMap[artist.deathcountry] : this.artistService.oldCountryMap[artist.oldDeathCountry]})`)
+          .join(", ");
+        
+        this.aiTitle = `AI Insight: You chose the category "Country of Death" and the artists ${formattedNames}`;
+        this.aiSmallTitle = `Artistic Connections in Their Final Years`;
+        
+        return `In 60 words, describe any meetings, collaborations, or influences among the following artists: ${deathCountryInfo}. Focus on their later and final years in life and their artistic careers. Highlight specific instances contributing to shared exhibitions, joint projects, or mutual influences. If no direct connections exist, explore similarities in their artistic movements, styles, or influences during this period. Only use the artists' last names in your answer.`;
+      }
+      
+      createExhibitedCountryPrompt(selectedArtists: Artist[], formattedNames: string): string {
+        const exhibitedInfo = selectedArtists
+          .map(artist => `${artist.firstname} ${artist.lastname} (Most exhibited in: ${this.modernMap ? this.artistService.countryMap[artist.most_exhibited_in] : this.artistService.oldCountryMap[artist.mostExhibitedInOldCountry]})`)
+          .join(", ");
+        
+        this.aiTitle = `AI Insight: You chose the category "Most Exhibited Country" and the artists ${formattedNames}`;
+        this.aiSmallTitle = `Their Prominence in Their Most Exhibited Countries Explained`;
+        
+        return `In 60 words, analyze why the following artists were most exhibited in these countries: ${exhibitedInfo}. Focus on the reasons for their prominence in these regions, similarities among the artists, and any known group exhibitions or collaborative projects that may have occurred. Highlight how their artistic styles or backgrounds contributed to their popularity in these locations. Only use the artists' last names in your answer.`;
+      }
+      
+      // Function to call the AI service and handle the response
+      generateAIResponse(prompt: string): void {
         this.generativeAIService.generateAIResponse(prompt).subscribe(
-            response => {
-                this.aiResponse = response.content;  // Store the response
-                this.aiLoading = false;
-               // console.log("AI Response:", this.aiResponse);
-            },
-            error => {
-              this.aiLoading = true;
-              alert('Error generating AI response: ' + error.message + '. Please try again.');
-
-                console.error("Error generating AI response:", error);
-            }
+          response => {
+            this.aiResponse = response.content;
+            this.aiLoading = false;
+          },
+          error => {
+            this.aiLoading = false;
+            alert('Error generating AI response: ' + error.message + '. Please try again.');
+            console.error("Error generating AI response:", error);
+          }
         );
       }
-  }
-}
+      
     
 /*     private drawClusterInCell(cell: any, x: string | number, y: string | number, cellWidth: number, cellHeight: number): void {
       const clusterIndex = Number(x) - 1;
@@ -3564,7 +3618,7 @@ const joinedNames = formattedNames.length > 1
               // Make sure that the circle element exists
               if (circle) {
                   const artistNodeData = d3.select(circle).datum() as ArtistNode;
-                  this.handleMultiNodeSelection(artistNodeData, circle, filter);
+                  this.handleMultiNodeSelection(artistNodeData, circle, filter, false);
               }
           });
       }
@@ -3630,7 +3684,7 @@ const joinedNames = formattedNames.length > 1
               // Make sure that the circle element exists
               if (circle) {
                   const artistNodeData = d3.select(circle).datum() as ArtistNode;
-                  this.handleMultiNodeSelection(artistNodeData, circle, filter);
+                  this.handleMultiNodeSelection(artistNodeData, circle, filter, false);
               }
           });
       }
