@@ -1422,6 +1422,8 @@ private updateFuseCollection(allArtists: Artist[]): void {
     
     private handleMultiNodeSelection(artistNode: ArtistNode, circle: SVGCircleElement, filter: any, single: boolean): void {
      // console.log('clicked', this.selectedNodes);
+
+     
   
       // Access the bound data for the circle
       const clusterNode = this.artistClusterMap.get(artistNode.id);
@@ -1452,6 +1454,25 @@ private updateFuseCollection(allArtists: Artist[]): void {
       const nodeIndex = this.selectedNodes.findIndex(node => node[0] === circle);
   
       if (nodeIndex !== -1) {
+        if (single) {
+          this.resetMultiNodeSelection();
+          this.selectedNodes = [];
+          this.selectedEdges.clear();
+          this.previouslyConnectedNodeIds.clear();
+          this.previouslyConnectedClusterNodeIds.clear();
+
+          if (clusterNode) {
+            this.selectedClusterNode = clusterNode;
+            this.updateClusterSelection(clusterNode);
+        } else {
+            this.updateClusterSelection(null);
+        }
+            // Select the cluster without updating the selectionService
+          
+           
+            return; // Exit the function
+        }
+
         //  console.log('Node is already selected, removing:', artistNode.id);
 
           
@@ -1486,7 +1507,8 @@ private updateFuseCollection(allArtists: Artist[]): void {
 
   
           // Check if this was the last selected node
-          if (this.selectedNodes.length === 0 || single) {
+          if (this.selectedNodes.length === 0) {
+            this.resetMultiNodeSelection();
             this.selectedEdges.clear();
             this.previouslyConnectedNodeIds.clear();
             this.previouslyConnectedClusterNodeIds.clear();
@@ -1525,6 +1547,24 @@ private updateFuseCollection(allArtists: Artist[]): void {
 
    
           return; // Exit the function since we've handled the removal
+        }else{
+          if (single) {
+                // Reset the style of the deselected node
+          this.resetStyleOfNode(circle, artistNode.artist);
+         
+          this.g.selectAll(`.artist-edge-${clusterNode?.clusterId}`)
+          .style('stroke', (d: any) =>
+              d.sharedExhibitionMinArtworks >= 0.4 ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none'
+          )
+          .style('opacity', 1);
+          this.resetOfOtherNodeStyles(artistNode.id);
+            this.resetMultiNodeSelection();
+            this.selectedNodes = [];
+            this.selectedEdges.clear();
+            this.previouslyConnectedNodeIds.clear();
+            this.previouslyConnectedClusterNodeIds.clear();
+        }
+        
         }
   
       // Add the node to the selection
@@ -2917,6 +2957,16 @@ this.fuse.setCollection(allArtistArray);
       setTimeout(() => {
         if(this.clusters.length>1){
           this.applyForceSimulation();
+        }else{
+          const singleClusterNode = this.clusterNodes[0];
+          singleClusterNode.x = this.contentWidth / 2;
+          singleClusterNode.y = this.contentHeight / 2;
+          singleClusterNode.vx = 0; // No velocity to ensure no movement
+          singleClusterNode.vy = 0; // No velocity to ensure no movement
+  
+          // Update the position in the DOM
+          d3.select(`.cluster-${singleClusterNode.clusterId}`)
+            .attr('transform', `translate(${singleClusterNode.x}, ${singleClusterNode.y})`);
         }
           this.isLoading = false;
        
@@ -3150,13 +3200,19 @@ this.fuse.setCollection(allArtistArray);
     const cluster = this.clusters[clusterIndex];
     if (!cluster) return;
   
-    const cellSize = Math.min(cellWidth, cellHeight);
+    const cellSize = Math.min(cellWidth, cellHeight, this.contentWidth / 5); // Limit cell size when there are few clusters
     const paddedCellSize = cellSize; // Reduce cell size by padding ratio
  
     // Find the maximum cluster size
     const maxClusterSize = d3.max(this.clusters, cluster => cluster.length) || 0;
-
-    const [outerRadius, innerRadius] = this.createSunburstProperties(cluster.length, maxClusterSize, paddedCellSize, this.clusters.length);
+let   [outerRadius, innerRadius] :number[]=[] ;
+    if(this.clusters.length >1){
+      [outerRadius, innerRadius]  = this.createSunburstProperties(cluster.length, maxClusterSize, paddedCellSize, this.clusters.length);
+    }else{
+      const size = Math.min(this.contentHeight,this.contentWidth)/2;
+      [outerRadius, innerRadius] = [size,size - size / 5]       
+   
+    }
     this.innerRadius = innerRadius; 
   
     // Use a single reduce function to calculate the average birth year and other properties
