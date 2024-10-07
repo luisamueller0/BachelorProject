@@ -1390,7 +1390,6 @@ private updateFuseCollection(allArtists: Artist[]): void {
   
   
   
-  
     private handleNodeClick(artistNode: ArtistNode, event: MouseEvent): void {
       event.stopPropagation(); // Stop the click event from propagating to the cluster
 
@@ -1442,11 +1441,10 @@ private updateFuseCollection(allArtists: Artist[]): void {
     
     private handleMultiNodeSelection(artistNode: ArtistNode, circle: SVGCircleElement, filter: any, single: boolean): void {
      // console.log('clicked', this.selectedNodes);
-
-     
   
       // Access the bound data for the circle
       const clusterNode = this.artistClusterMap.get(artistNode.id);
+
   
       // Test if a node of a different cluster was clicked, reset if different cluster
       if (this.selectedNodes.length > 0) {
@@ -1474,8 +1472,6 @@ private updateFuseCollection(allArtists: Artist[]): void {
       const nodeIndex = this.selectedNodes.findIndex(node => node[0] === circle);
   
       if (nodeIndex !== -1) {
-        
-
         //  console.log('Node is already selected, removing:', artistNode.id);
 
           
@@ -1510,8 +1506,7 @@ private updateFuseCollection(allArtists: Artist[]): void {
 
   
           // Check if this was the last selected node
-          if (this.selectedNodes.length === 0) {
-            this.resetMultiNodeSelection();
+          if (this.selectedNodes.length === 0 || single) {
             this.selectedEdges.clear();
             this.previouslyConnectedNodeIds.clear();
             this.previouslyConnectedClusterNodeIds.clear();
@@ -1550,26 +1545,6 @@ private updateFuseCollection(allArtists: Artist[]): void {
 
    
           return; // Exit the function since we've handled the removal
-        }else{
-          if (single) {
-            
-                // Reset the style of the deselected node
-          this.resetStyleOfNode(circle, artistNode.artist);
-          
-          this.g.selectAll(`.artist-edge-${clusterNode?.clusterId}`)
-          .style('stroke', (d: any) =>
-              d.sharedExhibitionMinArtworks >= 0.4 ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none'
-          )
-          .style('opacity', 1);
-            this.selectedNodes = [];
-            this.selectedEdges.clear();
-            this.previouslyConnectedNodeIds.clear();
-            this.previouslyConnectedClusterNodeIds.clear();
-
-            
-            
-        }
-        
         }
   
       // Add the node to the selection
@@ -1592,8 +1567,6 @@ private updateFuseCollection(allArtists: Artist[]): void {
       .style('opacity', '0.2')
     .style('stroke', 'none')
     .style('filter', 'none');
-
-    
     this.g.selectAll(`.artist-node`)
     .filter((d: any) => d.artist.cluster === clusterId)
       .style('opacity', '1')
@@ -1752,15 +1725,13 @@ private updateFuseCollection(allArtists: Artist[]): void {
       
       const clusterIndex = this.artistClusterMap.get(artistNode.id)?.clusterId;
 
+      this.startPulsing();
+
       // Make the button visible by selecting it based on its class
       if (clusterIndex !== undefined) {
         this.svg.select(`.ai-button-${clusterIndex}`)
           .style('visibility', 'visible');
-        
-
       }
-
-      this.startPulsing();
   
 
       if (this.selectedNode && this.selectedNode[0]) {
@@ -2045,7 +2016,7 @@ if(this.modernMap){
         const unconnectedOpacity = 0.2;
     
         // Loop over each cluster to adjust the stroke width for the artist nodes
-        Object.keys(this.clusters).forEach((clusterKey: string) => {
+        Object.keys(this.clusterNodes).forEach((clusterKey: string) => {
             const cluster = this.clusterNodes[+clusterKey]; // Retrieve the cluster object
             const clusterInnerRadius = cluster.innerRadius;
             const strokeWidth = 0.07 * clusterInnerRadius / 100;
@@ -2372,6 +2343,7 @@ const category = this.decisionService.getDecisionSunburst();
 
     return countryCode;  // Corrected: call toString()
   }
+
   private createEdgeColorScale(baseColor: string, minArtworks: number, maxArtworks: number): d3.ScaleLinear<string, number> {
     const baseColorRGB = d3.rgb(baseColor);
     
