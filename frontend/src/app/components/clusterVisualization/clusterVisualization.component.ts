@@ -1294,11 +1294,45 @@ private onClusterClick(clusterNode: ClusterNode): void {
   event?.stopPropagation();
   this.startPulsing();
   // Check if a node was selected prior to this cluster click
-  if (this.selectedNode) {
-      // Reset node selection if any node was selected before clicking on the cluster
-      this.resetNodeSelection();
-      this.updateClusterSelection(null);
-      this.selectedNode = null; // Clear the selectedNode to ensure it's reset
+  if (this.selectedNodes.length >0) {
+      // If Ctrl is pressed but the click is outside any node, reset the selection
+      let defs = this.svg.select('defs');
+      if (defs.empty()) {
+        defs = this.svg.append('defs');
+      }
+
+      let filter = defs.select('#shadow');
+      if (filter.empty()) {
+        filter = defs.append('filter')
+          .attr('id', 'shadow')
+          .attr('x', '-50%')
+          .attr('y', '-50%')
+          .attr('width', '200%')
+          .attr('height', '200%');
+      
+        filter.append('feDropShadow')
+          .attr('dx', 0)
+          .attr('dy', 0)
+          .attr('flood-color', 'black')
+          .attr('flood-opacity', 1);
+      
+        let feMerge = filter.append('feMerge');
+        feMerge.append('feMergeNode');
+        feMerge.append('feMergeNode')
+          .attr('in', 'SourceGraphic');
+      }
+
+      const allNodes = [...this.selectedNodes];
+      // Reset selection for all selected nodes
+      allNodes.forEach((node) => {
+        const circle = node[0] as SVGCircleElement;
+        if (circle) {
+          const artistNodeData = d3.select(circle).datum() as ArtistNode;
+          this.handleMultiNodeSelection(artistNodeData, circle, filter,false);
+        }
+      });
+      return;
+    
   }
 
   // If the same cluster is clicked again, deselect it
