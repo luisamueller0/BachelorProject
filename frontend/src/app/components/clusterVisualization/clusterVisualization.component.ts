@@ -89,6 +89,9 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
 
     private previouslyLowOpacity:boolean=false;
 
+    isPulsing = false;
+
+
 
     private paddingRatio: number = 0.05; // 5% padding
     private previousOnHover: number | null = null;
@@ -227,6 +230,17 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
 
      
     }
+
+
+  startPulsing() {
+    // Start pulsing
+    this.isPulsing = true;
+
+    // Stop pulsing after 5 seconds
+    setTimeout(() => {
+      this.isPulsing = false;
+    }, 5000); // 5000 milliseconds = 5 seconds
+  }
 
 
     clearSearch() {
@@ -1204,6 +1218,7 @@ const category = this.decisionService.getDecisionSunburst();
     
 private onClusterClick(clusterNode: ClusterNode): void {
   event?.stopPropagation();
+  this.startPulsing();
   // Check if a node was selected prior to this cluster click
   if (this.selectedNode) {
       // Reset node selection if any node was selected before clicking on the cluster
@@ -1540,12 +1555,12 @@ private updateFuseCollection(allArtists: Artist[]): void {
             
                 // Reset the style of the deselected node
           this.resetStyleOfNode(circle, artistNode.artist);
+          
           this.g.selectAll(`.artist-edge-${clusterNode?.clusterId}`)
           .style('stroke', (d: any) =>
               d.sharedExhibitionMinArtworks >= 0.4 ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none'
           )
           .style('opacity', 1);
-          this.resetOfOtherNodeStyles(artistNode.id);
             this.selectedNodes = [];
             this.selectedEdges.clear();
             this.previouslyConnectedNodeIds.clear();
@@ -1741,7 +1756,11 @@ private updateFuseCollection(allArtists: Artist[]): void {
       if (clusterIndex !== undefined) {
         this.svg.select(`.ai-button-${clusterIndex}`)
           .style('visibility', 'visible');
+        
+
       }
+
+      this.startPulsing();
   
 
       if (this.selectedNode && this.selectedNode[0]) {
@@ -2877,6 +2896,7 @@ this.fuse.setCollection(allArtistArray);
 
           }
           if(this.selectedClusterNode){
+            
             this.onClusterClick(this.selectedClusterNode);
           }}
 

@@ -57,6 +57,8 @@
         (click)="handleButtonClick()" 
         [ngStyle]="{'visibility': selectedNodes.length > 0 || this.selectedClusterNode? 'visible' : 'hidden'}"
         [style.cursor]="'pointer'"
+        [ngClass]="{'visible': selectedNodes.length > 0 || selectedClusterNode, 'pulse': isPulsing}" 
+
       >✧</div>
       <div *ngIf="aiLoading" class="ai-loading-spinner"></div>
 
