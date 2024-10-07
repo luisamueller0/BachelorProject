@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild, ElementRef, OnChanges, OnDestroy, HostListener } from '@angular/core';
 import * as d3 from 'd3';
-import { last, Subscription } from 'rxjs';
+import { first, last, Subscription } from 'rxjs';
 import { SelectionService } from '../../services/selection.service';
 import { DecisionService } from '../../services/decision.service';
 import { ArtistService } from '../../services/artist.service';
@@ -1445,7 +1445,43 @@ private updateFuseCollection(allArtists: Artist[]): void {
       // Access the bound data for the circle
       const clusterNode = this.artistClusterMap.get(artistNode.id);
 
-  
+  if(single && this.selectedNodes.length ===1){
+    const firstSelectedCircle = this.selectedNodes[0][0] as SVGCircleElement;
+    const firstSelectedNode = d3.select(firstSelectedCircle).datum() as ArtistNode;
+    if(firstSelectedCircle === circle){
+   // Reset the style of the deselected node
+   this.resetStyleOfNode(circle, artistNode.artist);
+         
+   this.g.selectAll(`.artist-edge-${clusterNode?.clusterId}`)
+   .style('stroke', (d: any) =>
+       d.sharedExhibitionMinArtworks >= 0.4 ? this.edgeColorScale(d.sharedExhibitionMinArtworks) : 'none'
+   )
+   .style('opacity', 1);
+   this.resetOfOtherNodeStyles(artistNode.id);
+this.selectedEdges.clear();
+      this.previouslyConnectedNodeIds.clear();
+      this.previouslyConnectedClusterNodeIds.clear();
+      this.selectedEdges.clear();
+      this.selectedNodes = [];
+
+
+      if (clusterNode) {
+        this.selectedClusterNode = clusterNode;
+        this.updateClusterSelection(clusterNode);
+    } else {
+        this.updateClusterSelection(null);
+    }
+        // Select the cluster without updating the selectionService
+      
+       
+        return; // Exit the function
+
+    }else{
+        this.previouslyConnectedNodeIds.clear();
+      this.previouslyConnectedClusterNodeIds.clear();
+    }
+    
+  }
       // Test if a node of a different cluster was clicked, reset if different cluster
       if (this.selectedNodes.length > 0) {
           const firstSelectedCircle = this.selectedNodes[0][0] as SVGCircleElement;
@@ -1466,6 +1502,20 @@ private updateFuseCollection(allArtists: Artist[]): void {
   
              
           }
+          if(single){
+            
+            const allNodes = [...this.selectedNodes];
+            // Reset selection for all selected nodes
+            allNodes.forEach((node) => {
+              const circle = node[0] as SVGCircleElement;
+              if (circle) {
+                const artistNodeData = d3.select(circle).datum() as ArtistNode;
+                this.handleMultiNodeSelection(artistNodeData, circle, filter,false);
+              }
+            });
+    
+          }
+          
       }
   
       // Check if the node is already in the selection
@@ -1478,6 +1528,12 @@ private updateFuseCollection(allArtists: Artist[]): void {
   
           // Remove the node from the selectedNodes array
           this.selectedNodes.splice(nodeIndex, 1);
+          if(single){
+            this.selectedNodes = [];
+            this.selectedEdges.clear();
+            this.previouslyConnectedNodeIds.clear();
+            this.previouslyConnectedClusterNodeIds.clear();
+          }
           this.previouslyConnectedNodeIds.clear();
 
            // Remove edges associated with this node from `this.selectedEdges`
@@ -1506,7 +1562,7 @@ private updateFuseCollection(allArtists: Artist[]): void {
 
   
           // Check if this was the last selected node
-          if (this.selectedNodes.length === 0 || single) {
+          if (this.selectedNodes.length === 0) {
             this.selectedEdges.clear();
             this.previouslyConnectedNodeIds.clear();
             this.previouslyConnectedClusterNodeIds.clear();
