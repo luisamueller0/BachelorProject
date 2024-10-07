@@ -43,7 +43,8 @@ export class ClusterVisualizationComponent implements OnInit, OnChanges, OnDestr
     private fuse: Fuse<{ id: number; name: string; artworks: number }>;
 
 
-
+private previousOnHoverCountry: string | null = null;
+private previousOnHoverArtists: Set<number> | null = null;
     public allArtists: Artist[] = [];
 
 
@@ -677,6 +678,9 @@ if(!this.g) return;
       if(!this.svg)
         return;
       if (country) {
+        this.previousOnHoverCountry = country;
+        
+
           // Highlight paths matching the hovered country
           this.svg.selectAll('path:not(.arrowhead-path)')
           .style("opacity", (d: any) => {
@@ -691,6 +695,8 @@ if(!this.g) return;
                   if (match) artistIdsWithOpacity1.add(d.artist.id);
                   return match ? 1 : 0.4;
               });
+
+              this.previousOnHoverArtists=artistIdsWithOpacity1;
   
           // Adjust edge opacity based on whether their source or target belongs to the selected country
           this.svg.selectAll('.artist-edge')
@@ -698,6 +704,33 @@ if(!this.g) return;
                   artistIdsWithOpacity1.has(d.source.id) || artistIdsWithOpacity1.has(d.target.id) ? 1 : 0
               );
       } else if(this.selectedNodes || this.selectedClusterNode) {
+
+        this.svg.selectAll('path:not(.arrowhead-path)')
+        .filter((d: any) => d.country === this.previousOnHoverCountry)
+        .style("opacity", 0.2);
+  
+        let lastSelectedNode = null;
+        let lastSelectedNodeCluster = null;
+        lastSelectedNode= this.selectedNode ? this.selectedNode[1].id : null;
+        if(this.selectedNodes.length > 0){
+          const artistNodeData = d3.select(this.selectedNodes[this.selectedNodes.length - 1][0] as SVGCircleElement).datum() as ArtistNode;
+          lastSelectedNode =  artistNodeData.id 
+          lastSelectedNodeCluster = artistNodeData.artist.cluster;
+        }
+        const artistIdsWithOpacity1 = this.previousOnHoverArtists;
+        if(artistIdsWithOpacity1 &&lastSelectedNode){
+        this.svg.selectAll('.artist-node')
+        .filter((d: any) => artistIdsWithOpacity1.has(d.artist.id))
+        .style("opacity", 0.2);
+          
+            this.previousOnHoverArtists=artistIdsWithOpacity1;
+  
+            
+        // Adjust edge opacity based on whether their source or target belongs to the selected country
+        this.svg.selectAll('.artist-edge')
+        .filter((d: any) => (artistIdsWithOpacity1.has(d.source.id) || artistIdsWithOpacity1.has(d.target.id))&& !(d.source.id === lastSelectedNode || d.target.id === lastSelectedNode))
+        .style("opacity", 0);
+        }
        
         // Extract the IDs of all currently selected nodes
         const selectedNodeIds = this.selectedNodes.map(([node]) => {
@@ -708,6 +741,10 @@ if(!this.g) return;
         const nodeId = this.selectedNode[1].id;
 selectedNodeIds.push(nodeId);
       }
+
+     
+         
+    
       
       // Reset all elements to full opacity
       if (this.selectedClusterNode) {
@@ -725,14 +762,7 @@ selectedNodeIds.push(nodeId);
               .filter((d: any) => d.artist.cluster === this.selectedClusterNode?.clusterId)
               .style('opacity', '1');
               
-              let lastSelectedNode = null;
-              let lastSelectedNodeCluster = null;
-              lastSelectedNode= this.selectedNode ? this.selectedNode[1].id : null;
-              if(this.selectedNodes.length > 0){
-                const artistNodeData = d3.select(this.selectedNodes[this.selectedNodes.length - 1][0] as SVGCircleElement).datum() as ArtistNode;
-                lastSelectedNode =  artistNodeData.id 
-                lastSelectedNodeCluster = artistNodeData.artist.cluster;
-              }
+              
           
 
              
@@ -742,6 +772,7 @@ selectedNodeIds.push(nodeId);
                 this.g.selectAll('.artist-node')
                     .filter((d: any) => !this.previouslyConnectedClusterNodeIds.has(d.id) && d.id !== lastSelectedNode && d.artist.cluster === this.selectedClusterNode?.clusterId)
                     .style('opacity', 0.2); // Adjust opacity
+                   
                     this.svg.selectAll(`.cluster-${lastSelectedNodeCluster} path`).style("opacity", 1);
 
             }
@@ -765,18 +796,19 @@ selectedNodeIds.push(nodeId);
                 .style('opacity', 0.8) // Adjust opacity
                 .style("stroke", "grey") // Set stroke to grey
                 .style("stroke-width", `${0.07 * this.innerRadius / 100}vw`); // Adjust stroke width if needed
-        }else {
-          // Reset all elements to full opacity
-          this.svg.selectAll('path:not(.arrowhead-path), .artist-node, .artist-edge').style("opacity", 1);
-      }
-       
+        }else{
 
        
 
-  
+        this.svg.selectAll('path:not(.arrowhead-path), .artist-node, .artist-edge').style("opacity", 1);
+        }
+        this.previousOnHoverCountry = null;
+        this.previousOnHoverArtists =null;
 
 
       }
+      
+     
   }
   
   
