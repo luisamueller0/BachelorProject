@@ -597,18 +597,16 @@ if(!this.g) return;
         }
 
     } else {
+
         // Extract the IDs of all currently selected nodes
         const selectedNodeIds = this.selectedNodes.map(([node]) => {
             const artistNodeData = d3.select(node as SVGCircleElement).datum() as ArtistNode;
             return artistNodeData.artist.id;
         });
-        if (selectedNodeIds.length === 0 && this.selectedNode) {
-          const nodeId = this.selectedNode[1].id;
-  selectedNodeIds.push(nodeId);
-        }
+        
         
         // Reset all elements to full opacity
-        if (this.selectedClusterNode) {
+        if (this.selectedClusterNode || this.selectedNodes.length > 0) {
           
             //console.log('selected cluster', this.selectedClusterNode);
 
@@ -740,7 +738,7 @@ selectedNodeIds.push(nodeId);
              
               if (this.previouslyConnectedClusterNodeIds && this.previouslyConnectedClusterNodeIds.size > 0 && lastSelectedNode && lastSelectedNodeCluster) {
                 // Now handle the case for previously connected nodes
-                console.log('HALLO')
+               // console.log('HALLO')
                 this.g.selectAll('.artist-node')
                     .filter((d: any) => !this.previouslyConnectedClusterNodeIds.has(d.id) && d.id !== lastSelectedNode && d.artist.cluster === this.selectedClusterNode?.clusterId)
                     .style('opacity', 0.2); // Adjust opacity
@@ -4376,7 +4374,7 @@ if (!centralNode) {
           degreeMap.set(rel.startId, (degreeMap.get(rel.startId) || 0) + 1);
           degreeMap.set(rel.endId, (degreeMap.get(rel.endId) || 0) + 1);
         });
-        console.log(degreeMap, clusterId)
+       // console.log(degreeMap, clusterId)
         const normalizedDegrees = this.normalizeLinear(degreeMap);
         this.degreesMap[clusterId] = normalizedDegrees;
       });
