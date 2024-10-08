@@ -11,7 +11,8 @@
   <div class="dropdown-group">
     <label for="dropdown" class="dropdown-label">Select country category ✧</label>
     <select class="dropdown" [(ngModel)]="selectedSunburst" (change)="onSunburstChange($event)">
-      <option *ngFor="let option of SunburstOptions" [value]="option.value">{{ option.label }}</option>
+      <option *ngFor="let option of SunburstOptions" [value]="option.value"       [disabled]="!isModernMap && option.value === 'nationality'">
+{{ option.label }}</option>
     </select>
   </div>
   

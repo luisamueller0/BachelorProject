@@ -5,6 +5,9 @@ import { ArtistService } from '../../services/artist.service';
 import { Artist } from '../../models/artist';
 import { Subscription, firstValueFrom } from 'rxjs';
 import Fuse from 'fuse.js';
+import { SelectionService } from '../../services/selection.service';
+import * as d3 from 'd3';
+
 
 interface SearchedArtist {
   id: number;
@@ -26,11 +29,14 @@ export class DecisionsComponent implements OnInit {
   public filteredArtists: { id: number; name: string; artworks: number }[] = [];
   public isLoadingK: boolean = false;
 public isLoadingRange: boolean = false;
+public isModernMap: boolean = true;
 
 
   private fuse: Fuse<{ id: number; name: string; artworks: number }>;
 
-  constructor(private decisionService: DecisionService, private artistService: ArtistService) {
+  constructor(private decisionService: DecisionService, 
+    private artistService: ArtistService,
+  private selectionService: SelectionService) {
     this.fuse = new Fuse([], {
       keys: ['name'],
       threshold: 0.3, // Adjust threshold for error tolerance
@@ -46,6 +52,15 @@ public isLoadingRange: boolean = false;
         
       }
     }));
+
+    this.subscription.add(this.selectionService.currentSelectModern.subscribe(modern => {
+      this.isModernMap=modern;
+
+    }));
+
+    
+
+    
     
     // Fetch default data from the database and set it as default values
     this.artistService.getArtistsWithRange(this.range).subscribe(
@@ -100,6 +115,8 @@ public isLoadingRange: boolean = false;
   rangeChanged = false; // Track if the range was changed
   kChanged = false; // Track if the K value was changed
 
+
+  
   selectRanking: string ='artworks';
   RankingOptions: { label: string, value: string }[] = [
       { label: 'Number of Exhibitions (High-Low)', value: 'exhibitions' },
@@ -122,6 +139,7 @@ public isLoadingRange: boolean = false;
   ];
     selectedSize: string = '';
  
+
 
   SizeOptions: { label: string, value: string }[] = [
     { label: 'Amount of Exhibitions', value: 'Amount of Exhibitions' },
@@ -148,6 +166,8 @@ public isLoadingRange: boolean = false;
   onRankingChange(event: any) {
     this.decisionService.changeDecisionRanking(event.target.value);
   }
+
+  
   
  
   onSizeChange(event: any) {
