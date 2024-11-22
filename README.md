@@ -1,6 +1,7 @@
 # Bachelor Project: "Exploring Avant-Garde: Visualizing Clusters of Exhibited Artists"
 ## Preview on developed Tool
-![image](https://github.com/user-attachments/assets/5915fdaa-6eb0-44f0-9d07-597516b62085)
+![Overview](https://github.com/user-attachments/assets/98f75163-a93e-46cc-8891-ea582345dfd3)
+
 
 ## Setup Instructions
 
@@ -40,6 +41,17 @@ This guide provides step-by-step instructions for setting up and running the pro
 2. Run the following command to install the necessary npm module
     ```bash
    npm install
+
+### 5. Obtain the `.env` File
+The `.env` file contains essential configuration details required to run the project (e.g., API keys, sensitive environment variables). This file is **not included** in the repository for security reasons.
+
+1. **Request the `.env` File:**
+   - To obtain the `.env` file, please contact me directly at luisamueller02@web.de.
+
+2. **Add the `.env` File:**
+   - Once you receive the file, place it in the appropriate directory:
+     - **Backend:** Place the `.env` file in the `backend` folder.
+
 
 ## How to Run the Project after Setup
 
