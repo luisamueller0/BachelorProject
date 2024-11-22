@@ -910,6 +910,7 @@ selectedNodeIds.push(nodeId);
   }
 
     private updateNetworkOnSunburstChange(newCategory: string): void {
+      console.log('HALLO')
       // Loop through all clusters
       this.clusters.forEach((cluster, clusterIndex) => {
         const clusterNode = this.clusterNodes[clusterIndex];
@@ -2789,6 +2790,8 @@ this.fuse.setCollection(allArtistArray);
       this.selectionService.selectCountries(this.allCountriesByCategory[category]);
      // console.log('all old', this.allOldCountriesByCategory)
       this.selectionService.selectOldCountries(this.allOldCountriesByCategory[category]);
+      this.updateNetworkOnSunburstChange(category)
+      this.updateMap(category);
  
     }
   

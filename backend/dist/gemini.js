@@ -7,8 +7,6 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
 var _require = require("@google/generative-ai"),
   GoogleGenerativeAI = _require.GoogleGenerativeAI;
 
-// Access your API key as an environment variable (see "Set up your API key" above)
-//const genAI = new GoogleGenerativeAI(process.env.API_KEY);
 var genAI = new GoogleGenerativeAI("AIzaSyDRjOqh1VbhpBwTb3E_Bwwhhvkd-NJWvzc");
 function run() {
   return _run.apply(this, arguments);

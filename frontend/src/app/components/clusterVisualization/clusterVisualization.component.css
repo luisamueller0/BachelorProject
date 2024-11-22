@@ -173,8 +173,8 @@ button:active {
   border: 0.3vw solid #f3f3f3; /* Light grey border */
   border-top: 0.2vw solid #09af2d; /* Dark purple border */
   border-radius: 50%;
-  width: 1vw;
-  height: 1vw;
+  width: 1.3vw;     /* Match the height of the title */
+  height: 1.3vw; 
   animation: spin 2s linear infinite; /* Spin animation */
 }
 /* Disable interaction with the slider when loading */
