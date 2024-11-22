@@ -3675,26 +3675,90 @@ switch(amount){
     } */
       handleButtonClick(): void {
         this.aiLoading = true;
-      
-        if (this.selectedNodes && this.selectedNodes.length > 0) {
-          const selectedArtists = this.getSelectedArtists();
-          const category = this.decisionService.getDecisionSunburst();
-          const prompt = this.generatePrompt(selectedArtists, category);
-      
-          if (prompt) {
-            this.generateAIResponse(prompt);
-          }
+    
+        if (this.selectedNodes && this.selectedNodes.length === 1) {
+            // Single selected node logic
+            const selectedArtist = this.getSelectedArtists()[0]; // Get the single selected artist
+            const category = this.decisionService.getDecisionSunburst();
+    
+            // Extract data for the selected artist
+            const nationality = this.artistService.countryMap[selectedArtist.nationality];
+            const birthcountry = this.modernMap
+                ? this.artistService.countryMap[selectedArtist.birthcountry]
+                : this.artistService.oldCountryMap[selectedArtist.oldBirthCountry];
+            const deathcountry = this.modernMap
+                ? this.artistService.countryMap[selectedArtist.deathcountry]
+                : this.artistService.oldCountryMap[selectedArtist.oldDeathCountry];
+            const mostexhibited = this.modernMap
+                ? this.artistService.countryMap[selectedArtist.most_exhibited_in]
+                : this.artistService.oldCountryMap[selectedArtist.mostExhibitedInOldCountry];
+    
+            const clusterNode = this.artistClusterMap.get(selectedArtist.id);
+    
+            let joinedNames = '';
+            if (clusterNode) {
+                const artists = this.clusters[clusterNode.clusterId];
+                const formattedNames = artists.map(name => `"${name.firstname} ${name.lastname}"`);
+                joinedNames = formattedNames.length > 1
+                    ? formattedNames.slice(0, -1).join(", ") + " or " + formattedNames[formattedNames.length - 1]
+                    : formattedNames[0];
+            }
+    
+            let prompt = '';
+            switch (category) {
+                case 'nationality':
+                    prompt = `In 60 words, explore how ${selectedArtist.lastname}'s nationality (${nationality}) influenced their artistic journey and connections with other artists such as ${joinedNames}. Focus on how cultural background and national identity shaped key collaborations and stylistic influences.`;
+                    this.aiTitle = `AI Insight: You chose the category "Nationality" for ${selectedArtist.firstname} ${selectedArtist.lastname}`;
+                    this.aiSmallTitle = `Impact of Nationality (${nationality}) on Their Art and Collaborations`;
+                    break;
+    
+                case 'birthcountry':
+                    prompt = `In 60 words, examine how growing up in ${birthcountry} shaped ${selectedArtist.lastname}'s early artistic development and relationships with other artists such as ${joinedNames}.`;
+                    this.aiTitle = `AI Insight: You chose the category "Birth Country" for ${selectedArtist.firstname} ${selectedArtist.lastname}`;
+                    this.aiSmallTitle = `Impact of Birth Country (${birthcountry}) on Their Early Career and Connections`;
+                    break;
+    
+                case 'deathcountry':
+                    prompt = `In 60 words, analyze how ${selectedArtist.lastname}'s later years in ${deathcountry} influenced their final works and connections with artists such as ${joinedNames}.`;
+                    this.aiTitle = `AI Insight: You chose the category "Country of Death" for ${selectedArtist.firstname} ${selectedArtist.lastname}`;
+                    this.aiSmallTitle = `Impact of Death Country (${deathcountry}) on Their Late Career and Connections`;
+                    break;
+    
+                case 'mostexhibited':
+                    prompt = `In 60 words, discuss why ${selectedArtist.lastname}'s works were most exhibited in ${mostexhibited}, and how connections with other artists, including ${joinedNames}, contributed to this focus.`;
+                    this.aiTitle = `AI Insight: You chose the category "Most Exhibited Country" for ${selectedArtist.firstname} ${selectedArtist.lastname}`;
+                    this.aiSmallTitle = `Why Their Art Was Most Exhibited in ${mostexhibited}`;
+                    break;
+    
+                default:
+                    console.warn('Unknown category:', category);
+                    break;
+            }
+    
+            if (prompt) {
+                this.generateAIResponse(prompt);
+            }
+        } else if (this.selectedNodes && this.selectedNodes.length > 1) {
+            // Multiple selected nodes logic
+            const selectedArtists = this.getSelectedArtists();
+            const category = this.decisionService.getDecisionSunburst();
+            const prompt = this.generatePrompt(selectedArtists, category);
+    
+            if (prompt) {
+                this.generateAIResponse(prompt);
+            }
         } else if (this.selectedClusterNode) {
-          const clusterArtists = this.selectedClusterNode.artists;
-          const category = this.decisionService.getDecisionSunburst();
-          const prompt = this.generatePromptForCluster(clusterArtists, category);
-      
-          if (prompt) {
-            this.generateAIResponse(prompt);
-          }
+            // Cluster selected logic
+            const clusterArtists = this.selectedClusterNode.artists;
+            const category = this.decisionService.getDecisionSunburst();
+            const prompt = this.generatePromptForCluster(clusterArtists, category);
+    
+            if (prompt) {
+                this.generateAIResponse(prompt);
+            }
         }
-      }
-      
+    }
+    
       // Function to get selected artists from the nodes
       getSelectedArtists(): Artist[] {
         return this.selectedNodes.map(([node]) => {
