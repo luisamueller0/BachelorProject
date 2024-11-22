@@ -3703,37 +3703,46 @@ switch(amount){
                     ? formattedNames.slice(0, -1).join(", ") + " or " + formattedNames[formattedNames.length - 1]
                     : formattedNames[0];
             }
-    
             let prompt = '';
+
+    
             switch (category) {
-                case 'nationality':
-                    prompt = `In 60 words, explore how ${selectedArtist.lastname}'s nationality (${nationality}) influenced their artistic journey and connections with other artists such as ${joinedNames}. Focus on how cultural background and national identity shaped key collaborations and stylistic influences.`;
-                    this.aiTitle = `AI Insight: You chose the category "Nationality" for ${selectedArtist.firstname} ${selectedArtist.lastname}`;
-                    this.aiSmallTitle = `Impact of Nationality (${nationality}) on Their Art and Collaborations`;
-                    break;
-    
-                case 'birthcountry':
-                    prompt = `In 60 words, examine how growing up in ${birthcountry} shaped ${selectedArtist.lastname}'s early artistic development and relationships with other artists such as ${joinedNames}.`;
-                    this.aiTitle = `AI Insight: You chose the category "Birth Country" for ${selectedArtist.firstname} ${selectedArtist.lastname}`;
-                    this.aiSmallTitle = `Impact of Birth Country (${birthcountry}) on Their Early Career and Connections`;
-                    break;
-    
-                case 'deathcountry':
-                    prompt = `In 60 words, analyze how ${selectedArtist.lastname}'s later years in ${deathcountry} influenced their final works and connections with artists such as ${joinedNames}.`;
-                    this.aiTitle = `AI Insight: You chose the category "Country of Death" for ${selectedArtist.firstname} ${selectedArtist.lastname}`;
-                    this.aiSmallTitle = `Impact of Death Country (${deathcountry}) on Their Late Career and Connections`;
-                    break;
-    
-                case 'mostexhibited':
-                    prompt = `In 60 words, discuss why ${selectedArtist.lastname}'s works were most exhibited in ${mostexhibited}, and how connections with other artists, including ${joinedNames}, contributed to this focus.`;
-                    this.aiTitle = `AI Insight: You chose the category "Most Exhibited Country" for ${selectedArtist.firstname} ${selectedArtist.lastname}`;
-                    this.aiSmallTitle = `Why Their Art Was Most Exhibited in ${mostexhibited}`;
-                    break;
-    
-                default:
-                    console.warn('Unknown category:', category);
-                    break;
-            }
+              case 'nationality':
+                  prompt = `In 60 words, explore how ${selectedArtist.firstname} ${selectedArtist.lastname}'s nationality (${nationality}) influenced their artistic journey and connections with other artists such as ${joinedNames}. 
+                  Focus on how cultural background and national identity shaped key collaborations and stylistic influences. Only use the artists' last names in your answer.`;
+                  this.aiTitle = `AI Insight: You chose the category "Nationality" and the artist ${selectedArtist.firstname} ${selectedArtist.lastname}`;
+                  this.aiSmallTitle = `The Impact of Their Nationality (${nationality}) on Their Art and Collaborations`;
+                  break;
+      
+              case 'birthcountry':
+                  prompt = `In 60 words, examine how growing up in ${birthcountry} shaped ${selectedArtist.firstname} ${selectedArtist.lastname}'s early artistic development and relationships with other artists such as ${joinedNames}. 
+                  Highlight early influences, movements, or regional connections that shaped their style. Only use the artists' last names in your answer.`;
+                  this.aiTitle = `AI Insight: You chose the category "Country of Birth" and the artist ${selectedArtist.firstname} ${selectedArtist.lastname}`;
+                  this.aiSmallTitle = `Impact of Their Birth Country (${birthcountry}) on Their Early Career and Connections`;
+      
+                  break;
+      
+              case 'deathcountry':
+                  prompt = `In 60 words, analyze how ${selectedArtist.firstname} ${selectedArtist.lastname}'s later years in ${deathcountry} influenced their final works and connections with artists such as ${joinedNames}. 
+                  Explore any late-career collaborations or influences during this period. Only use the artists' last names in your answer.`;
+                  this.aiTitle = `AI Insight: You chose the category "Country of Death" and the artist ${selectedArtist.firstname} ${selectedArtist.lastname}`;
+                  this.aiSmallTitle = `Impact of Their Death Country (${deathcountry}) on Their Late Career and Connections`;
+      
+                  break;
+      
+              case 'mostexhibited':
+                prompt = `In 60 words, discuss why ${selectedArtist.firstname} ${selectedArtist.lastname}'s works were most exhibited in ${mostexhibited}, and how connections with other artists, including ${joinedNames}, may have contributed to this focus. 
+                Explore key exhibitions, collaborations, or regional influences. Only use the artists' last names in your answer.`;  
+                  this.aiTitle = `AI Insight: You chose the category "Most Exhibited Country" and the artist ${selectedArtist.firstname} ${selectedArtist.lastname}`;
+                  this.aiSmallTitle = `Why Their Art Was Most Exhibited in ${mostexhibited}`;
+      
+                  break;
+      
+              default:
+                  console.warn('Unknown category:', category);
+                  break;
+          }
+     
     
             if (prompt) {
                 this.generateAIResponse(prompt);
