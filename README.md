@@ -18,7 +18,7 @@ This guide provides step-by-step instructions for setting up and running the pro
    npm install -g @angular/cli@17
 
 ### 3. Install Neo4j Desktop
-1. Download and install Neo4j Desktop (version 1.5.X) from the [official website](https://neo4j.com/download/).
+1. Download and install Neo4j Desktop (version 1.5.X) from the [official website](https://neo4j.com/download/](https://neo4j.com/deployment-center/#desktop)).
 2. Open Neo4j Desktop and create a new project.
 3. Click on the project and select "Reveal files in explorer" to open the project folder.
 4. Copy the `artvis-db.dump` file into the revealed folder.
