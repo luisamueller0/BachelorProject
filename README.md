@@ -70,9 +70,7 @@ The `.env` file contains essential configuration details required to run the pro
    - To obtain the `.env` file, please contact me directly at luisamueller02@web.de.
 
 2. **Add the `.env` File:**
-   - Once you receive the file, place it in the appropriate directory:
-     - **Backend:** Place the `.env` file in the `backend` folder.
-
+   - Once you receive the file, place the received `.env` file into the `backend` folder.
 
 ## How to Run the Project after Setup
 
