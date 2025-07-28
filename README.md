@@ -1,8 +1,10 @@
 # Bachelor Project: "Exploring Avant-Garde: Visualizing Clusters of Exhibited Artists"
-## Preview on developed Tool
-![Overview](https://github.com/user-attachments/assets/98f75163-a93e-46cc-8891-ea582345dfd3)
+# Thesis: "Visualizing the Avant-Garde: Data-Driven Insights into Artist Connections"
+## Final Dashboard used for Thesis
+_(Click to enlarge)_  
+[![Click to enlarge](https://github.com/user-attachments/assets/d8463bef-2e05-421f-b4c0-d55e64cce301)]([https://github.com/user-attachments/assets/d9a7db17-ed59-4b67-8533-edf1ffd4933f](https://github.com/user-attachments/assets/d8463bef-2e05-421f-b4c0-d55e64cce301))
 
-
+For a structured overview of the project, including motivation, visualization techniques, and evaluation, see the [final colloquium slides (PDF)](presentation/colloquium_slides.pdf).
 ## Setup Instructions
 
 This guide provides step-by-step instructions for setting up and running the project.
@@ -58,7 +60,7 @@ The `.env` file contains essential configuration details required to run the pro
 1. Open two terminals:
    - One in the `frontend` folder.
    - One in the `backend` folder.
-2. In the both terminals, run:
+2. In both terminals run:
    ```bash
    npm start
 3. Open your web browser and navigate to http://localhost:4200 to access the website.
