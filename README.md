@@ -23,7 +23,7 @@ This guide provides step-by-step instructions for setting up and running the pro
 1. Download and install Neo4j Desktop (version 1.5.X) from the [official website](https://neo4j.com/download/](https://neo4j.com/deployment-center/#desktop)).
 2. Open Neo4j Desktop and create a new project.
 3. Click on the project and select "Reveal files in explorer" to open the project folder.
-4. Copy the `artvis-db.dump` file into the revealed folder.
+4. Copy the `artvis-db.dump` file from the `database` folder into the revealed folder.
 5. In Neo4j Desktop, ensure the `artvis-db.dump` file is visible.
 6. Click on the three dots (options) next to the `artvis-db.dump` file and choose "Create new DBMS from dump".
 7. Configure the new DBMS with the following settings:
