@@ -2,8 +2,7 @@
 
 > This project originated as part of my Bachelor studies under the working title “Exploring Avant-Garde: Visualizing Clusters of Exhibited Artists” and was further developed and refined in collaboration with the Department of Art History at TU Wien. It enables art historians to explore relationships between co-exhibited artists and examine meaningful clusters through interactive visualizations and analytical components provided in the dashboard.
 >
-> Special thanks to my supervisor Raphael Buchmüller for his valuable input on design decisions and project direction.
-
+> Special thanks to my supervisor, Raphael Buchmüller, for his valuable input on design decisions and overall project direction.
 
 ## Final Dashboard (Used in Thesis)
 _(Click to enlarge)_  
