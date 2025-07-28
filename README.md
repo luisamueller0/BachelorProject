@@ -4,7 +4,9 @@
 _(Click to enlarge)_  
 [![Click to enlarge](https://github.com/user-attachments/assets/d8463bef-2e05-421f-b4c0-d55e64cce301)]([https://github.com/user-attachments/assets/d9a7db17-ed59-4b67-8533-edf1ffd4933f](https://github.com/user-attachments/assets/d8463bef-2e05-421f-b4c0-d55e64cce301))
 
+
 For a structured overview of the project, including motivation, visualization techniques, and evaluation, see the [final colloquium slides (PDF)](docs/colloquium_slides.pdf).
+You can also view the [earlier milestone presentation slides (PDF)](docs/early_project_presentation.pdf), which show the dashboard and project state at the end of my official project, before further refinement for the final thesis.
 ## Setup Instructions
 
 This guide provides step-by-step instructions for setting up and running the project.
